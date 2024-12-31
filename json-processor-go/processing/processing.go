@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 )
 
-// Mapeamento de diretórios
 var directories = map[string]string{
 	"contract":                "/app/crawlers/packages/contractDataJob/contractFiles",
 	"councilor":               "/app/crawlers/packages/councilorDataJob/councilorFiles",
@@ -20,7 +19,6 @@ var directories = map[string]string{
 	"travelExpenses":          "/app/crawlers/packages/travelExpensesDataJob/travelExpensesFiles",
 }
 
-// Processa arquivos JSON
 func ProcessJsonFiles() error {
 	for key, dir := range directories {
 		utils.Log.Infof("Processing files in directory: %s", dir)
@@ -47,14 +45,12 @@ func ProcessJsonFiles() error {
 					continue
 				}
 
-				// Validação de campos obrigatórios
 				err = validateFields(jsonData, []string{"requiredField1", "requiredField2"})
 				if err != nil {
 					utils.Log.Warnf("Validation failed for file %s: %v", file.Name(), err)
 					continue
 				}
 
-				// Envie os dados para a API
 				err = api.SendToApi(jsonData, key)
 				if err != nil {
 					utils.Log.Errorf("Failed to send data for %s: %v", key, err)
@@ -65,7 +61,6 @@ func ProcessJsonFiles() error {
 	return nil
 }
 
-// Valida campos obrigatórios em cada objeto do JSON
 func validateFields(data []map[string]interface{}, requiredFields []string) error {
 	for _, item := range data {
 		for _, field := range requiredFields {

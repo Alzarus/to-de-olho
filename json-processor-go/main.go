@@ -16,5 +16,5 @@ func main() {
 	}
 
 	go broker.ListenForMessages(brokerURL, processing.ProcessJsonFiles)
-	select {} // Manter o programa em execução
+	select {}
 }

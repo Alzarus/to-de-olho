@@ -14,7 +14,7 @@ gerar /dist (./api):
 npx tsc
 
 atualizar .sh para linux (com git bash)
-sed -i 's/\r$//' run-crawlers.sh
+sed -i 's/\r$//' ./crawlers/run-crawlers.sh
 
 pegar todos os logs dos crawlers
 tail -f /app/crawlers/logs/contract.log /app/crawlers/logs/councilor.log /app/crawlers/logs/frequency.log /app/crawlers/logs/general-productivity.log /app/crawlers/logs/proposition.log /app/crawlers/logs/proposition-productivity.log /app/crawlers/logs/travel-expenses.log
