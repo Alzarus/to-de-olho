@@ -17,20 +17,36 @@ COPY ./crawlers /app/crawlers
 FROM mcr.microsoft.com/playwright:v1.34.0-focal AS production
 WORKDIR /app/crawlers
 
-# Instalando dependências do sistema para cron, scripts e Google Chrome/Chromium
+# Instalando dependências do sistema
 RUN apt-get update && \
-    apt-get install -y curl cron wget gnupg libnss3 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxrandr2 x11-utils libgbm-dev libasound2 && \
-    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome.gpg && \
+    apt-get install -y curl wget gnupg libnss3 libatk-bridge2.0-0 \
+    libxcomposite1 libxdamage1 libxrandr2 x11-utils libgbm-dev libasound2 jq && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Instalando Google Chrome para Puppeteer
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome.gpg && \
     echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && \
     apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Instalando navegadores do Playwright (Chromium)
+RUN npx playwright install --with-deps chromium
 
 # Copiando o código e as dependências do build
 COPY --from=build /app/crawlers /app/crawlers
 
 # Garantindo que o lerna esteja disponível no ambiente de produção
 RUN npm install -g lerna
+
+# Definindo o caminho correto do Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_CHROMIUM_PATH=/ms-playwright/chromium-1064/chrome-linux/chrome
+
+# Link simbólico para garantir compatibilidade
+RUN ln -sf /ms-playwright/chromium-1064/chrome-linux/chrome /usr/bin/chromium
+
 
 # Garantindo que o script tem permissão de execução
 RUN chmod +x /app/crawlers/run-crawlers.sh

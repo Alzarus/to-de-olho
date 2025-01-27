@@ -52,11 +52,11 @@ func SetupRoutes(router *gin.Engine) {
 		v1.PUT("/propositions/:id", controllers.UpdateProposition)
 		v1.DELETE("/propositions/:id", controllers.DeleteProposition)
 
-		v1.GET("/proposition-productivities", controllers.GetPropositionProductivities)
-		v1.GET("/proposition-productivities/:id", controllers.GetPropositionProductivityByID)
-		v1.POST("/proposition-productivities", controllers.CreatePropositionProductivity)
-		v1.PUT("/proposition-productivities/:id", controllers.UpdatePropositionProductivity)
-		v1.DELETE("/proposition-productivities/:id", controllers.DeletePropositionProductivity)
+		v1.GET("/proposition-productivity", controllers.GetPropositionProductivities)
+		v1.GET("/proposition-productivity/:id", controllers.GetPropositionProductivityByID)
+		v1.POST("/proposition-productivity", controllers.CreatePropositionProductivity)
+		v1.PUT("/proposition-productivity/:id", controllers.UpdatePropositionProductivity)
+		v1.DELETE("/proposition-productivity/:id", controllers.DeletePropositionProductivity)
 
 		v1.GET("/travel-expenses", controllers.GetTravelExpenses)
 		v1.GET("/travel-expenses/latest", controllers.GetLatestTravelExpense)
