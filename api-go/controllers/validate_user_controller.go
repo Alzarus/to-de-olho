@@ -11,44 +11,36 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-// RequestBody define a estrutura dos dados recebidos
 type RequestBody struct {
 	TituloCpf      string `json:"tituloCpf" binding:"required"`
 	DataNascimento string `json:"dataNascimento" binding:"required"`
 	NomeMae        string `json:"nomeMae"`
 }
 
-// ValidateUser publica os dados do eleitor na fila do RabbitMQ
 func ValidateUser(c *gin.Context) {
 	var requestBody RequestBody
 
-	// Valida o JSON recebido
 	if err := c.ShouldBindJSON(&requestBody); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
 		return
 	}
 
-	// Converte os dados para JSON
 	message, err := json.Marshal(requestBody)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao serializar dados: " + err.Error()})
 		return
 	}
 
-	// Publica a mensagem na fila
 	err = publishToQueue(c, "validate_user_queue", message)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao publicar mensagem na fila: " + err.Error()})
 		return
 	}
 
-	// Responde imediatamente ao cliente
 	c.JSON(http.StatusAccepted, gin.H{"status": "processing", "message": "Validação em andamento"})
 }
 
-// publishToQueue publica uma mensagem em uma fila RabbitMQ
 func publishToQueue(c *gin.Context, queueName string, message []byte) error {
-	// Conecta ao RabbitMQ
 	conn, err := amqp091.Dial("amqp://to-de-olho:olho-de-to@broker:5672/")
 	if err != nil {
 		log.Printf("Erro ao conectar ao RabbitMQ: %v", err)
@@ -56,7 +48,6 @@ func publishToQueue(c *gin.Context, queueName string, message []byte) error {
 	}
 	defer conn.Close()
 
-	// Cria um canal
 	ch, err := conn.Channel()
 	if err != nil {
 		log.Printf("Erro ao abrir canal no RabbitMQ: %v", err)
@@ -64,7 +55,6 @@ func publishToQueue(c *gin.Context, queueName string, message []byte) error {
 	}
 	defer ch.Close()
 
-	// Declara a fila
 	_, err = ch.QueueDeclare(
 		queueName,
 		true,  // durable
@@ -78,11 +68,9 @@ func publishToQueue(c *gin.Context, queueName string, message []byte) error {
 		return err
 	}
 
-	// Cria um contexto com timeout
 	ctx, cancel := context.WithTimeout(c, 5*time.Second)
 	defer cancel()
 
-	// Publica a mensagem na fila
 	err = ch.PublishWithContext(
 		ctx,       // contexto para timeout
 		"",        // exchange

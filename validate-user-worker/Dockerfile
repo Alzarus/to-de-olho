@@ -1,29 +1,31 @@
-# Imagem base para o build
+# Etapa de build
 FROM golang:1.23-alpine AS builder
 
-# Instala dependências necessárias
+# Instala apenas as dependências necessárias para a compilação
 RUN apk add --no-cache git
 
-# Configura o diretório de trabalho
 WORKDIR /app
 
-# Copia os arquivos do microsserviço
+# Copia e baixa dependências antes do código-fonte para otimizar cache
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copia código-fonte
 COPY . .
 
-# Baixa as dependências
-RUN go mod tidy
+# Compila o binário de forma otimizada
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o validate-user-worker .
 
-# Compila o binário
-RUN go build -o validate-user-worker .
+# Etapa final: usa scratch para um container minimalista
+FROM scratch
 
-# Imagem final para produção
-FROM alpine:latest
-
-# Configura o diretório de trabalho
 WORKDIR /app
 
-# Copia o binário gerado na etapa anterior
+# Copia certificados para permitir conexões HTTPS
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copia o binário compilado
 COPY --from=builder /app/validate-user-worker .
 
-# Define o comando padrão ao iniciar o container
-CMD ["./validate-user-worker"]
+# Define o ponto de entrada
+ENTRYPOINT ["/app/validate-user-worker"]

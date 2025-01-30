@@ -25,6 +25,9 @@ func SetupRoutes(router *gin.Engine) {
 		v1.PUT("/councilors/:id", controllers.UpdateCouncilor)
 		v1.DELETE("/councilors/:id", controllers.DeleteCouncilor)
 
+		v1.GET("/execution-status", controllers.GetExecutionStatus)
+		v1.POST("/execution-status", controllers.LogExecution)
+
 		v1.GET("/frequencies", controllers.GetFrequencies)
 		v1.GET("/frequencies/latest", controllers.GetLatestFrequency)
 		v1.GET("/frequencies/:id", controllers.GetFrequencyByID)
@@ -48,6 +51,12 @@ func SetupRoutes(router *gin.Engine) {
 		v1.POST("/propositions/batch", controllers.CreatePropositions)
 		v1.PUT("/propositions/:id", controllers.UpdateProposition)
 		v1.DELETE("/propositions/:id", controllers.DeleteProposition)
+
+		v1.GET("/proposition-productivity", controllers.GetPropositionProductivities)
+		v1.GET("/proposition-productivity/:id", controllers.GetPropositionProductivityByID)
+		v1.POST("/proposition-productivity", controllers.CreatePropositionProductivity)
+		v1.PUT("/proposition-productivity/:id", controllers.UpdatePropositionProductivity)
+		v1.DELETE("/proposition-productivity/:id", controllers.DeletePropositionProductivity)
 
 		v1.GET("/travel-expenses", controllers.GetTravelExpenses)
 		v1.GET("/travel-expenses/latest", controllers.GetLatestTravelExpense)

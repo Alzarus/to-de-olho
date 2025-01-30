@@ -2,31 +2,28 @@
 FROM golang:1.23 AS builder
 WORKDIR /app
 
-# Copiar arquivos do projeto
+# Copiando arquivos necessários para o build
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
 
-# Alterar diretório para a pasta onde está o main.go
-WORKDIR /app/cmd
-
-# Configurar a compilação estática
+# Definição das flags de compilação para binário mais otimizado
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
-# Baixar dependências e compilar o binário
-RUN go mod tidy
-RUN go build -o main .
+RUN go build -o main ./cmd
 
-# Etapa de produção
 FROM alpine:latest
 WORKDIR /root/
 
-# Instalar dependências necessárias, como curl
-RUN apk add --no-cache ca-certificates curl
+# Copia certificados para conexões HTTPS funcionarem
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-# Copiar o binário gerado
-COPY --from=builder /app/cmd/main .
+# Copia o binário da aplicação
+COPY --from=builder /app/main .
 
-# Expor a porta da API
+# Define porta exposta
 EXPOSE 3000
 
-# Comando para rodar a aplicação
-CMD ["./main"]
+# Define entrada do container
+ENTRYPOINT ["./main"]

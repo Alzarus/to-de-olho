@@ -14,7 +14,7 @@ const OUTPUT_PATH = path.join(
 const DOWNLOAD_BUTTON_SELECTOR = ".scButton_default";
 const DOWNLOAD_FOLDER_PATH = path.join(__dirname, "../frequencyFiles");
 const EXPECTED_FILENAME = "LEG_SYS_frequencia.xml";
-const LINK = "http://177.136.123.157/leg/salvador/LEG_SYS_frequencia/";
+const LINK = "http://45.4.247.157/leg/salvador/LEG_SYS_frequencia/";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const SCRIPT_TIME_LABEL = "Script Time";
@@ -76,7 +76,8 @@ async function initialConfigs() {
     args: myArgs,
     headless: "new",
     defaultViewport: null,
-    executablePath: "/usr/bin/google-chrome",
+    executablePath:
+      process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
   };
 
   const browser = await puppeteer.launch(options);

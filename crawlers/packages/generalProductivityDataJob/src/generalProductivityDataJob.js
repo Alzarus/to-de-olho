@@ -10,7 +10,7 @@ const INPUT_PATH = path.join(
   "../generalProductivityFiles/tableData.json"
 );
 const LINK =
-  "http://177.136.123.157/leg/salvador/LEG_SYS_produtividade_parlamentar/";
+  "http://45.4.247.157/leg/salvador/LEG_SYS_produtividade_parlamentar/";
 
 const T_BODY_SELECTOR = "#sc-ui-summary-body > tbody:nth-child(2)";
 const T_ROWS_SELECTOR = "#sc-ui-summary-body > tbody:nth-child(2) > tr";
@@ -42,7 +42,9 @@ async function generalProductivityDataJob() {
 async function initialConfigs() {
   const options = {
     headless: true,
-    executablePath: "/usr/bin/chromium",
+    executablePath:
+      process.env.PLAYWRIGHT_CHROMIUM_PATH ||
+      "/ms-playwright/chromium-1064/chrome-linux/chrome",
   };
 
   const browser = await playwright.chromium.launch(options);

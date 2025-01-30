@@ -1,6 +1,5 @@
 const { chromium } = require("playwright-extra");
 const stealth = require("puppeteer-extra-plugin-stealth")();
-const yargs = require("yargs");
 
 chromium.use(stealth);
 
@@ -44,6 +43,9 @@ async function initialConfigs() {
   const options = {
     headless: false,
     slowMo: 100,
+    executablePath:
+      process.env.PLAYWRIGHT_CHROMIUM_PATH ||
+      "/ms-playwright/chromium-1064/chrome-linux/chrome",
   };
 
   const browser = await chromium.launch(options);

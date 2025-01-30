@@ -1,36 +1,32 @@
 # Etapa de build
 FROM golang:1.23 AS builder
-
-# Define o diretório de trabalho
 WORKDIR /app
 
-# Copia os arquivos de configuração do Go (mod e sum)
+# Copia arquivos necessários primeiro para otimizar cache
 COPY go.mod go.sum ./
-
-# Baixa as dependências necessárias
 RUN go mod download
 
-# Copia o restante do código
+# Copia código-fonte
 COPY . .
 
-# Gera o binário com variáveis de ambiente para compatibilidade
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o main .
+# Define variáveis de ambiente para build otimizado
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
-# Etapa de produção
-FROM alpine:latest
+# Compila o binário
+RUN go build -o main .
 
-# Define o diretório de trabalho
+# Etapa final: usar 'scratch' para imagem ultraleve
+FROM scratch
 WORKDIR /app
 
-# Copia o binário gerado na etapa de build
+# Copia certificados para conexões HTTPS funcionarem
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copia o binário compilado
 COPY --from=builder /app/main .
 
-# Adiciona dependências necessárias e configura permissões
-RUN apk add --no-cache ca-certificates && \
-    chmod +x /app/main
-
-# Define a porta exposta (se necessário)
+# Expor a porta, se necessário
 EXPOSE 3000
 
-# Define o comando padrão para execução
-CMD ["/app/main"]
+# Define entrada do container
+ENTRYPOINT ["/app/main"]

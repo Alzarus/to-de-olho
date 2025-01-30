@@ -8,11 +8,9 @@ services:
         POSTGRES_PASSWORD: "prod_password"
         POSTGRES_DB: "to_de_olho_prod"
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USERNAME: prod_username
-      DB_PASSWORD: prod_password
-      DB_DATABASE: to_de_olho_prod
+      POSTGRES_USER: "prod_username"
+      POSTGRES_PASSWORD: "prod_password"
+      POSTGRES_DB: "to_de_olho_prod"
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
@@ -43,10 +41,14 @@ services:
     volumes:
       - ./api-go:/app
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://api:3000/api/v1/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test:
+        [
+          "CMD-SHELL",
+          "wget --spider -q http://api:3000/api/v1/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   validate-user-worker:
@@ -66,7 +68,7 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
-    command: ["./validate-user-worker"]
+    command: ["/app/validate-user-worker"]
 
   crawlers:
     build:
@@ -82,10 +84,8 @@ services:
         condition: service_healthy
     volumes:
       - ./crawlers:/app/crawlers
-      - /app/crawlers/node_modules
-      - /app/crawlers/.npm:/root/.npm
-      - shared_data:/app/crawlers # Volume compartilhado entre crawlers e json-processor
-      - ./crawlers/logs:/app/crawlers/logs
+      - shared_data:/shared_data
+      - crawlers_cache:/app/crawlers/node_modules
     restart: unless-stopped
     command: ["/bin/bash", "/app/crawlers/run-crawlers.sh"]
 
@@ -101,8 +101,7 @@ services:
       broker:
         condition: service_healthy
     volumes:
-      - ./crawlers:/app/crawlers # Diretório de entrada para JSON
-      - ./json-processor-go/logs:/app/logs # Diretório de logs
+      - shared_data:/shared_data
     restart: unless-stopped
 
   broker:
@@ -123,3 +122,4 @@ services:
 volumes:
   db_data:
   shared_data:
+  crawlers_cache:
