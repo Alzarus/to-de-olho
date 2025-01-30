@@ -1,6 +1,5 @@
 const { chromium } = require("playwright-extra");
 const stealth = require("puppeteer-extra-plugin-stealth")();
-const yargs = require("yargs");
 
 chromium.use(stealth);
 

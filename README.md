@@ -7,8 +7,13 @@ nest g resource data/...
 
 docker-compose -f docker-compose.prod.yml up -d --build
 docker-compose -f docker-compose.prod.yml down --remove-orphans
+docker system prune -a --volumes
+
+
 npm run process-json -- --workers=4 >> /var/log/json-processor.log 2>&1
 docker-compose logs -f
+
+http://45.4.247.157/
 
 gerar /dist (./api):
 npx tsc
