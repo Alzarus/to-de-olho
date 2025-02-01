@@ -1,4 +1,4 @@
-module json-processor-go
+module json-processor
 
 go 1.23
 
