@@ -3,8 +3,8 @@ package processing
 import (
 	"encoding/json"
 	"fmt"
-	"json-processor-go/api"
-	"json-processor-go/utils"
+	"json-processor/api"
+	"json-processor/utils"
 	"os"
 	"path/filepath"
 )

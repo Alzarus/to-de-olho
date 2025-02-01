@@ -1,25 +1,32 @@
 # Etapa de build
-FROM node:18-slim AS build
-WORKDIR /app/json-processor
+FROM golang:1.23 AS builder
+WORKDIR /app
 
-# Copiando os arquivos de dependência para a instalação
-COPY ./json-processor/package.json ./json-processor/package-lock.json ./
-RUN npm ci && npm cache clean --force
+# Copia arquivos necessários primeiro para otimizar cache
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Copiando o código-fonte necessário do json-processor
-COPY ./json-processor /app/json-processor
+# Copia código-fonte
+COPY . .
 
-# Etapa de produção
-FROM node:18-slim AS production
-WORKDIR /app/json-processor
+# Define variáveis de ambiente para build otimizado
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
-# Instalação de curl e cron para o ambiente de produção
-RUN apt-get update && \
-    apt-get install -y curl cron && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Compila o binário
+RUN go build -o main .
 
-# Copiando o código e dependências do estágio de build
-COPY --from=build /app/json-processor /app/json-processor
+# Etapa final: usar 'scratch' para imagem ultraleve
+FROM scratch
+WORKDIR /app
 
-# CMD para iniciar o json-processor, aguardando o sinal do broker
-CMD ["npm", "run", "process-json"]
+# Copia certificados para conexões HTTPS funcionarem
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copia o binário compilado
+COPY --from=builder /app/main .
+
+# Expor a porta, se necessário
+EXPOSE 3000
+
+# Define entrada do container
+ENTRYPOINT ["/app/main"]

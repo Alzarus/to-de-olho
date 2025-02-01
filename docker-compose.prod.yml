@@ -24,7 +24,7 @@ services:
 
   api:
     build:
-      context: ./api-go
+      context: ./api
       dockerfile: Dockerfile
     environment:
       DB_HOST: db
@@ -39,7 +39,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./api-go:/app
+      - ./api:/app
     healthcheck:
       test:
         [
@@ -91,7 +91,7 @@ services:
 
   json-processor:
     build:
-      context: ./json-processor-go
+      context: ./json-processor
       dockerfile: Dockerfile
     environment:
       BROKER_URL: "amqp://to-de-olho:olho-de-to@broker"

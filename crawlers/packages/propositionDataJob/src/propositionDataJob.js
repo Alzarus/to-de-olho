@@ -229,7 +229,7 @@ async function waitForAvailableDownload(page) {
 async function waitForDownloadComplete(
   downloadPath,
   expectedFilename,
-  timeout = 30000
+  timeout = 60000
 ) {
   let filename;
   const startTime = new Date().getTime();

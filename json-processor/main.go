@@ -1,9 +1,9 @@
 package main
 
 import (
-	"json-processor-go/broker"
-	"json-processor-go/processing"
-	"json-processor-go/utils"
+	"json-processor/broker"
+	"json-processor/processing"
+	"json-processor/utils"
 	"os"
 )
 
