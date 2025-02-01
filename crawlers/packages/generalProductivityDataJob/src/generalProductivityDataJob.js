@@ -7,8 +7,10 @@ const DROPDOWN_PERIOD_BUTTON_SELECTOR =
   ".SumoSelect.sumo_TRA_TRA_DT_MOVIMENTACAO_SC_1";
 const INPUT_PATH = path.join(
   __dirname,
-  "../generalProductivityFiles/tableData.json"
+  "generalProductivityFiles",
+  "tableData.json"
 );
+
 const LINK =
   "http://45.4.247.157/leg/salvador/LEG_SYS_produtividade_parlamentar/";
 
@@ -42,6 +44,7 @@ async function generalProductivityDataJob() {
 async function initialConfigs() {
   const options = {
     headless: true,
+    // executablePath: playwright.chromium.executablePath(),
     executablePath:
       process.env.PLAYWRIGHT_CHROMIUM_PATH ||
       "/ms-playwright/chromium-1064/chrome-linux/chrome",
@@ -192,7 +195,7 @@ async function getTableData(page) {
 
 async function goToMainPage(page) {
   try {
-    await page.goto(LINK, { waitUntil: "networkidle0" });
+    await page.goto(LINK, { waitUntil: "domcontentloaded", timeout: 60000 });
 
     await page.waitForSelector(DROPDOWN_PERIOD_BUTTON_SELECTOR, {
       visible: true,
@@ -225,17 +228,16 @@ async function getTimeNow() {
 }
 
 async function renameFile(oldPath, newPath) {
-  return new Promise((resolve, reject) => {
-    fs.rename(oldPath, newPath, (err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve();
-    });
-  }).catch((error) => {
-    throw new Error(`Erro ao renomear o arquivo: ${error}`);
-  });
+  try {
+    if (fs.existsSync(oldPath)) {
+      await fs.promises.rename(oldPath, newPath);
+      await writeLog(`Arquivo renomeado com sucesso para: ${newPath}`);
+    } else {
+      throw new Error(`Arquivo não encontrado: ${oldPath}`);
+    }
+  } catch (error) {
+    await writeLog(`Erro ao renomear o arquivo: ${error.message}`);
+  }
 }
 
 async function wait(time) {
