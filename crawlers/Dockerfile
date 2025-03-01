@@ -2,52 +2,52 @@
 FROM node:18-alpine AS build
 WORKDIR /app/crawlers
 
-# Copia apenas arquivos necessários para instalação das dependências
+# Adicionando package.json primeiro para usar cache eficiente do Docker
 COPY ./crawlers/package.json ./crawlers/package-lock.json ./
 
-# Instalando dependências sem cache desnecessário
-RUN npm ci --prefer-offline --no-audit --no-fund && \
-    rm -rf /root/.npm
+# Instalando dependências com cache do npm (ACELERA a build!)
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --prefer-offline --no-audit --no-fund --legacy-peer-deps
 
-# Copia restante do código
+# Instalando Lerna globalmente
+RUN npm install -g lerna
+
+# Copiando restante do código após instalação das dependências
 COPY ./crawlers /app/crawlers
 
 # Etapa de produção
 FROM mcr.microsoft.com/playwright:v1.34.0-focal AS production
 WORKDIR /app/crawlers
 
-# Instalando dependências do sistema em um único RUN para melhor aproveitamento de cache
+# Instalando dependências do sistema em um único RUN (EVITA múltiplas camadas desnecessárias)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl wget gnupg libnss3 libatk-bridge2.0-0 libxcomposite1 \
     libxdamage1 libxrandr2 x11-utils libgbm-dev libasound2 jq \
-    build-essential ca-certificates && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    build-essential ca-certificates \
+    fonts-liberation \
+    xdg-utils \
+    libu2f-udev \
+    libvulkan1 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalando Google Chrome para Puppeteer e configurando chave de repositório
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && apt-get install -y google-chrome-stable && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Adicionando repositório oficial do Google Chrome e instalando a versão estável
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && apt-get install -y --no-install-recommends google-chrome-stable
 
-# Criando cache local do Playwright para evitar re-downloads contínuos
-RUN mkdir -p /ms-playwright && npx playwright install --with-deps chromium
-
-# Copiando o código e as dependências da etapa de build
+# Copiando o código da etapa de build para a imagem de produção
 COPY --from=build /app/crawlers /app/crawlers
 
-# Garantindo que o lerna esteja disponível no ambiente de produção
+# Definindo o caminho correto do Chrome para Puppeteer e Playwright
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
+ENV PLAYWRIGHT_BROWSERS_PATH=/usr/bin/google-chrome
+ENV PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/google-chrome
+
+# Instalando Lerna globalmente na produção
 RUN npm install -g lerna
 
-# Definindo o caminho correto do Chromium
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-ENV PLAYWRIGHT_CHROMIUM_PATH=/ms-playwright/chromium-1064/chrome-linux/chrome
-
-# Criando link simbólico para Chromium para compatibilidade
-RUN ln -sf /ms-playwright/chromium-1064/chrome-linux/chrome /usr/bin/chromium
-
-# Garantindo que o script tem permissão de execução
+# Permissão de execução para o script principal dos crawlers
 RUN chmod +x /app/crawlers/run-crawlers.sh
 
-# CMD para iniciar o serviço de crawlers
+# Comando de execução padrão
 CMD ["bash", "/app/crawlers/run-crawlers.sh"]

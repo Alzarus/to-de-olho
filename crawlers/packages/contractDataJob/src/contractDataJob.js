@@ -170,23 +170,37 @@ async function getTimeNow() {
 }
 
 async function makeDownload(page) {
-  await page.waitForSelector(DOWNLOAD_BUTTON_SELECTOR, { visible: true });
+  let attempt = 0;
+  while (attempt < 3) {
+    try {
+      await page.waitForSelector(DOWNLOAD_BUTTON_SELECTOR, {
+        visible: true,
+        timeout: 5000,
+      });
 
-  const downloadButton = await page.evaluateHandle(
-    (DOWNLOAD_BUTTON_SELECTOR) =>
-      Array.from(document.querySelectorAll(DOWNLOAD_BUTTON_SELECTOR)).find(
-        (button) =>
-          button.textContent.includes("Baixar") &&
-          !button.classList.contains("disabled")
-      ),
-    DOWNLOAD_BUTTON_SELECTOR
-  );
+      const downloadButton = await page.evaluateHandle(
+        (DOWNLOAD_BUTTON_SELECTOR) =>
+          Array.from(document.querySelectorAll(DOWNLOAD_BUTTON_SELECTOR)).find(
+            (button) =>
+              button.textContent.includes("Baixar") &&
+              !button.classList.contains("disabled")
+          ),
+        DOWNLOAD_BUTTON_SELECTOR
+      );
 
-  if (downloadButton.asElement()) {
-    await downloadButton.asElement().click();
-  } else {
-    await writeLog('Botão "Baixar" não encontrado.');
+      if (downloadButton.asElement()) {
+        await downloadButton.asElement().click();
+        return;
+      } else {
+        throw new Error('Botão "Baixar" não encontrado.');
+      }
+    } catch (error) {
+      attempt++;
+      await writeLog(`Tentativa ${attempt} falhou. Tentando novamente...`);
+      await wait(3000);
+    }
   }
+  throw new Error("Falha ao encontrar o botão de download após 3 tentativas.");
 }
 
 async function renameDownloadedFile(oldPath, newPath) {
@@ -236,7 +250,7 @@ async function waitForDownloadComplete(
 
     // Encontre o arquivo que corresponde ao nome esperado e que não tenha a extensão .crdownload
     filename = files.find(
-      (file) => file.includes(expectedFilename) && !file.endsWith(".crdownload")
+      (file) => file.endsWith(".json") && !file.endsWith(".crdownload")
     );
 
     if (filename) {

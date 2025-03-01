@@ -1,3 +1,10 @@
 node_modules
-npm-debug.log
+logs
+*.log
+.cache
+build
+dist
 .git
+.vscode
+.DS_Store
+npm-debug.log

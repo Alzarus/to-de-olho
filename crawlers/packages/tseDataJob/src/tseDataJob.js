@@ -41,8 +41,9 @@ async function tseDataJob(args) {
 
 async function initialConfigs() {
   const options = {
-    headless: false,
+    headless: true,
     slowMo: 100,
+    // executablePath: chromium.executablePath(),
     executablePath:
       process.env.PLAYWRIGHT_CHROMIUM_PATH ||
       "/ms-playwright/chromium-1064/chrome-linux/chrome",
