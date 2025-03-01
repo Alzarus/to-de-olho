@@ -16,6 +16,7 @@ type RequestBody struct {
 
 func main() {
 
+	// TODO: configurar variaveis ambiente
 	conn, err := amqp091.Dial("amqp://to-de-olho:olho-de-to@broker:5672/")
 	if err != nil {
 		log.Fatalf("Erro ao conectar ao RabbitMQ: %v", err)
@@ -81,6 +82,7 @@ func main() {
 }
 
 func runCrawler(data RequestBody) (string, error) {
+	// todo: ta fixo aqui
 	cmd := exec.Command(
 		"node",
 		"../packages/tseDataJob/src/tseDataJob.js",
