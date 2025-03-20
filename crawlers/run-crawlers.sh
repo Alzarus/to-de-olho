@@ -22,15 +22,16 @@ run_crawler_with_retries() {
     local crawler_name=$1
     local attempt=1
     local success=false
+    local timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
 
     while [[ $attempt -le $MAX_RETRIES ]]; do
         log "Executando o crawler '$crawler_name' (tentativa $attempt de $MAX_RETRIES)..."
-        if npm run "$crawler_name" > "/logs/${crawler_name}.log" 2>&1; then
+        if npm run "$crawler_name" > "/logs/${crawler_name}_${timestamp}.log" 2>&1; then
             log "Crawler '$crawler_name' concluído com sucesso."
             success=true
             break
         else
-            log "Erro ao executar o crawler '$crawler_name' (tentativa $attempt). Verifique /logs/${crawler_name}.log para mais detalhes."
+            log "Erro ao executar o crawler '$crawler_name' (tentativa $attempt). Verifique /logs/${crawler_name}_${timestamp}.log para mais detalhes."
             attempt=$((attempt + 1))
             sleep 5  # Espera 5 segundos antes de tentar novamente
         fi

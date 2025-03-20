@@ -7,7 +7,7 @@ COPY ./crawlers/package.json ./crawlers/package-lock.json ./
 
 # Instalando dependências com cache do npm (ACELERA a build!)
 RUN --mount=type=cache,target=/root/.npm \
-    npm install --prefer-offline --no-audit --no-fund --legacy-peer-deps
+    npm install --no-audit --no-fund --legacy-peer-deps
 
 # Instalando Lerna globalmente
 RUN npm install -g lerna
@@ -37,6 +37,9 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add
 
 # Copiando o código da etapa de build para a imagem de produção
 COPY --from=build /app/crawlers /app/crawlers
+
+# Instalando `amqplib` para suporte ao RabbitMQ
+RUN npm install amqplib --omit=dev
 
 # Definindo o caminho correto do Chrome para Puppeteer e Playwright
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome

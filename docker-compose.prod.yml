@@ -11,6 +11,7 @@ services:
       POSTGRES_USER: "prod_username"
       POSTGRES_PASSWORD: "prod_password"
       POSTGRES_DB: "to_de_olho_prod"
+      TZ: "America/Sao_Paulo"
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
@@ -33,6 +34,7 @@ services:
       DB_PASSWORD: "prod_password"
       DB_DATABASE: "to_de_olho_prod"
       BROKER_URL: "amqp://to-de-olho:olho-de-to@broker"
+      TZ: "America/Sao_Paulo"
     depends_on:
       db:
         condition: service_healthy
@@ -62,6 +64,7 @@ services:
       DB_USERNAME: "prod_username"
       DB_PASSWORD: "prod_password"
       DB_DATABASE: "to_de_olho_prod"
+      TZ: "America/Sao_Paulo"
     depends_on:
       broker:
         condition: service_healthy
@@ -77,13 +80,13 @@ services:
     environment:
       WORKER_COUNT: 4
       BROKER_URL: "amqp://to-de-olho:olho-de-to@broker"
+      TZ: "America/Sao_Paulo"
     depends_on:
       api:
         condition: service_healthy
       broker:
         condition: service_healthy
     volumes:
-      - ./crawlers:/app/crawlers
       - shared_data:/shared_data
       - crawlers_cache:/app/crawlers/node_modules
     restart: unless-stopped
@@ -95,6 +98,7 @@ services:
       dockerfile: Dockerfile
     environment:
       BROKER_URL: "amqp://to-de-olho:olho-de-to@broker"
+      TZ: "America/Sao_Paulo"
     depends_on:
       api:
         condition: service_healthy
@@ -109,6 +113,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: to-de-olho
       RABBITMQ_DEFAULT_PASS: olho-de-to
+      TZ: "America/Sao_Paulo"
     ports:
       - "5672:5672"
       - "15672:15672"
