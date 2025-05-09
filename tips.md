@@ -5,6 +5,7 @@ Créditos à Câmara Municipal de Salvador pela disponibilidade dos dados de tra
 
 nest g resource data/...
 
+DOCKER_BUILDKIT=1 docker-compose -f docker-compose.prod.yml build --parallel
 docker-compose -f docker-compose.prod.yml up -d --build
 docker-compose -f docker-compose.prod.yml down --remove-orphans
 docker system prune -a --volumes

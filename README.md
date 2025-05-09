@@ -43,7 +43,7 @@ O sistema segue uma abordagem baseada em **microserviços**, onde cada component
 │── /json-processor              # Processamento de JSONs gerados pelos crawlers
 │── /postgresql                  # Banco de dados PostgreSQL
 │── /validate-user-worker        # Serviço de validação de usuários
-│── /data                        # 📌 Armazena os JSONs baixados pelos crawlers (volume compartilhado)
+│── /shared_data                 # 📌 Armazena os JSONs baixados pelos crawlers (volume compartilhado)
 │── /docker-compose.prod.yml     # Arquivo de orquestração dos serviços
 │── /README.md                   # Documentação do projeto
 ```
@@ -54,7 +54,7 @@ O sistema segue uma abordagem baseada em **microserviços**, onde cada component
 ### 🔹 **1. Crawlers (Coleta de Dados)**
 Os crawlers utilizam **Puppeteer** e **Playwright** para navegar e extrair os dados diretamente das páginas públicas, salvando-os em arquivos JSON.
 
-- Cada crawler armazena os arquivos JSON dentro de `/data/<nome-do-crawler>/`
+- Cada crawler armazena os arquivos JSON dentro de `/shared_data/<nome-do-crawler>/`
 - Os arquivos são salvos com timestamps para auditoria.
 
 📌 **Exemplo de execução manual:**
