@@ -4,14 +4,19 @@ const puppeteer = require("puppeteer");
 
 const DOWNLOAD_BUTTON_SELECTOR = ".scButton_default";
 const DOWNLOAD_FOLDER_PATH = path.join(__dirname, "../contractFiles");
-const EXPECTED_FILENAME = "contrato.json";
 const EXPORT_BUTTON_SELECTOR = "#sc_btgp_btn_group_1_top";
 const LINK = "https://cmsalvador.sys.inf.br/ca/contrato/";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-const INPUT_PATH = path.join(__dirname, "../contractFiles/contrato.json");
 const SCRIPT_TIME_LABEL = "Script Time";
 const PATH_FILES_FOLDER = "./contractFiles";
+
+// const EXPECTED_FILENAME = "contrato.json";
+// const INPUT_PATH = path.join(__dirname, "../contractFiles/contrato.json");
+
+const BASE_DOWNLOAD_FOLDER = "/shared_data/contractDataJob";
+const EXPECTED_FILENAME = "contrato.json";
+const INPUT_PATH = path.join(BASE_DOWNLOAD_FOLDER, EXPECTED_FILENAME);
 
 async function contractDataJob() {
   try {
@@ -27,7 +32,7 @@ async function contractDataJob() {
 
     await makeDownload(page);
 
-    await waitForDownloadComplete(DOWNLOAD_FOLDER_PATH, EXPECTED_FILENAME)
+    await waitForDownloadComplete(BASE_DOWNLOAD_FOLDER, EXPECTED_FILENAME)
       .then((filePath) => writeLog(`Download concluído: ${filePath}`))
       .catch((error) => writeLog(error));
 
@@ -133,11 +138,13 @@ async function getFormattedPath(originalFilePath) {
     .toString()
     .padStart(2, "0")}${now.getSeconds().toString().padStart(2, "0")}`;
 
-  const fileNameWithoutExtension = originalFilePath.replace(".json", "");
+  // Garante que o novo caminho seja salvo em `/shared_data/contractDataJob/`
+  const newFilePath = path.join(
+    path.dirname(originalFilePath),
+    `contrato_${formattedDate}_${formattedTime}.json`
+  );
 
-  const fileExtension = originalFilePath.split(".").pop();
-
-  return `${fileNameWithoutExtension}_${formattedDate}_${formattedTime}.${fileExtension}`;
+  return newFilePath;
 }
 
 async function goToJsonDownloadPage(page) {
@@ -205,6 +212,11 @@ async function makeDownload(page) {
 
 async function renameDownloadedFile(oldPath, newPath) {
   return new Promise((resolve, reject) => {
+    if (!fs.existsSync(oldPath)) {
+      reject(new Error(`Arquivo não encontrado: ${oldPath}`));
+      return;
+    }
+
     fs.rename(oldPath, newPath, (err) => {
       if (err) {
         reject(err);

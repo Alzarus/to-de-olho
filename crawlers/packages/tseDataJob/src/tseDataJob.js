@@ -11,8 +11,10 @@ const COOKIES_MODAL_CLOSE_BUTTON = 'button:has-text("Aceito")';
 const INPUT_TITULO_CPF_NOME = '[formcontrolname="TituloCPFNome"]';
 const INPUT_DATA_NASCIMENTO = '[formcontrolname="dataNascimento"]';
 const INPUT_NOME_MAE = '[formcontrolname="nomeMae"]';
-const CHECKBOX_MAE_NAO_CONSTA = '[formcontrolname="MaeNaoConsta"]';
 const LOGIN_BUTTON = ".btn-tse";
+const SELECT_TIPO_FILIACAO = 'select[formcontrolname="tipoFiliacao"]';
+const OPTION_UMA_MAE = "UMA_MAE";
+const OPTION_NAO_HA_REGISTRO = "NAO_HA_REGISTRO";
 
 async function tseDataJob(args) {
   try {
@@ -41,12 +43,12 @@ async function tseDataJob(args) {
 
 async function initialConfigs() {
   const options = {
-    headless: true,
+    headless: false,
     slowMo: 100,
-    // executablePath: chromium.executablePath(),
-    executablePath:
-      process.env.PLAYWRIGHT_CHROMIUM_PATH ||
-      "/ms-playwright/chromium-1064/chrome-linux/chrome",
+    executablePath: chromium.executablePath(),
+    // executablePath:
+    //   process.env.PLAYWRIGHT_CHROMIUM_PATH ||
+    //   "/ms-playwright/chromium-1064/chrome-linux/chrome",
   };
 
   const browser = await chromium.launch(options);
@@ -67,10 +69,12 @@ async function fillInputData(page, cpf, nascimento, nomeMae) {
   await page.fill(INPUT_DATA_NASCIMENTO, nascimento);
 
   if (nomeMae) {
+    await page.selectOption(SELECT_TIPO_FILIACAO, OPTION_UMA_MAE);
     await page.fill(INPUT_NOME_MAE, nomeMae);
   } else {
-    await page.click(CHECKBOX_MAE_NAO_CONSTA);
+    await page.selectOption(SELECT_TIPO_FILIACAO, OPTION_NAO_HA_REGISTRO);
   }
+  await page.waitForTimeout(2000);
 }
 
 async function goToMainPage(page) {

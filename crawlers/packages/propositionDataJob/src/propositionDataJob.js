@@ -3,18 +3,14 @@ const path = require("path");
 const puppeteer = require("puppeteer");
 
 const DOWNLOAD_BUTTON_SELECTOR = ".scButton_default";
-const DOWNLOAD_FOLDER_PATH = path.join(__dirname, "../propositionFiles");
+const DOWNLOAD_FOLDER_PATH = path.join(__dirname, "propositionFiles");
 const EXPECTED_FILENAME = "prop_interna.json";
 const EXPORT_BUTTON_SELECTOR = "#sc_btgp_btn_group_1_top";
 const LINK = "https://cmsalvador.sys.inf.br/cl/prop_interna/";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-const INPUT_PATH = path.join(
-  __dirname,
-  "../propositionFiles/prop_interna.json"
-);
 const SCRIPT_TIME_LABEL = "Script Time";
-const PATH_FILES_FOLDER = "./propositionFiles";
+const PATH_FILES_FOLDER = path.join(__dirname, "propositionFiles");
 
 async function propositionDataJob() {
   try {
@@ -30,23 +26,32 @@ async function propositionDataJob() {
 
     await makeDownload(page);
 
-    await waitForDownloadComplete(DOWNLOAD_FOLDER_PATH, EXPECTED_FILENAME)
-      .then((filePath) => writeLog(`Download concluído: ${filePath}`))
-      .catch((error) => writeLog(error));
+    // Wait for download and get the actual downloaded file path
+    const actualDownloadedFile = await waitForDownloadComplete(
+      DOWNLOAD_FOLDER_PATH,
+      EXPECTED_FILENAME
+    ).catch((error) => {
+      writeLog(error);
+      throw error;
+    });
 
-    const newFilePath = await getFormattedPath(INPUT_PATH);
+    await writeLog(`Download concluído: ${actualDownloadedFile}`);
 
-    await renameDownloadedFile(INPUT_PATH, newFilePath);
+    const newFilePath = await getFormattedPath(actualDownloadedFile);
+
+    await wait(3000);
+
+    await renameDownloadedFile(actualDownloadedFile, newFilePath);
 
     await writeLog(`Arquivo JSON renomeado para: ${newFilePath}`);
 
-    await wait(5000);
+    await wait(2000);
 
     await browser.close();
     console.timeEnd(SCRIPT_TIME_LABEL);
   } catch (error) {
     await writeLog(error);
-    process.exit();
+    process.exit(1);
   }
 }
 
@@ -70,8 +75,11 @@ async function initialConfigs() {
 
   const options = {
     args: myArgs,
-    headless: "new",
+    // headless: false,
+    headless: true,
     defaultViewport: null,
+    // executablePath:
+    //   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     executablePath:
       process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
   };
@@ -131,16 +139,22 @@ async function getFormattedPath(originalFilePath) {
   const formattedDate = `${now.getFullYear()}${(now.getMonth() + 1)
     .toString()
     .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}`;
+
   const formattedTime = `${now.getHours().toString().padStart(2, "0")}${now
     .getMinutes()
     .toString()
     .padStart(2, "0")}${now.getSeconds().toString().padStart(2, "0")}`;
 
-  const fileNameWithoutExtension = originalFilePath.replace(".json", "");
+  const directory = path.dirname(originalFilePath);
+  const filename = path.basename(originalFilePath);
 
-  const fileExtension = originalFilePath.split(".").pop();
+  const baseFilename = filename.split(".")[0];
+  const fileExtension = path.extname(originalFilePath);
 
-  return `${fileNameWithoutExtension}_${formattedDate}_${formattedTime}.${fileExtension}`;
+  return path.join(
+    directory,
+    `${baseFilename}_${formattedDate}_${formattedTime}${fileExtension}`
+  );
 }
 
 async function goToJsonDownloadPage(page) {
@@ -243,36 +257,66 @@ async function waitForAvailableDownload(page) {
 async function waitForDownloadComplete(
   downloadPath,
   expectedFilename,
-  timeout = 60000
+  timeout = 120000
 ) {
-  let filename;
   const startTime = new Date().getTime();
+  let foundFile = false;
+  let filePath = null;
 
-  while (true) {
-    const files = fs.readdirSync(downloadPath);
+  await writeLog("Aguardando conclusão do download...");
 
-    // Encontre o arquivo que corresponde ao nome esperado e que não tenha a extensão .crdownload
-    filename = files.find(
-      (file) => file.endsWith(".json") && !file.endsWith(".crdownload")
-    );
-
-    if (filename) {
-      const filePath = path.join(downloadPath, filename);
-      const fileSize1 = fs.statSync(filePath).size;
-      await wait(1000);
-      const fileSize2 = fs.statSync(filePath).size;
-
-      // Se o tamanho do arquivo não mudou, o download está completo
-      if (fileSize1 === fileSize2) break;
+  while (!foundFile) {
+    // Check if timeout has been reached
+    if (new Date().getTime() - startTime > timeout) {
+      throw new Error(`Download timeout após ${timeout / 1000} segundos`);
     }
 
-    // Verifique se o timeout foi atingido
-    if (new Date().getTime() - startTime > timeout) {
-      throw new Error("Download timeout");
+    try {
+      const files = fs.readdirSync(downloadPath);
+
+      // Check for temp download files first (Chrome creates .crdownload files)
+      const downloadingFiles = files.filter((file) =>
+        file.endsWith(".crdownload")
+      );
+      if (downloadingFiles.length > 0) {
+        await writeLog("Download ainda em progresso...");
+        await wait(2000);
+        continue;
+      }
+
+      // Now look for the actual JSON file
+      for (const file of files) {
+        if (file.includes("prop_interna") && file.endsWith(".json")) {
+          filePath = path.join(downloadPath, file);
+
+          // Ensure file is fully written and not empty
+          const stats = fs.statSync(filePath);
+          if (stats.size > 0) {
+            // Double check file is not changing in size
+            await wait(2000);
+            const newStats = fs.statSync(filePath);
+            if (stats.size === newStats.size) {
+              foundFile = true;
+              await writeLog(
+                `Arquivo encontrado: ${file} (${stats.size} bytes)`
+              );
+              break;
+            }
+          }
+        }
+      }
+
+      if (!foundFile) {
+        await writeLog("Arquivo ainda não encontrado, aguardando...");
+        await wait(3000);
+      }
+    } catch (err) {
+      await writeLog(`Erro ao verificar arquivos: ${err.message}`);
+      await wait(2000);
     }
   }
 
-  return path.join(downloadPath, filename);
+  return filePath;
 }
 
 async function writeLog(receivedString) {
