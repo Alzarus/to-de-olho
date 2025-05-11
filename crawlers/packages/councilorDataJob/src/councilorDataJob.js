@@ -7,8 +7,9 @@ const ALL_COUNCILOR_LINK = "https://www.cms.ba.gov.br/vereadores";
 const SCRIPT_TIME_LABEL = "Script Time";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-const PATH_FILES_FOLDER = "./councilorFiles";
-const PATH_PHOTOS_FOLDER = "./councilorPhotos";
+// Atualizar caminhos para usar __dirname
+const PATH_FILES_FOLDER = path.join(__dirname, "councilorFiles");
+const PATH_PHOTOS_FOLDER = path.join(__dirname, "councilorPhotos");
 
 async function councilorDataJob() {
   try {
@@ -32,7 +33,7 @@ async function councilorDataJob() {
 
     await saveDataToJson(
       councilorInfoList,
-      await getFormattedPath("./councilorFiles/councilorInfo.json")
+      await getFormattedPath(path.join(PATH_FILES_FOLDER, "councilorInfo.json"))
     );
 
     await browser.close();
@@ -64,8 +65,11 @@ async function initialConfigs() {
 
   const options = {
     args: myArgs,
+    // headless: false,
     headless: "new",
     defaultViewport: null,
+    // executablePath:
+    //   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     executablePath:
       process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
   };
@@ -220,8 +224,8 @@ async function fetchCouncilorData(page, url) {
   infoObject["linkFoto"] = `${MAIN_LINK}${await getBackgroundImageUrl(page)}`;
   infoObject["emAtividade"] = await getCouncilorActivityInfo(page);
 
-  // TODO: VERIFICAR SE AINDA SERA NECESSARIO
-  // await saveCouncilorPhoto(page, infoObject);
+  // Remover comentário para habilitar o salvamento de fotos
+  await saveCouncilorPhoto(page, infoObject);
 
   return infoObject;
 }
@@ -240,9 +244,10 @@ async function saveCouncilorPhoto(page, infoObject) {
         .then((buf) => Array.from(new Uint8Array(buf)))
     );
 
-    const filePath = `./councilorPhotos/${renameStringToFileUsage(
-      infoObject.nome
-    )}.jpg`;
+    const filePath = path.join(
+      PATH_PHOTOS_FOLDER,
+      `${renameStringToFileUsage(infoObject.nome)}.jpg`
+    );
     fs.writeFileSync(filePath, Buffer.from(imageBuffer));
 
     await writeLog(`Imagem salva com sucesso: ${filePath}`);
