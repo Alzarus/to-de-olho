@@ -3,23 +3,18 @@ const path = require("path");
 const puppeteer = require("puppeteer");
 const xml2js = require("xml2js");
 
-const INPUT_PATH = path.join(
-  __dirname,
-  "../frequencyFiles/LEG_SYS_frequencia.xml"
-);
-const OUTPUT_PATH = path.join(
-  __dirname,
-  "../frequencyFiles/LEG_SYS_frequencia.json"
-);
+// Update paths to use src directory
+const DOWNLOAD_FOLDER_PATH = path.join(__dirname, "frequencyFiles");
+const INPUT_PATH = path.join(DOWNLOAD_FOLDER_PATH, "LEG_SYS_frequencia.xml");
+const OUTPUT_PATH = path.join(DOWNLOAD_FOLDER_PATH, "LEG_SYS_frequencia.json");
 const DOWNLOAD_BUTTON_SELECTOR = ".scButton_default";
-const DOWNLOAD_FOLDER_PATH = path.join(__dirname, "../frequencyFiles");
 const EXPECTED_FILENAME = "LEG_SYS_frequencia.xml";
 const LINK = "http://45.4.247.157/leg/salvador/LEG_SYS_frequencia/";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const SCRIPT_TIME_LABEL = "Script Time";
 const XML_BUTTON_SELECTOR = "#xml_top";
-const PATH_FILES_FOLDER = "./frequencyFiles";
+const PATH_FILES_FOLDER = path.join(__dirname, "frequencyFiles");
 
 async function frequencyDataJob() {
   try {
@@ -35,14 +30,25 @@ async function frequencyDataJob() {
 
     await makeDownload(page);
 
-    await waitForDownloadComplete(DOWNLOAD_FOLDER_PATH, EXPECTED_FILENAME)
-      .then((filePath) => writeLog(`Download concluído: ${filePath}`))
-      .catch((error) => writeLog(error));
+    // Wait for download and get the actual downloaded file path
+    const actualDownloadedFile = await waitForDownloadComplete(
+      DOWNLOAD_FOLDER_PATH,
+      EXPECTED_FILENAME
+    ).catch((error) => {
+      writeLog(error);
+      throw error;
+    });
 
-    await convertXmlToJson(
-      INPUT_PATH,
-      await getFormattedPath(OUTPUT_PATH)
-    ).catch(console.error);
+    await writeLog(`Download concluído: ${actualDownloadedFile}`);
+
+    // Use the actual downloaded file path for conversion
+    const jsonOutputPath = await getFormattedPath(OUTPUT_PATH);
+    await convertXmlToJson(actualDownloadedFile, jsonOutputPath)
+      .then(() => writeLog(`Arquivo JSON convertido para: ${jsonOutputPath}`))
+      .catch((error) => {
+        writeLog(error);
+        throw error;
+      });
 
     await wait(5000);
 
@@ -74,8 +80,11 @@ async function initialConfigs() {
 
   const options = {
     args: myArgs,
+    // headless: false,
     headless: "new",
     defaultViewport: null,
+    // executablePath:
+    //   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     executablePath:
       process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
   };
@@ -232,36 +241,67 @@ async function waitForAvailableDownload(page) {
 async function waitForDownloadComplete(
   downloadPath,
   expectedFilename,
-  timeout = 30000
+  timeout = 120000
 ) {
-  let filename;
   const startTime = new Date().getTime();
+  let foundFile = false;
+  let filePath = null;
 
-  while (true) {
-    const files = fs.readdirSync(downloadPath);
+  await writeLog("Aguardando conclusão do download...");
+  await writeLog(`Diretório de download: ${downloadPath}`);
 
-    // Encontre o arquivo que corresponde ao nome esperado e que não tenha a extensão .crdownload
-    filename = files.find(
-      (file) => file.endsWith(".json") && !file.endsWith(".crdownload")
-    );
-
-    if (filename) {
-      const filePath = path.join(downloadPath, filename);
-      const fileSize1 = fs.statSync(filePath).size;
-      await wait(1000);
-      const fileSize2 = fs.statSync(filePath).size;
-
-      // Se o tamanho do arquivo não mudou, o download está completo
-      if (fileSize1 === fileSize2) break;
+  while (!foundFile) {
+    // Check if timeout has been reached
+    if (new Date().getTime() - startTime > timeout) {
+      throw new Error(`Download timeout após ${timeout / 1000} segundos`);
     }
 
-    // Verifique se o timeout foi atingido
-    if (new Date().getTime() - startTime > timeout) {
-      throw new Error("Download timeout");
+    try {
+      const files = fs.readdirSync(downloadPath);
+
+      // Check for temp download files first (Chrome creates .crdownload files)
+      const downloadingFiles = files.filter((file) =>
+        file.endsWith(".crdownload")
+      );
+      if (downloadingFiles.length > 0) {
+        await writeLog("Download ainda em progresso...");
+        await wait(2000);
+        continue;
+      }
+
+      // Now look for the actual XML file
+      for (const file of files) {
+        if (file.includes("LEG_SYS_frequencia") && file.endsWith(".xml")) {
+          filePath = path.join(downloadPath, file);
+
+          // Ensure file is fully written and not empty
+          const stats = fs.statSync(filePath);
+          if (stats.size > 0) {
+            // Double check file is not changing in size
+            await wait(2000);
+            const newStats = fs.statSync(filePath);
+            if (stats.size === newStats.size) {
+              foundFile = true;
+              await writeLog(
+                `Arquivo encontrado: ${file} (${stats.size} bytes)`
+              );
+              break;
+            }
+          }
+        }
+      }
+
+      if (!foundFile) {
+        await writeLog("Arquivo ainda não encontrado, aguardando...");
+        await wait(3000);
+      }
+    } catch (err) {
+      await writeLog(`Erro ao verificar arquivos: ${err.message}`);
+      await wait(2000);
     }
   }
 
-  return path.join(downloadPath, filename);
+  return filePath;
 }
 
 async function writeLog(receivedString) {

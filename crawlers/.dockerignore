@@ -8,3 +8,12 @@ dist
 .vscode
 .DS_Store
 npm-debug.log
+**/node_modules
+**/test
+**/*.test.js
+**/*.spec.js
+**/coverage
+**/.nyc_output
+**/.env*
+**/README.md
+**/docs

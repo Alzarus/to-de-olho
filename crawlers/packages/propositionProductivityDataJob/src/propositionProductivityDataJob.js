@@ -43,6 +43,7 @@ async function propositionProductivityDataJob() {
 
 async function initialConfigs() {
   const options = {
+    // headless: false,
     headless: true,
     // executablePath: playwright.chromium.executablePath(),
     executablePath:
@@ -187,8 +188,6 @@ async function getTableData(page) {
     const newFilePath = await getFormattedPath(INPUT_PATH);
 
     await renameFile(INPUT_PATH, newFilePath);
-
-    await writeLog(`Arquivo renomeado para: ${newFilePath}`);
   } catch (error) {
     await writeLog(error);
   }

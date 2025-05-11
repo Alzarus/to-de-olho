@@ -3,15 +3,17 @@ const path = require("path");
 const puppeteer = require("puppeteer");
 
 const DOWNLOAD_BUTTON_SELECTOR = ".scButton_default";
-const DOWNLOAD_FOLDER_PATH = path.join(__dirname, "../contractFiles");
-const EXPECTED_FILENAME = "contrato.json";
+const DOWNLOAD_FOLDER_PATH = path.join(__dirname, "contractFiles");
 const EXPORT_BUTTON_SELECTOR = "#sc_btgp_btn_group_1_top";
 const LINK = "https://cmsalvador.sys.inf.br/ca/contrato/";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-const INPUT_PATH = path.join(__dirname, "../contractFiles/contrato.json");
 const SCRIPT_TIME_LABEL = "Script Time";
-const PATH_FILES_FOLDER = "./contractFiles";
+const PATH_FILES_FOLDER = path.join(__dirname, "contractFiles");
+
+// Nome do arquivo esperado após o download
+const EXPECTED_FILENAME = "contrato.json";
+const INPUT_PATH = path.join(DOWNLOAD_FOLDER_PATH, EXPECTED_FILENAME);
 
 async function contractDataJob() {
   try {
@@ -27,13 +29,24 @@ async function contractDataJob() {
 
     await makeDownload(page);
 
-    await waitForDownloadComplete(DOWNLOAD_FOLDER_PATH, EXPECTED_FILENAME)
-      .then((filePath) => writeLog(`Download concluído: ${filePath}`))
-      .catch((error) => writeLog(error));
+    // Aguarda o download com timeout adequado e obtém o caminho do arquivo
+    const actualDownloadedFile = await waitForDownloadComplete(
+      DOWNLOAD_FOLDER_PATH,
+      EXPECTED_FILENAME,
+      60000 // Aumenta o timeout para 60 segundos
+    ).catch((error) => {
+      writeLog(error);
+      throw error;
+    });
 
-    const newFilePath = await getFormattedPath(INPUT_PATH);
+    await writeLog(`Download concluído: ${actualDownloadedFile}`);
 
-    await renameDownloadedFile(INPUT_PATH, newFilePath);
+    // Dá um tempo extra para garantir que o arquivo esteja pronto
+    await wait(3000);
+
+    const newFilePath = await getFormattedPath(actualDownloadedFile);
+
+    await renameDownloadedFile(actualDownloadedFile, newFilePath);
 
     await writeLog(`Arquivo JSON renomeado para: ${newFilePath}`);
 
@@ -67,8 +80,11 @@ async function initialConfigs() {
 
   const options = {
     args: myArgs,
+    // headless: false,
     headless: "new",
     defaultViewport: null,
+    // executablePath:
+    //   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     executablePath:
       process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
   };
@@ -80,13 +96,12 @@ async function initialConfigs() {
 
   await page.setUserAgent(USER_AGENT);
 
+  // Configurar comportamento de download para o caminho correto
   const client = await page.target().createCDPSession();
   await client.send("Page.setDownloadBehavior", {
     behavior: "allow",
     downloadPath: DOWNLOAD_FOLDER_PATH,
   });
-
-  //   await context.overridePermissions(LINK, ["geolocation"]);
 
   await page.setViewport({ width: 1280, height: 800 });
 
@@ -133,11 +148,16 @@ async function getFormattedPath(originalFilePath) {
     .toString()
     .padStart(2, "0")}${now.getSeconds().toString().padStart(2, "0")}`;
 
-  const fileNameWithoutExtension = originalFilePath.replace(".json", "");
+  const directory = path.dirname(originalFilePath);
+  const filename = path.basename(originalFilePath);
 
-  const fileExtension = originalFilePath.split(".").pop();
+  const baseFilename = filename.split(".")[0];
+  const fileExtension = path.extname(originalFilePath);
 
-  return `${fileNameWithoutExtension}_${formattedDate}_${formattedTime}.${fileExtension}`;
+  return path.join(
+    directory,
+    `${baseFilename}_${formattedDate}_${formattedTime}${fileExtension}`
+  );
 }
 
 async function goToJsonDownloadPage(page) {
@@ -205,6 +225,11 @@ async function makeDownload(page) {
 
 async function renameDownloadedFile(oldPath, newPath) {
   return new Promise((resolve, reject) => {
+    if (!fs.existsSync(oldPath)) {
+      reject(new Error(`Arquivo não encontrado: ${oldPath}`));
+      return;
+    }
+
     fs.rename(oldPath, newPath, (err) => {
       if (err) {
         reject(err);
@@ -240,36 +265,66 @@ async function waitForAvailableDownload(page) {
 async function waitForDownloadComplete(
   downloadPath,
   expectedFilename,
-  timeout = 30000
+  timeout = 60000
 ) {
-  let filename;
   const startTime = new Date().getTime();
+  let foundFile = false;
+  let filePath = null;
 
-  while (true) {
-    const files = fs.readdirSync(downloadPath);
+  await writeLog(`Aguardando conclusão do download em ${downloadPath}...`);
 
-    // Encontre o arquivo que corresponde ao nome esperado e que não tenha a extensão .crdownload
-    filename = files.find(
-      (file) => file.endsWith(".json") && !file.endsWith(".crdownload")
-    );
-
-    if (filename) {
-      const filePath = path.join(downloadPath, filename);
-      const fileSize1 = fs.statSync(filePath).size;
-      await wait(1000);
-      const fileSize2 = fs.statSync(filePath).size;
-
-      // Se o tamanho do arquivo não mudou, o download está completo
-      if (fileSize1 === fileSize2) break;
+  while (!foundFile) {
+    // Verifica se atingiu o timeout
+    if (new Date().getTime() - startTime > timeout) {
+      throw new Error(`Download timeout após ${timeout / 1000} segundos`);
     }
 
-    // Verifique se o timeout foi atingido
-    if (new Date().getTime() - startTime > timeout) {
-      throw new Error("Download timeout");
+    try {
+      const files = fs.readdirSync(downloadPath);
+
+      // Verifica se há arquivos temporários de download primeiro (Chrome cria arquivos .crdownload)
+      const downloadingFiles = files.filter((file) =>
+        file.endsWith(".crdownload")
+      );
+      if (downloadingFiles.length > 0) {
+        await writeLog("Download ainda em progresso...");
+        await wait(2000);
+        continue;
+      }
+
+      // Procura pelo arquivo JSON real
+      for (const file of files) {
+        if (file.includes("contrato") && file.endsWith(".json")) {
+          filePath = path.join(downloadPath, file);
+
+          // Garante que o arquivo está completamente escrito e não vazio
+          const stats = fs.statSync(filePath);
+          if (stats.size > 0) {
+            // Verifica novamente se o tamanho do arquivo não está mudando
+            await wait(2000);
+            const newStats = fs.statSync(filePath);
+            if (stats.size === newStats.size) {
+              foundFile = true;
+              await writeLog(
+                `Arquivo encontrado: ${file} (${stats.size} bytes)`
+              );
+              break;
+            }
+          }
+        }
+      }
+
+      if (!foundFile) {
+        await writeLog("Arquivo ainda não encontrado, aguardando...");
+        await wait(3000);
+      }
+    } catch (err) {
+      await writeLog(`Erro ao verificar arquivos: ${err.message}`);
+      await wait(2000);
     }
   }
 
-  return path.join(downloadPath, filename);
+  return filePath;
 }
 
 async function writeLog(receivedString) {
