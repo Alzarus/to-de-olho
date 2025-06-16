@@ -230,15 +230,26 @@ async function renameDownloadedFile(oldPath, newPath) {
       return;
     }
 
-    fs.rename(oldPath, newPath, (err) => {
+    // Copia o arquivo para o novo caminho com o timestamp
+    fs.copyFile(oldPath, newPath, (err) => {
       if (err) {
         reject(err);
         return;
       }
-      resolve();
+
+      // Após cópia bem-sucedida, remove o arquivo original
+      fs.unlink(oldPath, (unlinkErr) => {
+        if (unlinkErr) {
+          // Apenas loga o erro de remoção, mas não falha a operação
+          console.log(
+            `Aviso: Não foi possível remover o arquivo original: ${unlinkErr}`
+          );
+        }
+        resolve();
+      });
     });
   }).catch((error) => {
-    throw new Error(`Erro ao renomear o arquivo: ${error}`);
+    throw new Error(`Erro ao processar o arquivo: ${error}`);
   });
 }
 
