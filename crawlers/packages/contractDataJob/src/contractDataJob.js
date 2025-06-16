@@ -83,10 +83,10 @@ async function initialConfigs() {
     // headless: false,
     headless: "new",
     defaultViewport: null,
-    executablePath:
-      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     // executablePath:
-    //   process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
+    //   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    executablePath:
+      process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
   };
 
   const browser = await puppeteer.launch(options);
