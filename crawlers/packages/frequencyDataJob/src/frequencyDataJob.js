@@ -38,12 +38,22 @@ async function frequencyDataJob() {
       writeLog(error);
       throw error;
     });
-
     await writeLog(`Download concluído: ${actualDownloadedFile}`);
 
-    // Use the actual downloaded file path for conversion
+    // Dá um tempo extra para garantir que o arquivo esteja pronto
+    await wait(3000);
+
+    // Cria um novo caminho com timestamp para o arquivo XML
+    const newXmlPath = await getFormattedPathForXml(actualDownloadedFile);
+
+    // Renomeia o arquivo baixado e remove o original
+    await renameDownloadedFile(actualDownloadedFile, newXmlPath);
+
+    await writeLog(`Arquivo XML renomeado para: ${newXmlPath}`);
+
+    // Use the renamed XML file path for conversion
     const jsonOutputPath = await getFormattedPath(OUTPUT_PATH);
-    await convertXmlToJson(actualDownloadedFile, jsonOutputPath)
+    await convertXmlToJson(newXmlPath, jsonOutputPath)
       .then(() => writeLog(`Arquivo JSON convertido para: ${jsonOutputPath}`))
       .catch((error) => {
         writeLog(error);
@@ -80,13 +90,13 @@ async function initialConfigs() {
 
   const options = {
     args: myArgs,
-    // headless: false,
-    headless: "new",
+    headless: false,
+    // headless: "new",
     defaultViewport: null,
-    // executablePath:
-    //   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     executablePath:
-      process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    // executablePath:
+    //   process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
   };
 
   const browser = await puppeteer.launch(options);
@@ -168,6 +178,59 @@ async function getFormattedPath(originalFilePath) {
   const fileExtension = originalFilePath.split(".").pop();
 
   return `${fileNameWithoutExtension}_${formattedDate}_${formattedTime}.${fileExtension}`;
+}
+
+async function getFormattedPathForXml(originalFilePath) {
+  const now = new Date();
+
+  const formattedDate = `${now.getFullYear()}${(now.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}${now.getDate().toString().padStart(2, "0")}`;
+  const formattedTime = `${now.getHours().toString().padStart(2, "0")}${now
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")}${now.getSeconds().toString().padStart(2, "0")}`;
+
+  const directory = path.dirname(originalFilePath);
+  const filename = path.basename(originalFilePath);
+
+  const baseFilename = filename.split(".")[0];
+  const fileExtension = path.extname(originalFilePath);
+
+  return path.join(
+    directory,
+    `${baseFilename}_${formattedDate}_${formattedTime}${fileExtension}`
+  );
+}
+
+async function renameDownloadedFile(oldPath, newPath) {
+  return new Promise((resolve, reject) => {
+    if (!fs.existsSync(oldPath)) {
+      reject(new Error(`Arquivo não encontrado: ${oldPath}`));
+      return;
+    }
+
+    // Copia o arquivo para o novo caminho com o timestamp
+    fs.copyFile(oldPath, newPath, (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      // Após cópia bem-sucedida, remove o arquivo original
+      fs.unlink(oldPath, (unlinkErr) => {
+        if (unlinkErr) {
+          // Apenas loga o erro de remoção, mas não falha a operação
+          console.log(
+            `Aviso: Não foi possível remover o arquivo original: ${unlinkErr}`
+          );
+        }
+        resolve();
+      });
+    });
+  }).catch((error) => {
+    throw new Error(`Erro ao processar o arquivo: ${error}`);
+  });
 }
 
 async function goToXMLDownloadPage(page) {

@@ -83,10 +83,10 @@ async function initialConfigs() {
     // headless: false,
     headless: "new",
     defaultViewport: null,
-    // executablePath:
-    //   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     executablePath:
-      process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    // executablePath:
+    //   process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome",
   };
 
   const browser = await puppeteer.launch(options);
@@ -230,15 +230,26 @@ async function renameDownloadedFile(oldPath, newPath) {
       return;
     }
 
-    fs.rename(oldPath, newPath, (err) => {
+    // Copia o arquivo para o novo caminho com o timestamp
+    fs.copyFile(oldPath, newPath, (err) => {
       if (err) {
         reject(err);
         return;
       }
-      resolve();
+
+      // Após cópia bem-sucedida, remove o arquivo original
+      fs.unlink(oldPath, (unlinkErr) => {
+        if (unlinkErr) {
+          // Apenas loga o erro de remoção, mas não falha a operação
+          console.log(
+            `Aviso: Não foi possível remover o arquivo original: ${unlinkErr}`
+          );
+        }
+        resolve();
+      });
     });
   }).catch((error) => {
-    throw new Error(`Erro ao renomear o arquivo: ${error}`);
+    throw new Error(`Erro ao processar o arquivo: ${error}`);
   });
 }
 
