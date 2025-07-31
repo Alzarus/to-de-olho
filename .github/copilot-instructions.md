@@ -147,6 +147,7 @@ CREATE TABLE usuario_comportamento (
 
 ```go
 // Serviço de assistente IA educativo
+// https://github.com/googleapis/go-genai
 type EducationalAssistant struct {
     geminiClient  *genai.Client
     knowledgeBase *KnowledgeBaseService
