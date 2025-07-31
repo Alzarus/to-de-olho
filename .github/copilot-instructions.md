@@ -9,12 +9,13 @@ O **"Tô De Olho"** é uma plataforma de transparência política que visa democ
 3. **Potencial de Ludificação**: Estratégias de gamificação para elevar o interesse pela gestão pública
 
 ### Características do Sistema
+
 - **Linguagem oficial**: Português Brasileiro (pt-BR)
 - **Dados oficiais**: API da Câmara dos Deputados + TSE
 - **Interação cidadã**: Fórum e contato direto deputado-cidadão
 - **Gamificação**: Sistema de pontos, conquistas e rankings
 
-```
+````
 
 ## 📊 Inteligência e Analytics Avançados
 
@@ -30,7 +31,7 @@ O **"Tô De Olho"** é uma plataforma de transparência política que visa democ
 ```sql
 -- Exemplo de view para métricas regionais
 CREATE MATERIALIZED VIEW metricas_regionais AS
-SELECT 
+SELECT
     d.sigla_uf as estado,
     d.regiao,
     COUNT(d.id) as total_deputados,
@@ -45,31 +46,160 @@ LEFT JOIN proposicoes prop ON d.id = prop.autor_id
 LEFT JOIN votos v ON d.id = v.deputado_id
 WHERE d.ativo = true
 GROUP BY d.sigla_uf, d.regiao;
-```
+````
 
 ### Sistema de Alertas Inteligentes
 
 #### Alertas Automáticos
+
 - **Gastos Suspeitos**: Despesas acima da média ou padrões anômalos
 - **Mudança de Posição**: Deputado vota contra histórico
 - **Baixa Presença**: Faltas excessivas em votações importantes
 - **Nova Proposição**: Projetos que impactam sua região
 
 #### Notificações Personalizadas
+
 - **Por Interesse**: Temas específicos (educação, saúde, economia)
 - **Por Região**: Apenas deputados da sua área
 - **Por Deputado**: Acompanhar parlamentares específicos
 - **Por Tipo**: Escolher tipos de atividade (votações, gastos, proposições)
 
+## 🤖 Inteligência Artificial Generativa (Gemini SDK/MCP)
+
+### Moderação de Conteúdo e Ética
+
+#### Sistema de Moderação Automatizada
+
+- **Filtro Anti-Toxicidade**: Detecção de discurso de ódio, ofensas e linguagem inadequada
+- **Validação Ética**: Análise de conformidade com diretrizes de convivência democrática
+- **Classificação de Sentimento**: Identificação de tom agressivo ou desrespeitoso
+- **Detecção de Spam**: Identificação de conteúdo repetitivo ou malicioso
+
+```go
+// Exemplo de integração com Gemini para moderação
+type ModerationService struct {
+    geminiClient *genai.Client
+    logger       *slog.Logger
+}
+
+type ModerationResult struct {
+    IsApproved      bool                 `json:"is_approved"`
+    ConfidenceScore float64              `json:"confidence_score"`
+    Violations      []ViolationType      `json:"violations"`
+    SuggestedEdit   string               `json:"suggested_edit,omitempty"`
+    Reasoning       string               `json:"reasoning"`
+}
+
+type ViolationType string
+
+const (
+    ViolationToxicity       ViolationType = "toxicity"
+    ViolationHateSpeech     ViolationType = "hate_speech"
+    ViolationMisinformation ViolationType = "misinformation"
+    ViolationSpam           ViolationType = "spam"
+    ViolationOffTopic       ViolationType = "off_topic"
+)
+```
+
+#### Funcionalidades de Moderação Inteligente
+
+##### Análise em Tempo Real
+
+- **Pré-moderação**: Análise antes da publicação de posts/comentários
+- **Moderação Contínua**: Revisão de conteúdo já publicado
+- **Escalação Automática**: Envio para moderação humana em casos duvidosos
+- **Sugestões de Melhoria**: Propostas de reformulação para textos problemáticos
+
+##### Sistema de Pontuação Ética
+
+```sql
+-- Tabela para tracking de comportamento dos usuários
+CREATE TABLE usuario_comportamento (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id UUID NOT NULL REFERENCES usuarios(id),
+    score_civilidade DECIMAL(3,2) DEFAULT 5.00, -- 0.00 a 10.00
+    total_posts INTEGER DEFAULT 0,
+    posts_aprovados INTEGER DEFAULT 0,
+    posts_rejeitados INTEGER DEFAULT 0,
+    warnings_recebidos INTEGER DEFAULT 0,
+    ultimo_warning TIMESTAMP,
+    status_conta TEXT DEFAULT 'ativo', -- ativo, advertido, suspenso, banido
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Assistente IA para Engajamento Cívico
+
+#### Chatbot Educativo
+
+- **Explicação de Termos**: Glossário político interativo
+- **Orientação Cívica**: Como participar do processo democrático
+- **Análise de Proposições**: Resumos simplificados de projetos de lei complexos
+- **Comparação de Deputados**: Análises imparciais de performance parlamentar
+
+#### Geração de Conteúdo Educativo
+
+- **Resumos Automáticos**: Sínteses de sessões parlamentares e votações importantes
+- **Relatórios Personalizados**: Análises específicas por região ou interesse
+- **Explicações Contextuais**: Histórico e impacto de decisões políticas
+- **Fact-Checking**: Verificação automática de informações políticas
+
+```go
+// Serviço de assistente IA educativo
+type EducationalAssistant struct {
+    geminiClient  *genai.Client
+    knowledgeBase *KnowledgeBaseService
+    userProfile   *UserProfileService
+}
+
+func (ea *EducationalAssistant) ExplainProposition(ctx context.Context,
+    propositionID uuid.UUID, userID uuid.UUID) (*ExplanationResponse, error) {
+
+    // Buscar dados da proposição
+    proposition, err := ea.knowledgeBase.GetProposition(ctx, propositionID)
+    if err != nil {
+        return nil, err
+    }
+
+    // Obter perfil do usuário para personalização
+    profile, err := ea.userProfile.GetProfile(ctx, userID)
+    if err != nil {
+        return nil, err
+    }
+
+    // Gerar explicação personalizada via Gemini
+    prompt := fmt.Sprintf(`
+        Explique de forma simples e imparcial a proposição "%s" para um cidadão brasileiro.
+        Nível de conhecimento político: %s
+        Região de interesse: %s
+        Área de atuação: %s
+
+        Proposição: %s
+
+        Forneça:
+        1. Resumo em linguagem acessível
+        2. Possíveis impactos práticos
+        3. Argumentos pró e contra
+        4. Relevância para a região do usuário
+    `, proposition.Title, profile.PoliticalKnowledge,
+       profile.Region, profile.Profession, proposition.Content)
+
+    return ea.generateResponse(ctx, prompt)
+}
+```
+
 ### Ferramentas de Comparação
 
 #### Comparativo de Deputados
+
 - **Performance**: Presença, produtividade, gastos
 - **Posicionamento**: Histórico de votações por tema
 - **Evolução Temporal**: Mudanças ao longo do mandato
 - **Ranking**: Posição entre pares da mesma região/partido
 
 #### Análise Preditiva
+
 - **Tendências de Voto**: Previsão baseada em histórico
 - **Padrões de Gasto**: Projeção de despesas
 - **Engajamento**: Previsão de participação em votações
@@ -80,12 +210,14 @@ GROUP BY d.sigla_uf, d.regiao;
 ### Networking Político
 
 #### Grupos de Interesse
+
 - **Por Tema**: Educação, saúde, meio ambiente, economia
 - **Por Região**: Grupos estaduais e municipais
 - **Por Idade**: Jovens, adultos, idosos
 - **Por Profissão**: Professores, médicos, empresários
 
 #### Eventos e Mobilização
+
 - **Eventos Locais**: Encontros presenciais organizados via plataforma
 - **Campanhas**: Mobilização para causas específicas
 - **Petições**: Abaixo-assinados digitais com validação TSE
@@ -94,12 +226,14 @@ GROUP BY d.sigla_uf, d.regiao;
 ### Sistema de Mentoria Política
 
 #### Educação Cívica
+
 - **Cursos Interativos**: Como funciona o Congresso
 - **Glossário Político**: Termos técnicos explicados de forma simples
 - **Simuladores**: Como criar uma lei, processo legislativo
 - **Quiz Educativo**: Gamificação do aprendizado político
 
 #### Mentores Verificados
+
 - **Especialistas**: Cientistas políticos, juristas
 - **Ex-parlamentares**: Experiência prática
 - **Jornalistas**: Cobertura política especializada
@@ -108,30 +242,35 @@ GROUP BY d.sigla_uf, d.regiao;
 ## 🛠️ Padrões de Desenvolvimento
 
 ### Stack Tecnológico
+
 ```
 Backend:     Go 1.23+ (Gin framework)
 Frontend:    Next.js 15 + TypeScript + Tailwind CSS
 Database:    PostgreSQL 16 + Redis (cache)
 Queue:       RabbitMQ (mensageria assíncrona)
+AI/ML:       Google Gemini SDK + MCP (Model Context Protocol)
 Monitoring:  Prometheus + Grafana
 Security:    JWT + OAuth2 + Rate Limiting
 ```
 
 ### Microsserviços
+
 ```
 📋 deputados-service    → Gestão de parlamentares e perfis públicos
 🗳️  atividades-service  → Proposições, votações, presença parlamentar
 💰 despesas-service     → Análise de gastos e cota parlamentar
 👥 usuarios-service     → Autenticação, perfis e gamificação
 💬 forum-service        → Discussões cidadãs e interação deputado-público
-� plebiscitos-service  → Sistema de votações e consultas populares
-�🔄 ingestao-service     → ETL dados Câmara/TSE (background jobs)
-� analytics-service    → Métricas, rankings e insights regionais
+🗳️ plebiscitos-service  → Sistema de votações e consultas populares
+🔄 ingestao-service     → ETL dados Câmara/TSE (background jobs)
+📊 analytics-service    → Métricas, rankings e insights regionais
 🔍 search-service       → Busca inteligente de dados
 🚨 alertas-service      → Notificações e alertas automáticos
+🤖 ia-service          → Moderação, assistente educativo e análise preditiva
 ```
 
 ### Comunicação
+
 - **API Gateway**: Ponto único de entrada com rate limiting
 - **gRPC**: Comunicação interna entre microsserviços
 - **Message Queue**: Processamento assíncrono de dados
@@ -143,6 +282,7 @@ Security:    JWT + OAuth2 + Rate Limiting
 ### Endpoints Principais da API (https://dadosabertos.camara.leg.br/api/v2)
 
 #### Deputados
+
 - `GET /deputados` - Lista deputados com filtros
 - `GET /deputados/{id}` - Dados detalhados do deputado
 - `GET /deputados/{id}/despesas` - Gastos com cota parlamentar
@@ -153,6 +293,7 @@ Security:    JWT + OAuth2 + Rate Limiting
 - `GET /deputados/{id}/profissoes` - Formação e experiência
 
 #### Atividades Legislativas
+
 - `GET /proposicoes` - Lista de proposições (PLs, PECs, etc.)
 - `GET /proposicoes/{id}` - Detalhes da proposição
 - `GET /proposicoes/{id}/autores` - Autores da proposição
@@ -160,17 +301,20 @@ Security:    JWT + OAuth2 + Rate Limiting
 - `GET /proposicoes/{id}/votacoes` - Votações relacionadas
 
 #### Votações
+
 - `GET /votacoes` - Lista de votações
 - `GET /votacoes/{id}` - Detalhes da votação
 - `GET /votacoes/{id}/votos` - Votos individuais dos deputados
 - `GET /votacoes/{id}/orientacoes` - Orientação dos partidos
 
 #### Eventos e Presenças
+
 - `GET /eventos` - Reuniões, sessões e audiências
 - `GET /eventos/{id}/deputados` - Presença em eventos
 - `GET /eventos/{id}/pauta` - Pauta deliberativa
 
 #### Órgãos e Partidos
+
 - `GET /orgaos` - Comissões e órgãos da Câmara
 - `GET /partidos` - Partidos políticos
 - `GET /blocos` - Blocos partidários
@@ -178,24 +322,28 @@ Security:    JWT + OAuth2 + Rate Limiting
 ### Dados Essenciais para o Sistema
 
 #### 1. Perfil Parlamentar
+
 - Dados pessoais e mandato atual
 - Histórico de mandatos e mudanças
 - Formação acadêmica e profissional
 - Comissões e cargos ocupados
 
 #### 2. Performance Parlamentar
+
 - **Presença**: Participação em sessões e eventos
 - **Produtividade**: Proposições apresentadas e relatadas
 - **Engajamento**: Discursos e pronunciamentos
 - **Gastos**: Uso da cota parlamentar por categoria
 
 #### 3. Posicionamento Político
+
 - Histórico de votações por tema
 - Alinhamento com partido/bloco
 - Proposições de autoria
 - Participação em frentes parlamentares
 
 #### 4. Transparência Financeira
+
 - Detalhamento de despesas por mês/ano
 - Fornecedores mais utilizados
 - Comparativo com outros deputados
@@ -204,6 +352,7 @@ Security:    JWT + OAuth2 + Rate Limiting
 ## � Sistema de Usuários e Roles
 
 ### Tipos de Usuário
+
 ```go
 const (
     RolePublico     = "publico"         // Acesso básico de leitura
@@ -217,12 +366,14 @@ const (
 ### Funcionalidades por Role
 
 #### Público Geral
+
 - Visualizar dados de deputados e atividades
 - Consultar proposições e votações
 - Ver rankings e estatísticas
 - Acessar dados de transparência
 
 #### Eleitor Validado (TSE)
+
 - Todas as funcionalidades do público
 - Participar do fórum de discussões
 - Comentar em tópicos
@@ -230,6 +381,7 @@ const (
 - Seguir deputados específicos
 
 #### Deputado Verificado
+
 - Perfil oficial verificado
 - Responder diretamente aos cidadãos
 - Criar tópicos no fórum
@@ -238,12 +390,14 @@ const (
 - Receber feedback direto dos eleitores
 
 #### Moderador
+
 - Moderar discussões do fórum
 - Aplicar regras de convivência
 - Gerenciar denúncias
 - Validar contas de deputados
 
 #### Administrador
+
 - Gestão completa do sistema
 - Configurações da plataforma
 - Análise de métricas gerais
@@ -254,12 +408,14 @@ const (
 ### Elementos de Ludificação
 
 #### Sistema de Pontos
+
 - **Participação no Fórum**: Pontos por posts e comentários construtivos
 - **Engajamento Cívico**: Pontos por acompanhar votações importantes
 - **Conhecimento**: Pontos por acertar quiz sobre política
 - **Transparência**: Pontos por usar ferramentas de fiscalização
 
 #### Conquistas (Badges)
+
 - 🏛️ **Fiscal Ativo**: Acompanha regularmente gastos de deputados
 - 🗳️ **Eleitor Informado**: Conhece posicionamentos dos representantes
 - 💬 **Voz Cidadã**: Participa ativamente das discussões
@@ -267,6 +423,7 @@ const (
 - 🎯 **Vigilante**: Identifica inconsistências nos dados
 
 #### Rankings
+
 - **Cidadãos Mais Engajados**: Por pontuação acumulada
 - **Deputados Mais Transparentes**: Por interação e dados atualizados
 - **Estados Mais Participativos**: Por atividade dos usuários
@@ -275,32 +432,38 @@ const (
 ### Mecânicas de Engajamento
 
 #### Desafios Mensais
+
 - "Conhece seu Deputado?": Quiz sobre o representante local
 - "Fiscal do Mês": Acompanhar gastos e proposições
 - "Debate Construtivo": Participar de discussões relevantes
 
 #### Progressão
+
 - **Nível Iniciante**: 0-100 pontos
-- **Nível Cidadão**: 101-500 pontos  
+- **Nível Cidadão**: 101-500 pontos
 - **Nível Ativista**: 501-1000 pontos
 - **Nível Especialista**: 1000+ pontos
 
 #### Recompensas
+
 - Acesso antecipado a relatórios especiais
 - Badges exclusivos no perfil
 - Reconhecimento na comunidade
 - Participação em eventos especiais
+
 ## �️ Sistema de Participação Cidadã
 
 ### Plebiscitos e Consultas Populares
 
 #### Tipos de Votação
+
 - **Plebiscitos Locais**: Questões específicas por cidade/estado
 - **Consultas Nacionais**: Temas de interesse geral
 - **Enquetes Temáticas**: Posicionamento sobre proposições em tramitação
 - **Avaliação de Deputados**: Feedback direto sobre performance parlamentar
 
 #### Categorização Geográfica
+
 ```go
 type Votacao struct {
     ID          uuid.UUID `json:"id"`
@@ -326,6 +489,7 @@ type OpcaoVotacao struct {
 ```
 
 #### Validação e Segurança
+
 - **Eleitor Único**: Validação via CPF/TSE para evitar duplicatas
 - **Verificação Regional**: Voto apenas em consultas da sua região
 - **Auditoria**: Log completo de todas as votações
@@ -334,12 +498,14 @@ type OpcaoVotacao struct {
 ### Sistema de Propostas Cidadãs
 
 #### Criação de Propostas
+
 - **Cidadãos** podem propor plebiscitos locais
 - **Deputados** podem criar consultas sobre seus projetos
 - **Administradores** gerenciam propostas nacionais
 - **Moderadores** validam propostas antes da publicação
 
 #### Processo de Aprovação
+
 ```
 1. Submissão da Proposta
    ├── Validação automática (spam, linguagem)
@@ -363,6 +529,7 @@ type OpcaoVotacao struct {
 ```
 
 ### Estrutura de Projeto Go
+
 ```
 /services/
 ├── deputados/
@@ -377,6 +544,7 @@ type OpcaoVotacao struct {
 ```
 
 ### Convenções de Código
+
 ```go
 // Naming: PascalCase para exports, camelCase para internal
 type DeputadoService interface {
@@ -391,13 +559,14 @@ var (
 )
 
 // Logs estruturados
-log.Info("deputado criado com sucesso", 
+log.Info("deputado criado com sucesso",
     slog.String("id", deputado.ID.String()),
     slog.String("nome", deputado.Nome),
     slog.Duration("tempo", time.Since(start)))
 ```
 
 ### Frontend Next.js - Estrutura
+
 ```
 /frontend/
 ├── app/                   # App Router (Next.js 15)
@@ -419,6 +588,7 @@ log.Info("deputado criado com sucesso",
 ## 🔐 Segurança e Autenticação
 
 ### Sistema de Autenticação
+
 ```go
 // JWT com refresh tokens
 type TokenPair struct {
@@ -428,7 +598,7 @@ type TokenPair struct {
 }
 
 // Rate limiting por usuário/IP
-middleware.RateLimit(store.NewRedisStore(redisClient, 
+middleware.RateLimit(store.NewRedisStore(redisClient,
     ratelimit.WithRateLimit(100, time.Hour)))
 
 // RBAC (Role-Based Access Control)
@@ -442,12 +612,14 @@ const (
 ```
 
 ### Validação de Deputados
+
 - Verificação via dados oficiais da Câmara
 - Processo de validação manual inicial
 - Badge de "Perfil Verificado"
 - Acesso especial a funcionalidades do fórum
 
 ### Pipeline de Ingestão de Dados
+
 ```
 Phase 1: Carga Inicial (Backfill)
 ├── Download de arquivos históricos (JSON/CSV)
@@ -465,6 +637,7 @@ Phase 2: Atualizações Contínuas
 ## 🚀 Deploy e Infraestrutura
 
 ### Containerização
+
 ```dockerfile
 # Build multi-stage para Go
 FROM golang:1.23-alpine AS builder
@@ -483,6 +656,7 @@ CMD ["./main"]
 ```
 
 ### Kubernetes
+
 ```yaml
 # Horizontal Pod Autoscaler
 apiVersion: autoscaling/v2
@@ -497,15 +671,16 @@ spec:
   minReplicas: 2
   maxReplicas: 10
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
 ```
 
 ### CI/CD Pipeline
+
 ```yaml
 name: Deploy
 on:
@@ -519,7 +694,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.23'
+          go-version: "1.23"
       - name: Run Tests
         run: go test -race ./...
       - name: Security Scan
