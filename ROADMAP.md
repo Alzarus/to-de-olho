@@ -10,8 +10,10 @@
 
 | Fase | Status | Progresso | Previsão de Conclusão |
 |------|--------|-----------|----------------------|
-| 🏗️ **Planejamento** | ✅ Concluído | 100% | Agosto/2025 |
-| 🔧 **Setup Inicial** | 🔄 Em Andamento | 65% | Setembro/2025 |
+| 🏗️ **Planejamento** | ✅ Concluído | 100% ### 🚀 **Comandos Disponíveis (PowerShell - Windows)**
+
+```powershellgosto/2025 |
+| 🔧 **Setup Inicial** | ✅ Quase Concluído | 85% | Setembro/2025 |
 | 🏛️ **Core Backend** | ⏳ Pendente | 0% | Outubro/2025 |
 | 🎨 **Frontend Base** | ⏳ Pendente | 0% | Novembro/2025 |
 | 🤖 **IA & Analytics** | ⏳ Pendente | 0% | Dezembro/2025 |
@@ -47,6 +49,13 @@
 - ✅ Package.json do frontend Next.js 15
 - ✅ Prometheus + Grafana para monitoramento
 - ✅ README.md atualizado com instruções
+- ✅ **AMBIENTE TESTADO E FUNCIONANDO!**
+
+#### ✅ **Problema Make Resolvido**
+- ✅ Comandos Docker diretos funcionando perfeitamente
+- ✅ Ambiente de desenvolvimento rodando
+- ✅ Todos os containers iniciados com sucesso
+- ✅ URLs acessíveis (Grafana, Prometheus, RabbitMQ)
 
 #### ✅ **Arquivos Criados**
 ```
@@ -63,9 +72,14 @@
 
 #### 1. **Testar Ambiente de Desenvolvimento**
 ```powershell
-# Executar para validar setup
-make dev
-make bootstrap
+# COMANDOS QUE FUNCIONAM (testado):
+docker-compose -f docker-compose.dev.yml up -d
+
+# Verificar status
+docker ps
+
+# Ver logs
+docker-compose -f docker-compose.dev.yml logs -f
 ```
 
 #### 2. **Criar Primeiro Microsserviço** 
@@ -463,37 +477,24 @@ make bootstrap
 ### � **Comandos Disponíveis (Criados Hoje)**
 
 ```powershell
-# === DESENVOLVIMENTO ===
-make dev              # Inicia ambiente completo (Docker)
-make bootstrap        # Bootstrap inicial com dados demo
-make bootstrap-full   # Bootstrap completo (4 anos de dados)
-make stop            # Para todos os serviços
-make clean           # Remove containers e volumes
+# === COMANDOS ESSENCIAIS (Docker Direto) ===
+docker-compose -f docker-compose.dev.yml up -d    # Iniciar ambiente
+docker-compose -f docker-compose.dev.yml down     # Parar ambiente
+docker-compose -f docker-compose.dev.yml logs -f  # Ver logs
+docker-compose -f docker-compose.dev.yml restart  # Reiniciar
 
-# === BUILD & TEST ===
-make build-backend   # Compila todos os microsserviços
-make build-frontend  # Build Next.js production
-make test           # Executa todos os testes
-make test-coverage  # Testes com relatório de cobertura
-make lint           # Linting Go + TypeScript
-make format         # Formata código
+# === STATUS E DEBUG ===
+docker ps                                         # Ver containers rodando
+docker ps -a                                      # Ver todos containers
+docker stats                                      # Estatísticas de uso
+docker logs [container-name]                      # Logs específicos
 
-# === BANCO DE DADOS ===
-make migrate-up     # Executa migrações
-make migrate-down   # Desfaz última migração
-make migrate-reset  # Reset completo do banco
-make seed          # Popula dados demo
-make backup        # Backup do PostgreSQL
+# === ACESSO DIRETO ===
+docker exec -it todo-postgres psql -U postgres   # PostgreSQL
+docker exec -it todo-redis redis-cli              # Redis
 
-# === MONITORAMENTO ===
-make monitoring    # Abre dashboards (Grafana, Prometheus, RabbitMQ)
-make check-health  # Verifica saúde dos serviços
-make logs         # Logs dos serviços
-
-# === UTILITÁRIOS ===
-make install-tools # Instala ferramentas de dev
-make git-hooks    # Configura git hooks
-make docs         # Gera documentação da API
+# === LIMPEZA ===
+docker system prune -f                            # Limpar containers antigos
 ```
 
 ### 🌐 **URLs do Ambiente Local**
@@ -663,12 +664,20 @@ gantt
 ---
 
 **📧 Contato**: Pedro Batista de Almeida Filho - IFBA  
-**📅 Última Atualização**: 10 de Agosto de 2025 - 21:30  
+**📅 Última Atualização**: 10 de Agosto de 2025 - 22:00  
 **🔄 Próxima Revisão**: 17 de Agosto de 2025 (Semana 1 concluída)  
-**✅ Status Atual**: Setup Inicial 65% Concluído
+**✅ Status Atual**: Setup Inicial 85% Concluído - **AMBIENTE FUNCIONANDO!**
 
 ---
 
 > 🎯 **Objetivo**: Desenvolver uma plataforma completa de transparência política que democratize o acesso aos dados da Câmara dos Deputados, promovendo maior engajamento democrático através de tecnologia, gamificação e participação social.
 
-> 🚀 **Progresso Hoje**: Infraestrutura base 100% configurada, monorepo estruturado, Docker Compose funcional, scripts de automação criados. **Próximo**: Implementar primeiro microsserviço (deputados-service).
+> 🚀 **Progresso Hoje**: 
+> - ✅ Infraestrutura base 100% configurada
+> - ✅ Monorepo estruturado  
+> - ✅ Docker Compose funcional e testado
+> - ✅ Scripts de automação criados
+> - ✅ Ambiente de desenvolvimento rodando
+> - 🎯 **Próximo**: Implementar primeiro microsserviço (deputados-service)
+
+> **💡 Comando para começar**: `docker-compose -f docker-compose.dev.yml up -d`
