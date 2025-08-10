@@ -25,16 +25,16 @@ O **"Tô De Olho"** é uma plataforma inovadora de transparência política que 
 
 ### 1. 🛠️ Inicialização Rápida
 
-```powershell
+```bash
 # Clonar e configurar o projeto
 git clone https://github.com/alzarus/to-de-olho.git
 cd to-de-olho
 
 # Iniciar ambiente de desenvolvimento
-make dev
+docker-compose -f docker-compose.dev.yml up -d
 
-# Executar bootstrap (primeira vez)
-make bootstrap
+# Verificar se está funcionando
+docker ps
 ```
 
 ### 2. 🏗️ Tarefas Prioritárias
@@ -92,25 +92,18 @@ make bootstrap
 
 ## 🏃‍♂️ Comandos Úteis
 
-```powershell
+```bash
 # Desenvolvimento
-make dev              # Inicia ambiente completo
-make bootstrap        # Primeira inicialização
-make logs            # Ver logs dos serviços
+docker-compose -f docker-compose.dev.yml up -d    # Inicia ambiente completo
+docker-compose -f docker-compose.dev.yml ps       # Status dos serviços
+docker-compose -f docker-compose.dev.yml logs -f  # Ver logs dos serviços
+docker-compose -f docker-compose.dev.yml down     # Parar serviços
 
-# Build e Deploy
-make build-backend   # Compila microsserviços
-make build-frontend  # Build Next.js
-make test           # Executa todos os testes
+# Acesso direto aos serviços
+docker exec -it todeolho-postgres psql -U admin -d todeolho
+docker exec -it todeolho-redis redis-cli
 
-# Banco de Dados
-make migrate-up     # Aplica migrações
-make seed          # Popula dados demo
-make backup        # Backup do banco
-
-# Monitoramento
-make monitoring    # Abre dashboards
-make check-health  # Verifica serviços
+# Para comandos completos, consulte COMANDOS.md
 ```
 
 ## 📁 Estrutura do Projeto
