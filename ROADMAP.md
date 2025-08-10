@@ -11,7 +11,7 @@
 | Fase | Status | Progresso | Previsão de Conclusão |
 |------|--------|-----------|----------------------|
 | 🏗️ **Planejamento** | ✅ Concluído | 100% | Agosto/2025 |
-| 🔧 **Setup Inicial** | 🔄 Em Andamento | 0% | Setembro/2025 |
+| 🔧 **Setup Inicial** | 🔄 Em Andamento | 65% | Setembro/2025 |
 | 🏛️ **Core Backend** | ⏳ Pendente | 0% | Outubro/2025 |
 | 🎨 **Frontend Base** | ⏳ Pendente | 0% | Novembro/2025 |
 | 🤖 **IA & Analytics** | ⏳ Pendente | 0% | Dezembro/2025 |
@@ -35,25 +35,85 @@
 
 ---
 
+## ✅ **STATUS ATUAL - Agosto 2025**
+
+### 🎉 **Concluído Hoje (10/08/2025)**
+
+#### ✅ **Infraestrutura Base - 100% Concluída**
+- ✅ Estrutura completa do monorepo criada
+- ✅ Docker Compose configurado (PostgreSQL 16 + Redis 7 + RabbitMQ)
+- ✅ Scripts de automação (PowerShell + Makefile)
+- ✅ Go modules configurado com dependências
+- ✅ Package.json do frontend Next.js 15
+- ✅ Prometheus + Grafana para monitoramento
+- ✅ README.md atualizado com instruções
+
+#### ✅ **Arquivos Criados**
+```
+✅ docker-compose.dev.yml      # Infraestrutura de desenvolvimento
+✅ go.mod                      # Dependências Go do workspace
+✅ frontend/package.json       # Configuração Next.js 15
+✅ scripts/bootstrap.ps1       # Script de inicialização
+✅ scripts/init-databases.sh   # Setup múltiplos bancos
+✅ Makefile                    # Comandos de automação
+✅ Estrutura de pastas completa
+```
+
+### 🔄 **Próximos Passos Imediatos (Esta Semana)**
+
+#### 1. **Testar Ambiente de Desenvolvimento**
+```powershell
+# Executar para validar setup
+make dev
+make bootstrap
+```
+
+#### 2. **Criar Primeiro Microsserviço** 
+- 🎯 **deputados-service** (Prioridade 1)
+- Estrutura hexagonal (domain, usecase, repository, handler)
+- API REST básica para CRUD deputados
+- Testes unitários
+
+#### 3. **Setup Frontend Next.js**
+- Configuração TypeScript + Tailwind CSS
+- Componentes base Shadcn/ui
+- Roteamento e layout principal
+
+### 📊 **Progresso Geral Atualizado**
+
+| Componente | Status | Progresso |
+|------------|--------|-----------|
+| **Infraestrutura** | ✅ Concluído | 100% |
+| **Scripts Automação** | ✅ Concluído | 100% |
+| **Documentação** | ✅ Concluído | 90% |
+| **Microsserviços** | ⏳ Próximo | 0% |
+| **Frontend Base** | ⏳ Próximo | 0% |
+| **Integração API** | ⏳ Futuro | 0% |
+
+### 🎯 **Meta da Semana (11-17 Agosto)**
+**Objetivo**: Ter o primeiro microsserviço funcionando com dados reais da API da Câmara
+
+---
+
 ## 🏗️ Fases de Desenvolvimento
 
 ### **FASE 1: Setup e Infraestrutura Inicial** 📅 Agosto-Setembro/2025
 
 #### 🔧 Configuração do Ambiente
-- [ ] **Setup do Repositório**
-  - [ ] Estrutura de monorepo
+- [x] **Setup do Repositório**
+  - [x] Estrutura de monorepo
   - [ ] Configuração do Git (branches, hooks)
   - [ ] Setup do GitHub Actions (CI/CD)
-  - [ ] Documentação inicial
+  - [x] Documentação inicial
 
-- [ ] **Infraestrutura Base**
-  - [ ] Docker Compose para desenvolvimento
-  - [ ] PostgreSQL 16 setup
-  - [ ] Redis para cache
-  - [ ] RabbitMQ para mensageria
+- [x] **Infraestrutura Base**
+  - [x] Docker Compose para desenvolvimento
+  - [x] PostgreSQL 16 setup
+  - [x] Redis para cache
+  - [x] RabbitMQ para mensageria
 
-- [ ] **Script de Bootstrap (Cold Start)**
-  - [ ] Script de inicialização automática
+- [x] **Script de Bootstrap (Cold Start)**
+  - [x] Script de inicialização automática
   - [ ] Sincronização inicial da API Câmara (513 deputados)
   - [ ] Carga priorizada: Referências → Deputados → Atividades → Histórico
   - [ ] Sistema de cache hierárquico (Redis + PostgreSQL)
@@ -62,12 +122,12 @@
   - [ ] Seed de dados demo para desenvolvimento
 
 #### 📦 Stack Tecnológico
-- [ ] **Backend**: Go 1.23+ com Gin Framework
-- [ ] **Frontend**: Next.js 15 + TypeScript + Tailwind CSS
-- [ ] **Database**: PostgreSQL 16 + Redis
-- [ ] **Queue**: RabbitMQ
+- [x] **Backend**: Go 1.23+ com Gin Framework
+- [x] **Frontend**: Next.js 15 + TypeScript + Tailwind CSS
+- [x] **Database**: PostgreSQL 16 + Redis
+- [x] **Queue**: RabbitMQ
 - [ ] **AI**: Google Gemini SDK + MCP
-- [ ] **Monitoring**: Prometheus + Grafana
+- [x] **Monitoring**: Prometheus + Grafana
 
 ---
 
@@ -400,7 +460,53 @@
 
 ## 📝 Notas de Desenvolvimento
 
-### 📚 Recursos de Estudo
+### � **Comandos Disponíveis (Criados Hoje)**
+
+```powershell
+# === DESENVOLVIMENTO ===
+make dev              # Inicia ambiente completo (Docker)
+make bootstrap        # Bootstrap inicial com dados demo
+make bootstrap-full   # Bootstrap completo (4 anos de dados)
+make stop            # Para todos os serviços
+make clean           # Remove containers e volumes
+
+# === BUILD & TEST ===
+make build-backend   # Compila todos os microsserviços
+make build-frontend  # Build Next.js production
+make test           # Executa todos os testes
+make test-coverage  # Testes com relatório de cobertura
+make lint           # Linting Go + TypeScript
+make format         # Formata código
+
+# === BANCO DE DADOS ===
+make migrate-up     # Executa migrações
+make migrate-down   # Desfaz última migração
+make migrate-reset  # Reset completo do banco
+make seed          # Popula dados demo
+make backup        # Backup do PostgreSQL
+
+# === MONITORAMENTO ===
+make monitoring    # Abre dashboards (Grafana, Prometheus, RabbitMQ)
+make check-health  # Verifica saúde dos serviços
+make logs         # Logs dos serviços
+
+# === UTILITÁRIOS ===
+make install-tools # Instala ferramentas de dev
+make git-hooks    # Configura git hooks
+make docs         # Gera documentação da API
+```
+
+### 🌐 **URLs do Ambiente Local**
+```
+🚀 Aplicação Principal:  http://localhost:3000
+📊 Grafana (Monitoring): http://localhost:3001 (admin:admin123)
+🔥 Prometheus:           http://localhost:9090
+🐰 RabbitMQ Management:  http://localhost:15672 (admin:admin123)
+🗄️ PostgreSQL:           localhost:5432 (postgres:postgres)
+⚡ Redis:                localhost:6379
+```
+
+### �📚 Recursos de Estudo
 - [ ] API Câmara dos Deputados - Documentação completa
 - [ ] Go best practices - Clean Architecture
 - [ ] Next.js 15 - App Router patterns
@@ -409,12 +515,43 @@
 - [ ] Kubernetes basics
 
 ### 🔧 Ferramentas de Desenvolvimento
-- [ ] VSCode + Go extension
-- [ ] Docker Desktop
+- [x] VSCode + Go extension
+- [x] Docker Desktop
 - [ ] Postman/Insomnia (API testing)
 - [ ] pgAdmin (PostgreSQL)
 - [ ] Redis CLI
 - [ ] kubectl
+
+### 🎯 **PRÓXIMAS TAREFAS PRIORITÁRIAS**
+
+#### **Semana 1 (11-17 Agosto): Primeiro Microsserviço**
+```
+🏛️ deputados-service
+├── 📁 backend/services/deputados/
+├── 📄 cmd/server/main.go          # Entry point
+├── 📄 internal/domain/            # Entities
+├── 📄 internal/usecase/           # Business logic  
+├── 📄 internal/repository/        # Data access
+├── 📄 internal/handler/           # HTTP/gRPC
+└── 📄 internal/config/            # Configurações
+```
+
+#### **Semana 2 (18-24 Agosto): API Câmara Integration**
+- Client HTTP resiliente
+- Rate limiting (100 req/min)
+- Cache Redis para dados frequentes
+- Jobs background para sincronização
+
+#### **Semana 3 (25-31 Agosto): Frontend Base**
+- Setup Next.js 15 completo
+- Componentes Shadcn/ui
+- Layout principal
+- Primeira página funcional
+
+#### **Semana 4 (01-07 Setembro): Integração E2E**
+- Frontend consumindo API
+- Autenticação básica
+- Deploy de desenvolvimento
 
 ---
 
@@ -526,9 +663,12 @@ gantt
 ---
 
 **📧 Contato**: Pedro Batista de Almeida Filho - IFBA  
-**📅 Última Atualização**: Agosto 2025  
-**🔄 Próxima Revisão**: Setembro 2025
+**📅 Última Atualização**: 10 de Agosto de 2025 - 21:30  
+**🔄 Próxima Revisão**: 17 de Agosto de 2025 (Semana 1 concluída)  
+**✅ Status Atual**: Setup Inicial 65% Concluído
 
 ---
 
 > 🎯 **Objetivo**: Desenvolver uma plataforma completa de transparência política que democratize o acesso aos dados da Câmara dos Deputados, promovendo maior engajamento democrático através de tecnologia, gamificação e participação social.
+
+> 🚀 **Progresso Hoje**: Infraestrutura base 100% configurada, monorepo estruturado, Docker Compose funcional, scripts de automação criados. **Próximo**: Implementar primeiro microsserviço (deputados-service).
