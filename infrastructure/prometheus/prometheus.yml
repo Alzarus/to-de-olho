@@ -1,0 +1,68 @@
+# Configuração do Prometheus para monitoramento - Projeto "Tô De Olho"
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Monitoramento dos microsserviços (quando estiverem rodando)
+  - job_name: "deputados-service"
+    static_configs:
+      - targets: ["deputados-service:8080"]
+    scrape_interval: 30s
+    metrics_path: "/metrics"
+
+  - job_name: "atividades-service"
+    static_configs:
+      - targets: ["atividades-service:8081"]
+    scrape_interval: 30s
+    metrics_path: "/metrics"
+
+  - job_name: "despesas-service"
+    static_configs:
+      - targets: ["despesas-service:8082"]
+    scrape_interval: 30s
+    metrics_path: "/metrics"
+
+  - job_name: "usuarios-service"
+    static_configs:
+      - targets: ["usuarios-service:8083"]
+    scrape_interval: 30s
+    metrics_path: "/metrics"
+
+  - job_name: "forum-service"
+    static_configs:
+      - targets: ["forum-service:8084"]
+    scrape_interval: 30s
+    metrics_path: "/metrics"
+
+  # Monitoramento da infraestrutura
+  - job_name: "postgres"
+    static_configs:
+      - targets: ["postgres:5432"]
+
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis:6379"]
+
+  - job_name: "rabbitmq"
+    static_configs:
+      - targets: ["rabbitmq:15672"]
