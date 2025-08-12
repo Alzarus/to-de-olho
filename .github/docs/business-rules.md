@@ -5,18 +5,20 @@
 ### Entidade Deputado
 ```go
 type Deputado struct {
-    ID              uuid.UUID    `json:"id"`
+    ID              uuid.UUID    `json:"id"`              // UUID interno
+    CamaraID        int          `json:"camara_id"`       // ID oficial da Câmara
     Nome            string       `json:"nome"`
     NomeCivil       string       `json:"nome_civil"`
-    CPF             CPF          `json:"cpf"`           // Value Object
-    Sexo            Sexo         `json:"sexo"`          // M, F
+    CPF             CPF          `json:"cpf"`             // Value Object
+    Sexo            Sexo         `json:"sexo"`            // M, F
     DataNascimento  time.Time    `json:"data_nascimento"`
-    Estado          Estado       `json:"estado"`        // Value Object
-    Partido         Partido      `json:"partido"`       // Aggregate
-    Status          Status       `json:"status"`        // ativo, inativo, licenciado
+    Estado          Estado       `json:"estado"`          // Value Object
+    Partido         Partido      `json:"partido"`         // Aggregate
+    Status          Status       `json:"status"`          // ativo, inativo, licenciado
     Mandatos        []Mandato    `json:"mandatos"`
-    Contatos        Contatos     `json:"contatos"`      // Value Object
-    RedesSociais    RedesSociais `json:"redes_sociais"` // Value Object
+    Contatos        Contatos     `json:"contatos"`        // Value Object
+    RedesSociais    RedesSociais `json:"redes_sociais"`   // Value Object
+    UltimaSync      time.Time    `json:"ultima_sync"`     // Última sincronização com API Câmara
 }
 ```
 

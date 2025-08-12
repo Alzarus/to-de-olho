@@ -1,180 +1,215 @@
-# 🤖 GitHub Copilot - TCC "Tô De Olho" (MVP Focado)
+# 🤖 GitHub Copilot - Instruções Core
 
-## 🎯 Visão do Projeto (TCC - IFBA)
+## 🎯 Visão do Projeto
 
-O **"Tô De Olho"** é uma plataforma de transparência política para **TCC** que democratiza o acesso aos dados da Câmara dos Deputados com foco em **SIMPLICIDADE e EFETIVIDADE**.
+O **"Tô De Olho"** é uma plataforma de transparência política que democratiza o acesso aos dados da Câmara dos Deputados, promovendo engajamento cidadão através de:
 
-### 🚨 **PRIORIDADE ABSOLUTA: MVP que FUNCIONA**
-1. **Listar Deputados** com dados reais
-2. **Exibir Gastos** com gráficos simples  
-3. **Interface Responsiva** e moderna
-4. **Performance** adequada
+1. **Acessibilidade**: Interface intuitiva para todos os usuários
+2. **Gestão Social**: Participação cidadã nas decisões públicas  
+3. **Gamificação**: Sistema de pontos, conquistas e rankings
 
-### ❌ **EVITAR Over-Engineering:**
-- Não usar microsserviços (MONOLITO é OK)
-- Não implementar gamificação complexa
-- Foco em funcionalidades que FUNCIONAM 100%
+### Características Essenciais
+- **Linguagem**: Português Brasileiro (pt-BR)
+- **Dados**: API Câmara dos Deputados + TSE
+- **Interação**: Fórum e contato deputado-cidadão
+- **IA**: Google Gemini SDK para moderação e assistente educativo
 
-## 🛠️ Stack SIMPLIFICADA (TCC-Friendly)
+## 🛠️ Stack Tecnológico (2025-2026)
 
 ```
-Backend:     Go 1.23 + Gin + GORM (MONOLITO)
+Backend:     Go 1.23+ (Clean Architecture + DDD)
 Frontend:    Next.js 15 + TypeScript + Tailwind CSS
-Database:    PostgreSQL (simples, 3 tabelas principais)
-Deploy:      Vercel (frontend) + Railway (backend)
-Testing:     Básico (não precisa 80% coverage para TCC)
+Database:    PostgreSQL 16 + Redis (cache)
+Queue:       RabbitMQ (mensageria assíncrona)
+AI/ML:       Google Gemini SDK + MCP
+Monitoring:  Prometheus + Grafana
+Security:    JWT + OAuth2 + Rate Limiting
+Testing:     80% Coverage (Unit + Integration + E2E)
+CI/CD:       GitHub Actions com Quality Gates
 ```
 
-## 🏗️ Estrutura SIMPLES
+## 🏗️ Padrões de Arquitetura
 
-### Backend Monolito
+### Clean Architecture + DDD
 ```go
-// Estrutura SIMPLES para TCC
-/backend/
-├── main.go                     # Entry point único
-├── handlers/                   # HTTP handlers  
-│   ├── deputados.go           # CRUD deputados
-│   └── despesas.go            # Gastos
-├── models/                    # Structs GORM
-│   ├── deputado.go           
-│   └── despesa.go            
-├── services/                  # Business logic
-├── database/                  # DB connection
-└── utils/                     # Helpers
+// Estrutura por domínio de negócio
+/backend/services/deputados/
+├── cmd/server/                  # Entry points
+├── internal/
+│   ├── domain/                  # Entities, Value Objects, Aggregates
+│   ├── application/             # Use Cases / Application Services
+│   ├── infrastructure/          # Frameworks & Drivers
+│   └── interfaces/             # Interface Adapters
+├── pkg/                        # Código compartilhado público
+└── tests/                      # Testes organizados por tipo
 ```
 
-### Frontend Direto
+### Princípios SOLID Obrigatórios
+- **Single Responsibility**: Uma classe, uma responsabilidade
+- **Open/Closed**: Extensível sem modificação
+- **Liskov Substitution**: Subtipos substituíveis
+- **Interface Segregation**: Interfaces coesas e específicas
+- **Dependency Inversion**: Dependa de abstrações
+
+## 📋 Definition of Done (DoD)
+
+### ✅ Critérios Obrigatórios
+- [ ] **Clean Code**: Nomes expressivos, funções pequenas
+- [ ] **Testes**: Cobertura mínima 80% (unit + integration)
+- [ ] **SOLID**: Princípios implementados corretamente
+- [ ] **Security**: Scan sem vulnerabilidades críticas
+- [ ] **Performance**: Benchmarks dentro dos SLAs
+- [ ] **Review**: Aprovação de 2+ desenvolvedores
+- [ ] **CI/CD**: Pipeline verde em todos os stages
+
+## 🧪 Estratégia de Testes
+
+### Testing Pyramid (80/15/5)
 ```
-/frontend/
-├── pages/                     # Next.js pages
-│   ├── index.tsx             # Home
-│   ├── deputados/            # Lista + detalhes
-│   └── api/                  # API routes (se precisar)
-├── components/               # Componentes reutilizáveis
-├── hooks/                    # Custom hooks
-└── utils/                    # Helpers
+🔺 E2E Tests (5%)        - Jornadas completas do usuário
+🔺 Integration (15%)      - APIs + Database + Services  
+🔺 Unit Tests (80%)       - Business Logic + Domains
 ```
 
-## 📋 MVP Requirements (FOCO TOTAL)
-
-### ✅ **Core Features OBRIGATÓRIAS**
-- [ ] **GET /deputados** - Lista paginada com filtros
-- [ ] **GET /deputados/:id** - Perfil completo
-- [ ] **GET /deputados/:id/despesas** - Gastos do deputado
-- [ ] **Frontend responsivo** funcionando
-- [ ] **Dados reais** da API da Câmara
-
-### 🚀 **Nice-to-Have (SE DER TEMPO)**
-- [ ] Comparar 2-3 deputados
-- [ ] Dashboard com estatísticas
-- [ ] Export de dados (PDF/Excel)
-- [ ] Sistema de busca avançada
-## � Padrões de Código SIMPLES (TCC)
-
-### Naming Convention Go
+### Padrões de Teste
 ```go
-// ✅ Simples e direto
-type Deputado struct {
-    ID       uint   `gorm:"primaryKey"`
-    Nome     string `json:"nome"`
-    Partido  string `json:"partido"`
-    UF       string `json:"uf"`
-    FotoURL  string `json:"foto_url"`
+// Table-driven tests obrigatório
+func TestDeputadoValidator_Validate(t *testing.T) {
+    tests := []struct {
+        name      string
+        input     *domain.Deputado
+        wantError bool
+        errorCode string
+    }{
+        // casos de teste...
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // implementação do teste
+        })
+    }
 }
+```
 
-// ✅ Handlers simples
-func GetDeputados(c *gin.Context) {
-    var deputados []Deputado
-    db.Find(&deputados)
-    c.JSON(200, deputados)
-}
+## 🚀 Microsserviços
 
-// ✅ Errors simples
+```
+📋 deputados-service    → Gestão de parlamentares
+🗳️ atividades-service   → Proposições, votações, presença
+💰 despesas-service     → Análise de gastos parlamentares
+👥 usuarios-service     → Autenticação, perfis, gamificação
+💬 forum-service        → Discussões e interação cidadã
+🔄 ingestao-service     → ETL dados Câmara/TSE
+🤖 ia-service          → Moderação Gemini e assistente
+```
+
+## 📝 Convenções de Código
+
+### Naming (Go)
+```go
+// ✅ Funções exportadas - PascalCase
+func BuscarDeputadoPorID(ctx context.Context, id uuid.UUID) (*domain.Deputado, error)
+
+// ✅ Variáveis/funções internas - camelCase
+func validarCPFDeputado(cpf string) error
+
+// ✅ Constantes - PascalCase com prefixo
+const (
+    MaxTentativasRequisicaoAPI = 3
+    TimeoutPadraoHTTP         = 30 * time.Second
+)
+
+// ✅ Errors - Err + descrição
 var (
-    ErrDeputadoNotFound = errors.New("deputado não encontrado")
-    ErrInvalidInput     = errors.New("dados inválidos")
+    ErrDeputadoNaoEncontrado = errors.New("deputado não encontrado")
+    ErrDadosInvalidos       = errors.New("dados inválidos")
 )
 ```
 
-### Frontend Patterns
-```tsx
-// ✅ Componentes funcionais simples
-interface DeputadoCardProps {
-  deputado: Deputado;
+### Error Handling
+```go
+// ✅ Custom errors com contexto
+type DeputadoError struct {
+    Op   string    // Operação que falhou
+    ID   uuid.UUID // ID do deputado
+    Err  error     // Erro original
+    Code string    // Código para client
 }
 
-export function DeputadoCard({ deputado }: DeputadoCardProps) {
-  return (
-    <div className="p-4 border rounded-lg">
-      <h3 className="font-bold">{deputado.nome}</h3>
-      <p className="text-gray-600">{deputado.partido} - {deputado.uf}</p>
-    </div>
-  );
-}
-
-// ✅ Hooks simples para API
-export function useDeputados() {
-  const [deputados, setDeputados] = useState<Deputado[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    fetch('/api/deputados')
-      .then(res => res.json())
-      .then(setDeputados)
-      .finally(() => setLoading(false));
-  }, []);
-  
-  return { deputados, loading };
+// ✅ Error wrapping obrigatório
+if err != nil {
+    return fmt.Errorf("erro ao buscar deputado %s: %w", id, err)
 }
 ```
 
-## 📊 Dados da Câmara (API Oficial)
+## 🔒 Segurança & Performance
+
+### Rate Limiting
+```go
+// Middleware obrigatório para todas as APIs
+middleware.RateLimit(100, time.Hour) // 100 req/hora por IP
+```
+
+### Logs Estruturados
+```go
+// slog obrigatório para logs
+log.Info("deputado criado com sucesso",
+    slog.String("id", deputado.ID.String()),
+    slog.String("nome", deputado.Nome),
+    slog.Duration("tempo", time.Since(start)))
+```
+
+## 🎨 Frontend (Next.js 15)
+
+### Estrutura
+```
+/frontend/
+├── app/                   # App Router
+├── components/
+│   ├── ui/               # Shadcn/ui components
+│   ├── features/         # Feature-specific
+│   └── layout/           # Header, Footer, Sidebar
+├── lib/
+│   ├── api.ts            # TanStack Query
+│   └── auth.ts           # NextAuth.js
+└── types/                # TypeScript definitions
+```
+
+### Acessibilidade (WCAG 2.1 AA)
+- Contraste mínimo 4.5:1
+- Navegação completa via teclado
+- Textos alternativos obrigatórios
+- Suporte a leitores de tela
+
+## 📊 Dados da Câmara
 
 ### API Base: `https://dadosabertos.camara.leg.br/api/v2/`
 
-#### Endpoints Essenciais para TCC
-```bash
-# Deputados ativos (513 deputados)
-GET /deputados?idLegislatura=57&ordem=ASC&ordenarPor=nome
+#### Endpoints Principais
+- `GET /deputados` - Lista deputados (filtros: UF, partido, legislatura)
+- `GET /deputados/{id}` - Dados cadastrais completos
+- `GET /deputados/{id}/despesas` - Cota parlamentar detalhada
+- `GET /proposicoes` - Proposições com filtros avançados
+- `GET /votacoes` - Votações e votos individuais
 
-# Dados específicos do deputado  
-GET /deputados/{id}
-
-# Despesas do deputado (últimos 6 meses)
-GET /deputados/{id}/despesas?ano=2025&mes=8&ordem=DESC&ordenarPor=dataDocumento
-
-# Partidos ativos
-GET /partidos?idLegislatura=57&ordem=ASC&ordenarPor=sigla
-```
-
-#### Rate Limiting
+#### Rate Limiting API
 - **Limite**: 100 requisições/minuto
-- **Estratégia**: Cache simples + requisições em lote
-
-## 🎯 Foco do TCC: FUNCIONALIDADE > ARQUITETURA
-
-### ✅ **O que a Banca VAI valorizar:**
-1. **Funciona 100%** - Sem bugs na apresentação
-2. **Interface bonita** - Tailwind CSS bem usado
-3. **Dados reais** - API da Câmara funcionando
-4. **Código limpo** - Fácil de entender
-5. **Documentação** - README claro
-
-### ❌ **O que NÃO vai somar pontos:**
-- Over-engineering sem necessidade
-- Features incompletas ou bugadas
-- Complexidade desnecessária
-- Muitas tecnologias sem uso real
+- **Implementar**: Circuit breaker + retry com backoff exponencial
 
 ---
 
 ## 📚 Documentação Adicional
 
-Para detalhes específicos do MVP:
+Para detalhes específicos, consulte:
+- **Arquitetura**: `.github/docs/architecture.md`
 - **API Reference**: `.github/docs/api-reference.md`  
+- **API Official Dados Abertos Camara**: `.github/docs/api-docs.json` 
+- **Integração API Câmara**: `.github/docs/camara-api-integration.md`
 - **Business Rules**: `.github/docs/business-rules.md`
-- **Plano Realista**: `TCC-PLANO-REALISTA.md`
+- **Testing Guide**: `.github/docs/testing-guide.md`
+- **CI/CD Pipeline**: `.github/docs/cicd-guide.md`
 
 ---
 
-> **🎯 Objetivo TCC**: Criar plataforma funcional de transparência política que demonstre competência técnica e impacto social, priorizando qualidade sobre quantidade.
+> **🎯 Objetivo**: Código limpo, testável, escalável e seguro para democratizar a transparência política no Brasil através de tecnologia de ponta.

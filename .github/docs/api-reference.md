@@ -36,6 +36,7 @@ GET /deputados?uf=SP&partido=PT&page=1&limit=20
 - `page` (int): Página (default: 1)
 - `limit` (int): Itens por página (default: 20, max: 100)
 - `status` (string): ativo, inativo (default: ativo)
+- `camara_id` (int): ID oficial da Câmara (opcional)
 
 **Response:**
 ```json
@@ -43,6 +44,7 @@ GET /deputados?uf=SP&partido=PT&page=1&limit=20
   "data": [
     {
       "id": "uuid",
+      "camara_id": 220595,
       "nome": "João Silva",
       "nome_civil": "João da Silva Santos",
       "cpf": "123.456.789-01",
