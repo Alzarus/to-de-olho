@@ -39,7 +39,7 @@
 
 ## ✅ **STATUS ATUAL - Agosto 2025**
 
-### 🎉 **Concluído Hoje (10/08/2025)**
+### 🎉 **Concluído (10-11/08/2025)**
 
 #### ✅ **Infraestrutura Base - 100% Concluída**
 - ✅ Estrutura completa do monorepo criada
@@ -51,61 +51,80 @@
 - ✅ README.md atualizado com instruções
 - ✅ **AMBIENTE TESTADO E FUNCIONANDO!**
 
-#### ✅ **Problema Make Resolvido**
-- ✅ Comandos Docker diretos funcionando perfeitamente
-- ✅ Ambiente de desenvolvimento rodando
-- ✅ Todos os containers iniciados com sucesso
-- ✅ URLs acessíveis (Grafana, Prometheus, RabbitMQ)
+#### ✅ **Documentação Completa**
+- ✅ API Reference completa criada
+- ✅ Architecture Guide com Clean Architecture
+- ✅ Business Rules documentadas
+- ✅ CI/CD Pipeline configurado
+- ✅ Testing Guide com estratégias
+- ✅ TCC-PLANO-REALISTA.md para foco
+- ✅ START-AGORA.md para início imediato
 
-#### ✅ **Arquivos Criados**
+#### ✅ **Infraestrutura Confirmada Funcionando**
 ```
-✅ docker-compose.dev.yml      # Infraestrutura de desenvolvimento
-✅ go.mod                      # Dependências Go do workspace
-✅ frontend/package.json       # Configuração Next.js 15
-✅ scripts/bootstrap.ps1       # Script de inicialização
-✅ scripts/init-databases.sh   # Setup múltiplos bancos
-✅ Makefile                    # Comandos de automação
-✅ Estrutura de pastas completa
-```
-
-### 🔄 **Próximos Passos Imediatos (Esta Semana)**
-
-#### 1. **Testar Ambiente de Desenvolvimento**
-```powershell
-# COMANDOS QUE FUNCIONAM (testado):
-docker-compose -f docker-compose.dev.yml up -d
-
-# Verificar status
-docker ps
-
-# Ver logs
-docker-compose -f docker-compose.dev.yml logs -f
+Status dos containers Docker (testado):
+✅ todo-postgres      (PostgreSQL 16)    - HEALTHY
+✅ todo-redis         (Redis 7)          - HEALTHY  
+✅ todo-rabbitmq      (RabbitMQ)         - HEALTHY
+✅ todo-grafana       (Grafana)          - UP
+✅ todo-prometheus    (Prometheus)       - UP
 ```
 
-#### 2. **Criar Primeiro Microsserviço** 
-- 🎯 **deputados-service** (Prioridade 1)
-- Estrutura hexagonal (domain, usecase, repository, handler)
-- API REST básica para CRUD deputados
-- Testes unitários
+### 🔄 **SITUAÇÃO ATUAL (11/08/2025 - 22:52)**
 
-#### 3. **Setup Frontend Next.js**
-- Configuração TypeScript + Tailwind CSS
-- Componentes base Shadcn/ui
-- Roteamento e layout principal
+#### ⚠️ **Gaps Identificados:**
+- ❌ **Backend está vazio** - Pasta criada mas sem código
+- ❌ **Frontend básico** - Só package.json, sem componentes
+- ❌ **Primeiro endpoint** ainda não implementado
+- ⚠️ **Foco dividido** - Muita documentação, pouco código
 
-### 📊 **Progresso Geral Atualizado**
+#### 🚨 **PRIORIDADE ABSOLUTA - PRÓXIMAS 48H:**
 
-| Componente | Status | Progresso |
-|------------|--------|-----------|
-| **Infraestrutura** | ✅ Concluído | 100% |
-| **Scripts Automação** | ✅ Concluído | 100% |
-| **Documentação** | ✅ Concluído | 90% |
-| **Microsserviços** | ⏳ Próximo | 0% |
-| **Frontend Base** | ⏳ Próximo | 0% |
-| **Integração API** | ⏳ Futuro | 0% |
+##### 1. **Backend Mínimo Viável (12-13 Agosto)**
+```bash
+# AÇÃO IMEDIATA:
+cd backend
+go mod init to-de-olho-backend
+go get github.com/gin-gonic/gin
+go get gorm.io/gorm
+go get gorm.io/driver/postgres
 
-### 🎯 **Meta da Semana (11-17 Agosto)**
-**Objetivo**: Ter o primeiro microsserviço funcionando com dados reais da API da Câmara
+# Criar main.go básico com:
+GET /ping           # Health check
+GET /api/deputados  # Lista (mock primeiro)
+```
+
+##### 2. **Frontend Funcional (13-14 Agosto)**
+```bash
+# AÇÃO IMEDIATA:
+cd frontend
+npx create-next-app@latest . --typescript --tailwind --app --src-dir
+npm install lucide-react recharts
+
+# Criar página inicial que consome /api/deputados
+```
+
+##### 3. **Primeira Demo (14 Agosto)**
+- Backend + Frontend se comunicando
+- Lista de deputados (mesmo que mock)
+- Deploy básico funcionando
+
+### 📊 **Progresso Real Atualizado (11/08/25)**
+
+| Componente | Status | Progresso | Próxima Ação |
+|------------|--------|-----------|---------------|
+| **Infraestrutura** | ✅ Concluído | 100% | Manter rodando |
+| **Documentação** | ✅ Concluído | 95% | Focar no código |
+| **Backend Core** | ❌ **URGENTE** | 5% | **Criar main.go HOJE** |
+| **Frontend Base** | ❌ **URGENTE** | 10% | **Setup Next.js HOJE** |
+| **API Integration** | ⏳ Bloqueado | 0% | Após backend básico |
+
+### 🎯 **Meta REFORMULADA (12-18 Agosto)**
+**Objetivo**: **CÓDIGO FUNCIONANDO** > Documentação perfeita
+- **12/08**: Backend com 1 endpoint funcionando
+- **13/08**: Frontend consumindo backend  
+- **14/08**: Deploy e primeira demo
+- **15-18/08**: Integração API Câmara real
 
 ---
 
@@ -474,37 +493,53 @@ docker-compose -f docker-compose.dev.yml logs -f
 
 ## 📝 Notas de Desenvolvimento
 
-### � **Comandos Disponíveis (Criados Hoje)**
+### 🚀 **Comandos Disponíveis (Atualizado 11/08/2025)**
 
 ```powershell
-# === COMANDOS ESSENCIAIS (Docker Direto) ===
+# === AMBIENTE FUNCIONANDO (✅ TESTADO) ===
 docker-compose -f docker-compose.dev.yml up -d    # Iniciar ambiente
 docker-compose -f docker-compose.dev.yml down     # Parar ambiente
-docker-compose -f docker-compose.dev.yml logs -f  # Ver logs
-docker-compose -f docker-compose.dev.yml restart  # Reiniciar
-
-# === STATUS E DEBUG ===
 docker ps                                         # Ver containers rodando
-docker ps -a                                      # Ver todos containers
-docker stats                                      # Estatísticas de uso
-docker logs [container-name]                      # Logs específicos
+docker-compose -f docker-compose.dev.yml logs -f  # Ver logs
 
-# === ACESSO DIRETO ===
-docker exec -it todo-postgres psql -U postgres   # PostgreSQL
-docker exec -it todo-redis redis-cli              # Redis
+# === PRÓXIMAS AÇÕES IMEDIATAS ===
+# 1. Backend mínimo viável (URGENTE)
+cd backend
+go mod init to-de-olho-backend
+go get github.com/gin-gonic/gin github.com/gin-contrib/cors github.com/joho/godotenv
 
-# === LIMPEZA ===
-docker system prune -f                            # Limpar containers antigos
+# 2. Frontend básico (URGENTE)
+cd ../frontend  
+npx create-next-app@latest . --typescript --tailwind --app --src-dir
+npm install lucide-react recharts axios
+
+# 3. Testar API Câmara (1 comando)
+node -e "
+const https = require('https');
+const url = 'https://dadosabertos.camara.leg.br/api/v2/deputados?itens=5';
+https.get(url, res => {
+  let data = '';
+  res.on('data', chunk => data += chunk);
+  res.on('end', () => console.log('✅ API Câmara funcionando:', JSON.parse(data).dados.length, 'deputados'));
+}).on('error', err => console.error('❌', err.message));
+"
+
+# === DEBUG E MANUTENÇÃO ===
+docker stats                                      # Estatísticas containers
+docker exec -it todo-postgres psql -U postgres   # Acesso PostgreSQL
+docker exec -it todo-redis redis-cli              # Acesso Redis
+docker system prune -f                            # Limpeza
 ```
 
 ### 🌐 **URLs do Ambiente Local**
 ```
-🚀 Aplicação Principal:  http://localhost:3000
-📊 Grafana (Monitoring): http://localhost:3001 (admin:admin123)
-🔥 Prometheus:           http://localhost:9090
-🐰 RabbitMQ Management:  http://localhost:15672 (admin:admin123)
-🗄️ PostgreSQL:           localhost:5432 (postgres:postgres)
-⚡ Redis:                localhost:6379
+⚠️  Frontend:               http://localhost:3000 (AINDA NÃO CRIADO)
+⚠️  Backend:                http://localhost:8080 (AINDA NÃO CRIADO)
+✅ Grafana (Monitoring):    http://localhost:3001 (admin:admin123) - FUNCIONANDO
+✅ Prometheus:              http://localhost:9090 - FUNCIONANDO
+✅ RabbitMQ Management:     http://localhost:15672 (admin:admin123) - FUNCIONANDO
+✅ PostgreSQL:              localhost:5432 (postgres:postgres) - FUNCIONANDO
+✅ Redis:                   localhost:6379 - FUNCIONANDO
 ```
 
 ### �📚 Recursos de Estudo
@@ -523,36 +558,46 @@ docker system prune -f                            # Limpar containers antigos
 - [ ] Redis CLI
 - [ ] kubectl
 
-### 🎯 **PRÓXIMAS TAREFAS PRIORITÁRIAS**
+### 🎯 **PRÓXIMAS TAREFAS PRIORITÁRIAS (REFORMULADO)**
 
-#### **Semana 1 (11-17 Agosto): Primeiro Microsserviço**
+#### **🚨 URGENTE - Próximas 24h (12/08/2025):**
 ```
-🏛️ deputados-service
-├── 📁 backend/services/deputados/
-├── 📄 cmd/server/main.go          # Entry point
-├── 📄 internal/domain/            # Entities
-├── 📄 internal/usecase/           # Business logic  
-├── 📄 internal/repository/        # Data access
-├── 📄 internal/handler/           # HTTP/gRPC
-└── 📄 internal/config/            # Configurações
+1. ❌ BACKEND VAZIO → ✅ API básica funcionando
+   └── Comandos: cd backend → go mod init → main.go → go run main.go
+   
+2. ❌ FRONTEND VAZIO → ✅ Interface consumindo API  
+   └── Comandos: cd frontend → npx create-next-app → npm run dev
+   
+3. ❌ SEM DEMO → ✅ Primeira tela funcionando
+   └── Lista de deputados (mesmo que mock) renderizando
 ```
 
-#### **Semana 2 (18-24 Agosto): API Câmara Integration**
-- Client HTTP resiliente
-- Rate limiting (100 req/min)
-- Cache Redis para dados frequentes
-- Jobs background para sincronização
+#### **Semana 1 (12-18 Agosto): Código Funcionando**
+```
+� deputados-backend/
+├── � main.go                 # Server Gin básico
+├── 📄 handlers/deputados.go   # GET /api/deputados
+├── 📄 models/deputado.go      # Struct Deputado
+└── 📄 services/camara.go      # Cliente API Câmara
 
-#### **Semana 3 (25-31 Agosto): Frontend Base**
-- Setup Next.js 15 completo
-- Componentes Shadcn/ui
-- Layout principal
-- Primeira página funcional
+🎯 to-de-olho-frontend/
+├── 📄 src/app/page.tsx        # Home page
+├── 📄 src/components/         # Card deputado, Header
+├── 📄 src/lib/api.ts          # Cliente HTTP
+└── 📄 src/types/              # TypeScript types
+```
 
-#### **Semana 4 (01-07 Setembro): Integração E2E**
-- Frontend consumindo API
-- Autenticação básica
-- Deploy de desenvolvimento
+#### **Semana 2 (19-25 Agosto): Dados Reais**
+- Integração completa API da Câmara
+- Persistência PostgreSQL via GORM
+- Caching Redis para performance
+- Deploy básico (Vercel + Railway)
+
+#### **Semana 3 (26-31 Agosto): Features Essenciais**
+- Busca e filtros funcionando
+- Gráficos de gastos (Recharts)
+- Responsividade mobile completa
+- Testes unitários básicos
 
 ---
 
@@ -664,20 +709,25 @@ gantt
 ---
 
 **📧 Contato**: Pedro Batista de Almeida Filho - IFBA  
-**📅 Última Atualização**: 10 de Agosto de 2025 - 22:00  
-**🔄 Próxima Revisão**: 17 de Agosto de 2025 (Semana 1 concluída)  
-**✅ Status Atual**: Setup Inicial 85% Concluído - **AMBIENTE FUNCIONANDO!**
+**📅 Última Atualização**: 11 de Agosto de 2025 - 22:52  
+**🔄 Próxima Revisão**: 12 de Agosto de 2025 (Backend básico implementado)  
+**✅ Status Atual**: Setup Inicial 85% Concluído - **INFRAESTRUTURA FUNCIONANDO**  
+**🚨 Gap Crítico**: **PRECISA DE CÓDIGO AGORA** (Backend e Frontend vazios)
 
 ---
 
 > 🎯 **Objetivo**: Desenvolver uma plataforma completa de transparência política que democratize o acesso aos dados da Câmara dos Deputados, promovendo maior engajamento democrático através de tecnologia, gamificação e participação social.
 
 > 🚀 **Progresso Hoje**: 
-> - ✅ Infraestrutura base 100% configurada
+> - ✅ Infraestrutura base 100% configurada e testada
+> - ✅ Documentação completa criada (.github/docs/)
 > - ✅ Monorepo estruturado  
-> - ✅ Docker Compose funcional e testado
-> - ✅ Scripts de automação criados
-> - ✅ Ambiente de desenvolvimento rodando
-> - 🎯 **Próximo**: Implementar primeiro microsserviço (deputados-service)
+> - ✅ Docker Compose funcional (5 containers rodando)
+> - ✅ Scripts de automação funcionando
+> - ❌ **Backend vazio - CRÍTICO**
+> - ❌ **Frontend básico - CRÍTICO**
+> - 🎯 **Próximo**: **IMPLEMENTAR CÓDIGO IMEDIATAMENTE**
 
-> **💡 Comando para começar**: `docker-compose -f docker-compose.dev.yml up -d`
+> **💡 Comando para ambiente**: `docker-compose -f docker-compose.dev.yml up -d`  
+> **🚨 Comando URGENTE**: Ver `START-AGORA.md` para implementação imediata  
+> **📋 Foco**: Seguir `TCC-PLANO-REALISTA.md` (MVP > Arquitetura perfeita)
