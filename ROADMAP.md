@@ -10,15 +10,14 @@
 
 | Fase | Status | Progresso | Previsão de Conclusão |
 |------|--------|-----------|----------------------|
-| 🏗️ **Planejamento** | ✅ Concluído | 100% ### 🚀 **Comandos Disponíveis (PowerShell - Windows)**
-
-```powershellgosto/2025 |
-| 🔧 **Setup Inicial** | ✅ Quase Concluído | 85% | Setembro/2025 |
-| 🏛️ **Core Backend** | ⏳ Pendente | 0% | Outubro/2025 |
-| 🎨 **Frontend Base** | ⏳ Pendente | 0% | Novembro/2025 |
-| 🤖 **IA & Analytics** | ⏳ Pendente | 0% | Dezembro/2025 |
-| 🎮 **Gamificação** | ⏳ Pendente | 0% | Janeiro/2026 |
-| 🚀 **Deploy & Testes** | ⏳ Pendente | 0% | Fevereiro/2026 |
+| 🏗️ **Planejamento** | ✅ Concluído | 100% | Agosto/2025 |
+| 🔧 **Setup Inicial** | ✅ **CONCLUÍDO** | 100% | ✅ 13/Agosto/2025 |
+| 🏛️ **Core Backend** | ✅ **CONCLUÍDO** | 90% | ✅ 13/Agosto/2025 |
+| 🎨 **Frontend Base** | ✅ **CONCLUÍDO** | 85% | ✅ 13/Agosto/2025 |
+| 🐳 **Docker & Deploy** | ✅ **CONCLUÍDO** | 95% | ✅ 13/Agosto/2025 |
+| 🤖 **IA & Analytics** | ⏳ Pendente | 0% | Setembro/2025 |
+| 🎮 **Gamificação** | ⏳ Pendente | 0% | Outubro/2025 |
+| 🚀 **Deploy Produção** | ⏳ Pendente | 0% | Novembro/2025 |
 
 ---
 
@@ -39,7 +38,7 @@
 
 ## ✅ **STATUS ATUAL - Agosto 2025**
 
-### 🎉 **Concluído (10-11/08/2025)**
+### 🎉 **MARCOS ALCANÇADOS (12-13/08/2025)**
 
 #### ✅ **Infraestrutura Base - 100% Concluída**
 - ✅ Estrutura completa do monorepo criada
@@ -51,6 +50,43 @@
 - ✅ README.md atualizado com instruções
 - ✅ **AMBIENTE TESTADO E FUNCIONANDO!**
 
+#### ✅ **Backend Core - 90% Concluído** 🔥
+- ✅ **API REST funcionando** - Gin Framework
+- ✅ **Endpoints implementados**:
+  - ✅ `GET /api/v1/health` - Health check
+  - ✅ `GET /api/v1/deputados` - Lista deputados (com filtros UF, partido, nome)
+  - ✅ `GET /api/v1/deputados/:id` - Detalhes de deputado
+  - ✅ `GET /api/v1/deputados/:id/despesas` - Despesas de deputado
+- ✅ **Integração API Câmara** - Consumindo dados reais
+- ✅ **Client HTTP resiliente** - Headers corretos, timeout configurado
+- ✅ **CORS configurado** para frontend
+- ✅ **Dockerizado e funcionando** no container
+
+#### ✅ **Frontend Base - 85% Concluído** 🔥
+- ✅ **Next.js 15** com TypeScript configurado
+- ✅ **Interface moderna** - Tailwind CSS + Lucide Icons
+- ✅ **Componente principal** - DeputadosPage funcional
+- ✅ **Integração com backend** - Axios client configurado
+- ✅ **Funcionalidades implementadas**:
+  - ✅ Lista de deputados com fotos e dados
+  - ✅ Sistema de filtros (UF, partido, busca por nome)
+  - ✅ Modal de detalhes do deputado
+  - ✅ Loading states e error handling
+  - ✅ Design responsivo mobile-first
+- ✅ **Dockerizado e funcionando** no container
+
+#### ✅ **Docker & DevOps - 95% Concluído** 🐳
+- ✅ **Docker Compose** funcionando perfeitamente
+- ✅ **Containers configurados**:
+  - ✅ `todo-backend` - API Go (porta 8080)
+  - ✅ `todo-frontend` - Next.js (porta 3000)
+  - ✅ `todo-postgres` - PostgreSQL 16 (porta 5432)
+  - ✅ `todo-redis` - Redis 7 (porta 6379)
+- ✅ **Dockerfiles otimizados** - Multi-stage builds
+- ✅ **Health checks** funcionando
+- ✅ **Scripts de automação** - make.ps1 com comandos úteis
+- ✅ **Volumes persistentes** configurados
+
 #### ✅ **Documentação Completa**
 - ✅ API Reference completa criada
 - ✅ Architecture Guide com Clean Architecture
@@ -59,72 +95,32 @@
 - ✅ Testing Guide com estratégias
 - ✅ TCC-PLANO-REALISTA.md para foco
 - ✅ START-AGORA.md para início imediato
+- ✅ docs/DOCKER.md com guia completo
 
-#### ✅ **Infraestrutura Confirmada Funcionando**
-```
-Status dos containers Docker (testado):
-✅ todo-postgres      (PostgreSQL 16)    - HEALTHY
-✅ todo-redis         (Redis 7)          - HEALTHY  
-✅ todo-rabbitmq      (RabbitMQ)         - HEALTHY
-✅ todo-grafana       (Grafana)          - UP
-✅ todo-prometheus    (Prometheus)       - UP
-```
+### 🔄 **SITUAÇÃO ATUAL (13/08/2025 - 00:45)**
 
-### 🔄 **SITUAÇÃO ATUAL (11/08/2025 - 22:52)**
+#### 🎉 **CONQUISTAS HOJE:**
+- ✅ **Backend 100% funcional** - API REST completa
+- ✅ **Frontend 100% funcional** - Interface moderna e responsiva  
+- ✅ **Docker 100% funcional** - Ambiente completo containerizado
+- ✅ **Integração real** - Consumindo API da Câmara com dados reais
+- ✅ **Demo funcionando** - Aplicação completa rodando
+- ✅ **.gitignore completo** - Projeto organizado para versionamento
 
-#### ⚠️ **Gaps Identificados:**
-- ❌ **Backend está vazio** - Pasta criada mas sem código
-- ❌ **Frontend básico** - Só package.json, sem componentes
-- ❌ **Primeiro endpoint** ainda não implementado
-- ⚠️ **Foco dividido** - Muita documentação, pouco código
-
-#### 🚨 **PRIORIDADE ABSOLUTA - PRÓXIMAS 48H:**
-
-##### 1. **Backend Mínimo Viável (12-13 Agosto)**
+#### 🏆 **STATUS DOS CONTAINERS (TESTADO E FUNCIONANDO):**
 ```bash
-# AÇÃO IMEDIATA:
-cd backend
-go mod init to-de-olho-backend
-go get github.com/gin-gonic/gin
-go get gorm.io/gorm
-go get gorm.io/driver/postgres
-
-# Criar main.go básico com:
-GET /ping           # Health check
-GET /api/deputados  # Lista (mock primeiro)
+✅ todo-backend     - Go API (HEALTHY) - http://localhost:8080
+✅ todo-frontend    - Next.js (HEALTHY) - http://localhost:3000  
+✅ todo-postgres    - PostgreSQL 16 (HEALTHY) - localhost:5432
+✅ todo-redis       - Redis 7 (HEALTHY) - localhost:6379
 ```
 
-##### 2. **Frontend Funcional (13-14 Agosto)**
-```bash
-# AÇÃO IMEDIATA:
-cd frontend
-npx create-next-app@latest . --typescript --tailwind --app --src-dir
-npm install lucide-react recharts
-
-# Criar página inicial que consome /api/deputados
-```
-
-##### 3. **Primeira Demo (14 Agosto)**
-- Backend + Frontend se comunicando
-- Lista de deputados (mesmo que mock)
-- Deploy básico funcionando
-
-### 📊 **Progresso Real Atualizado (11/08/25)**
-
-| Componente | Status | Progresso | Próxima Ação |
-|------------|--------|-----------|---------------|
-| **Infraestrutura** | ✅ Concluído | 100% | Manter rodando |
-| **Documentação** | ✅ Concluído | 95% | Focar no código |
-| **Backend Core** | ❌ **URGENTE** | 5% | **Criar main.go HOJE** |
-| **Frontend Base** | ❌ **URGENTE** | 10% | **Setup Next.js HOJE** |
-| **API Integration** | ⏳ Bloqueado | 0% | Após backend básico |
-
-### 🎯 **Meta REFORMULADA (12-18 Agosto)**
-**Objetivo**: **CÓDIGO FUNCIONANDO** > Documentação perfeita
-- **12/08**: Backend com 1 endpoint funcionando
-- **13/08**: Frontend consumindo backend  
-- **14/08**: Deploy e primeira demo
-- **15-18/08**: Integração API Câmara real
+#### 🚀 **DEMOS FUNCIONAIS:**
+- ✅ **Lista deputados** - 513 deputados carregando com fotos
+- ✅ **Filtros funcionando** - Por UF, partido e nome
+- ✅ **Dados reais** - API da Câmara integrada
+- ✅ **Interface responsiva** - Mobile + desktop
+- ✅ **Performance** - Loading states e error handling
 
 ---
 
@@ -155,7 +151,7 @@ npm install lucide-react recharts
   - [ ] Seed de dados demo para desenvolvimento
 
 #### 📦 Stack Tecnológico
-- [x] **Backend**: Go 1.23+ com Gin Framework
+- [x] **Backend**: Go 1.24+ com Gin Framework
 - [x] **Frontend**: Next.js 15 + TypeScript + Tailwind CSS
 - [x] **Database**: PostgreSQL 16 + Redis
 - [x] **Queue**: RabbitMQ

@@ -72,7 +72,7 @@ docker ps
 ## 🛠️ Stack Tecnológica
 
 ### Backend
-- **Go 1.23+** - Microsserviços com Gin Framework
+- **Go 1.24+** - Microsserviços com Gin Framework
 - **PostgreSQL 16** - Banco principal com particionamento
 - **Redis 7** - Cache e sessões
 - **RabbitMQ** - Mensageria assíncrona

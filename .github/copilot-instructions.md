@@ -17,7 +17,7 @@ O **"Tô De Olho"** é uma plataforma de transparência política que democratiz
 ## 🛠️ Stack Tecnológico (2025-2026)
 
 ```
-Backend:     Go 1.23+ (Clean Architecture + DDD)
+Backend:     Go 1.24+ (Clean Architecture + DDD)
 Frontend:    Next.js 15 + TypeScript + Tailwind CSS
 Database:    PostgreSQL 16 + Redis (cache)
 Queue:       RabbitMQ (mensageria assíncrona)

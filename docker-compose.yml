@@ -1,0 +1,90 @@
+# Docker Compose para Projeto "Tô De Olho"
+# Versão simplificada que inclui apenas os serviços essenciais
+
+services:
+  # Backend Go
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: todo-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - GIN_MODE=release
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=todo_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: todo-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  # Banco de Dados Principal
+  postgres:
+    image: postgres:16-alpine
+    container_name: todo-postgres
+    environment:
+      POSTGRES_DB: todo_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Cache Redis
+  redis:
+    image: redis:7-alpine
+    container_name: todo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - todo-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  todo-network:
+    driver: bridge

@@ -1,0 +1,34 @@
+# Ignorar arquivos desnecessários no build
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+vendor/
+
+# Go binary
+main
+*.exe
+
+# Testing
+coverage.txt
+*.test
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

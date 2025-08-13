@@ -18,7 +18,7 @@ O **"Tô De Olho"** é uma plataforma de transparência política para **TCC** q
 ## 🛠️ Stack SIMPLIFICADA (TCC-Friendly)
 
 ```
-Backend:     Go 1.23 + Gin + GORM (MONOLITO)
+Backend:     Go 1.24 + Gin + GORM (MONOLITO)
 Frontend:    Next.js 15 + TypeScript + Tailwind CSS
 Database:    PostgreSQL (simples, 3 tabelas principais)
 Deploy:      Vercel (frontend) + Railway (backend)
