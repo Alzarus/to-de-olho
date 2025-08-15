@@ -1,6 +1,3 @@
-# Docker Compose para Projeto "Tô De Olho"
-# Versão simplificada que inclui apenas os serviços essenciais
-
 services:
   # Backend Go
   backend:
@@ -26,6 +23,7 @@ services:
     networks:
       - todo-network
     restart: unless-stopped
+    command: ["./server"]
 
   # Frontend Next.js
   frontend:
@@ -81,6 +79,40 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    restart: unless-stopped
+
+  # Ingestor (tarefas de backfill/daily). Executa e finaliza.
+  ingestor:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=todo_dev
+    networks:
+      - todo-network
+    command: ["./ingestor", "-mode", "daily", "-years", "5"]
+    restart: "no"
+
+  # Adminer (UI para Postgres)
+  adminer:
+    image: adminer:4.8.1
+    container_name: todo-adminer
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - todo-network
+    ports:
+      - "8081:8080"
     restart: unless-stopped
 
 volumes:

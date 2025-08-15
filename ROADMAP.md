@@ -50,20 +50,20 @@
 - ✅ README.md atualizado com instruções
 - ✅ **AMBIENTE TESTADO E FUNCIONANDO!**
 
-#### ✅ **Backend Core - MVP de leitura funcional** 🔥
-- ✅ **API REST funcionando (MVP)** - Gin Framework
+#### ✅ **Backend Core - Arquitetura limpa + MVP funcional** 🔥
+- ✅ Reestruturação para Clean Architecture (cmd/server + internal/{domain,application,infrastructure,interfaces})
+- ✅ **API REST (Gin)** com middlewares (CORS, Recovery, Rate Limiting 100 req/min/IP)
 - ✅ **Endpoints implementados**:
-  - ✅ `GET /api/v1/health` - Health check
-  - ✅ `GET /api/v1/deputados` - Lista deputados (com filtros UF, partido, nome)
-  - ✅ `GET /api/v1/deputados/:id` - Detalhes de deputado
-  - ✅ `GET /api/v1/deputados/:id/despesas` - Despesas de deputado
-- ✅ **Integração API Câmara** – Consumindo dados reais com cliente resiliente (retry com backoff + rate limiter local)
-- ✅ **Cache Redis** read-through para lista, por ID e despesas (TTLs curtos)
-- ✅ **Persistência PostgreSQL** write-through (JSONB upsert para deputados)
-- ✅ **CORS configurado** para frontend
-- ✅ **Testes**: unidade para cliente HTTP (retry/backoff) concluída; pendentes testes de handlers
-- ⚠️ **Pendente**: Rate limiting por IP (middleware), métricas/observabilidade (Prometheus), fallback de leitura via Postgres quando API externa falhar
-- ✅ Dockerfile presente e compose expondo porta 8080
+  - ✅ `GET /api/v1/health`
+  - ✅ `GET /api/v1/deputados` (filtros UF, partido, nome)
+  - ✅ `GET /api/v1/deputados/:id`
+  - ✅ `GET /api/v1/deputados/:id/despesas`
+- ✅ **Cliente API Câmara** resiliente (retry + backoff + rate limit local)
+- ✅ **Cache Redis** read-through e **PostgreSQL** write-through (JSONB upsert)
+- ✅ **Fallback de leitura** via PostgreSQL quando a API externa falhar
+- ✅ **CORS** configurado para o frontend
+- ✅ **Testes**: retry/backoff do client concluído; próximos: handlers/services
+- ✅ Dockerfile multi-stage atualizado (binários server + ingestor)
 
 #### ✅ **Frontend Base - MVP funcional** 🔥
 - ✅ **Next.js 15** com TypeScript configurado
@@ -85,7 +85,7 @@
   - ✅ `todo-frontend` - Next.js (porta 3000)
   - ✅ `todo-postgres` - PostgreSQL 16 (porta 5432)
   - ✅ `todo-redis` - Redis 7 (porta 6379)
-- ✅ **Dockerfiles otimizados** - Multi-stage builds
+- ✅ **Dockerfiles otimizados** - Multi-stage builds (server e ingestor)
 - ✅ **Health checks** nos serviços de banco e cache
 - ✅ **Scripts de automação** - make.ps1 com comandos úteis
 - ✅ **Volumes persistentes** configurados
@@ -166,17 +166,17 @@ Redis 7         → localhost:6379
 
 ---
 
-### **FASE 2: Core Backend Services** 📅 Setembro-Outubro/2025
+### **FASE 2: Core Backend Services + Ingestão** 📅 Setembro-Outubro/2025
 
 #### 🏛️ Microsserviços Principais
 
 ##### 1. **deputados-service** 
-- [ ] Estrutura base do serviço
-- [ ] Models e domínio
-- [ ] Repository layer (PostgreSQL)
-- [ ] Business logic (use cases)
-- [ ] HTTP handlers (REST API)
-- [ ] Testes unitários
+- [x] Estrutura base do serviço (Clean Architecture)
+- [x] Models e domínio
+- [x] Repository layer (PostgreSQL JSONB)
+- [x] Business logic (use cases) + cache/fallback
+- [x] HTTP handlers (REST API)
+- [ ] Testes unitários (handlers/services)
 
 ##### 2. **atividades-service**
 - [ ] Gestão de proposições
@@ -197,13 +197,19 @@ Redis 7         → localhost:6379
 - [ ] Validação TSE para eleitores
 
 #### 🔗 Integrações Externas
-- [ ] **API Câmara dos Deputados (v2)**
-  - [ ] Client HTTP resiliente com retry e circuit breaker
-  - [ ] Rate limiting (100 req/min)
-  - [ ] Cache inteligente de dados frequentes
-  - [ ] Sync incremental e background jobs
-  - [ ] Monitoramento de health da API
-  - [ ] Fallback para dados cached em caso de indisponibilidade
+- [x] **API Câmara dos Deputados (v2)**
+  - [x] Client HTTP resiliente com retry e rate limiting local
+  - [x] Fallback para dados guardados (PostgreSQL/Redis)
+  - [ ] Circuit breaker e métricas Prometheus
+### 📥 Pipeline de Ingestão de Dados
+
+- ✅ Binário `ingestor` com dois modos:
+  - `backfill`: popular base histórica (parâmetro `-years`, padrão 5)
+  - `daily`: sincronização diária incremental
+- ✅ docker-compose com serviço `ingestor` one-off (executa e finaliza)
+- 🔜 Persistir despesas em tabela dedicada (schema + índices)
+- 🔜 Agendador (cron/k8s CronJob ou GitHub Actions) para rodar `daily`
+- 🔜 Observabilidade: métricas de ingestão (sucesso/latência) e logs estruturados
 
 - [ ] **Endpoints Prioritários da Câmara**
   - [ ] `/deputados` - Lista completa de deputados ativos
@@ -554,17 +560,17 @@ RabbitMQ:   http://localhost:15672 (admin/admin123)
 
 #### **🚨 URGENTE - Próximas 24h (14/08/2025):**
 ```
-1. Backend → Fallback de leitura via PostgreSQL quando a API da Câmara falhar
-  └── Usar dados cacheados (JSONB) como plano B para /deputados e /:id
+1. Ingestão → Persistência de despesas (modelo + repositório + migração)
+  └── Completar pipeline no `ingestor` para despesas por intervalo (ano atual + N anos)
 
-2. API pública → Rate limiting por IP/rota no servidor (100 req/min)
-  └── Middleware + headers (Retry-After) protegendo endpoints públicos
+2. Observabilidade → Métricas Prometheus e logs estruturados
+  └── Expor `/metrics`, instrumentar client externo e handlers
 
-3. Testes mínimos (ampliar)
-  └── Handlers (happy path + erros) e interações cache/persistência; medir cobertura
+3. Testes (ampliar)
+  └── Handlers e services; medir cobertura
 
-4. Observabilidade básica
-  └── Logs estruturados, métricas (Prometheus) e health do cliente externo
+4. Perfis de execução
+  └── Cron diário do `ingestor` (compose override/Actions) e task manual de backfill
 ```
 
 #### **Semana 1 (12-18 Agosto): Código Funcionando**
@@ -700,9 +706,9 @@ gantt
 ---
 
 **📧 Contato**: Pedro Batista de Almeida Filho - IFBA  
-**📅 Última Atualização**: 14 de Agosto de 2025  
-**🔄 Próxima Revisão**: 16 de Agosto de 2025  
-**✅ Status Atual**: MVP de leitura funcionando (backend + frontend) com cache Redis e persistência PostgreSQL. Pendente: fallback de leitura, rate limiting (middleware), métricas e ampliar testes/CI.
+**📅 Última Atualização**: 15 de Agosto de 2025  
+**🔄 Próxima Revisão**: 18 de Agosto de 2025  
+**✅ Status Atual**: Backend refatorado para Clean Architecture, rate limiting ativo, fallback de leitura via Postgres, binários server/ingestor prontos. Pendente: persistir despesas plenamente, métricas Prometheus, ampliar testes/CI.
 
 ---
 
@@ -719,4 +725,4 @@ gantt
 
 > **💡 Comando para ambiente**: `docker compose up -d`  
 > **🚨 Comando URGENTE**: Ver `START-AGORA.md` para fluxo de desenvolvimento local  
-> **📋 Foco**: Seguir `TCC-PLANO-REALISTA.md` (MVP > Arquitetura perfeita)
+> **📋 Foco**: Seguir `TCC-PLANO-REALISTA.md` (MVP > Arquitetura perfeita) + pipeline de ingestão consolidado
