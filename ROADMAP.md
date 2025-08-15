@@ -12,9 +12,9 @@
 |------|--------|-----------|----------------------|
 | 🏗️ **Planejamento** | ✅ Concluído | 100% | Agosto/2025 |
 | 🔧 **Setup Inicial** | ✅ **CONCLUÍDO** | 100% | ✅ 13/Agosto/2025 |
-| 🏛️ **Core Backend** | ✅ **CONCLUÍDO** | 90% | ✅ 13/Agosto/2025 |
-| 🎨 **Frontend Base** | ✅ **CONCLUÍDO** | 85% | ✅ 13/Agosto/2025 |
-| 🐳 **Docker & Deploy** | ✅ **CONCLUÍDO** | 95% | ✅ 13/Agosto/2025 |
+| 🏛️ **Core Backend** | 🔄 Em Andamento | 50% | — |
+| 🎨 **Frontend Base** | 🔄 Em Andamento | 50% | — |
+| 🐳 **Docker & Deploy** | 🔄 Em Andamento | 70% | — |
 | 🤖 **IA & Analytics** | ⏳ Pendente | 0% | Setembro/2025 |
 | 🎮 **Gamificação** | ⏳ Pendente | 0% | Outubro/2025 |
 | 🚀 **Deploy Produção** | ⏳ Pendente | 0% | Novembro/2025 |
@@ -50,19 +50,22 @@
 - ✅ README.md atualizado com instruções
 - ✅ **AMBIENTE TESTADO E FUNCIONANDO!**
 
-#### ✅ **Backend Core - 90% Concluído** 🔥
-- ✅ **API REST funcionando** - Gin Framework
+#### ✅ **Backend Core - MVP de leitura funcional** 🔥
+- ✅ **API REST funcionando (MVP)** - Gin Framework
 - ✅ **Endpoints implementados**:
   - ✅ `GET /api/v1/health` - Health check
   - ✅ `GET /api/v1/deputados` - Lista deputados (com filtros UF, partido, nome)
   - ✅ `GET /api/v1/deputados/:id` - Detalhes de deputado
   - ✅ `GET /api/v1/deputados/:id/despesas` - Despesas de deputado
-- ✅ **Integração API Câmara** - Consumindo dados reais
-- ✅ **Client HTTP resiliente** - Headers corretos, timeout configurado
+- ✅ **Integração API Câmara** – Consumindo dados reais com cliente resiliente (retry com backoff + rate limiter local)
+- ✅ **Cache Redis** read-through para lista, por ID e despesas (TTLs curtos)
+- ✅ **Persistência PostgreSQL** write-through (JSONB upsert para deputados)
 - ✅ **CORS configurado** para frontend
-- ✅ **Dockerizado e funcionando** no container
+- ✅ **Testes**: unidade para cliente HTTP (retry/backoff) concluída; pendentes testes de handlers
+- ⚠️ **Pendente**: Rate limiting por IP (middleware), métricas/observabilidade (Prometheus), fallback de leitura via Postgres quando API externa falhar
+- ✅ Dockerfile presente e compose expondo porta 8080
 
-#### ✅ **Frontend Base - 85% Concluído** 🔥
+#### ✅ **Frontend Base - MVP funcional** 🔥
 - ✅ **Next.js 15** com TypeScript configurado
 - ✅ **Interface moderna** - Tailwind CSS + Lucide Icons
 - ✅ **Componente principal** - DeputadosPage funcional
@@ -73,17 +76,17 @@
   - ✅ Modal de detalhes do deputado
   - ✅ Loading states e error handling
   - ✅ Design responsivo mobile-first
-- ✅ **Dockerizado e funcionando** no container
+- ✅ Dockerfile presente; integração com backend local
 
-#### ✅ **Docker & DevOps - 95% Concluído** 🐳
-- ✅ **Docker Compose** funcionando perfeitamente
+#### ✅ **Docker & DevOps - Base pronta** 🐳
+- ✅ **Docker Compose** básico (backend, frontend, Postgres, Redis)
 - ✅ **Containers configurados**:
   - ✅ `todo-backend` - API Go (porta 8080)
   - ✅ `todo-frontend` - Next.js (porta 3000)
   - ✅ `todo-postgres` - PostgreSQL 16 (porta 5432)
   - ✅ `todo-redis` - Redis 7 (porta 6379)
 - ✅ **Dockerfiles otimizados** - Multi-stage builds
-- ✅ **Health checks** funcionando
+- ✅ **Health checks** nos serviços de banco e cache
 - ✅ **Scripts de automação** - make.ps1 com comandos úteis
 - ✅ **Volumes persistentes** configurados
 
@@ -97,22 +100,25 @@
 - ✅ START-AGORA.md para início imediato
 - ✅ docs/DOCKER.md com guia completo
 
-### 🔄 **SITUAÇÃO ATUAL (13/08/2025 - 00:45)**
+### 🔄 **SITUAÇÃO ATUAL (14/08/2025)**
 
 #### 🎉 **CONQUISTAS HOJE:**
-- ✅ **Backend 100% funcional** - API REST completa
-- ✅ **Frontend 100% funcional** - Interface moderna e responsiva  
-- ✅ **Docker 100% funcional** - Ambiente completo containerizado
+- ✅ **Backend MVP funcional** - Endpoints de leitura integrados à API da Câmara
+- ✅ **Frontend MVP funcional** - Lista de deputados com filtros e estados de UI  
+- ✅ **Docker funcional** - Compose com backend, frontend, Postgres e Redis
 - ✅ **Integração real** - Consumindo API da Câmara com dados reais
-- ✅ **Demo funcionando** - Aplicação completa rodando
+- ✅ **Cache Redis ativo** e **persistência PostgreSQL** (write-through) nos fluxos de leitura
+- ✅ **Cliente HTTP resiliente** com retry/backoff e rate limiting local
+- ✅ **Smoke tests** locais (PowerShell/Invoke-RestMethod) confirmam endpoints
+- ✅ **Demo local** - Aplicação roda em ambiente de desenvolvimento
 - ✅ **.gitignore completo** - Projeto organizado para versionamento
 
-#### 🏆 **STATUS DOS CONTAINERS (TESTADO E FUNCIONANDO):**
+#### 🏆 **SERVIÇOS E PORTAS:**
 ```bash
-✅ todo-backend     - Go API (HEALTHY) - http://localhost:8080
-✅ todo-frontend    - Next.js (HEALTHY) - http://localhost:3000  
-✅ todo-postgres    - PostgreSQL 16 (HEALTHY) - localhost:5432
-✅ todo-redis       - Redis 7 (HEALTHY) - localhost:6379
+Backend (Go)    → http://localhost:8080
+Frontend (Web)  → http://localhost:3000  
+PostgreSQL 16   → localhost:5432
+Redis 7         → localhost:6379
 ```
 
 #### 🚀 **DEMOS FUNCIONAIS:**
@@ -453,7 +459,7 @@
 ### 🎯 KPIs Técnicos
 | Métrica | Meta | Status Atual |
 |---------|------|--------------|
-| **Cobertura de Testes** | >80% | 0% |
+| **Cobertura de Testes** | >80% | Inicial (cliente HTTP); ampliar para handlers |
 | **Performance API** | <200ms | - |
 | **Uptime** | >99.5% | - |
 | **Dados Atualizados** | Daily | - |
@@ -489,56 +495,46 @@
 
 ## 📝 Notas de Desenvolvimento
 
-### 🚀 **Comandos Disponíveis (Atualizado 11/08/2025)**
+### 🚀 **Comandos Disponíveis (Atualizado 14/08/2025)**
 
 ```powershell
-# === AMBIENTE FUNCIONANDO (✅ TESTADO) ===
-docker-compose -f docker-compose.dev.yml up -d    # Iniciar ambiente
-docker-compose -f docker-compose.dev.yml down     # Parar ambiente
-docker ps                                         # Ver containers rodando
-docker-compose -f docker-compose.dev.yml logs -f  # Ver logs
+# === SUBIR AMBIENTE COM DOCKER ===
+docker compose up -d                 # Iniciar backend, frontend, Postgres e Redis
+docker compose ps                    # Status dos serviços
+docker compose logs -f backend       # Logs do backend
+docker compose down                  # Parar ambiente
 
-# === PRÓXIMAS AÇÕES IMEDIATAS ===
-# 1. Backend mínimo viável (URGENTE)
-cd backend
-go mod init to-de-olho-backend
-go get github.com/gin-gonic/gin github.com/gin-contrib/cors github.com/joho/godotenv
+# === DESENVOLVIMENTO LOCAL (sem Docker para app) ===
+./make.ps1 dev-infra                # Sobe Postgres + Redis
+./scripts/start-dev.ps1            # Abre backend (Go) e frontend (Next) em janelas separadas
 
-# 2. Frontend básico (URGENTE)
-cd ../frontend  
-npx create-next-app@latest . --typescript --tailwind --app --src-dir
-npm install lucide-react recharts axios
-
-# 3. Testar API Câmara (1 comando)
-node -e "
-const https = require('https');
-const url = 'https://dadosabertos.camara.leg.br/api/v2/deputados?itens=5';
-https.get(url, res => {
-  let data = '';
-  res.on('data', chunk => data += chunk);
-  res.on('end', () => console.log('✅ API Câmara funcionando:', JSON.parse(data).dados.length, 'deputados'));
-}).on('error', err => console.error('❌', err.message));
-"
+# === TESTAR API DA CÂMARA ===
+node .\scripts\test-api.js
 
 # === DEBUG E MANUTENÇÃO ===
-docker stats                                      # Estatísticas containers
-docker exec -it todo-postgres psql -U postgres   # Acesso PostgreSQL
-docker exec -it todo-redis redis-cli              # Acesso Redis
-docker system prune -f                            # Limpeza
+docker stats
+docker exec -it todo-postgres psql -U postgres
+docker exec -it todo-redis redis-cli
+
+# === SMOKE TEST (PowerShell) ===
+Invoke-RestMethod -Uri 'http://localhost:8080/api/v1/health'
+Invoke-RestMethod -Uri 'http://localhost:8080/api/v1/deputados?siglaUf=SP&itens=5'
 ```
 
 ### 🌐 **URLs do Ambiente Local**
 ```
-⚠️  Frontend:               http://localhost:3000 (AINDA NÃO CRIADO)
-⚠️  Backend:                http://localhost:8080 (AINDA NÃO CRIADO)
-✅ Grafana (Monitoring):    http://localhost:3001 (admin:admin123) - FUNCIONANDO
-✅ Prometheus:              http://localhost:9090 - FUNCIONANDO
-✅ RabbitMQ Management:     http://localhost:15672 (admin:admin123) - FUNCIONANDO
-✅ PostgreSQL:              localhost:5432 (postgres:postgres) - FUNCIONANDO
-✅ Redis:                   localhost:6379 - FUNCIONANDO
+Frontend:   http://localhost:3000  (quando o container ou npm run dev estiver ativo)
+Backend:    http://localhost:8080/api/v1
+PostgreSQL: localhost:5432 (postgres/postgres)
+Redis:      localhost:6379
+
+Opcional (se configurados em compose separado):
+Grafana:    http://localhost:3001 (admin/admin123)
+Prometheus: http://localhost:9090
+RabbitMQ:   http://localhost:15672 (admin/admin123)
 ```
 
-### �📚 Recursos de Estudo
+### 📚 Recursos de Estudo
 - [ ] API Câmara dos Deputados - Documentação completa
 - [ ] Go best practices - Clean Architecture
 - [ ] Next.js 15 - App Router patterns
@@ -554,38 +550,37 @@ docker system prune -f                            # Limpeza
 - [ ] Redis CLI
 - [ ] kubectl
 
-### 🎯 **PRÓXIMAS TAREFAS PRIORITÁRIAS (REFORMULADO)**
+### 🎯 **PRÓXIMAS TAREFAS PRIORITÁRIAS (ATUALIZADO)**
 
-#### **🚨 URGENTE - Próximas 24h (12/08/2025):**
+#### **🚨 URGENTE - Próximas 24h (14/08/2025):**
 ```
-1. ❌ BACKEND VAZIO → ✅ API básica funcionando
-   └── Comandos: cd backend → go mod init → main.go → go run main.go
-   
-2. ❌ FRONTEND VAZIO → ✅ Interface consumindo API  
-   └── Comandos: cd frontend → npx create-next-app → npm run dev
-   
-3. ❌ SEM DEMO → ✅ Primeira tela funcionando
-   └── Lista de deputados (mesmo que mock) renderizando
+1. Backend → Fallback de leitura via PostgreSQL quando a API da Câmara falhar
+  └── Usar dados cacheados (JSONB) como plano B para /deputados e /:id
+
+2. API pública → Rate limiting por IP/rota no servidor (100 req/min)
+  └── Middleware + headers (Retry-After) protegendo endpoints públicos
+
+3. Testes mínimos (ampliar)
+  └── Handlers (happy path + erros) e interações cache/persistência; medir cobertura
+
+4. Observabilidade básica
+  └── Logs estruturados, métricas (Prometheus) e health do cliente externo
 ```
 
 #### **Semana 1 (12-18 Agosto): Código Funcionando**
 ```
-� deputados-backend/
-├── � main.go                 # Server Gin básico
-├── 📄 handlers/deputados.go   # GET /api/deputados
-├── 📄 models/deputado.go      # Struct Deputado
-└── 📄 services/camara.go      # Cliente API Câmara
+🧱 backend/
+├── 📄 main.go                 # Server Gin + rotas /api/v1
+├── 📄 api_client.go           # Cliente API Câmara
 
-🎯 to-de-olho-frontend/
+🎯 frontend/
 ├── 📄 src/app/page.tsx        # Home page
-├── 📄 src/components/         # Card deputado, Header
-├── 📄 src/lib/api.ts          # Cliente HTTP
-└── 📄 src/types/              # TypeScript types
+├── 📄 src/components/         # DeputadosPage e UI
 ```
 
 #### **Semana 2 (19-25 Agosto): Dados Reais**
 - Integração completa API da Câmara
-- Persistência PostgreSQL via GORM
+- Persistência PostgreSQL via pgx/pgxpool
 - Caching Redis para performance
 - Deploy básico (Vercel + Railway)
 
@@ -705,10 +700,9 @@ gantt
 ---
 
 **📧 Contato**: Pedro Batista de Almeida Filho - IFBA  
-**📅 Última Atualização**: 11 de Agosto de 2025 - 22:52  
-**🔄 Próxima Revisão**: 12 de Agosto de 2025 (Backend básico implementado)  
-**✅ Status Atual**: Setup Inicial 85% Concluído - **INFRAESTRUTURA FUNCIONANDO**  
-**🚨 Gap Crítico**: **PRECISA DE CÓDIGO AGORA** (Backend e Frontend vazios)
+**📅 Última Atualização**: 14 de Agosto de 2025  
+**🔄 Próxima Revisão**: 16 de Agosto de 2025  
+**✅ Status Atual**: MVP de leitura funcionando (backend + frontend) com cache Redis e persistência PostgreSQL. Pendente: fallback de leitura, rate limiting (middleware), métricas e ampliar testes/CI.
 
 ---
 
@@ -718,12 +712,11 @@ gantt
 > - ✅ Infraestrutura base 100% configurada e testada
 > - ✅ Documentação completa criada (.github/docs/)
 > - ✅ Monorepo estruturado  
-> - ✅ Docker Compose funcional (5 containers rodando)
+> - ✅ Docker Compose funcional (serviços principais)
 > - ✅ Scripts de automação funcionando
-> - ❌ **Backend vazio - CRÍTICO**
-> - ❌ **Frontend básico - CRÍTICO**
-> - 🎯 **Próximo**: **IMPLEMENTAR CÓDIGO IMEDIATAMENTE**
+> - ✅ Cache Redis e persistência PostgreSQL implementados
+> - 🎯 **Próximo**: Fallback de leitura, rate limiting por IP/rota, métricas e testes de handlers
 
-> **💡 Comando para ambiente**: `docker-compose -f docker-compose.dev.yml up -d`  
-> **🚨 Comando URGENTE**: Ver `START-AGORA.md` para implementação imediata  
+> **💡 Comando para ambiente**: `docker compose up -d`  
+> **🚨 Comando URGENTE**: Ver `START-AGORA.md` para fluxo de desenvolvimento local  
 > **📋 Foco**: Seguir `TCC-PLANO-REALISTA.md` (MVP > Arquitetura perfeita)

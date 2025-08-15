@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -52,10 +55,21 @@ type APIResponseDespesas struct {
 
 func main() {
 	// Carregar variáveis de ambiente
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Println("Aviso: arquivo .env não encontrado")
 	}
+
+	// Contexto base
+	ctx := context.Background()
+
+	// Conexões e clients
+	pgPool, err := newPostgresPool(ctx)
+	if err != nil {
+		log.Printf("Aviso: não foi possível conectar ao Postgres: %v", err)
+	}
+	cache := newCache()
+	repo := NewDeputadoRepository(pgPool)
+	client := NewCamaraClient("", 30*time.Second, 2, 4)
 
 	// Configurar Gin
 	r := gin.Default()
@@ -76,9 +90,9 @@ func main() {
 	api := r.Group("/api/v1")
 	{
 		api.GET("/health", healthCheck)
-		api.GET("/deputados", getDeputados)
-		api.GET("/deputados/:id", getDeputadoByID)
-		api.GET("/deputados/:id/despesas", getDespesasDeputado)
+		api.GET("/deputados", func(c *gin.Context) { getDeputados(c, ctx, cache, client, repo) })
+		api.GET("/deputados/:id", func(c *gin.Context) { getDeputadoByID(c, ctx, cache, client) })
+		api.GET("/deputados/:id/despesas", func(c *gin.Context) { getDespesasDeputado(c, ctx, cache, client) })
 	}
 
 	// Porta do servidor
@@ -103,20 +117,39 @@ func healthCheck(c *gin.Context) {
 	})
 }
 
-func getDeputados(c *gin.Context) {
+func getDeputados(c *gin.Context, ctx context.Context, cache *Cache, client *CamaraClient, repo *DeputadoRepository) {
 	// Parâmetros de query
 	partido := c.Query("partido")
 	uf := c.Query("uf")
 	nome := c.Query("nome")
 
+	// Cache key
+	keyBytes, _ := json.Marshal(map[string]string{"p": partido, "u": uf, "n": nome})
+	cacheKey := "deputados:" + string(keyBytes)
+
+	// Tenta cache
+	if v, ok := cache.Get(ctx, cacheKey); ok && v != "" {
+		var cached []Deputado
+		if err := json.Unmarshal([]byte(v), &cached); err == nil {
+			c.JSON(http.StatusOK, gin.H{"data": cached, "total": len(cached), "source": "cache"})
+			return
+		}
+	}
+
 	// Chamar API da Câmara
-	deputados, err := fetchDeputadosFromAPI(partido, uf, nome)
+	deputados, err := client.FetchDeputados(ctx, partido, uf, nome)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Erro ao buscar deputados",
 			"details": err.Error(),
 		})
 		return
+	}
+
+	// Persistência leve e cache
+	_ = repo.UpsertDeputados(ctx, deputados)
+	if b, err := json.Marshal(deputados); err == nil {
+		cache.Set(ctx, cacheKey, string(b), 2*time.Minute)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -126,10 +159,17 @@ func getDeputados(c *gin.Context) {
 	})
 }
 
-func getDeputadoByID(c *gin.Context) {
+func getDeputadoByID(c *gin.Context, ctx context.Context, cache *Cache, client *CamaraClient) {
 	id := c.Param("id")
+	if v, ok := cache.Get(ctx, "deputado:"+id); ok && v != "" {
+		var d Deputado
+		if err := json.Unmarshal([]byte(v), &d); err == nil {
+			c.JSON(http.StatusOK, gin.H{"data": d, "source": "cache"})
+			return
+		}
+	}
 
-	deputado, err := fetchDeputadoByIDFromAPI(id)
+	deputado, err := client.FetchDeputadoByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   "Deputado não encontrado",
@@ -138,17 +178,33 @@ func getDeputadoByID(c *gin.Context) {
 		return
 	}
 
+	if b, err := json.Marshal(deputado); err == nil {
+		cache.Set(ctx, "deputado:"+id, string(b), 5*time.Minute)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"data":   deputado,
 		"source": "API Câmara dos Deputados",
 	})
 }
 
-func getDespesasDeputado(c *gin.Context) {
+func getDespesasDeputado(c *gin.Context, ctx context.Context, cache *Cache, client *CamaraClient) {
 	id := c.Param("id")
 	ano := c.DefaultQuery("ano", "2025")
+	cacheKey := "despesas:" + id + ":" + ano
+	if v, ok := cache.Get(ctx, cacheKey); ok && v != "" {
+		var cached []Despesa
+		if err := json.Unmarshal([]byte(v), &cached); err == nil {
+			var t float64
+			for _, d := range cached {
+				t += d.ValorLiquido
+			}
+			c.JSON(http.StatusOK, gin.H{"data": cached, "total": len(cached), "valor_total": t, "ano": ano, "source": "cache"})
+			return
+		}
+	}
 
-	despesas, err := fetchDespesasFromAPI(id, ano)
+	despesas, err := client.FetchDespesas(ctx, id, ano)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Erro ao buscar despesas",
@@ -161,6 +217,10 @@ func getDespesasDeputado(c *gin.Context) {
 	var total float64
 	for _, despesa := range despesas {
 		total += despesa.ValorLiquido
+	}
+
+	if b, err := json.Marshal(despesas); err == nil {
+		cache.Set(ctx, cacheKey, string(b), 1*time.Minute)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
