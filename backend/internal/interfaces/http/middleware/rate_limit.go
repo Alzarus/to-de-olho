@@ -35,19 +35,25 @@ func newBucket(capacity int, per time.Duration) *tokenBucket {
 func (b *tokenBucket) allow() bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	// refill
-	now := time.Now()
-	elapsed := now.Sub(b.lastRefill).Seconds()
-	refilled := int(elapsed * b.refillRate)
-	if refilled > 0 {
-		b.remaining = min(b.capacity, b.remaining+refilled)
-		b.lastRefill = now
-	}
+	b.refill(time.Since(b.lastRefill))
 	if b.remaining <= 0 {
 		return false
 	}
 	b.remaining--
 	return true
+}
+
+func (b *tokenBucket) refill(elapsed time.Duration) {
+	refilled := int(elapsed.Seconds() * b.refillRate)
+	if refilled > 0 {
+		b.remaining = min(b.capacity, b.remaining+refilled)
+		b.lastRefill = time.Now()
+	}
+}
+
+// RateLimit é um alias para RateLimitPerIP para compatibilidade
+func RateLimit(capacity int, window time.Duration) gin.HandlerFunc {
+	return RateLimitPerIP(capacity, window)
 }
 
 func min(a, b int) int {
@@ -86,10 +92,19 @@ func RateLimitPerIP(capacity int, window time.Duration) gin.HandlerFunc {
 		mu.Unlock()
 
 		if !v.limiter.allow() {
+			c.Header("X-RateLimit-Limit", strconv.Itoa(capacity))
+			c.Header("X-RateLimit-Remaining", "0")
+			c.Header("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(window).Unix(), 10))
 			c.Header("Retry-After", strconv.Itoa(int(window.Seconds())))
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "rate limit exceeded"})
 			return
 		}
+
+		// Adicionar headers informativos para requisições permitidas
+		c.Header("X-RateLimit-Limit", strconv.Itoa(capacity))
+		c.Header("X-RateLimit-Remaining", strconv.Itoa(v.limiter.remaining))
+		c.Header("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(window).Unix(), 10))
+
 		c.Next()
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetDeputadosHandler(svc *application.DeputadosService) gin.HandlerFunc {
+func GetDeputadosHandler(svc application.DeputadosServiceInterface) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		partido := c.Query("partido")
 		uf := c.Query("uf")
@@ -24,7 +24,7 @@ func GetDeputadosHandler(svc *application.DeputadosService) gin.HandlerFunc {
 	}
 }
 
-func GetDeputadoByIDHandler(svc *application.DeputadosService) gin.HandlerFunc {
+func GetDeputadoByIDHandler(svc application.DeputadosServiceInterface) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		dep, source, err := svc.BuscarDeputadoPorID(c.Request.Context(), id)
@@ -36,7 +36,7 @@ func GetDeputadoByIDHandler(svc *application.DeputadosService) gin.HandlerFunc {
 	}
 }
 
-func GetDespesasDeputadoHandler(svc *application.DeputadosService) gin.HandlerFunc {
+func GetDespesasDeputadoHandler(svc application.DeputadosServiceInterface) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		ano := c.DefaultQuery("ano", strconv.Itoa(time.Now().Year()))

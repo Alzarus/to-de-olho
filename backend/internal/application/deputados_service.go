@@ -3,10 +3,18 @@ package application
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"to-de-olho-backend/internal/domain"
 )
+
+// Service interface - define o contrato do serviço
+type DeputadosServiceInterface interface {
+	ListarDeputados(ctx context.Context, partido, uf, nome string) ([]domain.Deputado, string, error)
+	BuscarDeputadoPorID(ctx context.Context, id string) (*domain.Deputado, string, error)
+	ListarDespesas(ctx context.Context, deputadoID, ano string) ([]domain.Despesa, string, error)
+}
 
 // Ports (interfaces)
 type CamaraPort interface {
@@ -64,6 +72,11 @@ func (s *DeputadosService) ListarDeputados(ctx context.Context, partido, uf, nom
 }
 
 func (s *DeputadosService) BuscarDeputadoPorID(ctx context.Context, id string) (*domain.Deputado, string, error) {
+	// Validar ID não vazio
+	if id == "" {
+		return nil, "", errors.New("ID do deputado é obrigatório")
+	}
+
 	if v, ok := s.cache.Get(ctx, "deputado:"+id); ok && v != "" {
 		var d domain.Deputado
 		if err := json.Unmarshal([]byte(v), &d); err == nil {
