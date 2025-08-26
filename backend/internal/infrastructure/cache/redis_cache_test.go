@@ -11,11 +11,11 @@ func TestNew(t *testing.T) {
 	// Salvar variáveis originais
 	originalHost := os.Getenv("REDIS_HOST")
 	originalPort := os.Getenv("REDIS_PORT")
-	
+
 	// Limpar variáveis para testar defaults
 	os.Unsetenv("REDIS_HOST")
 	os.Unsetenv("REDIS_PORT")
-	
+
 	defer func() {
 		// Restaurar variáveis originais
 		if originalHost != "" {
@@ -66,7 +66,7 @@ func TestNew(t *testing.T) {
 			} else {
 				os.Unsetenv("REDIS_HOST")
 			}
-			
+
 			if tt.port != "" {
 				os.Setenv("REDIS_PORT", tt.port)
 			} else {
@@ -74,12 +74,12 @@ func TestNew(t *testing.T) {
 			}
 
 			cache := New()
-			
+
 			if cache == nil {
 				t.Error("New() deveria retornar uma instância válida")
 				return
 			}
-			
+
 			if cache.rdb == nil {
 				t.Error("cliente Redis não foi inicializado")
 				return
@@ -137,31 +137,31 @@ func TestCache_GetSet(t *testing.T) {
 						t.Errorf("Set() causou panic: %v - %s", r, tt.description)
 					}
 				}()
-				
+
 				tt.cache.Set(ctx, tt.key, tt.value, tt.ttl)
 			}()
 
 			// Test Get (não deveria causar panic)
 			var result string
 			var exists bool
-			
+
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
 						t.Errorf("Get() causou panic: %v - %s", r, tt.description)
 					}
 				}()
-				
+
 				result, exists = tt.cache.Get(ctx, tt.key)
 			}()
 
 			if exists != tt.shouldExist {
-				t.Errorf("existência esperada: %v, recebida: %v - %s", 
+				t.Errorf("existência esperada: %v, recebida: %v - %s",
 					tt.shouldExist, exists, tt.description)
 			}
 
 			if tt.shouldExist && result != tt.value {
-				t.Errorf("valor esperado: %s, recebido: %s - %s", 
+				t.Errorf("valor esperado: %s, recebido: %s - %s",
 					tt.value, result, tt.description)
 			}
 		})
@@ -172,13 +172,13 @@ func TestCache_GetNotFound(t *testing.T) {
 	// Teste com cache válido mas sem Redis real
 	cache := &Cache{rdb: nil}
 	ctx := context.Background()
-	
+
 	value, exists := cache.Get(ctx, "key-inexistente")
-	
+
 	if exists {
 		t.Error("chave inexistente deveria retornar false")
 	}
-	
+
 	if value != "" {
 		t.Errorf("valor deveria ser string vazia, recebeu: %s", value)
 	}
@@ -187,7 +187,7 @@ func TestCache_GetNotFound(t *testing.T) {
 func TestCache_SetWithDifferentTTL(t *testing.T) {
 	cache := &Cache{rdb: nil}
 	ctx := context.Background()
-	
+
 	tests := []struct {
 		name string
 		ttl  time.Duration
@@ -206,7 +206,7 @@ func TestCache_SetWithDifferentTTL(t *testing.T) {
 					t.Errorf("Set com TTL %v causou panic: %v", tt.ttl, r)
 				}
 			}()
-			
+
 			cache.Set(ctx, "test-key", "test-value", tt.ttl)
 		})
 	}
@@ -239,7 +239,7 @@ func TestCache_EdgeCases(t *testing.T) {
 
 func TestCache_ContextCancellation(t *testing.T) {
 	cache := &Cache{rdb: nil}
-	
+
 	// Contexto já cancelado
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -259,7 +259,7 @@ func TestCache_ContextCancellation(t *testing.T) {
 func BenchmarkCache_Set(b *testing.B) {
 	cache := &Cache{rdb: nil}
 	ctx := context.Background()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		cache.Set(ctx, "benchmark-key", "benchmark-value", 1*time.Minute)
@@ -269,10 +269,10 @@ func BenchmarkCache_Set(b *testing.B) {
 func BenchmarkCache_Get(b *testing.B) {
 	cache := &Cache{rdb: nil}
 	ctx := context.Background()
-	
+
 	// Setup
 	cache.Set(ctx, "benchmark-key", "benchmark-value", 1*time.Minute)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		cache.Get(ctx, "benchmark-key")
