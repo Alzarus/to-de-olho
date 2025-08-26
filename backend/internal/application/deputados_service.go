@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"to-de-olho-backend/internal/domain"
@@ -44,9 +45,7 @@ func NewDeputadosService(client CamaraPort, cache CachePort, repo DeputadoReposi
 }
 
 func (s *DeputadosService) ListarDeputados(ctx context.Context, partido, uf, nome string) ([]domain.Deputado, string, error) {
-	// Cache key simples
-	keyBytes, _ := json.Marshal(map[string]string{"p": partido, "u": uf, "n": nome})
-	cacheKey := "deputados:" + string(keyBytes)
+	cacheKey := fmt.Sprintf("deputados:p=%s:u=%s:n=%s", partido, uf, nome)
 	if v, ok := s.cache.Get(ctx, cacheKey); ok && v != "" {
 		var cached []domain.Deputado
 		if err := json.Unmarshal([]byte(v), &cached); err == nil {

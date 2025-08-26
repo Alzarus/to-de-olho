@@ -58,9 +58,6 @@ go.work.sum
 # Dependency directories (vendoring)
 vendor/
 
-# Go modules download cache
-go.sum
-
 # IDE
 .vscode/settings.json
 .idea/

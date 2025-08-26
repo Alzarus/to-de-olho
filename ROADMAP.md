@@ -188,18 +188,6 @@ Redis 7         → localhost:6379
    - Melhorar UI/UX
    - Adicionar mais filtros
 
-#### 🚀 **DEMOS FUNCIONAIS:**
-- ✅ **Lista deputados** - 513 deputados carregando com fotos
-- ✅ **Filtros funcionando** - Por UF, partido e nome
-- ✅ **Dados reais** - API da Câmara integrada
-- ✅ **Interface responsiva** - Mobile + desktop
-- ✅ **Performance** - Loading states e error handling
-- ✅ **Lista deputados** - 513 deputados carregando com fotos
-- ✅ **Filtros funcionando** - Por UF, partido e nome
-- ✅ **Dados reais** - API da Câmara integrada
-- ✅ **Interface responsiva** - Mobile + desktop
-- ✅ **Performance** - Loading states e error handling
-
 ---
 
 ## 🏗️ Fases de Desenvolvimento

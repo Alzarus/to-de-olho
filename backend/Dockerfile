@@ -35,6 +35,7 @@ WORKDIR /app
 # Copiar binário da aplicação
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/ingestor ./ingestor
+# TODO: INJETAR CONFIGURACOES EM TEMPO DE EXECUCAO
 COPY --from=builder /app/.env* ./
 
 # Mudar ownership para usuário não-root
