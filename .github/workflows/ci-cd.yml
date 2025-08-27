@@ -94,27 +94,27 @@ jobs:
           fi
           echo "✅ Coverage ${COVERAGE}% meets requirement"
 
-      - name: 🔒 Security scan with gosec
-        working-directory: ./backend
-        run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-          gosec -fmt json -out gosec-report.json ./...
+    - name: 🔒 Security scan with gosec
+      working-directory: ./backend
+      run: |
+        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+        gosec -fmt json -out gosec-report.json ./...
 
-      - name: 📈 Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./backend/coverage.out
-          flags: backend
-          name: backend-coverage
+    - name: 📈 Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.out
+        flags: backend
+        name: backend-coverage
 
-      - name: 📋 Upload test artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: backend-test-results
-          path: |
-            backend/coverage.html
-            backend/gosec-report.json
+    - name: 📋 Upload test artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: backend-test-results
+        path: |
+          backend/coverage.html
+          backend/gosec-report.json
 
   # 🎨 Frontend Tests
   test-frontend:
