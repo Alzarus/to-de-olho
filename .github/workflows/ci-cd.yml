@@ -97,8 +97,8 @@ jobs:
     - name: 🔒 Security scan with gosec
       working-directory: ./backend
       run: |
-        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-        gosec -fmt json -out gosec-report.json ./...
+        go install github.com/securego/gosec/v2/cmd/gosec@latest
+        $(go env GOPATH)/bin/gosec -fmt json -out gosec-report.json ./...
 
     - name: 📈 Upload coverage to Codecov
       uses: codecov/codecov-action@v3
