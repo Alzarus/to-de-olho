@@ -192,5 +192,3 @@ func BenchmarkDeputadoRepository_ListFromCache(b *testing.B) {
 		repo.ListFromCache(ctx, 100)
 	}
 }
-
-// end of file: deputado_repository_test.go (normalized to LF)
