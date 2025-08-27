@@ -68,53 +68,53 @@ jobs:
           exit 1
         fi
 
-  - name: 🏃‍♂️ Run unit tests (internal packages only)
-      working-directory: ./backend
-      env:
-        DB_HOST: localhost
-        DB_PORT: 5432
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_NAME: todo_test
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
-      run: |
-    echo "➡️ Executando testes apenas em ./internal/... (excluindo entrypoints cmd/*)"
-    go test -v -race -coverprofile=coverage.out ./internal/...
-        go tool cover -html=coverage.out -o coverage.html
+    - name: 🏃‍♂️ Run unit tests (internal packages only)
+        working-directory: ./backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: todo_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: |
+      echo "➡️ Executando testes apenas em ./internal/... (excluindo entrypoints cmd/*)"
+      go test -v -race -coverprofile=coverage.out ./internal/...
+          go tool cover -html=coverage.out -o coverage.html
 
-  - name: 📊 Coverage check (internal code)
-      working-directory: ./backend
-      run: |
-    COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
-        echo "📊 Coverage: ${COVERAGE}%"
-        if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-          echo "❌ Coverage ${COVERAGE}% is below minimum 80%"
-          exit 1
-        fi
-        echo "✅ Coverage ${COVERAGE}% meets requirement"
+    - name: 📊 Coverage check (internal code)
+        working-directory: ./backend
+        run: |
+      COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+          echo "📊 Coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below minimum 80%"
+            exit 1
+          fi
+          echo "✅ Coverage ${COVERAGE}% meets requirement"
 
-    - name: 🔒 Security scan with gosec
-      working-directory: ./backend
-      run: |
-        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-        gosec -fmt json -out gosec-report.json ./...
+      - name: 🔒 Security scan with gosec
+        working-directory: ./backend
+        run: |
+          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+          gosec -fmt json -out gosec-report.json ./...
 
-    - name: 📈 Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./backend/coverage.out
-        flags: backend
-        name: backend-coverage
+      - name: 📈 Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.out
+          flags: backend
+          name: backend-coverage
 
-    - name: 📋 Upload test artifacts
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: backend-test-results
-        path: |
-          backend/coverage.html
-          backend/gosec-report.json
+      - name: 📋 Upload test artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: |
+            backend/coverage.html
+            backend/gosec-report.json
 
   # 🎨 Frontend Tests
   test-frontend:
