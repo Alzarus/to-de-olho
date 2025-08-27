@@ -7,14 +7,22 @@ import (
 
 	"to-de-olho-backend/internal/domain"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type DeputadoRepository struct {
-	db *pgxpool.Pool
+// DB abstracts the subset of pgxpool.Pool used, enabling mocking in unit tests.
+type DB interface {
+	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 }
 
-func NewDeputadoRepository(db *pgxpool.Pool) *DeputadoRepository {
+type DeputadoRepository struct {
+	db DB
+}
+
+func NewDeputadoRepository(db *pgxpool.Pool) *DeputadoRepository { // keep signature for existing callers
 	return &DeputadoRepository{db: db}
 }
 

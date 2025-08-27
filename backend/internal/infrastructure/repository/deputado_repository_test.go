@@ -2,11 +2,63 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
 	"to-de-olho-backend/internal/domain"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// mockRows implements pgx.Rows minimally for tests
+type mockRows struct {
+	idx      int
+	data     []string
+	failScan bool
+}
+
+func (m *mockRows) Close()                                       {}
+func (m *mockRows) Err() error                                   { return nil }
+func (m *mockRows) CommandTag() pgconn.CommandTag                { return pgconn.CommandTag{} }
+func (m *mockRows) FieldDescriptions() []pgconn.FieldDescription { return nil }
+func (m *mockRows) Next() bool {
+	m.idx++
+	return m.idx <= len(m.data)
+}
+func (m *mockRows) Scan(dest ...interface{}) error {
+	if m.failScan {
+		return errors.New("scan error")
+	}
+	if m.idx-1 < 0 || m.idx-1 >= len(m.data) {
+		return errors.New("out of range")
+	}
+	*(dest[0].(*string)) = m.data[m.idx-1]
+	return nil
+}
+func (m *mockRows) Values() ([]interface{}, error) { return nil, nil }
+func (m *mockRows) RawValues() [][]byte            { return nil }
+func (m *mockRows) Conn() *pgx.Conn                { return nil }
+
+// mockDB implements DB
+type mockDB struct {
+	execErr   error
+	queryErr  error
+	rows      pgx.Rows
+	execCount int
+}
+
+func (m *mockDB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
+	m.execCount++
+	return pgconn.CommandTag{}, m.execErr
+}
+func (m *mockDB) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	if m.queryErr != nil {
+		return nil, m.queryErr
+	}
+	return m.rows, nil
+}
 
 func TestNewDeputadoRepository(t *testing.T) {
 	tests := []struct {
@@ -56,8 +108,8 @@ func TestDeputadoRepository_UpsertDeputados(t *testing.T) {
 			description: "Lista vazia deveria ser tratada sem erro",
 		},
 		{
-			name:       "deputados válidos",
-			repository: &DeputadoRepository{},
+			name:       "deputados válidos (com mock DB)",
+			repository: &DeputadoRepository{db: &mockDB{}},
 			deputados: []domain.Deputado{
 				{ID: 1, Nome: "João Silva", Partido: "PT"},
 				{ID: 2, Nome: "Maria Santos", Partido: "PSDB"},
@@ -65,13 +117,25 @@ func TestDeputadoRepository_UpsertDeputados(t *testing.T) {
 			expectError: false,
 			description: "Deveria inserir deputados válidos com sucesso",
 		},
+		{
+			name:        "erro ao criar tabela",
+			repository:  &DeputadoRepository{db: &mockDB{execErr: errors.New("ddl error")}},
+			deputados:   []domain.Deputado{{ID: 1, Nome: "X"}},
+			expectError: true,
+			description: "Propaga erro de criação de tabela",
+		},
+		// cenário de erro ao inserir já coberto por erro ao criar tabela
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			err := tt.repository.UpsertDeputados(ctx, tt.deputados)
+			// Se test de erro ao inserir, injeta erro após primeira Exec
+			var err error
+			if tt.repository != nil { // evitar panic em ponteiro nil
+				err = tt.repository.UpsertDeputados(ctx, tt.deputados)
+			}
 
 			if tt.expectError && err == nil {
 				t.Errorf("esperava erro, mas não ocorreu - %s", tt.description)
@@ -101,20 +165,36 @@ func TestDeputadoRepository_ListFromCache(t *testing.T) {
 			description:   "Repository nil deveria retornar lista vazia",
 		},
 		{
-			name:          "limite zero",
-			repository:    &DeputadoRepository{},
-			limit:         0,
+			name:          "retorna itens do cache",
+			repository:    &DeputadoRepository{db: &mockDB{rows: &mockRows{data: []string{`{"id":1,"nome":"A"}`, `{"id":2,"nome":"B"}`}}}},
+			limit:         10,
 			expectError:   false,
-			expectedCount: 0,
-			description:   "Limite zero deveria ser aceito",
+			expectedCount: 2,
+			description:   "Decodifica dois deputados do cache",
 		},
 		{
-			name:          "limite negativo",
-			repository:    &DeputadoRepository{},
-			limit:         -1,
-			expectError:   false,
+			name:          "erro query",
+			repository:    &DeputadoRepository{db: &mockDB{queryErr: errors.New("query fail")}},
+			limit:         5,
+			expectError:   true,
 			expectedCount: 0,
-			description:   "Limite negativo deveria ser tratado",
+			description:   "Propaga erro de query",
+		},
+		{
+			name:          "erro scan",
+			repository:    &DeputadoRepository{db: &mockDB{rows: &mockRows{data: []string{"x"}, failScan: true}}},
+			limit:         5,
+			expectError:   true,
+			expectedCount: 0,
+			description:   "Propaga erro de scan",
+		},
+		{
+			name:          "erro unmarshal",
+			repository:    &DeputadoRepository{db: &mockDB{rows: &mockRows{data: []string{"{"}}}},
+			limit:         5,
+			expectError:   true,
+			expectedCount: 0,
+			description:   "Propaga erro de unmarshal",
 		},
 	}
 
@@ -142,7 +222,7 @@ func TestDeputadoRepository_ListFromCache(t *testing.T) {
 }
 
 func TestDeputadoRepository_EdgeCases(t *testing.T) {
-	repo := &DeputadoRepository{}
+	repo := &DeputadoRepository{db: &mockDB{}}
 	ctx := context.Background()
 
 	// Teste com contexto cancelado

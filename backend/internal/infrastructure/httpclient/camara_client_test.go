@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -236,4 +238,143 @@ func TestCamaraClient_ContextCancellation(t *testing.T) {
 	if err == nil {
 		t.Error("esperava erro de contexto cancelado")
 	}
+}
+
+// ---- Novos testes adicionais para cobertura ----
+
+func TestCamaraClient_FetchDeputadosPaged_NormalizaParametros(t *testing.T) {
+	var captured []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured = append(captured, r.URL.RawQuery)
+		json.NewEncoder(w).Encode(map[string]any{"dados": []map[string]any{}})
+	}))
+	defer server.Close()
+	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+
+	// itens >100 deve virar 100; pagina <=0 vira 1 (observamos apenas que request acontece sem erro)
+	_, err := client.FetchDeputadosPaged(context.Background(), "", "", "", -5, 1000)
+	if err != nil {
+		t.Fatalf("erro inesperado: %v", err)
+	}
+	if len(captured) == 0 || !containsAll(captured[0], []string{"pagina=1", "itens=100"}) {
+		t.Fatalf("query não normalizada corretamente: %v", captured)
+	}
+}
+
+func TestCamaraClient_FetchAllDeputados_PaginacaoCompleta(t *testing.T) {
+	var page1Served, page2Served bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := r.URL.Query().Get("pagina")
+		switch p {
+		case "1":
+			page1Served = true
+			json.NewEncoder(w).Encode(map[string]any{"dados": []map[string]any{{"id": 1, "nome": "Dep 1"}}})
+		case "2":
+			page2Served = true
+			json.NewEncoder(w).Encode(map[string]any{"dados": []map[string]any{{"id": 2, "nome": "Dep 2"}}})
+		default:
+			json.NewEncoder(w).Encode(map[string]any{"dados": []map[string]any{}})
+		}
+	}))
+	defer server.Close()
+	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	deps, err := client.FetchAllDeputados(context.Background())
+	if err != nil {
+		t.Fatalf("erro inesperado: %v", err)
+	}
+	if len(deps) != 2 {
+		t.Fatalf("esperava 2 deps, obteve %d", len(deps))
+	}
+	if !page1Served || !page2Served {
+		t.Fatalf("páginas não servidas corretamente p1=%v p2=%v", page1Served, page2Served)
+	}
+}
+
+func TestCamaraClient_JSONInvalido(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{invalid"))
+	}))
+	defer server.Close()
+	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	if _, err := client.FetchDeputados(context.Background(), "", "", ""); err == nil {
+		t.Fatalf("esperava erro de JSON inválido")
+	}
+}
+
+func TestCamaraClient_RetryComSucessoNaTerceiraTentativa(t *testing.T) {
+	var count int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := atomic.AddInt32(&count, 1)
+		if c < 3 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{"dados": []map[string]any{{"id": 1, "nome": "Ok"}}})
+	}))
+	defer server.Close()
+	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	deps, err := client.FetchDeputados(context.Background(), "", "", "")
+	if err != nil {
+		t.Fatalf("não esperava erro após retries: %v", err)
+	}
+	if len(deps) != 1 {
+		t.Fatalf("esperava 1 dep, obteve %d", len(deps))
+	}
+	if count != 3 {
+		t.Fatalf("esperava 3 tentativas, obteve %d", count)
+	}
+}
+
+func TestCamaraClient_RetryFalhaApos3Tentativas(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	defer server.Close()
+	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	if _, err := client.FetchDeputados(context.Background(), "", "", ""); err == nil {
+		t.Fatalf("esperava erro após 3 tentativas sem sucesso")
+	}
+}
+
+func TestCamaraClient_LimiterContextCancel(t *testing.T) {
+	// Usamos um limiter com alta latência simulada cancelando contexto antes de Wait
+	client := &CamaraClient{baseURL: "http://127.0.0.1", httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(rate.Limit(1), 0)}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := client.FetchDeputados(ctx, "", "", "")
+	if err == nil {
+		t.Fatalf("esperava erro por contexto cancelado antes do limiter")
+	}
+}
+
+func TestCamaraClient_FetchDespesas_JSONInvalido(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{bad"))
+	}))
+	defer server.Close()
+	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	if _, err := client.FetchDespesas(context.Background(), "123", "2024"); err == nil {
+		t.Fatalf("esperava erro de JSON inválido despesas")
+	}
+}
+
+func TestCamaraClient_FetchDeputadoByID_ERROStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	if _, err := client.FetchDeputadoByID(context.Background(), "999"); err == nil {
+		t.Fatalf("esperava erro status 404")
+	}
+}
+
+// helper
+func containsAll(s string, parts []string) bool {
+	for _, p := range parts {
+		if !strings.Contains(s, p) {
+			return false
+		}
+	}
+	return true
 }
