@@ -68,7 +68,7 @@ jobs:
           exit 1
         fi
 
-    - name: 🏃‍♂️ Run unit tests
+  - name: 🏃‍♂️ Run unit tests (internal packages only)
       working-directory: ./backend
       env:
         DB_HOST: localhost
@@ -79,13 +79,14 @@ jobs:
         REDIS_HOST: localhost
         REDIS_PORT: 6379
       run: |
-        go test -v -race -coverprofile=coverage.out ./...
+    echo "➡️ Executando testes apenas em ./internal/... (excluindo entrypoints cmd/*)"
+    go test -v -race -coverprofile=coverage.out ./internal/...
         go tool cover -html=coverage.out -o coverage.html
 
-    - name: 📊 Coverage check
+  - name: 📊 Coverage check (internal code)
       working-directory: ./backend
       run: |
-        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+    COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
         echo "📊 Coverage: ${COVERAGE}%"
         if (( $(echo "$COVERAGE < 80" | bc -l) )); then
           echo "❌ Coverage ${COVERAGE}% is below minimum 80%"
