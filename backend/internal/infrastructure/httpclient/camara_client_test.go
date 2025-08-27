@@ -237,3 +237,5 @@ func TestCamaraClient_ContextCancellation(t *testing.T) {
 		t.Error("esperava erro de contexto cancelado")
 	}
 }
+
+// end of file: camara_client_test.go (normalized to LF)

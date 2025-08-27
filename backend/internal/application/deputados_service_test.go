@@ -105,9 +105,11 @@ func TestDeputadosService_ListarDeputados(t *testing.T) {
 			uf:             "RJ",
 			nome:           "",
 			expectedSource: "cache",
-			cacheData: map[string]string{
-				`deputados:{"n":"","p":"PSDB","u":"RJ"}`: `[{"id":3,"nome":"Pedro Oliveira","siglaPartido":"PSDB","siglaUf":"RJ"}]`,
-			},
+			cacheData: func() map[string]string {
+				m := make(map[string]string)
+				m[buildDeputadosCacheKey("PSDB", "RJ", "")] = `[{"id":3,"nome":"Pedro Oliveira","siglaPartido":"PSDB","siglaUf":"RJ"}]`
+				return m
+			}(),
 			expectError: false,
 		},
 		{

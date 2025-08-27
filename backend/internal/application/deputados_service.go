@@ -45,7 +45,7 @@ func NewDeputadosService(client CamaraPort, cache CachePort, repo DeputadoReposi
 }
 
 func (s *DeputadosService) ListarDeputados(ctx context.Context, partido, uf, nome string) ([]domain.Deputado, string, error) {
-	cacheKey := fmt.Sprintf("deputados:p=%s:u=%s:n=%s", partido, uf, nome)
+	cacheKey := buildDeputadosCacheKey(partido, uf, nome)
 	if v, ok := s.cache.Get(ctx, cacheKey); ok && v != "" {
 		var cached []domain.Deputado
 		if err := json.Unmarshal([]byte(v), &cached); err == nil {
@@ -68,6 +68,12 @@ func (s *DeputadosService) ListarDeputados(ctx context.Context, partido, uf, nom
 		s.cache.Set(ctx, cacheKey, string(b), 2*time.Minute)
 	}
 	return deputados, "api", nil
+}
+
+// buildDeputadosCacheKey centraliza o formato da chave de cache de listagem
+// para evitar divergência entre implementação e testes.
+func buildDeputadosCacheKey(partido, uf, nome string) string {
+	return fmt.Sprintf("deputados:p=%s:u=%s:n=%s", partido, uf, nome)
 }
 
 func (s *DeputadosService) BuscarDeputadoPorID(ctx context.Context, id string) (*domain.Deputado, string, error) {
