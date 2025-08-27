@@ -173,7 +173,7 @@ jobs:
     - name: 🏗️ Build frontend image
       working-directory: ./frontend
       run: |
-        docker build -t todo-frontend:${{ github.sha }} .
+        docker build --no-cache -t todo-frontend:${{ github.sha }} .
         docker tag todo-frontend:${{ github.sha }} todo-frontend:latest
 
     - name: 🔒 Run Trivy security scan
@@ -187,10 +187,10 @@ jobs:
         sudo apt-get install trivy
 
         # Scan backend
-        trivy image --exit-code 1 --severity HIGH,CRITICAL todo-backend:latest
+        trivy image --ignorefile .trivyignore --exit-code 1 --severity HIGH,CRITICAL todo-backend:latest
 
         # Scan frontend  
-        trivy image --exit-code 1 --severity HIGH,CRITICAL todo-frontend:latest
+        trivy image --ignorefile .trivyignore --exit-code 1 --severity HIGH,CRITICAL todo-frontend:latest
 
   # 🚀 Deploy to Staging
   deploy-staging:

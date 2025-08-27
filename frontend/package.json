@@ -29,5 +29,8 @@
     "eslint-config-next": "15.4.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "cross-spawn": "7.0.6"
   }
 }
