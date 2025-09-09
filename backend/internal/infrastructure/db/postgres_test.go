@@ -18,12 +18,48 @@ func TestGetenv(t *testing.T) {
 }
 
 func TestNewPostgresPool_ErroConfig(t *testing.T) {
-	// Força erro alterando variável para uma URL inválida (porta não numérica) - alterando apenas porta deve ainda parsear, então usamos user com caracteres
-	os.Setenv("DB_HOST", "localhost")
-	os.Setenv("DB_PORT", "5432")
-	os.Setenv("DB_USER", "invalid user\n") // quebra parse
-	os.Setenv("DB_PASSWORD", "x")
-	os.Setenv("DB_NAME", "foo")
+	// Salvar valores originais para restaurar depois
+	origHost := os.Getenv("POSTGRES_HOST")
+	origPort := os.Getenv("POSTGRES_PORT")
+	origUser := os.Getenv("POSTGRES_USER")
+	origPass := os.Getenv("POSTGRES_PASSWORD")
+	origDB := os.Getenv("POSTGRES_DB")
+
+	// Restaurar valores originais após o teste
+	defer func() {
+		if origHost != "" {
+			os.Setenv("POSTGRES_HOST", origHost)
+		} else {
+			os.Unsetenv("POSTGRES_HOST")
+		}
+		if origPort != "" {
+			os.Setenv("POSTGRES_PORT", origPort)
+		} else {
+			os.Unsetenv("POSTGRES_PORT")
+		}
+		if origUser != "" {
+			os.Setenv("POSTGRES_USER", origUser)
+		} else {
+			os.Unsetenv("POSTGRES_USER")
+		}
+		if origPass != "" {
+			os.Setenv("POSTGRES_PASSWORD", origPass)
+		} else {
+			os.Unsetenv("POSTGRES_PASSWORD")
+		}
+		if origDB != "" {
+			os.Setenv("POSTGRES_DB", origDB)
+		} else {
+			os.Unsetenv("POSTGRES_DB")
+		}
+	}()
+
+	// Força erro alterando variável para uma URL inválida - user com caracteres inválidos deve quebrar parse
+	os.Setenv("POSTGRES_HOST", "localhost")
+	os.Setenv("POSTGRES_PORT", "5432")
+	os.Setenv("POSTGRES_USER", "invalid user\n") // quebra parse
+	os.Setenv("POSTGRES_PASSWORD", "x")
+	os.Setenv("POSTGRES_DB", "foo")
 	if _, err := NewPostgresPool(context.Background()); err == nil {
 		t.Fatalf("esperava erro de parse config")
 	}

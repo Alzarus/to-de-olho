@@ -15,10 +15,22 @@ type Cache struct {
 }
 
 func New() *Cache {
+	// Primeiro tenta usar REDIS_ADDR diretamente
 	addr := os.Getenv("REDIS_ADDR")
+
+	// Se não estiver definido, constrói a partir de REDIS_HOST e REDIS_PORT
 	if addr == "" {
-		addr = "localhost:6379"
+		host := os.Getenv("REDIS_HOST")
+		if host == "" {
+			host = "localhost"
+		}
+		port := os.Getenv("REDIS_PORT")
+		if port == "" {
+			port = "6379"
+		}
+		addr = host + ":" + port
 	}
+
 	password := os.Getenv("REDIS_PASSWORD")
 
 	c := redis.NewClient(&redis.Options{

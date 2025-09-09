@@ -2,19 +2,13 @@ package migrations
 
 import (
 	"context"
-	"embed"
 	"fmt"
-	"io/fs"
 	"log"
-	"sort"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-//go:embed *.sql
-var migrationFiles embed.FS
-
+// Migration represents a database migration
 type Migration struct {
 	Version int
 	Name    string
@@ -37,98 +31,66 @@ func (m *Migrator) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to create migrations table: %w", err)
 	}
 
-	migrations, err := m.loadMigrations()
-	if err != nil {
-		return fmt.Errorf("failed to load migrations: %w", err)
-	}
-
+	migrations := m.getMigrations()
 	appliedMigrations, err := m.getAppliedMigrations(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get applied migrations: %w", err)
 	}
 
 	for _, migration := range migrations {
-		if _, applied := appliedMigrations[migration.Version]; !applied {
-			log.Printf("Applying migration %d: %s", migration.Version, migration.Name)
-
-			if err := m.applyMigration(ctx, migration); err != nil {
-				return fmt.Errorf("failed to apply migration %d: %w", migration.Version, err)
-			}
-
-			log.Printf("Successfully applied migration %d", migration.Version)
+		if m.isMigrationApplied(appliedMigrations, migration.Version) {
+			log.Printf("Migration %03d_%s already applied, skipping", migration.Version, migration.Name)
+			continue
 		}
+
+		log.Printf("Applying migration %03d_%s", migration.Version, migration.Name)
+		if err := m.applyMigration(ctx, migration); err != nil {
+			return fmt.Errorf("failed to apply migration %03d_%s: %w", migration.Version, migration.Name, err)
+		}
+		log.Printf("Successfully applied migration %03d_%s", migration.Version, migration.Name)
 	}
 
-	log.Printf("All migrations applied successfully")
+	log.Println("All migrations completed successfully")
 	return nil
 }
 
+// getMigrations returns all available migrations (hardcoded for CI/CD compatibility)
+func (m *Migrator) getMigrations() []Migration {
+	return []Migration{
+		{
+			Version: 1,
+			Name:    "create_deputados_cache",
+			SQL: `-- Migration: Create deputados_cache table
+-- Version: 001
+-- Description: Initial table for caching deputy data from API
+
+CREATE TABLE IF NOT EXISTS deputados_cache (
+    id INT PRIMARY KEY,
+    payload JSONB NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for faster queries
+CREATE INDEX IF NOT EXISTS idx_deputados_cache_updated_at ON deputados_cache(updated_at);`,
+		},
+	}
+}
+
+// createMigrationsTable creates the migrations tracking table
 func (m *Migrator) createMigrationsTable(ctx context.Context) error {
 	query := `
 		CREATE TABLE IF NOT EXISTS schema_migrations (
 			version INTEGER PRIMARY KEY,
-			name VARCHAR(255) NOT NULL,
 			applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
+		);
 	`
 	_, err := m.db.Exec(ctx, query)
 	return err
 }
 
-func (m *Migrator) loadMigrations() ([]Migration, error) {
-	var migrations []Migration
-
-	err := fs.WalkDir(migrationFiles, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() || !strings.HasSuffix(path, ".sql") {
-			return nil
-		}
-
-		content, err := migrationFiles.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		// Extract version from filename (e.g., "001_create_table.sql" -> 1)
-		parts := strings.Split(path, "_")
-		if len(parts) < 2 {
-			return fmt.Errorf("invalid migration filename: %s", path)
-		}
-
-		var version int
-		if _, err := fmt.Sscanf(parts[0], "%d", &version); err != nil {
-			return fmt.Errorf("invalid version in filename %s: %w", path, err)
-		}
-
-		name := strings.TrimSuffix(strings.Join(parts[1:], "_"), ".sql")
-
-		migrations = append(migrations, Migration{
-			Version: version,
-			Name:    name,
-			SQL:     string(content),
-		})
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	// Sort migrations by version
-	sort.Slice(migrations, func(i, j int) bool {
-		return migrations[i].Version < migrations[j].Version
-	})
-
-	return migrations, nil
-}
-
+// getAppliedMigrations returns a list of applied migration versions
 func (m *Migrator) getAppliedMigrations(ctx context.Context) (map[int]bool, error) {
-	query := "SELECT version FROM schema_migrations"
-	rows, err := m.db.Query(ctx, query)
+	rows, err := m.db.Query(ctx, "SELECT version FROM schema_migrations ORDER BY version")
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +108,12 @@ func (m *Migrator) getAppliedMigrations(ctx context.Context) (map[int]bool, erro
 	return applied, rows.Err()
 }
 
+// isMigrationApplied checks if a migration has been applied
+func (m *Migrator) isMigrationApplied(applied map[int]bool, version int) bool {
+	return applied[version]
+}
+
+// applyMigration applies a single migration
 func (m *Migrator) applyMigration(ctx context.Context, migration Migration) error {
 	tx, err := m.db.Begin(ctx)
 	if err != nil {
@@ -153,17 +121,17 @@ func (m *Migrator) applyMigration(ctx context.Context, migration Migration) erro
 	}
 	defer tx.Rollback(ctx)
 
-	// Execute migration SQL
-	if _, err := tx.Exec(ctx, migration.SQL); err != nil {
+	// Execute the migration SQL
+	_, err = tx.Exec(ctx, migration.SQL)
+	if err != nil {
 		return fmt.Errorf("failed to execute migration SQL: %w", err)
 	}
 
-	// Record migration as applied
-	insertQuery := `
-		INSERT INTO schema_migrations (version, name) 
-		VALUES ($1, $2)
-	`
-	if _, err := tx.Exec(ctx, insertQuery, migration.Version, migration.Name); err != nil {
+	// Record the migration as applied
+	_, err = tx.Exec(ctx,
+		"INSERT INTO schema_migrations (version) VALUES ($1)",
+		migration.Version)
+	if err != nil {
 		return fmt.Errorf("failed to record migration: %w", err)
 	}
 
