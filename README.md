@@ -45,29 +45,34 @@ docker ps
 - [x] Configuração inicial Go modules
 - [x] Scripts de bootstrap e automação
 - [x] Makefile com comandos úteis
+- [x] **Sistema de configuração centralizada**
+- [x] **Melhores práticas de variáveis de ambiente**
+- [x] **Sistema de migrações de banco**
+- [x] **API básica de deputados funcionando**
+- [x] **Frontend com integração à API**
+- [x] **Cache Redis implementado**
+- [x] **Rate limiting configurável**
 
 #### 🔄 **Em Andamento**
-- [ ] **Setup dos Microsserviços Go**
-  - [ ] `deputados-service` - Gestão de parlamentares
+- [ ] **Microsserviços Avançados**
   - [ ] `atividades-service` - Proposições e votações
   - [ ] `despesas-service` - Análise de gastos
   - [ ] `usuarios-service` - Autenticação e perfis
   - [ ] `forum-service` - Discussões cidadãs
 
 #### ⏳ **Próximas**
-- [ ] **Integração API Câmara**
-  - [ ] Client HTTP resiliente
-  - [ ] Sistema de rate limiting (100 req/min)
-  - [ ] Cache inteligente Redis
-  - [ ] Jobs background para sync
-- [ ] **Database Schema**
-  - [ ] Migrações PostgreSQL
-  - [ ] Seed de dados demo
-  - [ ] Índices otimizados
-- [ ] **Frontend Next.js 15**
-  - [ ] Setup TypeScript + Tailwind
-  - [ ] Componentes Shadcn/ui
-  - [ ] Sistema de autenticação
+- [ ] **Integração API Câmara Avançada**
+  - [ ] Jobs background para sync completo
+  - [ ] Webhook handlers
+  - [ ] Data enrichment com IA
+- [ ] **Features Frontend**
+  - [ ] Dashboard interativo
+  - [ ] Sistema de busca avançada
+  - [ ] Componentes de visualização
+- [ ] **Sistema de Autenticação**
+  - [ ] OAuth2 com Google/GitHub
+  - [ ] Perfis de usuário
+  - [ ] Sistema de gamificação
 
 ## 🛠️ Stack Tecnológica
 
@@ -94,17 +99,51 @@ docker ps
 
 ```bash
 # Desenvolvimento
-docker-compose -f docker-compose.dev.yml up -d    # Inicia ambiente completo
-docker-compose -f docker-compose.dev.yml ps       # Status dos serviços
-docker-compose -f docker-compose.dev.yml logs -f  # Ver logs dos serviços
-docker-compose -f docker-compose.dev.yml down     # Parar serviços
+docker-compose up -d                              # Inicia ambiente completo
+docker-compose ps                                 # Status dos serviços
+docker-compose logs -f                            # Ver logs dos serviços
+docker-compose down                               # Parar serviços
 
 # Acesso direto aos serviços
 docker exec -it todeolho-postgres psql -U admin -d todeolho
 docker exec -it todeolho-redis redis-cli
-
-# Para comandos completos, consulte COMANDOS.md
 ```
+
+## ⚙️ Configuração
+
+### Variáveis de Ambiente
+
+O projeto utiliza configuração centralizada e tipada. Copie o template:
+
+```bash
+# Backend
+cp backend/.env.example backend/.env
+
+# Frontend
+cp frontend/.env.example frontend/.env
+```
+
+#### Variáveis Principais
+
+```bash
+# Servidor
+PORT=8080
+GIN_MODE=release
+RATE_LIMIT_RPS=100
+
+# Banco PostgreSQL (OBRIGATÓRIO)
+POSTGRES_PASSWORD=sua_senha_segura
+
+# API Câmara dos Deputados
+CAMARA_CLIENT_RPS=2        # Requests por segundo (max: 100/min)
+CAMARA_CLIENT_TIMEOUT=30s  # Timeout das requisições
+
+# Redis Cache
+REDIS_ADDR=localhost:6379
+REDIS_PASSWORD=            # Deixar vazio para desenvolvimento
+```
+
+**📋 Documentação Completa**: [Environment Variables Best Practices](.github/docs/environment-variables-best-practices.md)
 
 ## 📁 Estrutura do Projeto
 

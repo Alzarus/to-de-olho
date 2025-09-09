@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"to-de-olho-backend/internal/config"
+
 	"github.com/redis/go-redis/v9"
 )
 
@@ -13,22 +15,32 @@ type Cache struct {
 }
 
 func New() *Cache {
-	host := os.Getenv("REDIS_HOST")
-	if host == "" {
-		host = "localhost"
+	addr := os.Getenv("REDIS_ADDR")
+	if addr == "" {
+		addr = "localhost:6379"
 	}
-	port := os.Getenv("REDIS_PORT")
-	if port == "" {
-		port = "6379"
-	}
-	addr := host + ":" + port
+	password := os.Getenv("REDIS_PASSWORD")
+
 	c := redis.NewClient(&redis.Options{
 		Addr:         addr,
-		Password:     "",
+		Password:     password,
 		DB:           0,
 		ReadTimeout:  500 * time.Millisecond,
 		WriteTimeout: 500 * time.Millisecond,
 		DialTimeout:  500 * time.Millisecond,
+	})
+	return &Cache{rdb: c}
+}
+
+// NewFromConfig creates a new cache instance from config
+func NewFromConfig(cfg *config.RedisConfig) *Cache {
+	c := redis.NewClient(&redis.Options{
+		Addr:         cfg.Addr,
+		Password:     cfg.Password,
+		DB:           cfg.DB,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		DialTimeout:  cfg.DialTimeout,
 	})
 	return &Cache{rdb: c}
 }

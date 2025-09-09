@@ -5,8 +5,7 @@ const nextConfig = {
   
   // Configurações de imagem
   images: {
-    domains: ['www.camara.leg.br'],
-    unoptimized: true
+    domains: ['www.camara.leg.br']
   },
   
   // Configurações de ambiente

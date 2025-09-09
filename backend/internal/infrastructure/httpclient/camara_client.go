@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"time"
 
+	"to-de-olho-backend/internal/config"
 	"to-de-olho-backend/internal/domain"
 
 	"golang.org/x/time/rate"
@@ -40,6 +41,15 @@ func NewCamaraClient(baseURL string, timeout time.Duration, rps int, burst int) 
 		httpClient: &http.Client{Timeout: timeout},
 		baseURL:    baseURL,
 		limiter:    rate.NewLimiter(rate.Limit(float64(rps)), burst),
+	}
+}
+
+// NewCamaraClientFromConfig creates a client from config
+func NewCamaraClientFromConfig(cfg *config.CamaraClientConfig) *CamaraClient {
+	return &CamaraClient{
+		httpClient: &http.Client{Timeout: cfg.Timeout},
+		baseURL:    cfg.BaseURL,
+		limiter:    rate.NewLimiter(rate.Limit(float64(cfg.RPS)), cfg.Burst),
 	}
 }
 

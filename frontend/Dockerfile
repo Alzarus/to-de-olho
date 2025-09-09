@@ -16,6 +16,10 @@ RUN npm ci && npm cache clean --force
 # Copy source code
 COPY . .
 
+# Set build-time environment variables
+ARG NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Build application
 RUN npm run build
 

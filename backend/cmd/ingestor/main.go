@@ -7,30 +7,41 @@ import (
 	"log"
 	"time"
 
-	"github.com/joho/godotenv"
-
 	app "to-de-olho-backend/internal/application"
+	"to-de-olho-backend/internal/config"
 	"to-de-olho-backend/internal/infrastructure/cache"
 	"to-de-olho-backend/internal/infrastructure/db"
 	"to-de-olho-backend/internal/infrastructure/httpclient"
+	"to-de-olho-backend/internal/infrastructure/migrations"
 	"to-de-olho-backend/internal/infrastructure/repository"
 )
 
 func main() {
-	_ = godotenv.Load()
-
 	mode := flag.String("mode", "backfill", "Mode: backfill|daily")
 	years := flag.Int("years", 5, "Backfill years from now backwards")
 	flag.Parse()
 
+	// Load configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Falha ao carregar configuração: %v", err)
+	}
+
 	ctx := context.Background()
-	pgPool, err := db.NewPostgresPool(ctx)
+	pgPool, err := db.NewPostgresPoolFromConfig(ctx, &cfg.Database)
 	if err != nil {
 		log.Fatalf("Postgres connection error: %v", err)
 	}
+
+	// Run database migrations
+	migrator := migrations.NewMigrator(pgPool)
+	if err := migrator.Run(ctx); err != nil {
+		log.Fatalf("Migration error: %v", err)
+	}
+
 	repo := repository.NewDeputadoRepository(pgPool)
-	client := httpclient.NewCamaraClient("", 30*time.Second, 2, 4)
-	cacheClient := cache.New()
+	client := httpclient.NewCamaraClientFromConfig(&cfg.CamaraClient)
+	cacheClient := cache.NewFromConfig(&cfg.Redis)
 	svc := app.NewDeputadosService(client, cacheClient, repo)
 
 	switch *mode {

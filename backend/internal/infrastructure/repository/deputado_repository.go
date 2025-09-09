@@ -30,14 +30,6 @@ func (r *DeputadoRepository) UpsertDeputados(ctx context.Context, deps []domain.
 	if r == nil || r.db == nil || len(deps) == 0 {
 		return nil
 	}
-	_, err := r.db.Exec(ctx, `CREATE TABLE IF NOT EXISTS deputados_cache (
-        id INT PRIMARY KEY,
-        payload JSONB NOT NULL,
-        updated_at TIMESTAMP NOT NULL
-    )`)
-	if err != nil {
-		return err
-	}
 	for _, d := range deps {
 		b, _ := json.Marshal(d)
 		_, err := r.db.Exec(ctx, `INSERT INTO deputados_cache (id, payload, updated_at)

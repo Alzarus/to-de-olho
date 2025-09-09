@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -12,9 +11,11 @@ import (
 	"github.com/joho/godotenv"
 
 	app "to-de-olho-backend/internal/application"
+	"to-de-olho-backend/internal/config"
 	"to-de-olho-backend/internal/infrastructure/cache"
 	"to-de-olho-backend/internal/infrastructure/db"
 	"to-de-olho-backend/internal/infrastructure/httpclient"
+	"to-de-olho-backend/internal/infrastructure/migrations"
 	"to-de-olho-backend/internal/infrastructure/repository"
 	httpif "to-de-olho-backend/internal/interfaces/http"
 	"to-de-olho-backend/internal/interfaces/http/middleware"
@@ -25,15 +26,30 @@ func main() {
 		log.Println("Aviso: arquivo .env não encontrado")
 	}
 
+	// Load configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Falha ao carregar configuração: %v", err)
+	}
+
 	ctx := context.Background()
 
-	pgPool, err := db.NewPostgresPool(ctx)
+	pgPool, err := db.NewPostgresPoolFromConfig(ctx, &cfg.Database)
 	if err != nil {
 		log.Printf("Aviso: não foi possível conectar ao Postgres: %v", err)
 	}
-	cacheClient := cache.New()
+
+	// Run database migrations if database is available
+	if pgPool != nil {
+		migrator := migrations.NewMigrator(pgPool)
+		if err := migrator.Run(ctx); err != nil {
+			log.Printf("Aviso: falha ao executar migrações: %v", err)
+		}
+	}
+
+	cacheClient := cache.NewFromConfig(&cfg.Redis)
 	repo := repository.NewDeputadoRepository(pgPool)
-	client := httpclient.NewCamaraClient("", 30*time.Second, 2, 4)
+	client := httpclient.NewCamaraClientFromConfig(&cfg.CamaraClient)
 
 	svc := app.NewDeputadosService(client, cacheClient, repo)
 
@@ -48,7 +64,7 @@ func main() {
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	r.Use(middleware.RateLimitPerIP(100, time.Minute))
+	r.Use(middleware.RateLimitPerIP(cfg.Server.RateLimit, time.Minute))
 
 	api := r.Group("/api/v1")
 	{
@@ -65,11 +81,7 @@ func main() {
 		api.GET("/deputados/:id/despesas", httpif.GetDespesasDeputadoHandler(svc))
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	log.Printf("🚀 Servidor rodando na porta %s", port)
-	log.Printf("📊 API disponível em: http://localhost:%s/api/v1", port)
-	_ = r.Run(":" + port)
+	log.Printf("🚀 Servidor rodando na porta %s", cfg.Server.Port)
+	log.Printf("📊 API disponível em: http://localhost:%s/api/v1", cfg.Server.Port)
+	_ = r.Run(":" + cfg.Server.Port)
 }

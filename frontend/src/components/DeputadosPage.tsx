@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, User, MapPin, Building2, Euro, AlertCircle } from 'lucide-react';
+import DeputadoCard from './DeputadoCard';
 
-interface Deputado {
+export interface Deputado {
   id: number;
   nome: string;
   siglaPartido: string;
@@ -70,10 +71,6 @@ export default function DeputadosPage() {
     fetchDeputados();
   };
 
-  const filteredDeputados = deputados.filter(deputado =>
-    deputado.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -115,7 +112,7 @@ export default function DeputadosPage() {
           Deputados Federais
         </h1>
         <p className="text-gray-600">
-          Explore os {filteredDeputados.length} deputados federais e seus dados de transparência
+          Explore os {deputados.length} deputados federais e seus dados de transparência
         </p>
       </div>
 
@@ -183,56 +180,16 @@ export default function DeputadosPage() {
 
       {/* Lista de Deputados */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredDeputados.map((deputado) => (
-          <div
+        {deputados.map((deputado) => (
+          <DeputadoCard
             key={deputado.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+            deputado={deputado}
             onClick={() => setSelectedDeputado(deputado)}
-          >
-            <div className="flex items-center mb-4">
-              {deputado.urlFoto ? (
-                <img
-                  src={deputado.urlFoto}
-                  alt={deputado.nome}
-                  className="w-16 h-16 rounded-full object-cover mr-4"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
-              ) : null}
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mr-4 hidden">
-                <User className="h-8 w-8 text-gray-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 text-sm leading-tight">
-                  {deputado.nome}
-                </h3>
-                <div className="flex items-center text-sm text-gray-600 mt-1">
-                  <Building2 className="h-3 w-3 mr-1" />
-                  {deputado.siglaPartido}
-                  <MapPin className="h-3 w-3 ml-2 mr-1" />
-                  {deputado.siglaUf}
-                </div>
-              </div>
-            </div>
-            
-            <div className="text-sm text-gray-600">
-              <p><strong>Situação:</strong> {deputado.condicaoEleitoral}</p>
-              {deputado.email && (
-                <p className="truncate"><strong>Email:</strong> {deputado.email}</p>
-              )}
-            </div>
-            
-            <button className="mt-4 w-full bg-blue-50 text-blue-700 py-2 px-4 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center">
-              <Euro className="h-4 w-4 mr-2" />
-              Ver Despesas
-            </button>
-          </div>
+          />
         ))}
       </div>
 
-      {filteredDeputados.length === 0 && !loading && (
+      {deputados.length === 0 && !loading && (
         <div className="text-center py-12">
           <User className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
