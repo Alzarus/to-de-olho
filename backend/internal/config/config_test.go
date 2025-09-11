@@ -429,6 +429,106 @@ func TestGetInt(t *testing.T) {
 	}
 }
 
+func TestGetInt32(t *testing.T) {
+	tests := []struct {
+		name         string
+		key          string
+		defaultValue int32
+		envValue     string
+		expected     int32
+	}{
+		{
+			name:         "usa valor padrão quando env não existe",
+			key:          "TEST_INT32_NONEXISTENT",
+			defaultValue: 42,
+			envValue:     "",
+			expected:     42,
+		},
+		{
+			name:         "converte valor válido do ambiente",
+			key:          "TEST_INT32_VALID",
+			defaultValue: 42,
+			envValue:     "123",
+			expected:     123,
+		},
+		{
+			name:         "usa padrão para valor inválido",
+			key:          "TEST_INT32_INVALID",
+			defaultValue: 42,
+			envValue:     "não_é_número",
+			expected:     42,
+		},
+		{
+			name:         "converte número negativo",
+			key:          "TEST_INT32_NEGATIVE",
+			defaultValue: 42,
+			envValue:     "-10",
+			expected:     -10,
+		},
+		{
+			name:         "converte zero",
+			key:          "TEST_INT32_ZERO",
+			defaultValue: 42,
+			envValue:     "0",
+			expected:     0,
+		},
+		{
+			name:         "rejeita valor maior que int32 max",
+			key:          "TEST_INT32_OVERFLOW",
+			defaultValue: 42,
+			envValue:     "2147483648", // int32 max + 1
+			expected:     42,
+		},
+		{
+			name:         "rejeita valor menor que int32 min",
+			key:          "TEST_INT32_UNDERFLOW",
+			defaultValue: 42,
+			envValue:     "-2147483649", // int32 min - 1
+			expected:     42,
+		},
+		{
+			name:         "aceita valor int32 max",
+			key:          "TEST_INT32_MAX",
+			defaultValue: 42,
+			envValue:     "2147483647", // int32 max
+			expected:     2147483647,
+		},
+		{
+			name:         "aceita valor int32 min",
+			key:          "TEST_INT32_MIN",
+			defaultValue: 42,
+			envValue:     "-2147483648", // int32 min
+			expected:     -2147483648,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			originalValue := os.Getenv(tt.key)
+			os.Unsetenv(tt.key)
+
+			if tt.envValue != "" {
+				os.Setenv(tt.key, tt.envValue)
+			}
+
+			// Cleanup
+			defer func() {
+				if originalValue != "" {
+					os.Setenv(tt.key, originalValue)
+				} else {
+					os.Unsetenv(tt.key)
+				}
+			}()
+
+			result := getInt32(tt.key, tt.defaultValue)
+			if result != tt.expected {
+				t.Errorf("getInt32(%q, %d) = %d, esperado %d", tt.key, tt.defaultValue, result, tt.expected)
+			}
+		})
+	}
+}
+
 func TestGetDuration(t *testing.T) {
 	tests := []struct {
 		name         string

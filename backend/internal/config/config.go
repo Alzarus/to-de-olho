@@ -96,8 +96,8 @@ func LoadConfig() (*Config, error) {
 			Password:        getEnvRequired("POSTGRES_PASSWORD"),
 			Database:        getEnv("POSTGRES_DB", "to_de_olho"),
 			SSLMode:         getEnv("POSTGRES_SSL_MODE", "disable"),
-			MaxConns:        int32(getInt("POSTGRES_MAX_CONNS", 25)),
-			MinConns:        int32(getInt("POSTGRES_MIN_CONNS", 5)),
+			MaxConns:        getInt32("POSTGRES_MAX_CONNS", 25),
+			MinConns:        getInt32("POSTGRES_MIN_CONNS", 5),
 			MaxConnLifetime: getDuration("POSTGRES_MAX_CONN_LIFETIME", 1*time.Hour),
 			MaxConnIdleTime: getDuration("POSTGRES_MAX_CONN_IDLE_TIME", 30*time.Minute),
 		},
@@ -197,6 +197,22 @@ func getInt(key string, defaultValue int) int {
 	}
 
 	return value
+}
+
+// getInt32 retorna um int32 com validação de range para evitar integer overflow
+func getInt32(key string, defaultValue int32) int32 {
+	valueStr := os.Getenv(key)
+	if valueStr == "" {
+		return defaultValue
+	}
+
+	value, err := strconv.ParseInt(valueStr, 10, 32)
+	if err != nil {
+		log.Printf("Invalid int32 value for %s: %s, using default: %d", key, valueStr, defaultValue)
+		return defaultValue
+	}
+
+	return int32(value)
 }
 
 func getDuration(key string, defaultValue time.Duration) time.Duration {
