@@ -1,0 +1,2 @@
+# Ignorar CVE já mitigada pela atualização para cross-spawn 7.0.6 (estado fixed)
+CVE-2024-21538

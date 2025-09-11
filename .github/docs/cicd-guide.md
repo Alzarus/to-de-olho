@@ -26,7 +26,7 @@ on:
     branches: [main, develop]
 
 env:
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.24"
   NODE_VERSION: "20"
 
 jobs:
@@ -551,7 +551,7 @@ jobs:
       - name: 🔧 Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.23"
+          go-version: "1.24"
           
       - name: 🔍 Code Coverage Gate
         run: |
@@ -632,7 +632,7 @@ jobs:
 ### Dockerfile Example
 ```dockerfile
 # backend/services/deputados/Dockerfile
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 

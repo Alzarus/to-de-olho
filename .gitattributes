@@ -1,0 +1,26 @@
+# Enforce consistent LF line endings for files checked by gofmt in CI
+*.go text eol=lf
+
+# Shell / scripts
+*.sh text eol=lf
+*.ps1 text eol=crlf
+
+# Markdown and YAML (Linux style)
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Ensure SVG and JSON treated as text for diffs
+*.svg text eol=lf
+*.json text eol=lf
+
+# Prevent Git from altering vendored binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+
+# NOTE: After adding this file run the following locally once to normalize:
+#   git add --renormalize .
+#   go fmt ./...
+#   git commit -m "chore: enforce LF line endings"
