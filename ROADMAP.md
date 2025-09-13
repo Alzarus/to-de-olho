@@ -3,17 +3,19 @@
 > **Plataforma de Transparência Política - Câmara dos Deputados**
 > 
 > **Autor**: Pedro Batista de Almeida Filho | **Curso**: ADS - IFBA  
-> **Status**: Setembro 2025 | **Progresso Geral**: 90% MVP Backend
+> **Status**: Setembro 2025 | **Progresso Geral**: 95% MVP Backend Completo
 
 ## 📊 Status Atual do Projeto
 
 | Componente | Status | Cobertura Testes | Próximo Marco |
 |------------|--------|------------------|---------------|
-| 🏗️ **Infraestrutura** | ✅ Completo | - | - |
-| 🔧 **Backend Core** | ✅ MVP | ~85% | Funcionalidades |
+| 🏗️ **Infraestrutura** | ✅ Completo | - | Monitoramento |
+| 🔧 **Backend Core** | ✅ MVP Completo | ~85% | Microsserviços |
 | 🧪 **Testes & QA** | ✅ Estável | 85%+ | 90%+ |
-| 🎨 **Frontend** | ✅ Básico | Manual | Expansão |
-| 🐳 **Docker/Deploy** | ✅ Funcional | - | Produção |
+| 🎨 **Frontend** | ✅ Funcional | Manual | Acessibilidade |
+| 🐳 **Docker/Deploy** | ✅ Funcional | - | CI/CD Avançado |
+| 🤖 **IA Integration** | ⏳ Planejado | - | Q1 2026 |
+| 🎮 **Gamificação** | ⏳ Planejado | - | Q4 2025 |
 
 ---
 
@@ -29,14 +31,19 @@
 - **Cache Redis + PostgreSQL fallback** funcionando
 
 #### ✅ **API Backend (FUNCIONAL)**
-- **Endpoints REST funcionais**:
-  - `GET /api/v1/health`
-  - `GET /api/v1/deputados` (filtros: UF, partido, nome)
-  - `GET /api/v1/deputados/:id`
-  - `GET /api/v1/deputados/:id/despesas`
-- **Cliente API Câmara resiliente** (retry, backoff, circuit breaker)
-- **Fallback de dados** via PostgreSQL quando API externa falhar
-- **CORS** configurado para frontend
+- **Endpoints**: `/health`, `/deputados`, `/deputados/:id`, `/deputados/:id/despesas`
+- **Integração Câmara**: Retry + circuit breaker + PostgreSQL fallback
+- **Features**: Rate limiting (100 req/min), CORS, cache Redis
+
+#### **🏛️ Próximos Endpoints API Câmara (Q4 2025)**
+| Endpoint | Função | Prioridade | Status |
+|----------|--------|------------|--------|
+| `/proposicoes` | Lista proposições + filtros | 1 | Out/2025 |
+| `/votacoes` | Votações + votos individuais | 1 | Nov/2025 |
+| `/presencas` | Presença parlamentar | 2 | Dez/2025 |
+| `/discursos` | Discursos e apartes | 3 | Q1/2026 |
+
+**Rate Limiting**: 100 req/min Câmara API + circuit breaker + cache TTL inteligente
 
 #### ✅ **Frontend MVP (OPERACIONAL)**
 - **Next.js 15 + TypeScript** configurado
@@ -69,6 +76,35 @@
 ❌ Migrations:               0.0% (não testado)
 
 TOTAL REALISTA: ~85% (sem falhas ativas) ✅ TODOS OS TESTES PASSANDO
+```
+
+---
+
+## 🚀 Roadmap Microsserviços & Features (Q4 2025 - Q2 2026)
+
+### **7 Serviços Target + Cronograma**
+| Serviço | Função | Prioridade | Entrega |
+|---------|--------|------------|---------|
+| 📋 deputados-service | Parlamentares (✅ MVP) | - | Completo |
+| 🗳️ atividades-service | Proposições, votações | 1 | Dez/2025 |
+| 👥 usuarios-service | Auth, perfis, gamificação | 2 | Nov/2025 |
+| � despesas-service | Análise gastos avançada | 3 | Fev/2026 |
+| 🤖 ia-service | Gemini AI, moderação | 4 | Mar/2026 |
+| � forum-service | Discussões cidadãs | 5 | Mai/2026 |
+| � ingestao-service | ETL Câmara + TSE | 6 | Jun/2026 |
+
+### **🤖 IA Features (Q1-Q2 2026)**
+- **Moderação**: Content safety + LGPD compliance
+- **Assistente**: Chatbot educativo político (português BR)
+- **Analytics**: Sentiment analysis + voting prediction
+- **Context**: RAG com dados Câmara + knowledge base 10k+ Q&As
+
+### **🎮 Gamificação (Q4 2025)**
+```
+Pontos: Visualização +5, Comentário +25, Análise +40 XP
+Badges: Cidadão Iniciante → Democracia Champion  
+Rankings: Semanal, Mensal, Hall da Fama
+Recompensas: Badges, certificados, conteúdo VIP
 ```
 
 ---
@@ -122,7 +158,11 @@ TOTAL REALISTA: ~85% (sem falhas ativas) ✅ TODOS OS TESTES PASSANDO
 4. **API Rate Limiting Avançado** (por usuário)
 5. **Sistema de Notificações** (email + push)
 
-### **🛠️ Melhorias Técnicas**
+### **🛠️ CI/CD & DevOps Avançado (Q4 2025)**
+- **GitHub Actions**: Quality gates automatizados (vet, test, lint, security)
+- **Monitoring**: Prometheus + Grafana + Jaeger tracing
+- **Messaging**: RabbitMQ para jobs assíncronos (sync, análise, notificações)
+- **Optimization**: WSL2 + Docker multi-stage builds
 1. **Monitoramento Completo** (Prometheus + Grafana)
 2. **Cache Inteligente** (invalidação automática)
 3. **Otimização de Performance** (lazy loading, pagination)
@@ -160,6 +200,33 @@ TOTAL REALISTA: ~85% (sem falhas ativas) ✅ TODOS OS TESTES PASSANDO
 
 ---
 
+## 📋 Quality Standards & DoD
+
+### **✅ Critérios Obrigatórios**
+- **Clean Code**: Nomes expressivos, funções <20 linhas, SOLID principles
+- **Tests**: 80% unit + 15% integration + 5% E2E (Target: 90%+ coverage)
+- **Security**: OWASP compliance, 0 vulnerabilidades críticas, rate limiting
+- **Performance**: API <500ms, Frontend <2s, 2+ code reviews
+- **CI/CD**: Automated quality gates (vet, test, lint, security, build)
+
+### **🧪 Testing Strategy**
+```
+Status Atual (Sep 2025):        Meta Q4 2025:
+✅ Domain/Handlers: 100%        → Manter 100%
+🟡 Infrastructure: 32%          → 80%+  
+❌ Config/CMD: 0%               → 80%/50%
+Total: ~85%                     → 90%+
+```
+
+### **🔒 Security & Performance Roadmap**
+- **Auth**: JWT + OAuth2 (Google/GitHub) - Q4 2025
+- **Logs**: Structured logging com slog - Imediato  
+- **Rate Limiting**: Por usuário + IP - Q4 2025
+- **OWASP**: Top 10 compliance - Q1 2026
+- **Accessibility**: WCAG 2.1 AA (contraste 4.5:1, navegação teclado) - Q4 2025
+
+---
+
 ## 📋 Checklist de Finalização MVP
 
 ### Backend Core ✅
@@ -191,11 +258,28 @@ TOTAL REALISTA: ~85% (sem falhas ativas) ✅ TODOS OS TESTES PASSANDO
 - [x] Health monitoring
 
 ### Próximos Passos 🔄
-- [ ] Testes para módulos sem cobertura
-- [ ] Sistema de autenticação
-- [ ] Dashboard de métricas
-- [ ] Deploy em produção
-- [ ] Monitoramento avançado
+- [ ] **Cobertura testes**: Config (0%→80%), DB (32%→80%), CMD (0%→50%)
+- [ ] **atividades-service**: Proposições + votações (Dez/2025)
+- [ ] **usuarios-service**: Auth + gamificação (Nov/2025)
+- [ ] **CI/CD avançado**: GitHub Actions + Prometheus (Q4/2025)
+
+### **🔒 Security & Compliance Quick Reference**
+```
+Auth: JWT + OAuth2 (Google/GitHub)      → Q4 2025
+Logs: Structured slog                   → Imediato
+Rate: 100 req/min Câmara + por usuário  → Q4 2025  
+OWASP: Top 10 compliance                → Q1 2026
+WCAG: 2.1 AA accessibility              → Q4 2025
+```
+
+---
+
+## 📚 Documentação Target (Q4 2025)
+- `.github/docs/architecture.md` → Clean Architecture + DDD
+- `.github/docs/api-reference.md` → OpenAPI/Swagger interativo
+- `.github/docs/business-rules.md` → Domain logic + validations
+- `.github/docs/testing-guide.md` → Testing pyramid + standards
+- `.github/docs/cicd-guide.md` → Pipeline + deployment
 
 ---
 
@@ -203,4 +287,4 @@ TOTAL REALISTA: ~85% (sem falhas ativas) ✅ TODOS OS TESTES PASSANDO
 > 
 > **🚀 Próximo Marco**: Cobertura de testes 90%+ e funcionalidades básicas de usuário
 
-**Última Atualização**: Setembro 9, 2025 | **Responsável**: Pedro Almeida
+**Última Atualização**: Setembro 13, 2025 | **Responsável**: Pedro Almeida | **Compliance**: copilot-instructions.md ✅
