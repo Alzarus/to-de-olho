@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, User, MapPin, Building2, Euro, AlertCircle } from 'lucide-react';
+import { Search, User, MapPin, Building2, Euro, AlertCircle, X } from 'lucide-react';
 import DeputadoCard from './DeputadoCard';
 
 export interface Deputado {
@@ -15,8 +15,36 @@ export interface Deputado {
   email: string;
 }
 
+export interface Despesa {
+  id?: number;
+  ano: number;
+  mes: number;
+  tipoDespesa: string;
+  codDocumento: number;
+  tipoDocumento: string;
+  codTipoDocumento: number;
+  dataDocumento: string;
+  numDocumento: string;
+  valorDocumento: number;
+  urlDocumento: string;
+  nomeFornecedor: string;
+  cnpjCpfFornecedor: string;
+  valorLiquido: number;
+  valorBruto: number;
+  valorGlosa: number;
+  numRessarcimento?: string;
+  codLote: number;
+  parcela?: number;
+}
+
 interface APIResponse {
   data: Deputado[];
+  total: number;
+  source: string;
+}
+
+interface DespesasAPIResponse {
+  data: Despesa[];
   total: number;
   source: string;
 }
@@ -31,6 +59,11 @@ export default function DeputadosPage() {
   const [selectedUF, setSelectedUF] = useState('');
   const [selectedPartido, setSelectedPartido] = useState('');
   const [selectedDeputado, setSelectedDeputado] = useState<Deputado | null>(null);
+  const [showDespesas, setShowDespesas] = useState(false);
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
+  const [loadingDespesas, setLoadingDespesas] = useState(false);
+  const [despesasError, setDespesasError] = useState<string | null>(null);
+  const [selectedAno, setSelectedAno] = useState(new Date().getFullYear());
 
   const estados = [
     'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
@@ -64,6 +97,50 @@ export default function DeputadosPage() {
       setError('Erro ao carregar deputados. Verifique se o backend está rodando.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDespesas = async (deputadoId: number, ano: number) => {
+    setLoadingDespesas(true);
+    setDespesasError(null);
+    
+    try {
+      const url = `${API_BASE_URL}/deputados/${deputadoId}/despesas?ano=${ano}`;
+      const response = await axios.get<DespesasAPIResponse>(url);
+      setDespesas(response.data.data || []);
+    } catch (err) {
+      console.error('Erro ao buscar despesas:', err);
+      setDespesasError('Erro ao carregar despesas. Tente novamente.');
+    } finally {
+      setLoadingDespesas(false);
+    }
+  };
+
+  const handleVerDespesas = (deputado: Deputado) => {
+    setSelectedDeputado(deputado);
+    setShowDespesas(true);
+    fetchDespesas(deputado.id, selectedAno);
+  };
+
+  const closeDespesasModal = () => {
+    setShowDespesas(false);
+    setDespesas([]);
+    setDespesasError(null);
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('pt-BR');
+    } catch {
+      return dateString;
     }
   };
 
@@ -185,6 +262,7 @@ export default function DeputadosPage() {
             key={deputado.id}
             deputado={deputado}
             onClick={() => setSelectedDeputado(deputado)}
+            onVerDespesas={() => handleVerDespesas(deputado)}
           />
         ))}
       </div>
@@ -242,10 +320,125 @@ export default function DeputadosPage() {
               >
                 Fechar
               </button>
-              <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 flex items-center justify-center">
+              <button 
+                onClick={() => handleVerDespesas(selectedDeputado)}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 flex items-center justify-center"
+              >
                 <Euro className="h-4 w-4 mr-2" />
                 Ver Despesas
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Despesas */}
+      {showDespesas && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Despesas do Deputado
+                </h2>
+                <button 
+                  onClick={() => setShowDespesas(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              {/* Seletor de Ano */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ano:
+                </label>
+                <select
+                  value={selectedAno}
+                  onChange={(e) => setSelectedAno(Number(e.target.value))}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {loadingDespesas ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Carregando despesas...</span>
+                </div>
+              ) : despesasError ? (
+                <div className="text-center py-8">
+                  <p className="text-red-600">{despesasError}</p>
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="mt-2 text-blue-600 hover:text-blue-800"
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              ) : despesas.length === 0 ? (
+                <div className="text-center py-8">
+                  <Euro className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">Nenhuma despesa encontrada para este período.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {despesas.map((despesa, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium text-gray-900">{despesa.tipoDespesa}</h3>
+                        <span className="text-lg font-semibold text-green-600">
+                          {formatCurrency(despesa.valorLiquido)}
+                        </span>
+                      </div>
+                      
+                      {despesa.nomeFornecedor && (
+                        <p className="text-sm text-gray-600 mb-1">
+                          <strong>Fornecedor:</strong> {despesa.nomeFornecedor}
+                        </p>
+                      )}
+                      
+                      {despesa.cnpjCpfFornecedor && (
+                        <p className="text-sm text-gray-600 mb-1">
+                          <strong>CNPJ/CPF:</strong> {despesa.cnpjCpfFornecedor}
+                        </p>
+                      )}
+                      
+                      <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
+                        <span>{formatDate(despesa.dataDocumento)}</span>
+                        {despesa.numDocumento && (
+                          <span>Doc: {despesa.numDocumento}</span>
+                        )}
+                      </div>
+                      
+                      {despesa.valorBruto !== despesa.valorLiquido && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          <span>Valor bruto: {formatCurrency(despesa.valorBruto)}</span>
+                          {despesa.valorGlosa > 0 && (
+                            <span className="ml-2">Glosa: {formatCurrency(despesa.valorGlosa)}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Resumo Total */}
+                  <div className="border-t border-gray-200 pt-4 mt-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold text-gray-900">Total:</span>
+                      <span className="text-xl font-bold text-green-600">
+                        {formatCurrency(despesas.reduce((sum, d) => sum + d.valorLiquido, 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

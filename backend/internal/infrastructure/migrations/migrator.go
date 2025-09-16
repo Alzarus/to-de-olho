@@ -73,6 +73,101 @@ CREATE TABLE IF NOT EXISTS deputados_cache (
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_deputados_cache_updated_at ON deputados_cache(updated_at);`,
 		},
+		{
+			Version: 2,
+			Name:    "create_proposicoes_cache",
+			SQL: `-- Migration: 002_create_proposicoes_cache.sql
+-- Descrição: Cria tabela para cache de proposições da Câmara dos Deputados
+
+-- Criar extensão pg_trgm se não existir (para busca textual)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE TABLE IF NOT EXISTS proposicoes_cache (
+    id INTEGER PRIMARY KEY,
+    payload JSONB NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para melhorar performance das queries
+CREATE INDEX IF NOT EXISTS idx_proposicoes_cache_updated_at ON proposicoes_cache(updated_at DESC);
+
+-- Índices BTREE para campos de texto/número (mais eficientes para igualdade e range)
+CREATE INDEX IF NOT EXISTS idx_proposicoes_cache_sigla_tipo ON proposicoes_cache((payload->>'siglaTipo'));
+CREATE INDEX IF NOT EXISTS idx_proposicoes_cache_numero ON proposicoes_cache(((payload->>'numero')::int));
+CREATE INDEX IF NOT EXISTS idx_proposicoes_cache_ano ON proposicoes_cache(((payload->>'ano')::int));
+CREATE INDEX IF NOT EXISTS idx_proposicoes_cache_uf_autor ON proposicoes_cache((payload->>'siglaUfAutor'));
+CREATE INDEX IF NOT EXISTS idx_proposicoes_cache_partido_autor ON proposicoes_cache((payload->>'siglaPartidoAutor'));
+
+-- Índice GIN apenas para busca textual na ementa
+CREATE INDEX IF NOT EXISTS idx_proposicoes_cache_ementa ON proposicoes_cache USING GIN ((payload->>'ementa') gin_trgm_ops);
+
+-- Comentários para documentação
+COMMENT ON TABLE proposicoes_cache IS 'Cache de proposições da Câmara dos Deputados para melhorar performance';
+COMMENT ON COLUMN proposicoes_cache.id IS 'ID único da proposição na API da Câmara';
+COMMENT ON COLUMN proposicoes_cache.payload IS 'Dados completos da proposição em formato JSON';
+COMMENT ON COLUMN proposicoes_cache.updated_at IS 'Data e hora da última atualização do cache';`,
+		},
+		{
+			Version: 3,
+			Name:    "create_backfill_checkpoints",
+			SQL: `-- Migration: 003_create_backfill_checkpoints.sql
+-- Descrição: Cria tabela para checkpoints do processo de backfill histórico
+
+CREATE TABLE IF NOT EXISTS backfill_checkpoints (
+    id VARCHAR(255) PRIMARY KEY,
+    type VARCHAR(50) NOT NULL,                              -- 'deputados', 'proposicoes', 'despesas'
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',          -- 'pending', 'in_progress', 'completed', 'failed'
+    progress JSONB NOT NULL DEFAULT '{}',                   -- Progresso serializado
+    metadata JSONB NOT NULL DEFAULT '{}',                   -- Metadados adicionais
+    started_at TIMESTAMP WITH TIME ZONE,                    -- Quando foi iniciado
+    completed_at TIMESTAMP WITH TIME ZONE,                  -- Quando foi completado
+    error_message TEXT,                                      -- Mensagem de erro se falhou
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),      -- Quando foi criado
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()       -- Última atualização
+);
+
+-- Índices para performance
+CREATE INDEX IF NOT EXISTS idx_backfill_checkpoints_type ON backfill_checkpoints(type);
+CREATE INDEX IF NOT EXISTS idx_backfill_checkpoints_status ON backfill_checkpoints(status);
+CREATE INDEX IF NOT EXISTS idx_backfill_checkpoints_created_at ON backfill_checkpoints(created_at);
+
+-- Comentários para documentação
+COMMENT ON TABLE backfill_checkpoints IS 'Checkpoints do processo de backfill histórico para resumabilidade';
+COMMENT ON COLUMN backfill_checkpoints.id IS 'ID único do checkpoint (tipo_timestamp)';
+COMMENT ON COLUMN backfill_checkpoints.type IS 'Tipo de dados sendo processados';
+COMMENT ON COLUMN backfill_checkpoints.status IS 'Status atual do checkpoint';
+COMMENT ON COLUMN backfill_checkpoints.progress IS 'Progresso detalhado em JSON';
+COMMENT ON COLUMN backfill_checkpoints.metadata IS 'Metadados específicos do tipo de backfill';`,
+		},
+		{
+			Version: 4,
+			Name:    "create_sync_metrics",
+			SQL: `-- Migration: 004_create_sync_metrics.sql
+-- Descrição: Cria tabela para métricas de sincronização incremental
+
+CREATE TABLE IF NOT EXISTS sync_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    sync_type VARCHAR(20) NOT NULL,                     -- 'daily', 'quick'
+    start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    deputados_updated INTEGER DEFAULT 0,
+    proposicoes_updated INTEGER DEFAULT 0,
+    errors_count INTEGER DEFAULT 0,
+    errors TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para performance
+CREATE INDEX IF NOT EXISTS idx_sync_metrics_type_time ON sync_metrics(sync_type, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_sync_metrics_start_time ON sync_metrics(start_time DESC);
+
+-- Comentários para documentação
+COMMENT ON TABLE sync_metrics IS 'Métricas de sincronização incremental e diária';
+COMMENT ON COLUMN sync_metrics.sync_type IS 'Tipo de sincronização: daily ou quick';
+COMMENT ON COLUMN sync_metrics.duration_ms IS 'Duração da sincronização em milissegundos';
+COMMENT ON COLUMN sync_metrics.errors IS 'Lista de erros ocorridos durante a sincronização';`,
+		},
 	}
 }
 

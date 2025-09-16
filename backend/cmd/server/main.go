@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -49,9 +50,13 @@ func main() {
 
 	cacheClient := cache.NewFromConfig(&cfg.Redis)
 	repo := repository.NewDeputadoRepository(pgPool)
+	proposicoesRepo := repository.NewProposicaoRepository(pgPool)
 	client := httpclient.NewCamaraClientFromConfig(&cfg.CamaraClient)
 
+	logger := slog.Default()
 	svc := app.NewDeputadosService(client, cacheClient, repo)
+	proposicoesSvc := app.NewProposicoesService(client, cacheClient, proposicoesRepo, logger)
+	analyticsSvc := app.NewAnalyticsService(repo, proposicoesRepo, cacheClient, logger)
 
 	r := gin.Default()
 
@@ -76,9 +81,25 @@ func main() {
 				"version":   "1.0.0",
 			})
 		})
+
+		// Rotas para deputados
 		api.GET("/deputados", httpif.GetDeputadosHandler(svc))
 		api.GET("/deputados/:id", httpif.GetDeputadoByIDHandler(svc))
 		api.GET("/deputados/:id/despesas", httpif.GetDespesasDeputadoHandler(svc))
+
+		// Rotas para proposições
+		api.GET("/proposicoes", httpif.GetProposicoesHandler(proposicoesSvc))
+		api.GET("/proposicoes/:id", httpif.GetProposicaoPorIDHandler(proposicoesSvc))
+
+		// Rotas para analytics
+		analytics := api.Group("/analytics")
+		{
+			analytics.GET("/rankings/gastos", httpif.GetRankingGastosHandler(analyticsSvc))
+			analytics.GET("/rankings/proposicoes", httpif.GetRankingProposicoesHandler(analyticsSvc))
+			analytics.GET("/rankings/presenca", httpif.GetRankingPresencaHandler(analyticsSvc))
+			analytics.GET("/insights", httpif.GetInsightsGeraisHandler(analyticsSvc))
+			analytics.POST("/rankings/atualizar", httpif.PostAtualizarRankingsHandler(analyticsSvc))
+		}
 	}
 
 	log.Printf("🚀 Servidor rodando na porta %s", cfg.Server.Port)

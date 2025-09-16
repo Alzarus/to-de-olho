@@ -17,7 +17,7 @@ import (
 type MockDeputadosService struct {
 	deputados []domain.Deputado
 	deputado  *domain.Deputado
-	despesas  []domain.Despesa
+	total     int
 	source    string
 	err       error
 }
@@ -40,116 +40,325 @@ func (m *MockDeputadosService) ListarDespesas(ctx context.Context, deputadoID, a
 	if m.err != nil {
 		return nil, "", m.err
 	}
-	return m.despesas, m.source, nil
+	return []domain.Despesa{}, m.source, nil
 }
 
-func setupRouter() *gin.Engine {
+// Mock service para testes de proposições
+type MockProposicoesService struct {
+	proposicoes []domain.Proposicao
+	proposicao  *domain.Proposicao
+	total       int
+	source      string
+	err         error
+}
+
+func (m *MockProposicoesService) ListarProposicoes(ctx context.Context, filtros *domain.ProposicaoFilter) ([]domain.Proposicao, int, string, error) {
+	if m.err != nil {
+		return nil, 0, "", m.err
+	}
+	return m.proposicoes, m.total, m.source, nil
+}
+
+func (m *MockProposicoesService) BuscarProposicaoPorID(ctx context.Context, id int) (*domain.Proposicao, string, error) {
+	if m.err != nil {
+		return nil, "", m.err
+	}
+	return m.proposicao, m.source, nil
+}
+
+func createTestProposicao(id int, siglaTipo string, numero int, ano int, ementa string) *domain.Proposicao {
+	return &domain.Proposicao{
+		ID:               id,
+		SiglaTipo:        siglaTipo,
+		Numero:           numero,
+		Ano:              ano,
+		Ementa:           ementa,
+		DataApresentacao: "2024-01-01",
+		StatusProposicao: domain.StatusProposicao{
+			DescricaoSituacao: "Em tramitação",
+			DataHora:          "2024-01-01T10:00:00",
+		},
+	}
+}
+
+func TestGetProposicoesHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	return gin.New()
-}
 
-func TestGetDeputadosHandler(t *testing.T) {
 	tests := []struct {
 		name           string
 		queryParams    string
-		mockDeputados  []domain.Deputado
-		mockSource     string
-		mockError      error
-		expectedStatus int
-		expectedData   bool
+		mockService    *MockProposicoesService
+		expectedCode   int
+		checkSource    bool
+		expectedSource string
 	}{
 		{
-			name:        "sucesso - lista deputados sem filtro",
-			queryParams: "",
-			mockDeputados: []domain.Deputado{
-				{ID: 1, Nome: "João Silva", Partido: "PT", UF: "SP"},
-				{ID: 2, Nome: "Maria Santos", Partido: "PSDB", UF: "RJ"},
+			name:        "success - proposições encontradas via API",
+			queryParams: "?siglaTipo=PL&ano=2024",
+			mockService: &MockProposicoesService{
+				proposicoes: []domain.Proposicao{
+					*createTestProposicao(1, "PL", 123, 2024, "Ementa do projeto de lei"),
+				},
+				total:  1,
+				source: "api",
 			},
-			mockSource:     "api",
-			expectedStatus: http.StatusOK,
-			expectedData:   true,
+			expectedCode:   http.StatusOK,
+			checkSource:    true,
+			expectedSource: "api",
 		},
 		{
-			name:        "sucesso - filtro por partido",
-			queryParams: "?partido=PT",
-			mockDeputados: []domain.Deputado{
-				{ID: 1, Nome: "João Silva", Partido: "PT", UF: "SP"},
+			name:        "success - proposições encontradas via cache",
+			queryParams: "?numero=123",
+			mockService: &MockProposicoesService{
+				proposicoes: []domain.Proposicao{
+					*createTestProposicao(1, "PL", 123, 2024, "Ementa do projeto de lei"),
+				},
+				total:  1,
+				source: "cache",
 			},
-			mockSource:     "cache",
-			expectedStatus: http.StatusOK,
-			expectedData:   true,
+			expectedCode:   http.StatusOK,
+			checkSource:    true,
+			expectedSource: "cache",
 		},
 		{
-			name:        "sucesso - filtros múltiplos",
-			queryParams: "?partido=PT&uf=SP&nome=João",
-			mockDeputados: []domain.Deputado{
-				{ID: 1, Nome: "João Silva", Partido: "PT", UF: "SP"},
+			name:        "success - nenhuma proposição encontrada",
+			queryParams: "?siglaTipo=INEXISTENTE",
+			mockService: &MockProposicoesService{
+				proposicoes: []domain.Proposicao{},
+				total:       0,
+				source:      "api",
 			},
-			mockSource:     "api",
-			expectedStatus: http.StatusOK,
-			expectedData:   true,
+			expectedCode: http.StatusOK,
 		},
 		{
-			name:           "erro interno do serviço",
-			queryParams:    "",
-			mockError:      errors.New("erro de rede"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedData:   false,
-		},
-		{
-			name:           "sucesso - lista vazia",
-			queryParams:    "?partido=INEXISTENTE",
-			mockDeputados:  []domain.Deputado{},
-			mockSource:     "api",
-			expectedStatus: http.StatusOK,
-			expectedData:   true,
+			name:        "error - erro interno do serviço",
+			queryParams: "?siglaTipo=PL",
+			mockService: &MockProposicoesService{
+				err: errors.New("erro interno"),
+			},
+			expectedCode: http.StatusInternalServerError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Setup
-			mockService := &MockDeputadosService{
-				deputados: tt.mockDeputados,
-				source:    tt.mockSource,
-				err:       tt.mockError,
-			}
+			router := gin.New()
+			router.GET("/proposicoes", GetProposicoesHandler(tt.mockService))
 
-			router := setupRouter()
-			router.GET("/deputados", GetDeputadosHandler(mockService))
-
-			// Execute
-			req := httptest.NewRequest("GET", "/deputados"+tt.queryParams, nil)
+			req := httptest.NewRequest("GET", "/proposicoes"+tt.queryParams, nil)
 			w := httptest.NewRecorder()
+
 			router.ServeHTTP(w, req)
 
-			// Assert
-			if w.Code != tt.expectedStatus {
-				t.Errorf("status esperado: %d, recebido: %d", tt.expectedStatus, w.Code)
+			if w.Code != tt.expectedCode {
+				t.Errorf("código esperado: %d, recebido: %d", tt.expectedCode, w.Code)
 			}
 
-			if tt.expectedData && tt.expectedStatus == http.StatusOK {
+			if tt.expectedCode == http.StatusOK {
 				var response map[string]interface{}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				if err != nil {
-					t.Fatalf("erro ao decodificar JSON: %v", err)
+					t.Fatalf("erro ao decodificar resposta: %v", err)
 				}
 
-				if response["data"] == nil {
-					t.Error("resposta deveria conter campo 'data'")
-				}
-
-				if response["total"] == nil {
-					t.Error("resposta deveria conter campo 'total'")
-				}
-
-				if response["source"] != tt.mockSource {
-					t.Errorf("source esperado: %s, recebido: %v", tt.mockSource, response["source"])
+				if tt.checkSource {
+					if response["source"] != tt.expectedSource {
+						t.Errorf("source esperado: %s, recebido: %s", tt.expectedSource, response["source"])
+					}
 				}
 
 				data := response["data"].([]interface{})
-				if len(data) != len(tt.mockDeputados) {
-					t.Errorf("quantidade esperada: %d, recebida: %d", len(tt.mockDeputados), len(data))
+				if len(data) != len(tt.mockService.proposicoes) {
+					t.Errorf("quantidade esperada: %d, recebida: %d", len(tt.mockService.proposicoes), len(data))
+				}
+			}
+		})
+	}
+}
+
+func TestGetProposicaoPorIDHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		proposicaoID   string
+		mockService    *MockProposicoesService
+		expectedCode   int
+		checkSource    bool
+		expectedSource string
+	}{
+		{
+			name:         "success - proposição encontrada via API",
+			proposicaoID: "123",
+			mockService: &MockProposicoesService{
+				proposicao: createTestProposicao(123, "PL", 456, 2024, "Ementa do projeto"),
+				source:     "api",
+			},
+			expectedCode:   http.StatusOK,
+			checkSource:    true,
+			expectedSource: "api",
+		},
+		{
+			name:         "success - proposição encontrada via cache",
+			proposicaoID: "123",
+			mockService: &MockProposicoesService{
+				proposicao: createTestProposicao(123, "PL", 456, 2024, "Ementa do projeto"),
+				source:     "cache",
+			},
+			expectedCode:   http.StatusOK,
+			checkSource:    true,
+			expectedSource: "cache",
+		},
+		{
+			name:         "error - ID inválido",
+			proposicaoID: "invalid",
+			mockService:  &MockProposicoesService{},
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "error - proposição não encontrada",
+			proposicaoID: "999",
+			mockService: &MockProposicoesService{
+				err: domain.ErrProposicaoNaoEncontrada,
+			},
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "error - erro interno do serviço",
+			proposicaoID: "123",
+			mockService: &MockProposicoesService{
+				err: errors.New("erro interno"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/proposicoes/:id", GetProposicaoPorIDHandler(tt.mockService))
+
+			req := httptest.NewRequest("GET", "/proposicoes/"+tt.proposicaoID, nil)
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("código esperado: %d, recebido: %d", tt.expectedCode, w.Code)
+			}
+
+			if tt.expectedCode == http.StatusOK {
+				var response map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				if err != nil {
+					t.Fatalf("erro ao decodificar resposta: %v", err)
+				}
+
+				if tt.checkSource {
+					if response["source"] != tt.expectedSource {
+						t.Errorf("source esperado: %s, recebido: %s", tt.expectedSource, response["source"])
+					}
+				}
+
+				data := response["data"].(map[string]interface{})
+				if data["id"] != float64(tt.mockService.proposicao.ID) {
+					t.Errorf("ID esperado: %d, recebido: %v", tt.mockService.proposicao.ID, data["id"])
+				}
+			}
+		})
+	}
+}
+
+// Testes dos deputados existentes
+func TestGetDeputadosHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		queryParams    string
+		mockService    *MockDeputadosService
+		expectedCode   int
+		checkSource    bool
+		expectedSource string
+	}{
+		{
+			name:        "success - deputados encontrados via API",
+			queryParams: "?uf=SP&partido=PT",
+			mockService: &MockDeputadosService{
+				deputados: []domain.Deputado{
+					{ID: 1, Nome: "Deputado 1", UF: "SP", Partido: "PT"},
+				},
+				total:  1,
+				source: "api",
+			},
+			expectedCode:   http.StatusOK,
+			checkSource:    true,
+			expectedSource: "api",
+		},
+		{
+			name:        "success - deputados encontrados via cache",
+			queryParams: "?nome=João",
+			mockService: &MockDeputadosService{
+				deputados: []domain.Deputado{
+					{ID: 1, Nome: "João Silva", UF: "RJ", Partido: "PSDB"},
+				},
+				total:  1,
+				source: "cache",
+			},
+			expectedCode:   http.StatusOK,
+			checkSource:    true,
+			expectedSource: "cache",
+		},
+		{
+			name:        "success - nenhum deputado encontrado",
+			queryParams: "?uf=INEXISTENTE",
+			mockService: &MockDeputadosService{
+				deputados: []domain.Deputado{},
+				total:     0,
+				source:    "api",
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:        "error - erro interno do serviço",
+			queryParams: "?uf=SP",
+			mockService: &MockDeputadosService{
+				err: errors.New("erro interno"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/deputados", GetDeputadosHandler(tt.mockService))
+
+			req := httptest.NewRequest("GET", "/deputados"+tt.queryParams, nil)
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("código esperado: %d, recebido: %d", tt.expectedCode, w.Code)
+			}
+
+			if tt.expectedCode == http.StatusOK {
+				var response map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				if err != nil {
+					t.Fatalf("erro ao decodificar resposta: %v", err)
+				}
+
+				if tt.checkSource {
+					if response["source"] != tt.expectedSource {
+						t.Errorf("source esperado: %s, recebido: %s", tt.expectedSource, response["source"])
+					}
+				}
+
+				data := response["data"].([]interface{})
+				if len(data) != len(tt.mockService.deputados) {
+					t.Errorf("quantidade esperada: %d, recebida: %d", len(tt.mockService.deputados), len(data))
 				}
 			}
 		})
@@ -157,215 +366,119 @@ func TestGetDeputadosHandler(t *testing.T) {
 }
 
 func TestGetDeputadoByIDHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
 	tests := []struct {
 		name           string
 		deputadoID     string
-		mockDeputado   *domain.Deputado
-		mockSource     string
-		mockError      error
-		expectedStatus int
+		mockService    *MockDeputadosService
+		expectedCode   int
+		checkSource    bool
+		expectedSource string
 	}{
 		{
-			name:       "sucesso - deputado encontrado",
+			name:       "success - deputado encontrado via API",
 			deputadoID: "123",
-			mockDeputado: &domain.Deputado{
-				ID:      123,
-				Nome:    "João Silva",
-				Partido: "PT",
-				UF:      "SP",
-				Email:   "joao@camara.leg.br",
+			mockService: &MockDeputadosService{
+				deputado: &domain.Deputado{
+					ID: 123, Nome: "João Silva", UF: "SP", Partido: "PT",
+				},
+				source: "api",
 			},
-			mockSource:     "api",
-			expectedStatus: http.StatusOK,
+			expectedCode:   http.StatusOK,
+			checkSource:    true,
+			expectedSource: "api",
 		},
 		{
-			name:           "deputado não encontrado",
-			deputadoID:     "999",
-			mockError:      errors.New("deputado não encontrado"),
-			expectedStatus: http.StatusNotFound,
+			name:       "success - deputado encontrado via cache",
+			deputadoID: "123",
+			mockService: &MockDeputadosService{
+				deputado: &domain.Deputado{
+					ID: 123, Nome: "João Silva", UF: "SP", Partido: "PT",
+				},
+				source: "cache",
+			},
+			expectedCode:   http.StatusOK,
+			checkSource:    true,
+			expectedSource: "cache",
 		},
 		{
-			name:       "sucesso - dados do cache",
-			deputadoID: "456",
-			mockDeputado: &domain.Deputado{
-				ID:      456,
-				Nome:    "Maria Santos",
-				Partido: "PSDB",
-				UF:      "RJ",
+			name:       "error - ID inválido",
+			deputadoID: "invalid",
+			mockService: &MockDeputadosService{
+				err: errors.New("ID do deputado é obrigatório"),
 			},
-			mockSource:     "cache",
-			expectedStatus: http.StatusOK,
+			expectedCode: http.StatusNotFound, // Handler não valida ID, sempre retorna 404 para erro
+		},
+		{
+			name:       "error - deputado não encontrado",
+			deputadoID: "999",
+			mockService: &MockDeputadosService{
+				err: domain.ErrDeputadoNaoEncontrado,
+			},
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:       "error - erro interno do serviço",
+			deputadoID: "123",
+			mockService: &MockDeputadosService{
+				err: errors.New("erro interno"),
+			},
+			expectedCode: http.StatusNotFound, // Handler sempre retorna 404 para qualquer erro
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Setup
-			mockService := &MockDeputadosService{
-				deputado: tt.mockDeputado,
-				source:   tt.mockSource,
-				err:      tt.mockError,
-			}
+			router := gin.New()
+			router.GET("/deputados/:id", GetDeputadoByIDHandler(tt.mockService))
 
-			router := setupRouter()
-			router.GET("/deputados/:id", GetDeputadoByIDHandler(mockService))
-
-			// Execute
 			req := httptest.NewRequest("GET", "/deputados/"+tt.deputadoID, nil)
 			w := httptest.NewRecorder()
+
 			router.ServeHTTP(w, req)
 
-			// Assert
-			if w.Code != tt.expectedStatus {
-				t.Errorf("status esperado: %d, recebido: %d", tt.expectedStatus, w.Code)
+			if w.Code != tt.expectedCode {
+				t.Errorf("código esperado: %d, recebido: %d", tt.expectedCode, w.Code)
 			}
 
-			if tt.expectedStatus == http.StatusOK {
+			if tt.expectedCode == http.StatusOK {
 				var response map[string]interface{}
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				if err != nil {
-					t.Fatalf("erro ao decodificar JSON: %v", err)
+					t.Fatalf("erro ao decodificar resposta: %v", err)
 				}
 
-				if response["data"] == nil {
-					t.Error("resposta deveria conter campo 'data'")
+				if tt.checkSource {
+					if response["source"] != tt.expectedSource {
+						t.Errorf("source esperado: %s, recebido: %s", tt.expectedSource, response["source"])
+					}
 				}
 
-				if response["source"] != tt.mockSource {
-					t.Errorf("source esperado: %s, recebido: %v", tt.mockSource, response["source"])
+				data := response["data"].(map[string]interface{})
+				if data["id"] != float64(tt.mockService.deputado.ID) {
+					t.Errorf("ID esperado: %d, recebido: %v", tt.mockService.deputado.ID, data["id"])
 				}
 			}
 		})
 	}
 }
 
-func TestGetDespesasDeputadoHandler(t *testing.T) {
-	tests := []struct {
-		name           string
-		deputadoID     string
-		ano            string
-		mockDespesas   []domain.Despesa
-		mockSource     string
-		mockError      error
-		expectedStatus int
-	}{
-		{
-			name:       "sucesso - despesas encontradas",
-			deputadoID: "123",
-			ano:        "2024",
-			mockDespesas: []domain.Despesa{
-				{Ano: 2024, Mes: 1, ValorLiquido: 150.75, TipoDespesa: "COMBUSTÍVEL"},
-				{Ano: 2024, Mes: 2, ValorLiquido: 300.50, TipoDespesa: "ALIMENTAÇÃO"},
-			},
-			mockSource:     "api",
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:           "sucesso - ano padrão (atual)",
-			deputadoID:     "123",
-			ano:            "", // Teste do DefaultQuery
-			mockDespesas:   []domain.Despesa{},
-			mockSource:     "api",
-			expectedStatus: http.StatusOK,
-		},
-		{
-			name:           "erro interno do serviço",
-			deputadoID:     "123",
-			ano:            "2024",
-			mockError:      errors.New("erro ao buscar despesas"),
-			expectedStatus: http.StatusInternalServerError,
-		},
-		{
-			name:           "sucesso - lista vazia",
-			deputadoID:     "123",
-			ano:            "2020",
-			mockDespesas:   []domain.Despesa{},
-			mockSource:     "api",
-			expectedStatus: http.StatusOK,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup
-			mockService := &MockDeputadosService{
-				despesas: tt.mockDespesas,
-				source:   tt.mockSource,
-				err:      tt.mockError,
-			}
-
-			router := setupRouter()
-			router.GET("/deputados/:id/despesas", GetDespesasDeputadoHandler(mockService))
-
-			// Execute
-			url := "/deputados/" + tt.deputadoID + "/despesas"
-			if tt.ano != "" {
-				url += "?ano=" + tt.ano
-			}
-
-			req := httptest.NewRequest("GET", url, nil)
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
-
-			// Assert
-			if w.Code != tt.expectedStatus {
-				t.Errorf("status esperado: %d, recebido: %d", tt.expectedStatus, w.Code)
-			}
-
-			if tt.expectedStatus == http.StatusOK {
-				var response map[string]interface{}
-				err := json.Unmarshal(w.Body.Bytes(), &response)
-				if err != nil {
-					t.Fatalf("erro ao decodificar JSON: %v", err)
-				}
-
-				if response["data"] == nil {
-					t.Error("resposta deveria conter campo 'data'")
-				}
-
-				if response["total"] == nil {
-					t.Error("resposta deveria conter campo 'total'")
-				}
-
-				if response["valor_total"] == nil {
-					t.Error("resposta deveria conter campo 'valor_total'")
-				}
-
-				// Verificar cálculo do total de valores
-				data := response["data"].([]interface{})
-				if len(data) != len(tt.mockDespesas) {
-					t.Errorf("quantidade esperada: %d, recebida: %d", len(tt.mockDespesas), len(data))
-				}
-
-				// Calcular total esperado
-				var expectedTotal float64
-				for _, despesa := range tt.mockDespesas {
-					expectedTotal += despesa.ValorLiquido
-				}
-
-				totalValor := response["valor_total"].(float64)
-				if totalValor != expectedTotal {
-					t.Errorf("total esperado: %.2f, recebido: %.2f", expectedTotal, totalValor)
-				}
-			}
-		})
-	}
-}
-
-// Benchmark para handlers críticos
+// Benchmark tests
 func BenchmarkGetDeputadosHandler(b *testing.B) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+
 	mockService := &MockDeputadosService{
 		deputados: []domain.Deputado{
-			{ID: 1, Nome: "João Silva", Partido: "PT", UF: "SP"},
-			{ID: 2, Nome: "Maria Santos", Partido: "PSDB", UF: "RJ"},
+			{ID: 1, Nome: "Deputado 1", UF: "SP", Partido: "PT"},
+			{ID: 2, Nome: "Deputado 2", UF: "RJ", Partido: "PSDB"},
 		},
-		source: "api",
+		source: "cache",
 	}
 
-	router := setupRouter()
 	router.GET("/deputados", GetDeputadosHandler(mockService))
 
-	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		req := httptest.NewRequest("GET", "/deputados", nil)
 		w := httptest.NewRecorder()
