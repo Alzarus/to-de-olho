@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"to-de-olho-backend/internal/application"
 	"to-de-olho-backend/internal/domain"
 
 	"github.com/gin-gonic/gin"
@@ -483,5 +484,348 @@ func BenchmarkGetDeputadosHandler(b *testing.B) {
 		req := httptest.NewRequest("GET", "/deputados", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
+	}
+}
+
+// Mock Analytics Service para testes
+type MockAnalyticsService struct {
+	rankings         interface{}
+	insights         *application.InsightsGerais
+	err              error
+	source           string
+	atualizarChamado bool
+}
+
+func (m *MockAnalyticsService) GetRankingGastos(ctx context.Context, ano int, limite int) (*application.RankingGastos, string, error) {
+	if m.err != nil {
+		return nil, "", m.err
+	}
+	ranking := &application.RankingGastos{
+		Ano:         ano,
+		TotalGeral:  1000000.0,
+		MediaGastos: 50000.0,
+		Deputados:   []application.DeputadoRankingGastos{},
+	}
+	return ranking, m.source, nil
+}
+
+func (m *MockAnalyticsService) GetRankingProposicoes(ctx context.Context, ano int, limite int) (*application.RankingProposicoes, string, error) {
+	if m.err != nil {
+		return nil, "", m.err
+	}
+	ranking := &application.RankingProposicoes{
+		Ano:       ano,
+		Deputados: []application.DeputadoRankingProposicoes{},
+	}
+	return ranking, m.source, nil
+}
+
+func (m *MockAnalyticsService) GetRankingPresenca(ctx context.Context, ano int, limite int) (*application.RankingPresenca, string, error) {
+	if m.err != nil {
+		return nil, "", m.err
+	}
+	ranking := &application.RankingPresenca{
+		Ano:       ano,
+		Deputados: []application.DeputadoRankingPresenca{},
+	}
+	return ranking, m.source, nil
+}
+
+func (m *MockAnalyticsService) GetInsightsGerais(ctx context.Context) (*application.InsightsGerais, string, error) {
+	if m.err != nil {
+		return nil, "", m.err
+	}
+	if m.insights == nil {
+		m.insights = &application.InsightsGerais{
+			TotalDeputados:      513,
+			TotalGastoAno:       25000000.0,
+			TotalProposicoesAno: 1500,
+			MediaGastosDeputado: 50000.0,
+			PartidoMaiorGasto:   "PT",
+			UFMaiorGasto:        "SP",
+		}
+	}
+	return m.insights, m.source, nil
+}
+
+func (m *MockAnalyticsService) AtualizarRankings(ctx context.Context) error {
+	m.atualizarChamado = true
+	return m.err
+}
+
+func TestGetDespesasDeputadoHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		deputadoID   string
+		ano          string
+		mockService  *MockDeputadosService
+		expectedCode int
+	}{
+		{
+			name:       "success - despesas encontradas",
+			deputadoID: "123",
+			ano:        "2024",
+			mockService: &MockDeputadosService{
+				source: "api",
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:       "error - erro no serviço",
+			deputadoID: "123",
+			mockService: &MockDeputadosService{
+				err: errors.New("erro do serviço"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/deputados/:id/despesas", GetDespesasDeputadoHandler(tt.mockService))
+
+			url := "/deputados/" + tt.deputadoID + "/despesas"
+			if tt.ano != "" {
+				url += "?ano=" + tt.ano
+			}
+
+			req := httptest.NewRequest("GET", url, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
+			}
+		})
+	}
+}
+
+func TestGetRankingGastosHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		limite       string
+		mockService  *MockAnalyticsService
+		expectedCode int
+	}{
+		{
+			name:   "success - ranking encontrado",
+			limite: "10",
+			mockService: &MockAnalyticsService{
+				rankings: []interface{}{
+					map[string]interface{}{"nome": "Deputado 1", "gasto": 1000.0},
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "success - limite padrão",
+			mockService:  &MockAnalyticsService{rankings: []interface{}{}},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name: "error - erro no serviço",
+			mockService: &MockAnalyticsService{
+				err: errors.New("erro analytics"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/rankings/gastos", GetRankingGastosHandler(tt.mockService))
+
+			url := "/rankings/gastos"
+			if tt.limite != "" {
+				url += "?limite=" + tt.limite
+			}
+
+			req := httptest.NewRequest("GET", url, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
+			}
+		})
+	}
+}
+
+func TestGetRankingProposicoesHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		mockService  *MockAnalyticsService
+		expectedCode int
+	}{
+		{
+			name: "success - ranking encontrado",
+			mockService: &MockAnalyticsService{
+				rankings: []interface{}{
+					map[string]interface{}{"nome": "Deputado 1", "proposicoes": 10},
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name: "error - erro no serviço",
+			mockService: &MockAnalyticsService{
+				err: errors.New("erro analytics"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/rankings/proposicoes", GetRankingProposicoesHandler(tt.mockService))
+
+			req := httptest.NewRequest("GET", "/rankings/proposicoes", nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
+			}
+		})
+	}
+}
+
+func TestGetRankingPresencaHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		mockService  *MockAnalyticsService
+		expectedCode int
+	}{
+		{
+			name: "success - ranking encontrado",
+			mockService: &MockAnalyticsService{
+				rankings: []interface{}{
+					map[string]interface{}{"nome": "Deputado 1", "presenca": 95.5},
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name: "error - erro no serviço",
+			mockService: &MockAnalyticsService{
+				err: errors.New("erro analytics"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/rankings/presenca", GetRankingPresencaHandler(tt.mockService))
+
+			req := httptest.NewRequest("GET", "/rankings/presenca", nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
+			}
+		})
+	}
+}
+
+func TestGetInsightsGeraisHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		mockService  *MockAnalyticsService
+		expectedCode int
+	}{
+		{
+			name: "success - insights encontrados",
+			mockService: &MockAnalyticsService{
+				insights: &application.InsightsGerais{
+					TotalDeputados:      513,
+					TotalGastoAno:       25000000.0,
+					TotalProposicoesAno: 1500,
+					MediaGastosDeputado: 50000.0,
+					PartidoMaiorGasto:   "PT",
+					UFMaiorGasto:        "SP",
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name: "error - erro no serviço",
+			mockService: &MockAnalyticsService{
+				err: errors.New("erro analytics"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/insights", GetInsightsGeraisHandler(tt.mockService))
+
+			req := httptest.NewRequest("GET", "/insights", nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
+			}
+		})
+	}
+}
+
+func TestPostAtualizarRankingsHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		mockService  *MockAnalyticsService
+		expectedCode int
+	}{
+		{
+			name:         "success - rankings atualizados",
+			mockService:  &MockAnalyticsService{},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name: "error - erro na atualização",
+			mockService: &MockAnalyticsService{
+				err: errors.New("erro ao atualizar"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.POST("/rankings/atualizar", PostAtualizarRankingsHandler(tt.mockService))
+
+			req := httptest.NewRequest("POST", "/rankings/atualizar", nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
+			}
+
+			if tt.expectedCode == http.StatusOK && !tt.mockService.atualizarChamado {
+				t.Error("AtualizarRankings should have been called")
+			}
+		})
 	}
 }

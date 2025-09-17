@@ -48,6 +48,23 @@ func TestMigrator_GetMigrations(t *testing.T) {
 			t.Errorf("SQL da migração deveria conter '%s'", cmd)
 		}
 	}
+
+	// Verificar se as migrações estão ordenadas por versão
+	for i := 1; i < len(migrations); i++ {
+		if migrations[i].Version <= migrations[i-1].Version {
+			t.Errorf("migrações deveriam estar ordenadas por versão, %d não é maior que %d", migrations[i].Version, migrations[i-1].Version)
+		}
+	}
+
+	// Verificar se todas as migrações têm nome
+	for i, migration := range migrations {
+		if migration.Name == "" {
+			t.Errorf("migração %d deveria ter nome não vazio", i)
+		}
+		if migration.SQL == "" {
+			t.Errorf("migração %d (%s) deveria ter SQL não vazio", i, migration.Name)
+		}
+	}
 }
 
 // Função auxiliar para verificar se uma string contém outra
@@ -159,6 +176,141 @@ func TestMigrator_GetMigrations_VersionSequence(t *testing.T) {
 		if migration.Version != expectedVersion {
 			t.Errorf("migração %d deveria ter versão %d, obteve %d", i, expectedVersion, migration.Version)
 		}
+	}
+}
+
+// Testes adicionais para melhorar cobertura
+func TestMigration_Structure(t *testing.T) {
+	migration := Migration{
+		Version: 1,
+		Name:    "test_migration",
+		SQL:     "CREATE TABLE test (id INTEGER);",
+	}
+
+	if migration.Version != 1 {
+		t.Errorf("Version = %v, want 1", migration.Version)
+	}
+
+	if migration.Name != "test_migration" {
+		t.Errorf("Name = %v, want test_migration", migration.Name)
+	}
+
+	if migration.SQL != "CREATE TABLE test (id INTEGER);" {
+		t.Errorf("SQL = %v, want CREATE TABLE test (id INTEGER);", migration.SQL)
+	}
+}
+
+func TestMigrator_IsMigrationApplied_Extended(t *testing.T) {
+	migrator := &Migrator{}
+
+	appliedMigrations := map[int]bool{
+		1: true,
+		3: true,
+		5: true,
+	}
+
+	tests := []struct {
+		version  int
+		expected bool
+	}{
+		{1, true},
+		{2, false},
+		{3, true},
+		{4, false},
+		{5, true},
+		{6, false},
+	}
+
+	for _, tt := range tests {
+		result := migrator.isMigrationApplied(appliedMigrations, tt.version)
+		if result != tt.expected {
+			t.Errorf("isMigrationApplied(%d) = %v, want %v", tt.version, result, tt.expected)
+		}
+	}
+}
+
+func TestMigrator_IsMigrationApplied_EmptyMapV2(t *testing.T) {
+	migrator := &Migrator{}
+
+	appliedMigrations := map[int]bool{}
+	result := migrator.isMigrationApplied(appliedMigrations, 1)
+
+	if result != false {
+		t.Errorf("isMigrationApplied with empty map should return false, got %v", result)
+	}
+}
+
+func TestMigrator_GetMigrations_AllVersionsUnique(t *testing.T) {
+	migrator := &Migrator{}
+	migrations := migrator.getMigrations()
+
+	versionMap := make(map[int]bool)
+	for _, migration := range migrations {
+		if versionMap[migration.Version] {
+			t.Errorf("versão %d aparece mais de uma vez", migration.Version)
+		}
+		versionMap[migration.Version] = true
+	}
+}
+
+func TestMigrator_GetMigrations_AllNamesUnique(t *testing.T) {
+	migrator := &Migrator{}
+	migrations := migrator.getMigrations()
+
+	nameMap := make(map[string]bool)
+	for _, migration := range migrations {
+		if nameMap[migration.Name] {
+			t.Errorf("nome '%s' aparece mais de uma vez", migration.Name)
+		}
+		nameMap[migration.Name] = true
+	}
+}
+
+func TestMigrator_GetMigrations_SQLValidation(t *testing.T) {
+	migrator := &Migrator{}
+	migrations := migrator.getMigrations()
+
+	for _, migration := range migrations {
+		// Verificar se o SQL contém comandos SQL válidos
+		if !containsString(migration.SQL, "CREATE") &&
+			!containsString(migration.SQL, "ALTER") &&
+			!containsString(migration.SQL, "INSERT") {
+			t.Errorf("migração %s deveria conter comandos SQL válidos", migration.Name)
+		}
+
+		// Verificar se não contém comandos perigosos
+		dangerousCommands := []string{"DROP DATABASE", "TRUNCATE", "DELETE FROM"}
+		for _, cmd := range dangerousCommands {
+			if containsString(migration.SQL, cmd) {
+				t.Errorf("migração %s não deveria conter comando perigoso: %s", migration.Name, cmd)
+			}
+		}
+	}
+}
+
+func TestMigrator_Fields(t *testing.T) {
+	pool := &pgxpool.Pool{}
+	migrator := NewMigrator(pool)
+
+	// Verificar se todos os campos estão definidos corretamente
+	if migrator.db == nil {
+		t.Error("db field should not be nil")
+	}
+
+	if migrator.db != pool {
+		t.Error("db field should point to the provided pool")
+	}
+}
+
+func TestMigrator_NilPool(t *testing.T) {
+	migrator := NewMigrator(nil)
+
+	if migrator == nil {
+		t.Error("NewMigrator should not return nil even with nil pool")
+	}
+
+	if migrator.db != nil {
+		t.Error("db field should be nil when nil pool is provided")
 	}
 }
 

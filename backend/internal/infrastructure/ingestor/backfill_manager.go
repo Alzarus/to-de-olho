@@ -7,8 +7,17 @@ import (
 	"log"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// DB abstracts the subset of pgxpool.Pool used, enabling mocking in unit tests.
+type DB interface {
+	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+}
 
 // BackfillCheckpoint representa um checkpoint do processo de backfill
 type BackfillCheckpoint struct {
@@ -34,11 +43,16 @@ type BackfillProgress struct {
 
 // BackfillManager gerencia o processo de backfill histórico
 type BackfillManager struct {
-	db *pgxpool.Pool
+	db DB
 }
 
 // NewBackfillManager cria um novo gerenciador de backfill
 func NewBackfillManager(db *pgxpool.Pool) *BackfillManager {
+	return &BackfillManager{db: db}
+}
+
+// NewBackfillManagerWithDB cria um novo gerenciador de backfill com interface DB (para testes)
+func NewBackfillManagerWithDB(db DB) *BackfillManager {
 	return &BackfillManager{db: db}
 }
 
