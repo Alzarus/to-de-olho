@@ -55,7 +55,9 @@ func (sbe *StrategicBackfillExecutor) ExecuteBackfill(ctx context.Context) error
 		for _, checkpoint := range pendingCheckpoints {
 			if err := sbe.resumeCheckpoint(ctx, checkpoint); err != nil {
 				log.Printf("❌ Erro ao resumir checkpoint %s: %v", checkpoint.ID, err)
-				sbe.manager.MarkAsFailed(ctx, checkpoint, err.Error())
+				if markErr := sbe.manager.MarkAsFailed(ctx, checkpoint, err.Error()); markErr != nil {
+					log.Printf("❌ Erro ao marcar checkpoint como falhado: %v", markErr)
+				}
 			}
 		}
 	}
@@ -139,13 +141,17 @@ func (sbe *StrategicBackfillExecutor) executeBackfillPlan(ctx context.Context) e
 		if err := sbe.executeCheckpoint(ctx, checkpoint); err != nil {
 			log.Printf("❌ Falha no checkpoint %s após %v: %v",
 				checkpoint.ID, time.Since(startTime), err)
-			sbe.manager.MarkAsFailed(ctx, checkpoint, err.Error())
+			if markErr := sbe.manager.MarkAsFailed(ctx, checkpoint, err.Error()); markErr != nil {
+				log.Printf("❌ Erro ao marcar checkpoint como falhado: %v", markErr)
+			}
 			continue
 		}
 
 		duration := time.Since(startTime)
 		log.Printf("✅ Checkpoint %s concluído em %v", checkpoint.ID, duration)
-		sbe.manager.MarkAsCompleted(ctx, checkpoint)
+		if markErr := sbe.manager.MarkAsCompleted(ctx, checkpoint); markErr != nil {
+			log.Printf("❌ Erro ao marcar checkpoint como concluído: %v", markErr)
+		}
 	}
 
 	// Estatísticas finais
