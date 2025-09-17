@@ -182,6 +182,54 @@ type Rankings struct {
 3. **Implementar Despesas por Deputado**: Método no repositório + endpoint
 4. **Frontend WCAG**: Correções de contraste e navegação por teclado
 
+### 🧪 **Testing Infrastructure (CRÍTICO - Esta Sprint)**
+**Problema Identificado**: Módulos de infraestrutura com baixa cobertura afetam confiabilidade do core business
+- **migrations**: 25.0% → **Target**: 60%+ 
+- **ingestor**: 18.9% → **Target**: 55%+
+- **Cobertura geral**: ~72% → **Target**: 80%+
+
+#### **Estratégia Smart Testing**:
+```go
+// 1. Database Mocking com Testcontainers
+func TestMigrator_WithRealDB(t *testing.T) {
+    container := testcontainers.PostgreSQL(...)  // DB real isolado
+    migrator := NewMigrator(container.ConnectionString())
+    // Testa DDL real sem afetar produção
+}
+
+// 2. Service Mocks com Interfaces Funcionais
+type MockDeputadosService struct {
+    responses map[string][]domain.Deputado  // Dados predefinidos
+    callCount int                          // Tracking de calls
+}
+```
+
+#### **Ferramentas Recomendadas**:
+- **Testcontainers Go**: DB PostgreSQL real em containers para migrations
+- **GoMock** ou **Counterfeiter**: Geração automática de mocks para services
+- **Dockertest**: Alternativa leve para containers de teste
+- **Embedded SQLite**: Para testes unitários que precisam de SQL real
+
+#### **Implementação Faseada**:
+**Fase 1 (Esta Semana)**:
+- [ ] Implementar Testcontainers para `migrations_test.go`
+- [ ] Criar mocks funcionais para `ingestor_test.go` com dados reais
+- [ ] Setup CI/CD com containers de teste
+
+**Fase 2 (Próxima Sprint)**:
+- [ ] Benchmark testing: validar performance sob carga
+- [ ] Integration tests: end-to-end com dados Câmara
+- [ ] Chaos testing: simular falhas de API externa
+
+#### **Cobertura Target**:
+| Módulo | Atual | Target | Estratégia |
+|--------|-------|--------|------------|
+| migrations | 25.0% | 60%+ | Testcontainers + DDL real |
+| ingestor | 18.9% | 55%+ | Service mocks + integration |
+| **TOTAL** | ~72% | **80%+** | Smart testing focused |
+
+> **Rationale**: Infraestrutura é o coração da ingestão. Falhas aqui comprometem dados ciudadanos dependem.
+
 ### 📊 **Performance & Dados Reais (Próxima Sprint)**
 1. **Substituir Simulação por Dados Reais**:
    - Implementar busca real de despesas no `DeputadoRepository`

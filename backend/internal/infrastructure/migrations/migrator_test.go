@@ -308,6 +308,7 @@ func TestMigrator_NilPool(t *testing.T) {
 
 	if migrator == nil {
 		t.Error("NewMigrator should not return nil even with nil pool")
+		return
 	}
 
 	if migrator.db != nil {
@@ -716,5 +717,70 @@ func TestMigrator_Run_NilDB(t *testing.T) {
 		t.Error("esperava erro com DB nil")
 	} else {
 		t.Logf("Run retornou erro esperado: %v", err)
+	}
+}
+
+// Testes diretos para métodos internos com coverage adicional
+
+func TestMigrator_CreateMigrationsTable_NilDB(t *testing.T) {
+	migrator := NewMigrator(nil)
+	ctx := context.Background()
+
+	// Deve dar panic com DB nil
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("createMigrationsTable panic esperado com DB nil: %v", r)
+		} else {
+			t.Error("esperava panic com DB nil")
+		}
+	}()
+
+	err := migrator.createMigrationsTable(ctx)
+	if err == nil {
+		t.Error("esperava erro com DB nil")
+	}
+}
+
+func TestMigrator_GetAppliedMigrations_NilDB(t *testing.T) {
+	migrator := NewMigrator(nil)
+	ctx := context.Background()
+
+	// Deve dar panic com DB nil
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("getAppliedMigrations panic esperado com DB nil: %v", r)
+		} else {
+			t.Error("esperava panic com DB nil")
+		}
+	}()
+
+	applied, err := migrator.getAppliedMigrations(ctx)
+	if err == nil || applied != nil {
+		t.Error("esperava erro com DB nil")
+	}
+}
+
+func TestMigrator_ApplyMigration_NilDB(t *testing.T) {
+	migrator := NewMigrator(nil)
+	ctx := context.Background()
+
+	migration := Migration{
+		Version: 1,
+		Name:    "test_migration",
+		SQL:     "CREATE TABLE test (id INT);",
+	}
+
+	// Deve dar panic com DB nil
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("applyMigration panic esperado com DB nil: %v", r)
+		} else {
+			t.Error("esperava panic com DB nil")
+		}
+	}()
+
+	err := migrator.applyMigration(ctx, migration)
+	if err == nil {
+		t.Error("esperava erro com DB nil")
 	}
 }
