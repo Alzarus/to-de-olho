@@ -57,6 +57,10 @@ func (m *mockDB) Query(ctx context.Context, sql string, args ...interface{}) (pg
 	if m.queryErr != nil {
 		return nil, m.queryErr
 	}
+	// Se rows for nil, retornar um mock vazio para evitar nil pointer dereference
+	if m.rows == nil {
+		return &mockRows{data: []string{}}, nil
+	}
 	return m.rows, nil
 }
 
