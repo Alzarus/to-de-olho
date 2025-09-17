@@ -28,7 +28,8 @@ func (m *MockDBProposicoes) Query(ctx context.Context, sql string, args ...inter
 	if m.queryFunc != nil {
 		return m.queryFunc(ctx, sql, args...)
 	}
-	return nil, nil
+	// Retornar mock rows vazio em vez de nil para evitar panic
+	return NewMockRowsProposicoes([][]interface{}{}), nil
 }
 
 // MockRows implementa pgx.Rows para testes
