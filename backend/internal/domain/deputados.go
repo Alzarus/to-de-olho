@@ -60,17 +60,24 @@ func isValidUF(uf string) bool {
 }
 
 type Despesa struct {
-	Ano            int     `json:"ano"`
-	Mes            int     `json:"mes"`
-	TipoDespesa    string  `json:"tipoDespesa"`
-	CodDocumento   int     `json:"codDocumento"`
-	TipoDocumento  string  `json:"tipoDocumento"`
-	CodTipoDoc     int     `json:"codTipoDocumento"`
-	DataDocumento  string  `json:"dataDocumento"`
-	NumDocumento   string  `json:"numDocumento"`
-	ValorLiquido   float64 `json:"valorLiquido"`
-	Fornecedor     string  `json:"nomeFornecedor"`
-	CNPJFornecedor string  `json:"cnpjCpfFornecedor"`
+	Ano               int     `json:"ano"`
+	Mes               int     `json:"mes"`
+	TipoDespesa       string  `json:"tipoDespesa"`
+	CodDocumento      int     `json:"codDocumento"`
+	TipoDocumento     string  `json:"tipoDocumento"`
+	CodTipoDocumento  int     `json:"codTipoDocumento"`
+	DataDocumento     string  `json:"dataDocumento"`
+	NumDocumento      string  `json:"numDocumento"`
+	ValorDocumento    float64 `json:"valorDocumento"`
+	URLDocumento      string  `json:"urlDocumento"`
+	NomeFornecedor    string  `json:"nomeFornecedor"`
+	CNPJCPFFornecedor string  `json:"cnpjCpfFornecedor"`
+	ValorLiquido      float64 `json:"valorLiquido"`
+	ValorBruto        float64 `json:"valorBruto,omitempty"`
+	ValorGlosa        float64 `json:"valorGlosa"`
+	NumRessarcimento  string  `json:"numRessarcimento,omitempty"`
+	CodLote           int     `json:"codLote"`
+	Parcela           int     `json:"parcela,omitempty"`
 }
 
 // Validate valida os dados da despesa
@@ -104,4 +111,32 @@ func (d *Despesa) GetMesNome() string {
 	}
 
 	return meses[d.Mes]
+}
+
+// Erros do domínio deputados
+var (
+	ErrDeputadoIDInvalido      = errors.New("ID do deputado inválido")
+	ErrDeputadoNomeVazio       = errors.New("nome do deputado é obrigatório")
+	ErrDeputadoUFInvalida      = errors.New("UF inválida")
+	ErrDeputadoPartidoInvalido = errors.New("partido inválido")
+	ErrDeputadoNaoEncontrado   = errors.New("deputado não encontrado")
+)
+
+// DeputadoFilter representa os filtros para busca de deputados
+type DeputadoFilter struct {
+	Nome    string `json:"nome,omitempty"`
+	UF      string `json:"uf,omitempty"`
+	Partido string `json:"partido,omitempty"`
+	Limite  int    `json:"limite,omitempty"`
+	Pagina  int    `json:"pagina,omitempty"`
+}
+
+// SetDefaults aplica valores padrão aos filtros
+func (f *DeputadoFilter) SetDefaults() {
+	if f.Limite <= 0 {
+		f.Limite = 20
+	}
+	if f.Pagina <= 0 {
+		f.Pagina = 1
+	}
 }

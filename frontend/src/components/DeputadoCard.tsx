@@ -5,9 +5,10 @@ import { Deputado } from './DeputadosPage';
 interface DeputadoCardProps {
   deputado: Deputado;
   onClick: () => void;
+  onVerDespesas?: () => void;
 }
 
-export default function DeputadoCard({ deputado, onClick }: DeputadoCardProps) {
+export default function DeputadoCard({ deputado, onClick, onVerDespesas }: DeputadoCardProps) {
   const [imageError, setImageError] = useState(false);
 
   return (
@@ -48,7 +49,13 @@ export default function DeputadoCard({ deputado, onClick }: DeputadoCardProps) {
         )}
       </div>
 
-      <button className="mt-4 w-full bg-blue-50 text-blue-700 py-2 px-4 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center text-sm font-medium">
+      <button 
+        className="mt-4 w-full bg-blue-50 text-blue-700 py-2 px-4 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center text-sm font-medium"
+        onClick={(e) => {
+          e.stopPropagation();
+          onVerDespesas?.();
+        }}
+      >
         <Euro className="h-4 w-4 mr-2" />
         Ver Despesas
       </button>

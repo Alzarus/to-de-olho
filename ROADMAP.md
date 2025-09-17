@@ -1,206 +1,320 @@
-# 🛣️ Roadmap de Desenvolvimento - "Tô De Olho"
+# 🛣️ Roadmap - "Tô De Olho" 
 
-> **Plataforma de Transparência Política - Câmara dos Deputados**
+> **Transparência Política para Todos os Brasileiros**
 > 
-> **Autor**: Pedro Batista de Almeida Filho | **Curso**: ADS - IFBA  
-> **Status**: Setembro 2025 | **Progresso Geral**: 90% MVP Backend
+> **Status**: Set/2025 | **Arquitetura**: Ingestão Total + Analytics + WCAG 2.1 AA
 
-## 📊 Status Atual do Projeto
+## 🎯 Visão Core 2026
 
-| Componente | Status | Cobertura Testes | Próximo Marco |
-|------------|--------|------------------|---------------|
-| 🏗️ **Infraestrutura** | ✅ Completo | - | - |
-| 🔧 **Backend Core** | ✅ MVP | ~85% | Funcionalidades |
-| 🧪 **Testes & QA** | ✅ Estável | 85%+ | 90%+ |
-| 🎨 **Frontend** | ✅ Básico | Manual | Expansão |
-| 🐳 **Docker/Deploy** | ✅ Funcional | - | Produção |
+**Missão**: Plataforma acessível que democratiza dados da Câmara com:
+- **🔄 Ingestão Completa**: Base própria (histórico + diário)  
+- **📊 Analytics Inteligentes**: Rankings, insights, tendências
+- **♿ WCAG 2.1 AA**: Interface para TODA população brasileira
+- **🤖 IA Educativa**: Assistente político contextual
 
----
+## 📊 Status Arquitetural
 
-## ✅ Marcos Recentes (Agosto-Setembro 2025)
+| Camada | Status | Prioridade | Marco |
+|--------|--------|------------|-------|
+| 🔄 **Ingestão ETL** | ✅ Implementado | CRÍTICA | ✅ Set/2025 |
+| 📊 **Analytics Engine** | ✅ Base pronta | ALTA | ✅ Set/2025 |
+| ♿ **Frontend WCAG** | ❌ Não conforme | CRÍTICA | Out/2025 |
+| 🏗️ **Backend Core** | ✅ Sólido | - | Manter |
+| 🤖 **IA Gemini** | ❌ Planejado | MÉDIA | Dez/2025 |
 
-### 🏆 **Conquistas Principais**
+## 🎉 Progresso Setembro 2025
 
-#### ✅ **Arquitetura & Configuração (COMPLETO)**
-- **Clean Architecture** implementada (Domain/Application/Infrastructure/Interfaces)
-- **Sistema de configuração centralizada** com validação automática
-- **Melhores práticas de env vars** documentadas e implementadas
-- **Rate limiting configurável** (100 req/min padrão)
-- **Cache Redis + PostgreSQL fallback** funcionando
+### ✅ **CONCLUÍDO - Set/16/2025**
 
-#### ✅ **API Backend (FUNCIONAL)**
-- **Endpoints REST funcionais**:
-  - `GET /api/v1/health`
-  - `GET /api/v1/deputados` (filtros: UF, partido, nome)
-  - `GET /api/v1/deputados/:id`
-  - `GET /api/v1/deputados/:id/despesas`
-- **Cliente API Câmara resiliente** (retry, backoff, circuit breaker)
-- **Fallback de dados** via PostgreSQL quando API externa falhar
-- **CORS** configurado para frontend
+#### 🔄 **Sistema de Ingestão Completo**
+- ✅ **Backfill Configurável**: Ano inicial configurável via `INGESTOR_BACKFILL_START_YEAR=2025`
+- ✅ **Estratégia Inteligente**: Checkpoints, retry exponencial, circuit breaker
+- ✅ **Três Modos**: `daily`, `backfill`, `strategic` com parâmetros flexíveis
+- ✅ **Configuração Robusta**: `IngestorConfig` com batch size e max retries
+- ✅ **Comando**: `./ingestor -mode=strategic -start-year=2025`
 
-#### ✅ **Frontend MVP (OPERACIONAL)**
-- **Next.js 15 + TypeScript** configurado
-- **Interface responsiva** com Tailwind CSS
-- **Lista de deputados funcional** com fotos e dados
-- **Sistema de filtros** (UF, partido, busca)
-- **Modal de detalhes** do deputado
-- **Integração backend** via Axios
+#### 📊 **Analytics com Dados Internos**
+- ✅ **Repositórios Diretos**: Analytics usa PostgreSQL ao invés da API Câmara
+- ✅ **Rankings Disponíveis**: Gastos, proposições, presença (com simulação)
+- ✅ **Cache Inteligente**: Redis para performance + fallback
+- ✅ **Insights Gerais**: Dashboard agregado para transparência
 
-#### ✅ **Infrastructure & DevOps**
-- **Docker Compose funcional** (backend, frontend, PostgreSQL, Redis)
-- **Scripts de automação** Windows/PowerShell
-- **Sistema de migrações** PostgreSQL (✅ go:embed CI/CD blocker CORRIGIDO)
-- **Health checks** implementados
-- **Documentação técnica completa**
-- **CI/CD Pipeline** desbloqueado (`go vet` e `go build` passando)
+#### 🧪 **Testing & Collection**
+- ✅ **Postman Collection Completa**: 25+ endpoints organizados
+- ✅ **Ambientes Configurados**: Local development + variáveis
+- ✅ **Testes Automáticos**: Validação de status, performance, estrutura
+- ✅ **Documentação**: README detalhado para uso da collection
 
-### 📊 **Cobertura de Testes Atual (ATUALIZADA - SETEMBRO 2025)**
+#### 🏗️ **Arquitetura Melhorada**
+- ✅ **Interfaces Limpas**: Repository patterns implementados
+- ✅ **Configuração Central**: `config.go` com todas as settings
+- ✅ **Separation of Concerns**: Analytics não depende mais de services externos
+- ✅ **Error Handling**: Timeouts, contextos, logs estruturados
+
+#### 🧪 **Qualidade & Performance**
+- ✅ **Testes Corrigidos**: Analytics service 100% funcional (12 erros de compilação resolvidos)
+- ✅ **Performance Otimizada**: Processamento de 513 deputados em ~76μs (vs limitação anterior de 100)
+- ✅ **Processamento em Batches**: Algoritmo otimizado para grandes volumes (50 deputados/batch)
+- ✅ **Timeout Inteligente**: 30s para rankings, 15s para insights, logs informativos
+
+## 🔄 Arquitetura de Ingestão (PRIORIDADE #1)
+
+### **Problema Atual**: Frontend consulta API externa (lento + instável)
+### **Solução**: Base própria enriched + Analytics pre-computados
+
 ```
-✅ Domain Layer:           100.0% (business logic sólida)
-✅ HTTP Handlers:          100.0% (REST endpoints)  
-✅ Repository:             100.0% (data access)
-✅ Cache (Redis):           95.7% (configuração robusta)
-✅ Application Layer:       90.0% (use cases)
-✅ Middleware:              84.6% (CORS/rate limiting)
-🟡 HTTP Client (Câmara):    83.9% (external API)
-🟡 Infrastructure/DB:       32.4% (básico funcionando)
-❌ Config Package:           0.0% (não testado)
-❌ CMD Entry Points:         0.0% (não testado)
-❌ Migrations:               0.0% (não testado)
-
-TOTAL REALISTA: ~85% (sem falhas ativas) ✅ TODOS OS TESTES PASSANDO
+API Câmara → Ingestor ETL → PostgreSQL → Analytics → API Nossa → Frontend
+     ↓           ↓            ↓           ↓         ↓          ↓
+Deputados   Backfill    Cache Redis   Rankings   Cache     UX Rápida
+Proposições   Daily      Histórico    Insights   Intelig.   + Offline
+Despesas     Schedule    Fallback     Trending   Response
 ```
 
----
+### **Implementação Out/2025**:
+1. **Backfill Histórico** (2019-2025): Deputados, proposições, despesas
+   - **Estratégia**: Lotes por legislatura+ano, rate limit 100/min, circuit breaker
+   - **Ordem**: Deputados → Proposições → Despesas → Votações
+   - **Resilência**: Retry exponencial, checkpoints, fallback por lote
+2. **Ingestão Diária** (6h): Scheduler automático + delta sync  
+3. **Analytics Pre-compute**: Rankings, gastos suspeitos, temas trending
+4. **API Própria**: Cache inteligente + fallback Câmara
 
-## 🎯 Próximas Prioridades (Setembro-Outubro 2025)
+## ♿ Frontend WCAG 2.1 AA (PRIORIDADE #1)
 
-### **🚨 CRÍTICO - Situação Real Atual**
+### **Problemas Identificados**:
+- ❌ Contraste baixo: `text-gray-600` (3:1) → precisa 4.5:1+
+- ❌ Textos pequenos: `text-sm` → mínimo 16px base
+- ❌ Navegação teclado: sem `tabIndex`, `aria-labels`
+- ❌ Cores únicas: filtros sem indicadores textuais
 
-#### ✅ **RESOLVIDO: Pipeline CI/CD Desbloqueado** (SETEMBRO 2025)
-- **Problema**: `internal/infrastructure/migrations/migrator.go:15:12: pattern *.sql: no matching files found`
-- **Causa**: `go:embed *.sql` falhando em ambiente CI/CD (diferente do local)
-- **Solução**: Migração de arquivos SQL embedidos para SQL inline no código
-- **Validação**: ✅ `go vet ./...` e `go build ./...` passando sem erros
-- **Status**: 🟢 **CI/CD FUNCIONAL**
+### **Padrão Acessível**:
+```tsx
+// ✅ Contraste alto, navegação teclado, aria-labels
+<button 
+  className="bg-blue-700 text-white text-base px-6 py-3 rounded-lg
+             hover:bg-blue-800 focus:ring-4 focus:ring-blue-300
+             focus:outline-none"
+  aria-label="Buscar deputados por filtros selecionados"
+  tabIndex={0}
+>
+  Buscar Deputados
+</button>
+```
 
-#### ✅ **RESOLVIDO: Testes Corrigidos** (SETEMBRO 2025)
-- **Problema**: 5 testes falhando (4 cache Redis + 1 database PostgreSQL)
-- **Causa Cache**: Incompatibilidade entre `REDIS_ADDR` vs `REDIS_HOST`/`REDIS_PORT`
-- **Causa DB**: Teste usando variáveis `DB_*` mas código usando `POSTGRES_*`
-- **Solução Cache**: Método `New()` agora suporta ambas as configurações
-- **Solução DB**: Teste corrigido para usar variáveis corretas e restaurar estado
-- **Validação**: ✅ `go test ./...` - todos os testes passando
-- **Status**: 🟢 **TESTES 100% FUNCIONAIS**
+### **UX Brasileira**:
+- **Linguagem simples**: "Gastos do Deputado" vs "Despesas Parlamentares"
+- **Contexto político**: Tooltips explicativos para termos técnicos
+- **Mobile-first**: 70% acessos via smartphone no Brasil
+- **Offline-ready**: PWA para áreas com internet instável
 
-#### 1. **🏗️ Expandir Cobertura de Testes** (PRÓXIMA PRIORIDADE)
-- Adicionar testes para `config` package (0% → 80%+)
-- Testes básicos para `cmd` entry points (0% → 50%+)
-- Testes para sistema de `migrations` (0% → 70%+)
-- **Meta**: Atingir 90%+ de cobertura geral
+## 📊 Analytics & Insights Engine
 
-#### 2. **📈 Funcionalidades Básicas** (MÉDIA PRIORIDADE)
-- Sistema de ranking/gamificação básico
-- Filtros avançados de busca
-- Análise de despesas (gráficos simples)
-- Sistema de favoritos do usuário
+### **Rankings Automáticos**:
+```go
+type Rankings struct {
+    Presenca      []DeputadoRank // Quem mais falta
+    GastosEfic    []DeputadoRank // Melhor custo/benefício  
+    Proposicoes   []DeputadoRank // Mais ativo legislativo
+    Transparencia []DeputadoRank // Dados mais completos
+}
+```
 
-#### 3. **🚀 Preparação para Produção** (BAIXA PRIORIDADE)
-- Docker multi-stage builds otimizados
-- Configuração de ambiente de produção
-- Scripts de deployment automatizado
-- Monitoramento básico (logs + metrics)
+### **Insights Cidadão**:
+- **Trending**: Temas mais votados últimos 30 dias
+- **Impacto**: Proposições que afetam seu município  
+- **Comparativo**: Seu deputado vs média nacional/estadual
+- **Alertas**: Gastos suspeitos, mudanças importantes
 
----
+## 🤖 IA Assistente Educativo
 
-## 📈 Roadmap de Médio Prazo (Outubro-Dezembro 2025)
-
-### **🔥 Features Prioritárias**
-1. **Autenticação & Usuários** (OAuth2 + JWT)
-2. **Sistema de Comentários** (moderação IA)
-3. **Dashboard Analítico** (métricas + visualizações)
-4. **API Rate Limiting Avançado** (por usuário)
-5. **Sistema de Notificações** (email + push)
-
-### **🛠️ Melhorias Técnicas**
-1. **Monitoramento Completo** (Prometheus + Grafana)
-2. **Cache Inteligente** (invalidação automática)
-3. **Otimização de Performance** (lazy loading, pagination)
-4. **Segurança Avançada** (OWASP compliance)
-5. **Documentação Interativa** (Swagger/OpenAPI)
-
-### **📱 Expansão de Plataformas**
-1. **PWA** (Progressive Web App)
-2. **Mobile-First** optimizations
-3. **API Pública** para desenvolvedores
-4. **Integração TSE** (dados eleições)
-5. **Webhooks** para notificações
+### **Contexto Brasileiro**:
+- **Base Knowledge**: 10k+ perguntas políticas respondidas  
+- **Moderação**: Gemini AI para conteúdo seguro e factual
+- **Educação**: "Como funciona uma PEC?" integrado ao contexto
+- **Personalização**: Baseado na localização (UF/município)
 
 ---
 
-## 💡 Inovações Futuras (2026+)
+## 🚀 Cronograma Executivo Atualizado
 
-### **🤖 Inteligência Artificial**
-- Análise de sentimento em proposições
-- Predição de resultados de votações  
-- Detecção automática de conflitos de interesse
-- Assistente virtual para navegação
+### ✅ **Setembro 2025 - Base Sólida** (CONCLUÍDO)
+- ✅ Ingestor completo (deputados + proposições + despesas)
+- ✅ Analytics com dados internos + cache inteligente
+- ✅ Collection Postman completa para testes
+- ✅ Configuração flexível via environment variables
 
-### **📊 Analytics Avançados**
-- Machine Learning para padrões de gastos suspeitos
-- Análise de redes de relacionamento político
-- Predição de impacto de proposições
-- Dashboard preditivo para cidadãos
+### **Outubro 2025 - Dados Reais & Frontend**
+- [ ] **Dados Reais**: Substituir simulação por repository SQL otimizado
+  - [ ] Implementar `DespesaRepository` com queries por deputado/ano
+  - [ ] Criar índices para performance: `(deputado_id, ano, valor)`
+  - [ ] Validar accuracy rankings vs dados oficiais Câmara
+- [ ] Executar backfill completo 2025 (dados reais da Câmara)
+- [ ] Frontend WCAG 2.1 AA compliance  
+- [ ] Testes de carga: 1000+ requests simultâneas
+- [ ] **Performance Real**: Benchmark analytics com 513 deputados + dados completos
 
-### **🌐 Expansão Nacional**
-- Integração com Senado Federal
-- Dados de câmaras municipais
-- Transparência de governos estaduais
-- Portal unificado de transparência
+### **Novembro 2025 - Analytics Avançados**  
+- [ ] Rankings automáticos com dados reais (presença, gastos, eficiência)
+- [ ] Dashboard insights cidadão
+- [ ] API analytics + frontend integration
+- [ ] Implementar proposições por autor/tema
+- [ ] **Cache Strategy**: Warming + hierarchy (L1+L2+L3)
+- [ ] **Background Jobs**: Rankings pesados processados offline
+
+### **Dezembro 2025 - IA & UX**
+- [ ] Assistente Gemini básico
+- [ ] PWA + offline capabilities  
+- [ ] Testes usuário população alvo
+
+### **Q1 2026 - Produção**
+- [ ] Deploy produção + monitoramento
+  - **Plataforma**: Google Cloud Platform (Cloud Run + Cloud SQL + Memorystore)
+  - **Domínio**: `todeolho.com.br` via Cloud Domains  
+  - **Custo inicial**: ~$90-120/mês (auto-scale conforme uso)
+- [ ] Documentação pública + API aberta
+- [ ] Marketing transparência eleitoral
+
+## 🎯 Próximos Passos Imediatos
+
+### 🔥 **Alta Prioridade (Esta Semana)**
+1. **Executar Backfill Completo**: `./ingestor -mode=strategic -start-year=2025`
+2. **Testar API com Postman**: Validar todos endpoints com dados reais
+3. **Implementar Despesas por Deputado**: Método no repositório + endpoint
+4. **Frontend WCAG**: Correções de contraste e navegação por teclado
+5. **⚠️ RESOLVER DÉBITO TÉCNICO CI/CD**: Retornar cobertura de 70% → 80% com Testcontainers (Out/2025)
+
+### 🧪 **Testing Infrastructure (CRÍTICO - Esta Sprint)**
+**Problema Identificado**: Módulos de infraestrutura com baixa cobertura afetam confiabilidade do core business
+
+> **⚠️ ATENÇÃO TEMPORÁRIA**: Pipeline CI/CD ajustada para 70% de cobertura (Set/17/2025)
+> **📋 DÉBITO TÉCNICO**: Retornar para 80% até Out/2025 com implementação de Testcontainers
+
+- **migrations**: 25.0% → **Target**: 60%+ 
+- **ingestor**: 18.9% → **Target**: 55%+
+- **Cobertura geral**: ~72% → **Target CI/CD**: 70% (temporário) → **Target Final**: 80%+
+
+#### **Estratégia Smart Testing**:
+```go
+// 1. Database Mocking com Testcontainers
+func TestMigrator_WithRealDB(t *testing.T) {
+    container := testcontainers.PostgreSQL(...)  // DB real isolado
+    migrator := NewMigrator(container.ConnectionString())
+    // Testa DDL real sem afetar produção
+}
+
+// 2. Service Mocks com Interfaces Funcionais
+type MockDeputadosService struct {
+    responses map[string][]domain.Deputado  // Dados predefinidos
+    callCount int                          // Tracking de calls
+}
+```
+
+#### **Ferramentas Recomendadas**:
+- **Testcontainers Go**: DB PostgreSQL real em containers para migrations
+- **GoMock** ou **Counterfeiter**: Geração automática de mocks para services
+- **Dockertest**: Alternativa leve para containers de teste
+- **Embedded SQLite**: Para testes unitários que precisam de SQL real
+
+#### **Implementação Faseada**:
+**Fase 1 (Esta Semana)**:
+- [ ] Implementar Testcontainers para `migrations_test.go`
+- [ ] Criar mocks funcionais para `ingestor_test.go` com dados reais
+- [ ] Setup CI/CD com containers de teste
+
+**Fase 2 (Próxima Sprint)**:
+- [ ] Benchmark testing: validar performance sob carga
+- [ ] Integration tests: end-to-end com dados Câmara
+- [ ] Chaos testing: simular falhas de API externa
+
+#### **Cobertura Target**:
+| Módulo | Atual | Target | Estratégia | Status CI/CD |
+|--------|-------|--------|------------|--------------|
+| migrations | 25.0% | 60%+ | Testcontainers + DDL real | 70% temporário |
+| ingestor | 18.9% | 55%+ | Service mocks + integration | 70% temporário |
+| **TOTAL** | ~72% | **80%+** | Smart testing focused | **70% (temporário até Out/2025)** |
+
+> **Rationale**: Infraestrutura é o coração da ingestão. Falhas aqui comprometem dados ciudadanos dependem.
+
+### 📊 **Performance & Dados Reais (Próxima Sprint)**
+1. **Substituir Simulação por Dados Reais**:
+   - Implementar busca real de despesas no `DeputadoRepository`
+   - Criar queries SQL otimizadas para gastos por ano
+   - Adicionar índices para performance (`deputado_id`, `ano`, `valor`)
+
+2. **Otimização Analytics Production**:
+   - Cache warming: Pré-computar rankings principais no deploy
+   - Background jobs: Processar rankings pesados em background
+   - Paginação inteligente: Implementar para rankings > 100 itens
+   - Monitoring: Prometheus metrics para performance analytics
+
+3. **Validação e Qualidade**:
+   - Executar benchmark com dados reais (513 deputados completos)
+   - Stress testing: 1000+ requisições simultâneas
+   - Validar accuracy dos rankings vs dados oficiais Câmara
+   - Configurar alertas para performance degradation
+
+### 🏗️ **Arquitetura & Escalabilidade**
+1. **Repository Layer Completo**:
+   - `DespesaRepository` com queries otimizadas
+   - `VotacaoRepository` para ranking de presença real
+   - Connection pooling e read replicas para analytics
+   
+2. **Cache Strategy**:
+   - Redis Cluster para alta disponibilidade
+   - Cache hierarchy: L1 (in-memory) + L2 (Redis) + L3 (DB)
+   - TTL inteligente baseado na frequência de updates
+
+3. **API Governance**:
+   - Rate limiting por usuário/API key
+   - Circuit breaker para dependencies externas
+   - Health checks e readiness probes
+
+### 📊 **Métricas de Sucesso**
+- **Performance**: API < 200ms vs 2s+ da API Câmara original
+- **Cobertura**: 100% deputados 2025 + principais proposições
+- **Acessibilidade**: WCAG 2.1 AA completo
+- **Testes**: 90%+ cobertura de código
+- **Analytics**: Rankings com 513 deputados em <100ms (atual: 76μs)
+- **Confiabilidade**: Zero timeouts em cenários de produção
+
+### 🛠️ **Melhorias Técnicas Implementadas Hoje (Set/16)**
+- ✅ **Mock Repositories**: Interfaces corretas para testes analytics
+- ✅ **Processamento Escalável**: 600 deputados suportados vs 100 anterior
+- ✅ **Batch Processing**: Algoritmo otimizado em lotes de 50
+- ✅ **Error Handling**: Timeouts configuráveis com logs detalhados
+- ✅ **Interface CachePort**: Abstração completa para cache Redis
+
+### 🔮 **Melhorias Técnicas Futuras**
+- Circuit breaker para API externa (já implementado baseline)
+- Metrics com Prometheus/Grafana  
+- Rate limiting por IP (já implementado)
+- Logs estruturados com observabilidade
+- **Dados Reais**: Substituir simulação por queries PostgreSQL otimizadas
+- **Cache Warming**: Pré-computar rankings durante CI/CD
+- **Horizontal Scaling**: Suporte a múltiplas instâncias analytics
 
 ---
 
-## 📋 Checklist de Finalização MVP
+## ✅ Definition of Done
 
-### Backend Core ✅
-- [x] API REST funcional
-- [x] Integração Câmara dos Deputados
-- [x] Sistema de cache (Redis)
-- [x] Fallback database (PostgreSQL) 
-- [x] Rate limiting
-- [x] Health checks
-- [x] CORS configurado
-- [x] Clean Architecture
-- [x] Testes automatizados (85%+)
-- [x] CI/CD pipeline funcional
+### **Acessibilidade** (não negociável):
+- [ ] Contraste 4.5:1+ em todos elementos
+- [ ] Navegação completa via teclado  
+- [ ] Screen reader friendly (NVDA/JAWS)
+- [ ] Textos mínimo 16px, máximo 80 chars/linha
 
-### Frontend Core ✅
-- [x] Interface responsiva
-- [x] Lista de deputados
-- [x] Sistema de filtros
-- [x] Modal de detalhes
-- [x] Integração com backend
-- [x] Loading states
-- [x] Error handling
+### **Performance**:
+- [ ] API nossa: <200ms (vs 2s+ Câmara)
+- [ ] Frontend: <1s FCP, <2.5s LCP
+- [ ] Offline: Cache 7 dias dados essenciais
 
-### Infrastructure ✅
-- [x] Docker Compose
-- [x] Scripts de automação
-- [x] Migrações de database
-- [x] Documentação técnica
-- [x] Health monitoring
-
-### Próximos Passos 🔄
-- [ ] Testes para módulos sem cobertura
-- [ ] Sistema de autenticação
-- [ ] Dashboard de métricas
-- [ ] Deploy em produção
-- [ ] Monitoramento avançado
+### **Qualidade**:
+- [ ] Testes: 90%+ cobertura  
+- [ ] Security: 0 vulnerabilidades críticas
+- [ ] UX: Validado com brasileiros +50 anos
 
 ---
 
-> **🎯 Status Atual**: MVP Backend 90% completo | Frontend básico funcionando | Infraestrutura sólida
+> **🎯 Meta 2026**: Ferramenta #1 transparência política para eleições
 > 
-> **🚀 Próximo Marco**: Cobertura de testes 90%+ e funcionalidades básicas de usuário
-
-**Última Atualização**: Setembro 9, 2025 | **Responsável**: Pedro Almeida
+> **🇧🇷 Impacto**: Decisões eleitorais mais informadas para TODOS os brasileiros

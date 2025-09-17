@@ -104,6 +104,33 @@ services:
     command: ["./ingestor", "-mode", "daily", "-years", "5"]
     restart: "no"
 
+  # Scheduler (sincronização incremental automática)
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: todo-scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - POSTGRES_DB=${POSTGRES_DB:-to_de_olho}
+      - REDIS_ADDR=${REDIS_ADDR:-redis:6379}
+      - CAMARA_CLIENT_RPS=${CAMARA_CLIENT_RPS:-2}
+      - CAMARA_CLIENT_BURST=${CAMARA_CLIENT_BURST:-4}
+      - CAMARA_CLIENT_TIMEOUT=${CAMARA_CLIENT_TIMEOUT:-30s}
+      - CAMARA_CLIENT_BASE_URL=${CAMARA_CLIENT_BASE_URL:-https://dadosabertos.camara.leg.br/api/v2}
+    networks:
+      - todo-network
+    command: ["./scheduler"]
+    restart: unless-stopped
+
   # Adminer (UI para Postgres)
   adminer:
     image: adminer:4.8.1

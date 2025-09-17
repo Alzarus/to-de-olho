@@ -3,6 +3,7 @@ package httpclient
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,8 +11,24 @@ import (
 	"testing"
 	"time"
 
+	"to-de-olho-backend/internal/domain"
+	"to-de-olho-backend/internal/infrastructure/resilience"
+
 	"golang.org/x/time/rate"
 )
+
+// Helper para criar client de teste com circuit breaker
+func newTestCamaraClient(baseURL string) *CamaraClient {
+	config := resilience.DefaultCircuitBreakerConfig()
+	config.Timeout = time.Second
+
+	return &CamaraClient{
+		baseURL:        baseURL,
+		httpClient:     &http.Client{Timeout: time.Second},
+		limiter:        rate.NewLimiter(100, 100),
+		circuitBreaker: resilience.NewCircuitBreaker(config),
+	}
+}
 
 func TestNewCamaraClient(t *testing.T) {
 	tests := []struct {
@@ -125,11 +142,7 @@ func TestCamaraClient_FetchDeputados(t *testing.T) {
 			server := tt.setupServer()
 			defer server.Close()
 
-			client := &CamaraClient{
-				baseURL:    server.URL,
-				httpClient: &http.Client{Timeout: 5 * time.Second},
-				limiter:    rate.NewLimiter(rate.Limit(100), 100),
-			}
+			client := newTestCamaraClient(server.URL)
 
 			ctx := context.Background()
 			deputados, err := client.FetchDeputados(ctx, "", "", "")
@@ -160,11 +173,7 @@ func TestCamaraClient_FetchDeputadoByID(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := &CamaraClient{
-		baseURL:    server.URL,
-		httpClient: &http.Client{Timeout: 5 * time.Second},
-		limiter:    rate.NewLimiter(rate.Limit(100), 100),
-	}
+	client := newTestCamaraClient(server.URL)
 
 	ctx := context.Background()
 	deputado, err := client.FetchDeputadoByID(ctx, "123")
@@ -198,11 +207,7 @@ func TestCamaraClient_FetchDespesas(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := &CamaraClient{
-		baseURL:    server.URL,
-		httpClient: &http.Client{Timeout: 5 * time.Second},
-		limiter:    rate.NewLimiter(rate.Limit(100), 100),
-	}
+	client := newTestCamaraClient(server.URL)
 
 	ctx := context.Background()
 	despesas, err := client.FetchDespesas(ctx, "123", "2024")
@@ -225,11 +230,7 @@ func TestCamaraClient_ContextCancellation(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := &CamaraClient{
-		baseURL:    server.URL,
-		httpClient: &http.Client{Timeout: 5 * time.Second},
-		limiter:    rate.NewLimiter(rate.Limit(100), 100),
-	}
+	client := newTestCamaraClient(server.URL)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
@@ -249,7 +250,7 @@ func TestCamaraClient_FetchDeputadosPaged_NormalizaParametros(t *testing.T) {
 		json.NewEncoder(w).Encode(map[string]any{"dados": []map[string]any{}})
 	}))
 	defer server.Close()
-	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	client := newTestCamaraClient(server.URL)
 
 	// itens >100 deve virar 100; pagina <=0 vira 1 (observamos apenas que request acontece sem erro)
 	_, err := client.FetchDeputadosPaged(context.Background(), "", "", "", -5, 1000)
@@ -277,7 +278,7 @@ func TestCamaraClient_FetchAllDeputados_PaginacaoCompleta(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	client := newTestCamaraClient(server.URL)
 	deps, err := client.FetchAllDeputados(context.Background())
 	if err != nil {
 		t.Fatalf("erro inesperado: %v", err)
@@ -295,7 +296,7 @@ func TestCamaraClient_JSONInvalido(t *testing.T) {
 		w.Write([]byte("{invalid"))
 	}))
 	defer server.Close()
-	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	client := newTestCamaraClient(server.URL)
 	if _, err := client.FetchDeputados(context.Background(), "", "", ""); err == nil {
 		t.Fatalf("esperava erro de JSON inválido")
 	}
@@ -312,7 +313,7 @@ func TestCamaraClient_RetryComSucessoNaTerceiraTentativa(t *testing.T) {
 		json.NewEncoder(w).Encode(map[string]any{"dados": []map[string]any{{"id": 1, "nome": "Ok"}}})
 	}))
 	defer server.Close()
-	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	client := newTestCamaraClient(server.URL)
 	deps, err := client.FetchDeputados(context.Background(), "", "", "")
 	if err != nil {
 		t.Fatalf("não esperava erro após retries: %v", err)
@@ -330,7 +331,7 @@ func TestCamaraClient_RetryFalhaApos3Tentativas(t *testing.T) {
 		w.WriteHeader(http.StatusBadGateway)
 	}))
 	defer server.Close()
-	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	client := newTestCamaraClient(server.URL)
 	if _, err := client.FetchDeputados(context.Background(), "", "", ""); err == nil {
 		t.Fatalf("esperava erro após 3 tentativas sem sucesso")
 	}
@@ -352,7 +353,7 @@ func TestCamaraClient_FetchDespesas_JSONInvalido(t *testing.T) {
 		w.Write([]byte("{bad"))
 	}))
 	defer server.Close()
-	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	client := newTestCamaraClient(server.URL)
 	if _, err := client.FetchDespesas(context.Background(), "123", "2024"); err == nil {
 		t.Fatalf("esperava erro de JSON inválido despesas")
 	}
@@ -363,7 +364,7 @@ func TestCamaraClient_FetchDeputadoByID_ERROStatus(t *testing.T) {
 		w.WriteHeader(http.StatusNotFound)
 	}))
 	defer server.Close()
-	client := &CamaraClient{baseURL: server.URL, httpClient: &http.Client{Timeout: time.Second}, limiter: rate.NewLimiter(100, 100)}
+	client := newTestCamaraClient(server.URL)
 	if _, err := client.FetchDeputadoByID(context.Background(), "999"); err == nil {
 		t.Fatalf("esperava erro status 404")
 	}
@@ -377,4 +378,296 @@ func containsAll(s string, parts []string) bool {
 		}
 	}
 	return true
+}
+
+// Testes para proposições
+
+func TestCamaraClient_FetchProposicoes(t *testing.T) {
+	tests := []struct {
+		name           string
+		filtros        *domain.ProposicaoFilter
+		serverResponse string
+		serverStatus   int
+		expectError    bool
+		expectedCount  int
+	}{
+		{
+			name: "busca com sucesso",
+			filtros: &domain.ProposicaoFilter{
+				SiglaTipo:  "PL",
+				Ano:        &[]int{2024}[0],
+				Limite:     10,
+				Pagina:     1,
+				Ordem:      "DESC",
+				OrdenarPor: "dataApresentacao",
+			},
+			serverResponse: `{
+				"dados": [
+					{
+						"id": 123456,
+						"uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/123456",
+						"siglaTipo": "PL",
+						"codTipo": 139,
+						"numero": 1234,
+						"ano": 2024,
+						"ementa": "Dispõe sobre teste de proposição.",
+						"dataApresentacao": "2024-01-15T10:00:00",
+						"descricaoTipo": "Projeto de Lei",
+						"statusProposicao": {
+							"id": 1,
+							"uri": "https://dadosabertos.camara.leg.br/api/v2/referencias/situacoesProposicao/1",
+							"descricaoSituacao": "Aguardando Designação de Relator",
+							"codSituacao": 1,
+							"dataHora": "2024-01-15T10:00:00",
+							"sequencia": 1
+						}
+					},
+					{
+						"id": 789012,
+						"uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/789012",
+						"siglaTipo": "PL",
+						"codTipo": 139,
+						"numero": 5678,
+						"ano": 2024,
+						"ementa": "Altera a Lei sobre testes.",
+						"dataApresentacao": "2024-02-10T14:30:00",
+						"descricaoTipo": "Projeto de Lei",
+						"statusProposicao": {
+							"id": 2,
+							"uri": "https://dadosabertos.camara.leg.br/api/v2/referencias/situacoesProposicao/2",
+							"descricaoSituacao": "Em tramitação",
+							"codSituacao": 2,
+							"dataHora": "2024-02-10T14:30:00",
+							"sequencia": 1
+						}
+					}
+				],
+				"links": [
+					{
+						"rel": "self",
+						"href": "https://dadosabertos.camara.leg.br/api/v2/proposicoes"
+					}
+				]
+			}`,
+			serverStatus:  http.StatusOK,
+			expectError:   false,
+			expectedCount: 2,
+		},
+		{
+			name: "resposta vazia",
+			filtros: &domain.ProposicaoFilter{
+				SiglaTipo: "PEC",
+				Limite:    5,
+				Pagina:    1,
+			},
+			serverResponse: `{
+				"dados": [],
+				"links": []
+			}`,
+			serverStatus:  http.StatusOK,
+			expectError:   false,
+			expectedCount: 0,
+		},
+		{
+			name: "erro do servidor",
+			filtros: &domain.ProposicaoFilter{
+				Limite: 10,
+				Pagina: 1,
+			},
+			serverResponse: `{"erro": "Erro interno do servidor"}`,
+			serverStatus:   http.StatusInternalServerError,
+			expectError:    true,
+			expectedCount:  0,
+		},
+		{
+			name: "JSON inválido",
+			filtros: &domain.ProposicaoFilter{
+				Limite: 10,
+				Pagina: 1,
+			},
+			serverResponse: `{invalid json`,
+			serverStatus:   http.StatusOK,
+			expectError:    true,
+			expectedCount:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Criar servidor mock
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Verificar parâmetros de query
+				if tt.filtros.SiglaTipo != "" {
+					if r.URL.Query().Get("siglaTipo") != tt.filtros.SiglaTipo {
+						t.Errorf("Expected siglaTipo %s, got %s", tt.filtros.SiglaTipo, r.URL.Query().Get("siglaTipo"))
+					}
+				}
+
+				w.WriteHeader(tt.serverStatus)
+				w.Write([]byte(tt.serverResponse))
+			}))
+			defer server.Close()
+
+			client := NewCamaraClient(server.URL, 30*time.Second, 100, 100)
+
+			// Aplicar padrões nos filtros
+			tt.filtros.SetDefaults()
+
+			proposicoes, err := client.FetchProposicoes(context.Background(), tt.filtros)
+
+			if tt.expectError && err == nil {
+				t.Errorf("Expected error but got none")
+				return
+			}
+
+			if !tt.expectError && err != nil {
+				t.Errorf("Expected no error but got: %v", err)
+				return
+			}
+
+			if !tt.expectError {
+				if len(proposicoes) != tt.expectedCount {
+					t.Errorf("Expected %d proposições but got %d", tt.expectedCount, len(proposicoes))
+				}
+
+				// Verificar dados da primeira proposição se houver
+				if len(proposicoes) > 0 {
+					p := proposicoes[0]
+					if p.ID <= 0 {
+						t.Errorf("Expected valid ID but got %d", p.ID)
+					}
+					if p.SiglaTipo == "" {
+						t.Errorf("Expected SiglaTipo but got empty string")
+					}
+					if p.Ementa == "" {
+						t.Errorf("Expected Ementa but got empty string")
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestCamaraClient_FetchProposicaoPorID(t *testing.T) {
+	tests := []struct {
+		name           string
+		id             int
+		serverResponse string
+		serverStatus   int
+		expectError    bool
+		expectedID     int
+	}{
+		{
+			name: "busca com sucesso",
+			id:   123456,
+			serverResponse: `{
+				"dados": {
+					"id": 123456,
+					"uri": "https://dadosabertos.camara.leg.br/api/v2/proposicoes/123456",
+					"siglaTipo": "PL",
+					"codTipo": 139,
+					"numero": 1234,
+					"ano": 2024,
+					"ementa": "Dispõe sobre teste de proposição individual.",
+					"dataApresentacao": "2024-01-15T10:00:00",
+					"descricaoTipo": "Projeto de Lei",
+					"statusProposicao": {
+						"id": 1,
+						"uri": "https://dadosabertos.camara.leg.br/api/v2/referencias/situacoesProposicao/1",
+						"descricaoSituacao": "Aguardando Designação de Relator",
+						"codSituacao": 1,
+						"dataHora": "2024-01-15T10:00:00",
+						"sequencia": 1
+					},
+					"ultimoRelator": {
+						"id": 204379,
+						"nome": "Dep. Teste",
+						"codTipo": 10000,
+						"siglaUf": "SP",
+						"siglaPartido": "PT",
+						"uriPartido": "https://dadosabertos.camara.leg.br/api/v2/partidos/36835",
+						"uriCamara": "https://dadosabertos.camara.leg.br/api/v2/deputados/204379",
+						"urlFoto": "https://www.camara.leg.br/internet/deputado/bandep/204379.jpg"
+					}
+				}
+			}`,
+			serverStatus: http.StatusOK,
+			expectError:  false,
+			expectedID:   123456,
+		},
+		{
+			name:           "ID inválido",
+			id:             0,
+			serverResponse: "",
+			serverStatus:   http.StatusOK,
+			expectError:    true,
+			expectedID:     0,
+		},
+		{
+			name:           "proposição não encontrada",
+			id:             999999,
+			serverResponse: `{"erro": "Proposição não encontrada"}`,
+			serverStatus:   http.StatusNotFound,
+			expectError:    true,
+			expectedID:     0,
+		},
+		{
+			name:           "JSON inválido",
+			id:             123456,
+			serverResponse: `{invalid json`,
+			serverStatus:   http.StatusOK,
+			expectError:    true,
+			expectedID:     0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Criar servidor mock
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Verificar se a URL contém o ID correto
+				expectedPath := fmt.Sprintf("/proposicoes/%d", tt.id)
+				if tt.id > 0 && !strings.Contains(r.URL.Path, expectedPath) {
+					t.Errorf("Expected path to contain %s, got %s", expectedPath, r.URL.Path)
+				}
+
+				w.WriteHeader(tt.serverStatus)
+				w.Write([]byte(tt.serverResponse))
+			}))
+			defer server.Close()
+
+			client := NewCamaraClient(server.URL, 30*time.Second, 100, 100)
+
+			proposicao, err := client.FetchProposicaoPorID(context.Background(), tt.id)
+
+			if tt.expectError && err == nil {
+				t.Errorf("Expected error but got none")
+				return
+			}
+
+			if !tt.expectError && err != nil {
+				t.Errorf("Expected no error but got: %v", err)
+				return
+			}
+
+			if !tt.expectError {
+				if proposicao == nil {
+					t.Errorf("Expected proposição but got nil")
+					return
+				}
+
+				if proposicao.ID != tt.expectedID {
+					t.Errorf("Expected ID %d but got %d", tt.expectedID, proposicao.ID)
+				}
+
+				if proposicao.SiglaTipo == "" {
+					t.Errorf("Expected SiglaTipo but got empty string")
+				}
+
+				if proposicao.Ementa == "" {
+					t.Errorf("Expected Ementa but got empty string")
+				}
+			}
+		})
+	}
 }

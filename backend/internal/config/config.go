@@ -27,6 +27,9 @@ type Config struct {
 
 	// Aplicação
 	App AppConfig
+
+	// Ingestor
+	Ingestor IngestorConfig
 }
 
 type ServerConfig struct {
@@ -75,6 +78,13 @@ type AppConfig struct {
 	Version     string
 }
 
+// IngestorConfig configurações específicas do ingestor
+type IngestorConfig struct {
+	BackfillStartYear int // Ano inicial para backfill histórico
+	BatchSize         int // Tamanho dos lotes para processamento
+	MaxRetries        int // Máximo de tentativas por lote
+}
+
 // LoadConfig carrega configurações de variáveis de ambiente
 func LoadConfig() (*Config, error) {
 	// Tentar carregar arquivo .env se existir
@@ -121,6 +131,11 @@ func LoadConfig() (*Config, error) {
 			Environment: getEnv("APP_ENV", "development"),
 			LogLevel:    getEnv("LOG_LEVEL", "info"),
 			Version:     getEnv("APP_VERSION", "1.0.0"),
+		},
+		Ingestor: IngestorConfig{
+			BackfillStartYear: getInt("INGESTOR_BACKFILL_START_YEAR", 2025),
+			BatchSize:         getInt("INGESTOR_BATCH_SIZE", 50),
+			MaxRetries:        getInt("INGESTOR_MAX_RETRIES", 3),
 		},
 	}
 

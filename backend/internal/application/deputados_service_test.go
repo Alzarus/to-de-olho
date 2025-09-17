@@ -56,21 +56,25 @@ func (m *MockCache) Set(ctx context.Context, key, value string, ttl time.Duratio
 }
 
 type MockRepository struct {
-	deputados []domain.Deputado
-	err       error
+	deputados    []domain.Deputado
+	err          error
+	upsertedData []domain.Deputado
 }
 
 func (m *MockRepository) UpsertDeputados(ctx context.Context, deps []domain.Deputado) error {
 	if m.err != nil {
 		return m.err
 	}
-	m.deputados = deps
+	m.upsertedData = deps
 	return nil
 }
 
 func (m *MockRepository) ListFromCache(ctx context.Context, limit int) ([]domain.Deputado, error) {
 	if m.err != nil {
 		return nil, m.err
+	}
+	if len(m.deputados) > limit {
+		return m.deputados[:limit], nil
 	}
 	return m.deputados, nil
 }
@@ -107,7 +111,8 @@ func TestDeputadosService_ListarDeputados(t *testing.T) {
 			expectedSource: "cache",
 			cacheData: func() map[string]string {
 				m := make(map[string]string)
-				m[buildDeputadosCacheKey("PSDB", "RJ", "")] = `[{"id":3,"nome":"Pedro Oliveira","siglaPartido":"PSDB","siglaUf":"RJ"}]`
+				// Usar a função centralizada para gerar a chave
+				m[BuildDeputadosCacheKey("PSDB", "RJ", "")] = `[{"id":3,"nome":"Pedro Oliveira","siglaPartido":"PSDB","siglaUf":"RJ"}]`
 				return m
 			}(),
 			expectError: false,
@@ -119,6 +124,19 @@ func TestDeputadosService_ListarDeputados(t *testing.T) {
 			nome:        "",
 			mockError:   errors.New("erro de rede"),
 			expectError: true,
+		},
+		{
+			name:      "fallback para repositório quando API falha",
+			partido:   "PSL",
+			uf:        "RS",
+			nome:      "",
+			mockError: errors.New("API indisponível"),
+			// Mock repositório terá dados de fallback
+			mockDeputados: []domain.Deputado{
+				{ID: 99, Nome: "Deputado Fallback", Partido: "PSL", UF: "RS"},
+			},
+			expectedSource: "fallback-db",
+			expectError:    false,
 		},
 		{
 			name:    "filtro por nome",
@@ -149,6 +167,10 @@ func TestDeputadosService_ListarDeputados(t *testing.T) {
 			}
 
 			mockRepo := &MockRepository{}
+			// Se esperamos fallback, configurar dados no repositório
+			if tt.expectedSource == "fallback-db" {
+				mockRepo.deputados = tt.mockDeputados
+			}
 
 			service := NewDeputadosService(mockClient, mockCache, mockRepo)
 
@@ -271,24 +293,38 @@ func TestDeputadosService_BuscarDeputadoPorID(t *testing.T) {
 
 func TestDeputadosService_ListarDespesas(t *testing.T) {
 	tests := []struct {
-		name          string
-		deputadoID    string
-		ano           string
-		mockDespesas  []domain.Despesa
-		mockError     error
-		expectError   bool
-		expectedCount int
+		name           string
+		deputadoID     string
+		ano            string
+		mockDespesas   []domain.Despesa
+		mockError      error
+		cacheData      map[string]string
+		expectedSource string
+		expectError    bool
+		expectedCount  int
 	}{
 		{
-			name:       "sucesso busca despesas",
+			name:       "sucesso busca despesas na API",
 			deputadoID: "123",
 			ano:        "2024",
 			mockDespesas: []domain.Despesa{
 				{Ano: 2024, Mes: 1, ValorLiquido: 150.0, TipoDespesa: "COMBUSTÍVEL"},
 				{Ano: 2024, Mes: 2, ValorLiquido: 300.0, TipoDespesa: "ALIMENTAÇÃO"},
 			},
-			expectError:   false,
-			expectedCount: 2,
+			expectedSource: "api",
+			expectError:    false,
+			expectedCount:  2,
+		},
+		{
+			name:       "sucesso dados do cache",
+			deputadoID: "456",
+			ano:        "2024",
+			cacheData: map[string]string{
+				"despesas:456:2024": `[{"ano":2024,"mes":3,"valorLiquido":200.0,"tipoDespesa":"COMBUSTÍVEL"}]`,
+			},
+			expectedSource: "cache",
+			expectError:    false,
+			expectedCount:  1,
 		},
 		{
 			name:        "erro na API",
@@ -298,12 +334,13 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name:          "nenhuma despesa encontrada",
-			deputadoID:    "123",
-			ano:           "2024",
-			mockDespesas:  []domain.Despesa{},
-			expectError:   false,
-			expectedCount: 0,
+			name:           "nenhuma despesa encontrada",
+			deputadoID:     "123",
+			ano:            "2024",
+			mockDespesas:   []domain.Despesa{},
+			expectedSource: "api",
+			expectError:    false,
+			expectedCount:  0,
 		},
 	}
 
@@ -316,6 +353,12 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 			}
 
 			mockCache := NewMockCache()
+			if tt.cacheData != nil {
+				for k, v := range tt.cacheData {
+					mockCache.data[k] = v
+				}
+			}
+
 			mockRepo := &MockRepository{}
 
 			service := NewDeputadosService(mockClient, mockCache, mockRepo)
@@ -340,9 +383,8 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 				t.Errorf("quantidade esperada: %d, recebida: %d", tt.expectedCount, len(result))
 			}
 
-			// Para despesas, deve sempre vir da API (por enquanto)
-			if source != "api" {
-				t.Errorf("source deveria ser 'api', recebido: %s", source)
+			if source != tt.expectedSource {
+				t.Errorf("source esperado: %s, recebido: %s", tt.expectedSource, source)
 			}
 		})
 	}
