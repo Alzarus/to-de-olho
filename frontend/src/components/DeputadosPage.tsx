@@ -376,7 +376,7 @@ export default function DeputadosPage() {
                 <div className="text-center py-8">
                   <p className="text-red-600">{despesasError}</p>
                   <button 
-                    onClick={() => window.location.reload()}
+                    onClick={() => selectedDeputado && fetchDespesas(selectedDeputado.id, selectedAno)}
                     className="mt-2 text-blue-600 hover:text-blue-800"
                   >
                     Tentar novamente

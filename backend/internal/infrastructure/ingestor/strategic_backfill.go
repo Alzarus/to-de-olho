@@ -268,24 +268,25 @@ func (sbe *StrategicBackfillExecutor) executeProposicoesBackfill(ctx context.Con
 			OrdenarPor: "id",
 		}
 
-		proposicoes, total, _, err := sbe.proposicoesService.ListarProposicoes(ctx, filtros)
+		proposicoes, _, _, err := sbe.proposicoesService.ListarProposicoes(ctx, filtros)
 		if err != nil {
 			return fmt.Errorf("erro ao buscar proposições ano %d página %d: %w", yearInt, pagina, err)
 		}
 
+		// Se não há proposições na página atual, chegamos ao final
 		if len(proposicoes) == 0 {
-			break // Não há mais páginas
+			break
 		}
 
 		allProposicoes = append(allProposicoes, proposicoes...)
 
 		// Log de progresso
 		if pagina%10 == 0 {
-			log.Printf("📄 Página %d processada, coletado: %d/%d proposições", pagina, len(allProposicoes), total)
+			log.Printf("📄 Página %d processada, coletadas: %d proposições até agora", pagina, len(allProposicoes))
 		}
 
-		// Verificar se chegamos ao final
-		if len(allProposicoes) >= total {
+		// Se a página atual retornou menos itens que o limite, provavelmente é a última página
+		if len(proposicoes) < itensPorPagina {
 			break
 		}
 

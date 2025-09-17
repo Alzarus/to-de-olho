@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -23,17 +24,24 @@ import (
 func main() {
 	log.Println("🕐 Iniciando Scheduler de Sincronização Diária")
 
+	if err := run(); err != nil {
+		log.Printf("❌ Erro fatal no scheduler: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	// Configuração
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("erro ao carregar configuração: %v", err)
+		return fmt.Errorf("erro ao carregar configuração: %w", err)
 	}
 
 	// Database
 	ctx := context.Background()
 	database, err := db.NewPostgresPoolFromConfig(ctx, &cfg.Database)
 	if err != nil {
-		log.Fatalf("erro ao conectar ao banco: %v", err)
+		return fmt.Errorf("erro ao conectar ao banco: %w", err)
 	}
 	defer database.Close()
 
@@ -69,8 +77,12 @@ func main() {
 		redisCache,
 	)
 
-	// Cron Scheduler
-	c := cron.New(cron.WithLocation(time.FixedZone("UTC-3", -3*60*60))) // Brasil timezone
+	// Cron Scheduler com timezone do Brasil
+	loc, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		return fmt.Errorf("erro ao carregar fuso horário: %w", err)
+	}
+	c := cron.New(cron.WithLocation(loc))
 
 	// Sync diário às 6h da manhã
 	_, err = c.AddFunc("0 6 * * *", func() {
@@ -86,7 +98,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("erro ao configurar cron job: %v", err)
+		return fmt.Errorf("erro ao configurar cron job: %w", err)
 	}
 
 	// Sync a cada 4 horas durante horário comercial (útil para testes)
@@ -103,7 +115,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("erro ao configurar cron job 4h: %v", err)
+		return fmt.Errorf("erro ao configurar cron job 4h: %w", err)
 	}
 
 	// Iniciar scheduler
@@ -132,4 +144,6 @@ func main() {
 	log.Println("🛑 Parando scheduler...")
 	c.Stop()
 	log.Println("👋 Scheduler finalizado")
+
+	return nil
 }

@@ -206,8 +206,11 @@ deputadosBatchLoop:
 		}
 	}
 
-	// Calcular média
-	mediaGastos := totalGeral / float64(len(deputadosRanking))
+	// Calcular média (verificar se há deputados para evitar divisão por zero)
+	var mediaGastos float64
+	if len(deputadosRanking) > 0 {
+		mediaGastos = totalGeral / float64(len(deputadosRanking))
+	}
 
 	// Ordenar por gasto (maior para menor)
 	sort.Slice(deputadosRanking, func(i, j int) bool {
@@ -287,8 +290,11 @@ func (s *AnalyticsService) GetRankingProposicoes(ctx context.Context, ano int, l
 		totalGeral += totalProposicoes
 	}
 
-	// Calcular média
-	mediaProposicoes := float64(totalGeral) / float64(len(deputadosRanking))
+	// Calcular média (verificar se há deputados para evitar divisão por zero)
+	var mediaProposicoes float64
+	if len(deputadosRanking) > 0 {
+		mediaProposicoes = float64(totalGeral) / float64(len(deputadosRanking))
+	}
 
 	// Ordenar por proposições (maior para menor)
 	sort.Slice(deputadosRanking, func(i, j int) bool {
@@ -478,21 +484,9 @@ func (s *AnalyticsService) GetInsightsGerais(ctx context.Context) (*InsightsGera
 func (s *AnalyticsService) AtualizarRankings(ctx context.Context) error {
 	anoAtual := time.Now().Year()
 
-	// Limpar cache dos rankings
-	keysToDelete := []string{
-		fmt.Sprintf("ranking:gastos:%d:10", anoAtual),
-		fmt.Sprintf("ranking:gastos:%d:50", anoAtual),
-		fmt.Sprintf("ranking:proposicoes:%d:10", anoAtual),
-		fmt.Sprintf("ranking:proposicoes:%d:50", anoAtual),
-		fmt.Sprintf("ranking:presenca:%d:10", anoAtual),
-		fmt.Sprintf("ranking:presenca:%d:50", anoAtual),
-		"insights:gerais",
-	}
-
 	// O Redis tem TTL automático, então apenas forçar recálculo
 	s.logger.Info("iniciando atualização de rankings",
-		slog.Int("ano", anoAtual),
-		slog.Int("rankings_para_atualizar", len(keysToDelete)))
+		slog.Int("ano", anoAtual))
 
 	// Pré-computar rankings principais
 	_, _, err := s.GetRankingGastos(ctx, anoAtual, 50)

@@ -177,7 +177,14 @@ func TestProposicoesService_ListarProposicoes(t *testing.T) {
 				}
 
 				if cacheBytes, err := json.Marshal(cacheData); err == nil {
-					mockCache.Set(context.Background(), "proposicoes:p1:l20:oDESC:opdataApresentacao", string(cacheBytes), time.Minute)
+					// Criar os filtros para gerar a chave corretamente
+					filtros := &domain.ProposicaoFilter{
+						Limite: 20,
+						Pagina: 1,
+					}
+					filtros.SetDefaults() // Aplicar padrões para gerar chave correta
+					cacheKey := BuildProposicoesCacheKey(filtros)
+					mockCache.Set(context.Background(), cacheKey, string(cacheBytes), time.Minute)
 				}
 
 				return mockClient, mockCache, mockRepo
@@ -439,7 +446,7 @@ func TestBuildProposicoesCacheKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := buildProposicoesCacheKey(tt.filtros)
+			result := BuildProposicoesCacheKey(tt.filtros)
 			if result != tt.expected {
 				t.Errorf("buildProposicoesCacheKey() = %s, want %s", result, tt.expected)
 			}

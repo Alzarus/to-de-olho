@@ -70,7 +70,7 @@ func (s *ProposicoesService) ListarProposicoes(
 	filtros.SetDefaults()
 
 	// Tentar buscar no cache primeiro
-	cacheKey := buildProposicoesCacheKey(filtros)
+	cacheKey := BuildProposicoesCacheKey(filtros)
 	if cached, ok := s.cache.Get(ctx, cacheKey); ok && cached != "" {
 		var result struct {
 			Proposicoes []domain.Proposicao `json:"proposicoes"`
@@ -254,8 +254,8 @@ func (s *ProposicoesService) buscarProposicoesRepository(
 	return proposicoes, total, "repository", nil
 }
 
-// buildProposicoesCacheKey constrói a chave do cache para listas de proposições
-func buildProposicoesCacheKey(filtros *domain.ProposicaoFilter) string {
+// BuildProposicoesCacheKey constrói a chave do cache para listas de proposições
+func BuildProposicoesCacheKey(filtros *domain.ProposicaoFilter) string {
 	key := fmt.Sprintf("proposicoes:p%d:l%d:o%s:op%s",
 		filtros.Pagina,
 		filtros.Limite,

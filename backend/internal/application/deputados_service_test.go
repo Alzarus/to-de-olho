@@ -111,8 +111,8 @@ func TestDeputadosService_ListarDeputados(t *testing.T) {
 			expectedSource: "cache",
 			cacheData: func() map[string]string {
 				m := make(map[string]string)
-				// Usar o formato correto da chave de cache
-				m["deputados:p=PSDB:u=RJ:n="] = `[{"id":3,"nome":"Pedro Oliveira","siglaPartido":"PSDB","siglaUf":"RJ"}]`
+				// Usar a função centralizada para gerar a chave
+				m[BuildDeputadosCacheKey("PSDB", "RJ", "")] = `[{"id":3,"nome":"Pedro Oliveira","siglaPartido":"PSDB","siglaUf":"RJ"}]`
 				return m
 			}(),
 			expectError: false,
