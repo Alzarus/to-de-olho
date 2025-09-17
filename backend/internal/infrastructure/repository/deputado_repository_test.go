@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 
 	"to-de-olho-backend/internal/domain"
@@ -47,10 +48,13 @@ type mockDB struct {
 	queryErr  error
 	rows      pgx.Rows
 	execCount int
+	mu        sync.RWMutex // Proteção contra race conditions
 }
 
 func (m *mockDB) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
+	m.mu.Lock()
 	m.execCount++
+	m.mu.Unlock()
 	return pgconn.CommandTag{}, m.execErr
 }
 func (m *mockDB) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
@@ -62,6 +66,13 @@ func (m *mockDB) Query(ctx context.Context, sql string, args ...interface{}) (pg
 		return &mockRows{data: []string{}}, nil
 	}
 	return m.rows, nil
+}
+
+// GetExecCount retorna o número de execuções de forma thread-safe
+func (m *mockDB) GetExecCount() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.execCount
 }
 
 func TestNewDeputadoRepository(t *testing.T) {
