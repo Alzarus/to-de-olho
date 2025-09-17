@@ -181,12 +181,17 @@ type Rankings struct {
 2. **Testar API com Postman**: Validar todos endpoints com dados reais
 3. **Implementar Despesas por Deputado**: Método no repositório + endpoint
 4. **Frontend WCAG**: Correções de contraste e navegação por teclado
+5. **⚠️ RESOLVER DÉBITO TÉCNICO CI/CD**: Retornar cobertura de 70% → 80% com Testcontainers (Out/2025)
 
 ### 🧪 **Testing Infrastructure (CRÍTICO - Esta Sprint)**
 **Problema Identificado**: Módulos de infraestrutura com baixa cobertura afetam confiabilidade do core business
+
+> **⚠️ ATENÇÃO TEMPORÁRIA**: Pipeline CI/CD ajustada para 70% de cobertura (Set/17/2025)
+> **📋 DÉBITO TÉCNICO**: Retornar para 80% até Out/2025 com implementação de Testcontainers
+
 - **migrations**: 25.0% → **Target**: 60%+ 
 - **ingestor**: 18.9% → **Target**: 55%+
-- **Cobertura geral**: ~72% → **Target**: 80%+
+- **Cobertura geral**: ~72% → **Target CI/CD**: 70% (temporário) → **Target Final**: 80%+
 
 #### **Estratégia Smart Testing**:
 ```go
@@ -222,11 +227,11 @@ type MockDeputadosService struct {
 - [ ] Chaos testing: simular falhas de API externa
 
 #### **Cobertura Target**:
-| Módulo | Atual | Target | Estratégia |
-|--------|-------|--------|------------|
-| migrations | 25.0% | 60%+ | Testcontainers + DDL real |
-| ingestor | 18.9% | 55%+ | Service mocks + integration |
-| **TOTAL** | ~72% | **80%+** | Smart testing focused |
+| Módulo | Atual | Target | Estratégia | Status CI/CD |
+|--------|-------|--------|------------|--------------|
+| migrations | 25.0% | 60%+ | Testcontainers + DDL real | 70% temporário |
+| ingestor | 18.9% | 55%+ | Service mocks + integration | 70% temporário |
+| **TOTAL** | ~72% | **80%+** | Smart testing focused | **70% (temporário até Out/2025)** |
 
 > **Rationale**: Infraestrutura é o coração da ingestão. Falhas aqui comprometem dados ciudadanos dependem.
 
