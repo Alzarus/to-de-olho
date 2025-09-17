@@ -332,3 +332,69 @@ func TestIncrementalSyncManager_SaveSyncMetrics_NilDB(t *testing.T) {
 		t.Log("saveSyncMetrics handled nil DB gracefully")
 	}
 }
+
+// Testes simples para ExecuteDailySync e ExecuteQuickSync
+// Foca em verificar se os métodos existem e têm assinaturas corretas
+
+func TestIncrementalSyncManager_ExecuteDailySync_Basic(t *testing.T) {
+	// Mock cache simples que implementa a interface
+	cache := &mockCacheBasic{}
+
+	// Manager com cache mock mas services nil para teste básico
+	manager := &IncrementalSyncManager{
+		deputadosService:   nil,
+		proposicoesService: nil,
+		analyticsService:   nil,
+		db:                 nil,
+		cache:              cache,
+	}
+
+	ctx := context.Background()
+
+	// Este teste vai falhar com panic, mas isso é esperado
+	// O importante é que o método existe e pode ser chamado
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("ExecuteDailySync panic esperado com services nil: %v", r)
+		}
+	}()
+
+	_ = manager.ExecuteDailySync(ctx)
+	t.Error("Não deveria chegar aqui - esperava panic")
+}
+
+func TestIncrementalSyncManager_ExecuteQuickSync_Basic(t *testing.T) {
+	// Mock cache simples que implementa a interface
+	cache := &mockCacheBasic{}
+
+	manager := &IncrementalSyncManager{
+		deputadosService:   nil,
+		proposicoesService: nil,
+		analyticsService:   nil,
+		db:                 nil,
+		cache:              cache,
+	}
+
+	ctx := context.Background()
+
+	// Este teste vai falhar com panic, mas isso é esperado
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("ExecuteQuickSync panic esperado com services nil: %v", r)
+		}
+	}()
+
+	_ = manager.ExecuteQuickSync(ctx)
+	t.Error("Não deveria chegar aqui - esperava panic")
+}
+
+// Mock básico de cache para testes
+type mockCacheBasic struct{}
+
+func (m *mockCacheBasic) Get(ctx context.Context, key string) (string, bool) {
+	return "", false
+}
+
+func (m *mockCacheBasic) Set(ctx context.Context, key, value string, ttl time.Duration) {
+	// nothing to do in mock
+}
