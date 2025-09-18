@@ -34,14 +34,25 @@ type DeputadoRepositoryPort interface {
 	ListFromCache(ctx context.Context, limit int) ([]domain.Deputado, error)
 }
 
-type DeputadosService struct {
-	client CamaraPort
-	cache  CachePort
-	repo   DeputadoRepositoryPort
+type DespesaRepositoryPort interface {
+	UpsertDespesas(ctx context.Context, deputadoID int, ano int, despesas []domain.Despesa) error
+	ListDespesasByDeputadoAno(ctx context.Context, deputadoID int, ano int) ([]domain.Despesa, error)
 }
 
-func NewDeputadosService(client CamaraPort, cache CachePort, repo DeputadoRepositoryPort) *DeputadosService {
-	return &DeputadosService{client: client, cache: cache, repo: repo}
+type DeputadosService struct {
+	client      CamaraPort
+	cache       CachePort
+	repo        DeputadoRepositoryPort
+	despesaRepo DespesaRepositoryPort
+}
+
+func NewDeputadosService(client CamaraPort, cache CachePort, repo DeputadoRepositoryPort, despesaRepo DespesaRepositoryPort) *DeputadosService {
+	return &DeputadosService{
+		client:      client,
+		cache:       cache,
+		repo:        repo,
+		despesaRepo: despesaRepo,
+	}
 }
 
 func (s *DeputadosService) ListarDeputados(ctx context.Context, partido, uf, nome string) ([]domain.Deputado, string, error) {
@@ -99,6 +110,26 @@ func (s *DeputadosService) BuscarDeputadoPorID(ctx context.Context, id string) (
 }
 
 func (s *DeputadosService) ListarDespesas(ctx context.Context, id, ano string) ([]domain.Despesa, string, error) {
+	deputadoID := 0
+	if _, err := fmt.Sscanf(id, "%d", &deputadoID); err != nil {
+		return nil, "", fmt.Errorf("ID de deputado inválido: %s", id)
+	}
+
+	anoInt := 0
+	if _, err := fmt.Sscanf(ano, "%d", &anoInt); err != nil {
+		return nil, "", fmt.Errorf("ano inválido: %s", ano)
+	}
+
+	// Prioridade 1: Verificar no banco de dados (source of truth)
+	if s.despesaRepo != nil {
+		despesas, err := s.despesaRepo.ListDespesasByDeputadoAno(ctx, deputadoID, anoInt)
+		if err == nil && len(despesas) > 0 {
+			return despesas, "database", nil
+		}
+		// Se erro ou vazio, continua para próxima source
+	}
+
+	// Prioridade 2: Verificar cache Redis
 	cacheKey := "despesas:" + id + ":" + ano
 	if v, ok := s.cache.Get(ctx, cacheKey); ok && v != "" {
 		var cached []domain.Despesa
@@ -106,12 +137,25 @@ func (s *DeputadosService) ListarDespesas(ctx context.Context, id, ano string) (
 			return cached, "cache", nil
 		}
 	}
+
+	// Prioridade 3: Buscar na API da Câmara (fallback)
 	despesas, err := s.client.FetchDespesas(ctx, id, ano)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("erro ao buscar despesas na API da Câmara: %w", err)
 	}
+
+	// Armazenar no banco para próximas consultas
+	if s.despesaRepo != nil && len(despesas) > 0 {
+		if err := s.despesaRepo.UpsertDespesas(ctx, deputadoID, anoInt, despesas); err != nil {
+			// Log error mas não falha a requisição
+			fmt.Printf("Aviso: erro ao salvar despesas no banco: %v\n", err)
+		}
+	}
+
+	// Armazenar no cache
 	if b, err := json.Marshal(despesas); err == nil {
 		s.cache.Set(ctx, cacheKey, string(b), time.Minute)
 	}
+
 	return despesas, "api", nil
 }

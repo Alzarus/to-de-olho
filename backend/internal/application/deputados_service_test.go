@@ -79,6 +79,37 @@ func (m *MockRepository) ListFromCache(ctx context.Context, limit int) ([]domain
 	return m.deputados, nil
 }
 
+type MockDespesaRepository struct {
+	despesas    []domain.Despesa
+	err         error
+	upsertCalls []UpsertCall
+}
+
+type UpsertCall struct {
+	DeputadoID int
+	Ano        int
+	Despesas   []domain.Despesa
+}
+
+func (m *MockDespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, ano int, despesas []domain.Despesa) error {
+	if m.err != nil {
+		return m.err
+	}
+	m.upsertCalls = append(m.upsertCalls, UpsertCall{
+		DeputadoID: deputadoID,
+		Ano:        ano,
+		Despesas:   despesas,
+	})
+	return nil
+}
+
+func (m *MockDespesaRepository) ListDespesasByDeputadoAno(ctx context.Context, deputadoID int, ano int) ([]domain.Despesa, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.despesas, nil
+}
+
 func TestDeputadosService_ListarDeputados(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -172,13 +203,11 @@ func TestDeputadosService_ListarDeputados(t *testing.T) {
 				mockRepo.deputados = tt.mockDeputados
 			}
 
-			service := NewDeputadosService(mockClient, mockCache, mockRepo)
+			service := NewDeputadosService(mockClient, mockCache, mockRepo, &MockDespesaRepository{})
 
 			// Execute
 			ctx := context.Background()
-			result, source, err := service.ListarDeputados(ctx, tt.partido, tt.uf, tt.nome)
-
-			// Assert
+			result, source, err := service.ListarDeputados(ctx, tt.partido, tt.uf, tt.nome) // Assert
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("esperava erro mas não recebeu")
@@ -262,13 +291,11 @@ func TestDeputadosService_BuscarDeputadoPorID(t *testing.T) {
 
 			mockRepo := &MockRepository{}
 
-			service := NewDeputadosService(mockClient, mockCache, mockRepo)
+			service := NewDeputadosService(mockClient, mockCache, mockRepo, &MockDespesaRepository{})
 
 			// Execute
 			ctx := context.Background()
-			result, source, err := service.BuscarDeputadoPorID(ctx, tt.deputadoID)
-
-			// Assert
+			result, source, err := service.BuscarDeputadoPorID(ctx, tt.deputadoID) // Assert
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("esperava erro mas não recebeu")
@@ -361,13 +388,11 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 
 			mockRepo := &MockRepository{}
 
-			service := NewDeputadosService(mockClient, mockCache, mockRepo)
+			service := NewDeputadosService(mockClient, mockCache, mockRepo, &MockDespesaRepository{})
 
 			// Execute
 			ctx := context.Background()
-			result, source, err := service.ListarDespesas(ctx, tt.deputadoID, tt.ano)
-
-			// Assert
+			result, source, err := service.ListarDespesas(ctx, tt.deputadoID, tt.ano) // Assert
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("esperava erro mas não recebeu")

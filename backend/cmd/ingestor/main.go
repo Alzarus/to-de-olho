@@ -52,11 +52,12 @@ func main() {
 
 	// Setup repositories and services
 	deputadoRepo := repository.NewDeputadoRepository(pgPool)
+	despesaRepo := repository.NewDespesaRepository(pgPool)
 	proposicaoRepo := repository.NewProposicaoRepository(pgPool)
 	client := httpclient.NewCamaraClientFromConfig(&cfg.CamaraClient)
 	cacheClient := cache.NewFromConfig(&cfg.Redis)
 
-	deputadosService := app.NewDeputadosService(client, cacheClient, deputadoRepo)
+	deputadosService := app.NewDeputadosService(client, cacheClient, deputadoRepo, despesaRepo)
 	proposicoesService := app.NewProposicoesService(client, cacheClient, proposicaoRepo, logger)
 
 	switch *mode {
