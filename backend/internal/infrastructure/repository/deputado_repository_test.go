@@ -42,6 +42,13 @@ func (m *mockRows) Values() ([]interface{}, error) { return nil, nil }
 func (m *mockRows) RawValues() [][]byte            { return nil }
 func (m *mockRows) Conn() *pgx.Conn                { return nil }
 
+// mockRow implements pgx.Row for testing
+type mockRow struct{}
+
+func (m *mockRow) Scan(dest ...interface{}) error {
+	return pgx.ErrNoRows
+}
+
 // mockDB implements DB
 type mockDB struct {
 	execErr   error
@@ -66,6 +73,10 @@ func (m *mockDB) Query(ctx context.Context, sql string, args ...interface{}) (pg
 		return &mockRows{data: []string{}}, nil
 	}
 	return m.rows, nil
+}
+func (m *mockDB) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+	// Return a mock row that can be used for scanning
+	return &mockRow{}
 }
 
 // GetExecCount retorna o número de execuções de forma thread-safe

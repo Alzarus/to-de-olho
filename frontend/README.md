@@ -1,6 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎨 Frontend - Tô De Olho
 
-## Getting Started
+> **Plataforma de transparência política** com foco em **acessibilidade** e **mobile-first**
+
+Este é um projeto [Next.js](https://nextjs.org) desenvolvido especificamente para o contexto brasileiro, priorizando acessibilidade WCAG 2.1 AA e experiência mobile-first.
+
+## 📱 Mobile-First Approach
+
+### **Contexto Brasileiro**
+- **70% dos acessos via smartphone** (especialmente classes C/D/E)
+- **Conectividade limitada**: 4G instável, franquia de dados
+- **População alvo**: Adultos 35-65 anos, familiaridade média com tech
+- **Dispositivos**: Android predominante, telas 5-6 polegadas
+
+### **Princípios de Design**
+- **Mobile-First**: Design começa em 375px, depois expande
+- **Touch-Friendly**: Botões mínimo 44px x 44px
+- **Typography**: Base 16px+ (evita zoom automático)
+- **Performance**: Bundle <200KB, imagens WebP + lazy loading
+
+### **Breakpoints Padrão**
+```tsx
+// ✅ Pattern Mobile-First obrigatório
+<div className="
+  grid grid-cols-1           // Mobile: 1 coluna
+  md:grid-cols-2            // Tablet: 2 colunas  
+  lg:grid-cols-3            // Desktop: 3 colunas
+  gap-4 p-4                 // Mobile: padding menor
+  md:gap-6 md:p-8           // Desktop: padding maior
+">
+```
+
+## ♿ Acessibilidade (WCAG 2.1 AA)
+
+- **Contraste**: Mínimo 4.5:1 em todos os elementos
+- **Navegação**: Completa via teclado (Tab, Enter, Esc)
+- **Screen readers**: Aria-labels e semantic HTML
+- **Typography**: Textos legíveis, hierarquia clara
+
+## 🚀 Getting Started
 
 First, run the development server:
 

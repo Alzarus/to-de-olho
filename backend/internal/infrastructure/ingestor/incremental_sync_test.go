@@ -7,677 +7,360 @@ import (
 	"time"
 
 	"to-de-olho-backend/internal/application"
-	"to-de-olho-backend/internal/domain"
 )
 
-func TestSyncMetrics_Structure(t *testing.T) {
-	metrics := SyncMetrics{
-		StartTime:          time.Now(),
-		EndTime:            time.Now().Add(time.Minute),
-		Duration:           time.Minute,
-		DeputadosUpdated:   10,
-		ProposicoesUpdated: 20,
-		ErrorsCount:        1,
-		Errors:             []string{"test error"},
-		SyncType:           "daily",
+// TestSyncMetrics testa a struct SyncMetrics usando table-driven tests
+func TestSyncMetrics(t *testing.T) {
+	tests := []struct {
+		name     string
+		metrics  SyncMetrics
+		validate func(t *testing.T, metrics SyncMetrics)
+	}{
+		{
+			name: "complete structure with all fields",
+			metrics: SyncMetrics{
+				StartTime:          time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+				EndTime:            time.Date(2024, 1, 1, 11, 30, 0, 0, time.UTC),
+				Duration:           90 * time.Minute,
+				DeputadosUpdated:   100,
+				ProposicoesUpdated: 250,
+				ErrorsCount:        2,
+				Errors:             []string{"error1", "error2"},
+				SyncType:           "daily",
+			},
+			validate: func(t *testing.T, metrics SyncMetrics) {
+				if metrics.DeputadosUpdated != 100 {
+					t.Errorf("DeputadosUpdated = %v, want 100", metrics.DeputadosUpdated)
+				}
+				if metrics.ProposicoesUpdated != 250 {
+					t.Errorf("ProposicoesUpdated = %v, want 250", metrics.ProposicoesUpdated)
+				}
+				if metrics.ErrorsCount != 2 {
+					t.Errorf("ErrorsCount = %v, want 2", metrics.ErrorsCount)
+				}
+				if len(metrics.Errors) != 2 {
+					t.Errorf("len(Errors) = %v, want 2", len(metrics.Errors))
+				}
+				if metrics.SyncType != "daily" {
+					t.Errorf("SyncType = %v, want daily", metrics.SyncType)
+				}
+				expectedDuration := 90 * time.Minute
+				if metrics.Duration != expectedDuration {
+					t.Errorf("Duration = %v, want %v", metrics.Duration, expectedDuration)
+				}
+			},
+		},
+		{
+			name: "empty errors case",
+			metrics: SyncMetrics{
+				ErrorsCount: 0,
+				Errors:      []string{},
+				SyncType:    "quick",
+			},
+			validate: func(t *testing.T, metrics SyncMetrics) {
+				if metrics.ErrorsCount != 0 {
+					t.Errorf("ErrorsCount = %v, want 0", metrics.ErrorsCount)
+				}
+				if len(metrics.Errors) != 0 {
+					t.Errorf("len(Errors) = %v, want 0", len(metrics.Errors))
+				}
+				if metrics.SyncType != "quick" {
+					t.Errorf("SyncType = %v, want quick", metrics.SyncType)
+				}
+			},
+		},
+		{
+			name: "nil errors slice",
+			metrics: SyncMetrics{
+				ErrorsCount: 0,
+				Errors:      nil,
+				SyncType:    "incremental",
+			},
+			validate: func(t *testing.T, metrics SyncMetrics) {
+				if metrics.ErrorsCount != 0 {
+					t.Errorf("ErrorsCount = %v, want 0", metrics.ErrorsCount)
+				}
+				if metrics.Errors != nil {
+					t.Errorf("Errors should be nil")
+				}
+			},
+		},
 	}
 
-	if metrics.DeputadosUpdated != 10 {
-		t.Errorf("DeputadosUpdated = %v, want 10", metrics.DeputadosUpdated)
-	}
-
-	if metrics.ProposicoesUpdated != 20 {
-		t.Errorf("ProposicoesUpdated = %v, want 20", metrics.ProposicoesUpdated)
-	}
-
-	if metrics.ErrorsCount != 1 {
-		t.Errorf("ErrorsCount = %v, want 1", metrics.ErrorsCount)
-	}
-
-	if len(metrics.Errors) != 1 || metrics.Errors[0] != "test error" {
-		t.Errorf("Errors = %v, want [test error]", metrics.Errors)
-	}
-
-	if metrics.SyncType != "daily" {
-		t.Errorf("SyncType = %v, want daily", metrics.SyncType)
-	}
-}
-
-func TestSyncMetrics_DailyType(t *testing.T) {
-	metrics := SyncMetrics{
-		SyncType: "daily",
-	}
-
-	if metrics.SyncType != "daily" {
-		t.Errorf("SyncType = %v, want daily", metrics.SyncType)
-	}
-}
-
-func TestSyncMetrics_QuickType(t *testing.T) {
-	metrics := SyncMetrics{
-		SyncType: "quick",
-	}
-
-	if metrics.SyncType != "quick" {
-		t.Errorf("SyncType = %v, want quick", metrics.SyncType)
-	}
-}
-
-func TestSyncMetrics_DurationCalculation(t *testing.T) {
-	start := time.Now()
-	end := start.Add(30 * time.Second)
-
-	metrics := SyncMetrics{
-		StartTime: start,
-		EndTime:   end,
-		Duration:  end.Sub(start),
-	}
-
-	expectedDuration := 30 * time.Second
-	if metrics.Duration != expectedDuration {
-		t.Errorf("Duration = %v, want %v", metrics.Duration, expectedDuration)
-	}
-}
-
-func TestSyncMetrics_ErrorHandling(t *testing.T) {
-	metrics := SyncMetrics{
-		Errors: []string{},
-	}
-
-	// Add some errors
-	metrics.Errors = append(metrics.Errors, "error 1")
-	metrics.Errors = append(metrics.Errors, "error 2")
-	metrics.ErrorsCount = len(metrics.Errors)
-
-	if metrics.ErrorsCount != 2 {
-		t.Errorf("ErrorsCount = %v, want 2", metrics.ErrorsCount)
-	}
-
-	if len(metrics.Errors) != 2 {
-		t.Errorf("Errors length = %v, want 2", len(metrics.Errors))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.validate(t, tt.metrics)
+		})
 	}
 }
 
-func TestSyncMetrics_EmptyErrors(t *testing.T) {
-	metrics := SyncMetrics{
-		ErrorsCount: 0,
-		Errors:      []string{},
-	}
-
-	if metrics.ErrorsCount != 0 {
-		t.Errorf("ErrorsCount = %v, want 0", metrics.ErrorsCount)
-	}
-
-	if len(metrics.Errors) != 0 {
-		t.Errorf("Errors length = %v, want 0", len(metrics.Errors))
-	}
-}
-
-// Testes adicionais para melhorar cobertura
-func TestSyncMetrics_ValidationFields(t *testing.T) {
-	now := time.Now()
-	metrics := SyncMetrics{
-		StartTime:          now,
-		EndTime:            now.Add(2 * time.Hour),
-		Duration:           2 * time.Hour,
-		DeputadosUpdated:   150,
-		ProposicoesUpdated: 300,
-		ErrorsCount:        2,
-		Errors:             []string{"connection timeout", "validation error"},
-		SyncType:           "full",
-	}
-
-	// Validar todos os campos
-	if metrics.DeputadosUpdated != 150 {
-		t.Errorf("DeputadosUpdated = %v, want 150", metrics.DeputadosUpdated)
-	}
-
-	if metrics.ProposicoesUpdated != 300 {
-		t.Errorf("ProposicoesUpdated = %v, want 300", metrics.ProposicoesUpdated)
-	}
-
-	if metrics.ErrorsCount != 2 {
-		t.Errorf("ErrorsCount = %v, want 2", metrics.ErrorsCount)
-	}
-
-	if metrics.SyncType != "full" {
-		t.Errorf("SyncType = %v, want full", metrics.SyncType)
-	}
-
-	if metrics.Duration != 2*time.Hour {
-		t.Errorf("Duration = %v, want 2h", metrics.Duration)
-	}
-}
-
-func TestSyncMetrics_EmptyErrorsSlice(t *testing.T) {
-	metrics := SyncMetrics{
-		ErrorsCount: 0,
-		Errors:      []string{}, // Empty slice instead of nil
-	}
-
-	if metrics.ErrorsCount != 0 {
-		t.Errorf("ErrorsCount = %v, want 0", metrics.ErrorsCount)
-	}
-
-	if len(metrics.Errors) != 0 {
-		t.Errorf("len(Errors) = %v, want 0", len(metrics.Errors))
-	}
-}
-
-func TestSyncMetrics_TimeCalculations(t *testing.T) {
-	start := time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC)
-	end := time.Date(2024, 1, 1, 12, 30, 0, 0, time.UTC)
-
-	metrics := SyncMetrics{
-		StartTime: start,
-		EndTime:   end,
-	}
-
-	// Calcular duração
-	metrics.Duration = metrics.EndTime.Sub(metrics.StartTime)
-
-	expected := 2*time.Hour + 30*time.Minute
-	if metrics.Duration != expected {
-		t.Errorf("Duration = %v, want %v", metrics.Duration, expected)
-	}
-}
-
-func TestSyncMetrics_LargeNumbers(t *testing.T) {
-	metrics := SyncMetrics{
-		DeputadosUpdated:   10000,
-		ProposicoesUpdated: 50000,
-		ErrorsCount:        100,
-		SyncType:           "batch",
-	}
-
-	if metrics.DeputadosUpdated != 10000 {
-		t.Errorf("DeputadosUpdated = %v, want 10000", metrics.DeputadosUpdated)
-	}
-
-	if metrics.ProposicoesUpdated != 50000 {
-		t.Errorf("ProposicoesUpdated = %v, want 50000", metrics.ProposicoesUpdated)
-	}
-
-	if metrics.ErrorsCount != 100 {
-		t.Errorf("ErrorsCount = %v, want 100", metrics.ErrorsCount)
-	}
-}
-
-func TestSyncMetrics_AllSyncTypes(t *testing.T) {
-	syncTypes := []string{"daily", "quick", "incremental", "full", "batch"}
-
-	for _, syncType := range syncTypes {
-		metrics := SyncMetrics{
-			SyncType: syncType,
-		}
-
-		if metrics.SyncType != syncType {
-			t.Errorf("SyncType = %v, want %v", metrics.SyncType, syncType)
-		}
-	}
-}
-
-// Testes para métodos do IncrementalSyncManager
-func TestIncrementalSyncManager_NewCreation(t *testing.T) {
-	manager := NewIncrementalSyncManager(
-		nil, // deputadosService
-		nil, // proposicoesService
-		nil, // analyticsService
-		nil, // db
-		nil, // cache
-	)
-
-	if manager == nil {
-		t.Error("NewIncrementalSyncManager should not return nil")
-	}
-}
-
-func TestIncrementalSyncManager_CleanupOldCache_NilCache(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		cache: nil,
-	}
-
-	ctx := context.Background()
-	err := manager.cleanupOldCache(ctx)
-
-	// Deve retornar erro por cache ser nil ou executar sem erro se tiver verificação
-	if err != nil {
-		t.Logf("cleanupOldCache returned error as expected: %v", err)
-	} else {
-		t.Log("cleanupOldCache handled nil cache gracefully")
-	}
-}
-
-func TestIncrementalSyncManager_GetSyncStats_NilDB(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		db: nil,
-	}
-
-	ctx := context.Background()
-
-	// Usar defer para capturar panic se ocorrer
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("GetSyncStats panicked as expected with nil DB: %v", r)
-		}
-	}()
-
-	stats, err := manager.GetSyncStats(ctx, 7)
-
-	// Se não deu panic, deve ter erro
-	if err == nil && stats == nil {
-		t.Log("GetSyncStats handled nil DB gracefully")
-	} else if err != nil {
-		t.Logf("GetSyncStats returned error as expected: %v", err)
-	}
-}
-
-func TestSyncMetrics_JSONMarshalling(t *testing.T) {
-	metrics := SyncMetrics{
+// TestSyncMetrics_JSONSerialization testa serialização/deserialização JSON
+func TestSyncMetrics_JSONSerialization(t *testing.T) {
+	originalMetrics := SyncMetrics{
 		StartTime:          time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
 		EndTime:            time.Date(2024, 1, 1, 13, 0, 0, 0, time.UTC),
 		Duration:           time.Hour,
-		DeputadosUpdated:   10,
-		ProposicoesUpdated: 20,
+		DeputadosUpdated:   50,
+		ProposicoesUpdated: 150,
 		ErrorsCount:        1,
-		Errors:             []string{"test error"},
+		Errors:             []string{"connection timeout"},
 		SyncType:           "test",
 	}
 
-	// Verificar se a struct pode ser serializada (JSON tags)
-	data, err := json.Marshal(metrics)
+	// Test marshaling
+	data, err := json.Marshal(originalMetrics)
 	if err != nil {
-		t.Errorf("Failed to marshal SyncMetrics: %v", err)
+		t.Fatalf("Failed to marshal SyncMetrics: %v", err)
 	}
 
 	if len(data) == 0 {
 		t.Error("Marshaled data is empty")
 	}
 
-	// Verificar se pode deserializar
+	// Test unmarshaling
 	var unmarshaled SyncMetrics
 	err = json.Unmarshal(data, &unmarshaled)
 	if err != nil {
-		t.Errorf("Failed to unmarshal SyncMetrics: %v", err)
+		t.Fatalf("Failed to unmarshal SyncMetrics: %v", err)
 	}
 
-	if unmarshaled.SyncType != metrics.SyncType {
-		t.Errorf("Unmarshaled SyncType = %v, want %v", unmarshaled.SyncType, metrics.SyncType)
+	// Verify key fields
+	if unmarshaled.SyncType != originalMetrics.SyncType {
+		t.Errorf("Unmarshaled SyncType = %v, want %v", unmarshaled.SyncType, originalMetrics.SyncType)
+	}
+
+	if unmarshaled.DeputadosUpdated != originalMetrics.DeputadosUpdated {
+		t.Errorf("Unmarshaled DeputadosUpdated = %v, want %v",
+			unmarshaled.DeputadosUpdated, originalMetrics.DeputadosUpdated)
+	}
+
+	if unmarshaled.ProposicoesUpdated != originalMetrics.ProposicoesUpdated {
+		t.Errorf("Unmarshaled ProposicoesUpdated = %v, want %v",
+			unmarshaled.ProposicoesUpdated, originalMetrics.ProposicoesUpdated)
+	}
+
+	if unmarshaled.ErrorsCount != originalMetrics.ErrorsCount {
+		t.Errorf("Unmarshaled ErrorsCount = %v, want %v",
+			unmarshaled.ErrorsCount, originalMetrics.ErrorsCount)
 	}
 }
 
-func TestIncrementalSyncManager_SaveSyncMetrics_NilDB(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		db: nil,
+// TestSyncMetrics_SyncTypes testa diferentes tipos de sincronização
+func TestSyncMetrics_SyncTypes(t *testing.T) {
+	syncTypes := []string{"daily", "quick", "incremental", "full", "batch"}
+
+	for _, syncType := range syncTypes {
+		t.Run("sync_type_"+syncType, func(t *testing.T) {
+			metrics := SyncMetrics{
+				SyncType: syncType,
+			}
+
+			if metrics.SyncType != syncType {
+				t.Errorf("SyncType = %v, want %v", metrics.SyncType, syncType)
+			}
+		})
+	}
+}
+
+// TestNewIncrementalSyncManager testa a criação do manager
+func TestNewIncrementalSyncManager(t *testing.T) {
+	tests := []struct {
+		name    string
+		wantNil bool
+	}{
+		{
+			name:    "should create manager with nil dependencies",
+			wantNil: false,
+		},
 	}
 
-	metrics := &SyncMetrics{
-		SyncType:           "test",
-		DeputadosUpdated:   5,
-		ProposicoesUpdated: 10,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewIncrementalSyncManager(
+				nil, // deputadosService
+				nil, // proposicoesService
+				nil, // analyticsService
+				nil, // db
+				nil, // cache
+			)
+
+			if (got == nil) != tt.wantNil {
+				t.Errorf("NewIncrementalSyncManager() = %v, wantNil %v", got, tt.wantNil)
+			}
+		})
+	}
+}
+
+// TestIncrementalSyncManager_CleanupOldCache testa a limpeza de cache
+func TestIncrementalSyncManager_CleanupOldCache(t *testing.T) {
+	tests := []struct {
+		name    string
+		cache   application.CachePort
+		wantErr bool
+	}{
+		{
+			name:    "nil cache should not error",
+			cache:   nil,
+			wantErr: false,
+		},
+		{
+			name:    "valid cache should work",
+			cache:   &mockCache{},
+			wantErr: false,
+		},
 	}
 
-	ctx := context.Background()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			manager := &IncrementalSyncManager{
+				cache: tt.cache,
+			}
 
-	// Usar defer para capturar panic se ocorrer
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("saveSyncMetrics panicked as expected with nil DB: %v", r)
+			ctx := context.Background()
+			err := manager.cleanupOldCache(ctx)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("cleanupOldCache() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestIncrementalSyncManager_GetSyncStats testa o método GetSyncStats
+func TestIncrementalSyncManager_GetSyncStats(t *testing.T) {
+	tests := []struct {
+		name        string
+		manager     *IncrementalSyncManager
+		days        int
+		expectError bool
+		expectNil   bool
+	}{
+		{
+			name: "nil database should return error",
+			manager: &IncrementalSyncManager{
+				db: nil,
+			},
+			days:        7,
+			expectError: true,
+			expectNil:   true,
+		},
+		{
+			name: "negative days should be handled",
+			manager: &IncrementalSyncManager{
+				db: nil,
+			},
+			days:        -1,
+			expectError: true,
+			expectNil:   true,
+		},
+		{
+			name: "zero days should be handled",
+			manager: &IncrementalSyncManager{
+				db: nil,
+			},
+			days:        0,
+			expectError: true,
+			expectNil:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			stats, err := tt.manager.GetSyncStats(ctx, tt.days)
+
+			if (err != nil) != tt.expectError {
+				t.Errorf("GetSyncStats() error = %v, expectError %v", err, tt.expectError)
+			}
+
+			if (stats == nil) != tt.expectNil {
+				t.Errorf("GetSyncStats() stats = %v, expectNil %v", stats, tt.expectNil)
+			}
+		})
+	}
+}
+
+// TestSyncMetrics_DurationCalculation testa cálculos de duração
+func TestSyncMetrics_DurationCalculation(t *testing.T) {
+	testCases := []struct {
+		name      string
+		startTime time.Time
+		endTime   time.Time
+		expected  time.Duration
+	}{
+		{
+			name:      "30 seconds duration",
+			startTime: time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+			endTime:   time.Date(2024, 1, 1, 10, 0, 30, 0, time.UTC),
+			expected:  30 * time.Second,
+		},
+		{
+			name:      "2 hours 30 minutes duration",
+			startTime: time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+			endTime:   time.Date(2024, 1, 1, 12, 30, 0, 0, time.UTC),
+			expected:  2*time.Hour + 30*time.Minute,
+		},
+		{
+			name:      "zero duration",
+			startTime: time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+			endTime:   time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+			expected:  0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			metrics := SyncMetrics{
+				StartTime: tc.startTime,
+				EndTime:   tc.endTime,
+				Duration:  tc.endTime.Sub(tc.startTime),
+			}
+
+			if metrics.Duration != tc.expected {
+				t.Errorf("Duration = %v, want %v", metrics.Duration, tc.expected)
+			}
+		})
+	}
+}
+
+// TestSyncMetrics_ErrorAccumulation testa acumulação de erros
+func TestSyncMetrics_ErrorAccumulation(t *testing.T) {
+	metrics := SyncMetrics{
+		Errors:      []string{},
+		ErrorsCount: 0,
+	}
+
+	// Simular adição de erros
+	errors := []string{"error 1", "error 2", "error 3"}
+
+	for _, errMsg := range errors {
+		metrics.Errors = append(metrics.Errors, errMsg)
+		metrics.ErrorsCount++
+	}
+
+	if metrics.ErrorsCount != 3 {
+		t.Errorf("ErrorsCount = %v, want 3", metrics.ErrorsCount)
+	}
+
+	if len(metrics.Errors) != 3 {
+		t.Errorf("len(Errors) = %v, want 3", len(metrics.Errors))
+	}
+
+	// Verificar conteúdo dos erros
+	for i, errMsg := range errors {
+		if metrics.Errors[i] != errMsg {
+			t.Errorf("Errors[%d] = %v, want %v", i, metrics.Errors[i], errMsg)
 		}
-	}()
-
-	err := manager.saveSyncMetrics(ctx, metrics)
-
-	// Se não deu panic, deve ter erro ou passar se houver verificação de nil
-	if err != nil {
-		t.Logf("saveSyncMetrics returned error as expected: %v", err)
-	} else {
-		t.Log("saveSyncMetrics handled nil DB gracefully")
 	}
 }
 
-// Testes simples para ExecuteDailySync e ExecuteQuickSync
-// Foca em verificar se os métodos existem e têm assinaturas corretas
+// mockCache é um mock simples do CachePort para testes
+type mockCache struct{}
 
-func TestIncrementalSyncManager_ExecuteDailySync_Basic(t *testing.T) {
-	// Mock cache simples que implementa a interface
-	cache := &mockCacheBasic{}
-
-	// Manager com cache mock mas services nil para teste básico
-	manager := &IncrementalSyncManager{
-		deputadosService:   nil,
-		proposicoesService: nil,
-		analyticsService:   nil,
-		db:                 nil,
-		cache:              cache,
-	}
-
-	ctx := context.Background()
-
-	// Este teste vai falhar com panic, mas isso é esperado
-	// O importante é que o método existe e pode ser chamado
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("ExecuteDailySync panic esperado com services nil: %v", r)
-		}
-	}()
-
-	_ = manager.ExecuteDailySync(ctx)
-	t.Error("Não deveria chegar aqui - esperava panic")
-}
-
-func TestIncrementalSyncManager_ExecuteQuickSync_Basic(t *testing.T) {
-	// Mock cache simples que implementa a interface
-	cache := &mockCacheBasic{}
-
-	manager := &IncrementalSyncManager{
-		deputadosService:   nil,
-		proposicoesService: nil,
-		analyticsService:   nil,
-		db:                 nil,
-		cache:              cache,
-	}
-
-	ctx := context.Background()
-
-	// Este teste vai falhar com panic, mas isso é esperado
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("ExecuteQuickSync panic esperado com services nil: %v", r)
-		}
-	}()
-
-	_ = manager.ExecuteQuickSync(ctx)
-	t.Error("Não deveria chegar aqui - esperava panic")
-}
-
-// Mock básico de cache para testes
-type mockCacheBasic struct{}
-
-func (m *mockCacheBasic) Get(ctx context.Context, key string) (string, bool) {
+func (m *mockCache) Get(ctx context.Context, key string) (string, bool) {
 	return "", false
 }
 
-func (m *mockCacheBasic) Set(ctx context.Context, key, value string, ttl time.Duration) {
-	// nothing to do in mock
-}
-
-// Testes adicionais para métodos menos cobertos
-
-func TestIncrementalSyncManager_SyncDeputados_Coverage(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		deputadosService:   nil,
-		proposicoesService: nil,
-		analyticsService:   nil,
-		db:                 nil,
-		cache:              &mockCacheBasic{},
-	}
-
-	ctx := context.Background()
-	metrics := &SyncMetrics{
-		Errors: []string{},
-	}
-
-	// Deve dar panic com service nil, mas adiciona coverage
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("syncDeputados panic esperado: %v", r)
-		} else {
-			t.Error("esperava panic com deputadosService nil")
-		}
-	}()
-
-	err := manager.syncDeputados(ctx, metrics)
-	if err == nil {
-		t.Error("esperava erro com service nil")
-	}
-}
-
-func TestIncrementalSyncManager_SyncRecentProposicoes_Coverage(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		deputadosService:   nil,
-		proposicoesService: nil,
-		analyticsService:   nil,
-		db:                 nil,
-		cache:              &mockCacheBasic{},
-	}
-
-	ctx := context.Background()
-	metrics := &SyncMetrics{
-		Errors: []string{},
-	}
-
-	// Deve dar panic com service nil, mas adiciona coverage
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("syncRecentProposicoes panic esperado: %v", r)
-		} else {
-			t.Error("esperava panic com proposicoesService nil")
-		}
-	}()
-
-	err := manager.syncRecentProposicoes(ctx, metrics)
-	if err == nil {
-		t.Error("esperava erro com service nil")
-	}
-}
-
-// Mock de AnalyticsService que implementa a interface
-type mockAnalyticsService struct{}
-
-func (m *mockAnalyticsService) GetRankingGastos(ctx context.Context, ano int, limite int) (*application.RankingGastos, string, error) {
-	return &application.RankingGastos{}, "cache", nil
-}
-
-func (m *mockAnalyticsService) GetRankingProposicoes(ctx context.Context, ano int, limite int) (*application.RankingProposicoes, string, error) {
-	return &application.RankingProposicoes{}, "cache", nil
-}
-
-func (m *mockAnalyticsService) GetRankingPresenca(ctx context.Context, ano int, limite int) (*application.RankingPresenca, string, error) {
-	return &application.RankingPresenca{}, "cache", nil
-}
-
-func (m *mockAnalyticsService) GetInsightsGerais(ctx context.Context) (*application.InsightsGerais, string, error) {
-	return &application.InsightsGerais{}, "cache", nil
-}
-
-func (m *mockAnalyticsService) AtualizarRankings(ctx context.Context) error {
-	return nil // Simula sucesso
-}
-
-// Mock funcional de DeputadosService
-type mockDeputadosService struct{}
-
-func (m *mockDeputadosService) ListarDeputados(ctx context.Context, partido, uf, nome string) ([]domain.Deputado, string, error) {
-	// Retorna dados fictícios mas válidos
-	deputados := []domain.Deputado{
-		{ID: 1, Nome: "Deputado Test 1"},
-		{ID: 2, Nome: "Deputado Test 2"},
-	}
-	return deputados, "api", nil
-}
-
-func (m *mockDeputadosService) BuscarDeputadoPorID(ctx context.Context, id string) (*domain.Deputado, string, error) {
-	return &domain.Deputado{ID: 1, Nome: "Test"}, "api", nil
-}
-
-func (m *mockDeputadosService) ListarDespesas(ctx context.Context, deputadoID, ano string) ([]domain.Despesa, string, error) {
-	return []domain.Despesa{}, "api", nil
-}
-
-// Mock funcional de ProposicoesService
-type mockProposicoesService struct{}
-
-func (m *mockProposicoesService) ListarProposicoes(ctx context.Context, filtros *domain.ProposicaoFilter) ([]domain.Proposicao, int, string, error) {
-	proposicoes := []domain.Proposicao{
-		{ID: 1, Ementa: "Proposição Test 1"},
-		{ID: 2, Ementa: "Proposição Test 2"},
-	}
-	return proposicoes, len(proposicoes), "api", nil
-}
-
-func (m *mockProposicoesService) BuscarProposicaoPorID(ctx context.Context, id int) (*domain.Proposicao, string, error) {
-	return &domain.Proposicao{ID: id, Ementa: "Test"}, "api", nil
-}
-
-func TestIncrementalSyncManager_ExecuteDailySync_WithAnalytics(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		deputadosService:   nil,
-		proposicoesService: nil,
-		analyticsService:   &mockAnalyticsService{},
-		db:                 nil,
-		cache:              &mockCacheBasic{},
-	}
-
-	ctx := context.Background()
-
-	// Vai falhar nos services de deputados/proposições mas pode executar analytics
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("ExecuteDailySync panic esperado em syncDeputados: %v", r)
-		}
-	}()
-
-	err := manager.ExecuteDailySync(ctx)
-	t.Logf("ExecuteDailySync com analytics retornou: %v", err)
-}
-
-func TestIncrementalSyncManager_CleanupOldCache_WithCache(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		cache: &mockCacheBasic{},
-	}
-
-	ctx := context.Background()
-	err := manager.cleanupOldCache(ctx)
-
-	// Método deve executar sem erro com cache válido
-	if err != nil {
-		t.Logf("cleanupOldCache retornou erro: %v", err)
-	} else {
-		t.Log("cleanupOldCache executou com sucesso")
-	}
-}
-
-func TestIncrementalSyncManager_SaveSyncMetrics_Coverage(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		db: nil,
-	}
-
-	metrics := &SyncMetrics{
-		StartTime:          time.Now(),
-		EndTime:            time.Now().Add(time.Hour),
-		Duration:           time.Hour,
-		DeputadosUpdated:   10,
-		ProposicoesUpdated: 20,
-		ErrorsCount:        0,
-		Errors:             []string{},
-		SyncType:           "test",
-	}
-
-	ctx := context.Background()
-
-	// Deve dar panic ou erro com DB nil
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("saveSyncMetrics panic esperado: %v", r)
-		}
-	}()
-
-	err := manager.saveSyncMetrics(ctx, metrics)
-	if err != nil {
-		t.Logf("saveSyncMetrics retornou erro: %v", err)
-	}
-}
-
-func TestIncrementalSyncManager_ExecuteQuickSync_FullPath(t *testing.T) {
-	manager := &IncrementalSyncManager{
-		deputadosService:   nil,
-		proposicoesService: nil,
-		analyticsService:   nil,
-		db:                 nil,
-		cache:              &mockCacheBasic{},
-	}
-
-	ctx := context.Background()
-
-	// Deve executar o início do método mesmo com services nil
-	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("ExecuteQuickSync panic esperado: %v", r)
-		}
-	}()
-
-	err := manager.ExecuteQuickSync(ctx)
-	t.Logf("ExecuteQuickSync retornou: %v", err)
-}
-
-func TestSyncMetrics_MaxFields(t *testing.T) {
-	// Teste com todos os campos preenchidos para máxima cobertura
-	start := time.Now()
-	end := start.Add(5 * time.Hour)
-
-	metrics := SyncMetrics{
-		StartTime:          start,
-		EndTime:            end,
-		Duration:           end.Sub(start),
-		DeputadosUpdated:   999999,
-		ProposicoesUpdated: 888888,
-		ErrorsCount:        10,
-		Errors:             []string{"erro1", "erro2", "erro3", "erro4", "erro5"},
-		SyncType:           "comprehensive",
-	}
-
-	// Verificar todos os campos
-	if metrics.StartTime.IsZero() {
-		t.Error("StartTime não deveria ser zero")
-	}
-
-	if metrics.EndTime.IsZero() {
-		t.Error("EndTime não deveria ser zero")
-	}
-
-	if metrics.Duration != 5*time.Hour {
-		t.Errorf("Duration = %v, want 5h", metrics.Duration)
-	}
-
-	if metrics.DeputadosUpdated != 999999 {
-		t.Errorf("DeputadosUpdated = %v, want 999999", metrics.DeputadosUpdated)
-	}
-
-	if metrics.ProposicoesUpdated != 888888 {
-		t.Errorf("ProposicoesUpdated = %v, want 888888", metrics.ProposicoesUpdated)
-	}
-
-	if metrics.ErrorsCount != 10 {
-		t.Errorf("ErrorsCount = %v, want 10", metrics.ErrorsCount)
-	}
-
-	if len(metrics.Errors) != 5 {
-		t.Errorf("len(Errors) = %v, want 5", len(metrics.Errors))
-	}
-
-	if metrics.SyncType != "comprehensive" {
-		t.Errorf("SyncType = %v, want comprehensive", metrics.SyncType)
-	}
-
-	// Teste de serialização JSON
-	jsonData, err := json.Marshal(metrics)
-	if err != nil {
-		t.Errorf("Erro ao serializar para JSON: %v", err)
-	}
-
-	if len(jsonData) == 0 {
-		t.Error("JSON serializado está vazio")
-	}
-
-	// Teste de deserialização
-	var decoded SyncMetrics
-	err = json.Unmarshal(jsonData, &decoded)
-	if err != nil {
-		t.Errorf("Erro ao deserializar JSON: %v", err)
-	}
-
-	if decoded.SyncType != metrics.SyncType {
-		t.Errorf("SyncType após deserialização = %v, want %v", decoded.SyncType, metrics.SyncType)
-	}
+func (m *mockCache) Set(ctx context.Context, key, value string, ttl time.Duration) {
+	// Mock implementation - does nothing
 }

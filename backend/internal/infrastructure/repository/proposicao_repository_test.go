@@ -32,6 +32,18 @@ func (m *MockDBProposicoes) Query(ctx context.Context, sql string, args ...inter
 	return NewMockRowsProposicoes([][]interface{}{}), nil
 }
 
+func (m *MockDBProposicoes) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+	// Return a mock row that can be used for scanning
+	return &MockRowProposicoes{}
+}
+
+// MockRowProposicoes implementa pgx.Row para testes
+type MockRowProposicoes struct{}
+
+func (m *MockRowProposicoes) Scan(dest ...interface{}) error {
+	return pgx.ErrNoRows
+}
+
 // MockRows implementa pgx.Rows para testes
 type MockRowsProposicoes struct {
 	rows     [][]interface{}
