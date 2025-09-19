@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"container/heap"
 	"context"
 	"sync"
 	"time"
@@ -15,6 +16,31 @@ type CacheItem struct {
 // IsExpired verifica se o item expirou
 func (c *CacheItem) IsExpired() bool {
 	return time.Now().After(c.ExpiresAt)
+}
+
+// evictionItem representa um item para evicção no heap
+type evictionItem struct {
+	key       string
+	expiresAt time.Time
+}
+
+// evictionHeap implementa heap.Interface para encontrar itens mais antigos
+type evictionHeap []evictionItem
+
+func (h evictionHeap) Len() int           { return len(h) }
+func (h evictionHeap) Less(i, j int) bool { return h[i].expiresAt.Before(h[j].expiresAt) }
+func (h evictionHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *evictionHeap) Push(x interface{}) {
+	*h = append(*h, x.(evictionItem))
+}
+
+func (h *evictionHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	item := old[n-1]
+	*h = old[0 : n-1]
+	return item
 }
 
 // MultiLevelCache implementa cache L1 (in-memory) + L2 (Redis)
@@ -118,35 +144,29 @@ func (mlc *MultiLevelCache) removeFromL1(key string) {
 }
 
 // evictOldestL1 remove 10% dos itens mais antigos quando L1 atinge limite
+// Otimizado: usa heap para O(N log k) onde k é a quantidade a remover
 func (mlc *MultiLevelCache) evictOldestL1() {
 	toRemove := mlc.l1MaxSize / 10
 	if toRemove < 1 {
 		toRemove = 1
 	}
 
-	// Encontrar itens mais antigos (expiram primeiro)
-	type keyTime struct {
-		key       string
-		expiresAt time.Time
-	}
-
-	var items []keyTime
+	// Use partial heap para encontrar os K menores elementos em O(N log k)
+	// mais eficiente que ordenar tudo O(N log N)
+	items := make(evictionHeap, 0, len(mlc.l1Cache))
 	for key, item := range mlc.l1Cache {
-		items = append(items, keyTime{key: key, expiresAt: item.ExpiresAt})
+		items = append(items, evictionItem{key: key, expiresAt: item.ExpiresAt})
 	}
 
-	// Ordenar por tempo de expiração (mais antigos primeiro)
-	for i := 0; i < len(items)-1; i++ {
-		for j := i + 1; j < len(items); j++ {
-			if items[i].expiresAt.After(items[j].expiresAt) {
-				items[i], items[j] = items[j], items[i]
-			}
-		}
-	}
+	// Heapify é O(N)
+	heap.Init(&items)
 
-	// Remover os mais antigos
-	for i := 0; i < toRemove && i < len(items); i++ {
-		delete(mlc.l1Cache, items[i].key)
+	// Remover os K itens mais antigos em O(k log N)
+	removedCount := 0
+	for removedCount < toRemove && items.Len() > 0 {
+		oldest := heap.Pop(&items).(evictionItem)
+		delete(mlc.l1Cache, oldest.key)
+		removedCount++
 	}
 }
 

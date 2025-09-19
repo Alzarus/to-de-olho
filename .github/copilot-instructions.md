@@ -211,6 +211,16 @@ Para detalhes específicos, consulte:
 - **Testing Guide**: `.github/docs/testing-guide.md`
 - **CI/CD Pipeline**: `.github/docs/cicd-guide.md`
 
+### 🔧 Arquitetura & Performance
+- **`sistema-ultra-performance.md`**: Sistema de 6 camadas de otimização implementado
+- **`security-performance-best-practices.md`**: Lições do Gemini Code Assist e correções aplicadas
+- **`gcp-deployment-decision.md`**: Decisões de infraestrutura e deployment
+
+### 📋 Desenvolvimento & Qualidade  
+- **`testing-guide.md`**: Estratégias de teste e pyramid 80/15/5
+- **`coverage-improvement-plan.md`**: Plano para alcançar 80% de cobertura
+- **`environment-variables-best-practices.md`**: Gestão segura de configurações
+
 ---
 
 > **🎯 Objetivo**: Código limpo, testável, escalável e seguro para democratizar a transparência política no Brasil através de tecnologia de ponta.

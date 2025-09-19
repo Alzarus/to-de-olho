@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -39,6 +40,41 @@ type CursorData struct {
 	ID        string    `json:"id"`
 	Timestamp time.Time `json:"timestamp"`
 	SortValue string    `json:"sort_value"`
+}
+
+// AllowedSortColumns define as colunas permitidas para ordenação por tabela
+var AllowedSortColumns = map[string][]string{
+	"deputados": {
+		"id", "nome", "cpf", "sigla_partido", "sigla_uf",
+		"created_at", "updated_at", "url_foto",
+	},
+	"proposicoes": {
+		"id", "numero", "ano", "tipo", "ementa", "keywords",
+		"descricao_tramitacao", "descricao_situacao", "created_at", "updated_at",
+	},
+	"despesas": {
+		"id", "deputado_id", "ano", "mes", "tipo_documento", "cod_documento",
+		"data_documento", "num_documento", "valor_documento", "nome_fornecedor",
+		"valor_liquido", "valor_bruto", "created_at", "updated_at",
+	},
+}
+
+// ValidateSortColumn valida se a coluna de ordenação é permitida para a tabela
+func ValidateSortColumn(table, column string) error {
+	allowedColumns, exists := AllowedSortColumns[table]
+	if !exists {
+		return fmt.Errorf("tabela não suportada: %s", table)
+	}
+
+	// Converte para lowercase para comparação case-insensitive
+	column = strings.ToLower(column)
+	for _, allowed := range allowedColumns {
+		if strings.ToLower(allowed) == column {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("coluna de ordenação não permitida: %s para tabela %s", column, table)
 }
 
 // ValidateAndNormalize valida e normaliza parâmetros de paginação
@@ -140,7 +176,12 @@ func BuildCursorPagination(data interface{}, hasNext bool, nextCursor string) *P
 }
 
 // GetPaginationSQL gera SQL para paginação por página
-func GetPaginationSQL(baseQuery string, req *PaginationRequest) string {
+func GetPaginationSQL(baseQuery string, req *PaginationRequest, table string) (string, error) {
+	// Validar coluna de ordenação
+	if err := ValidateSortColumn(table, req.SortBy); err != nil {
+		return "", err
+	}
+
 	offset := req.GetOffset()
 
 	query := fmt.Sprintf(`
@@ -149,17 +190,23 @@ func GetPaginationSQL(baseQuery string, req *PaginationRequest) string {
 		LIMIT %d OFFSET %d
 	`, baseQuery, req.SortBy, req.Order, req.Limit, offset)
 
-	return query
+	return query, nil
 }
 
 // GetCursorSQL gera SQL para paginação por cursor
-func GetCursorSQL(baseQuery string, req *PaginationRequest, cursorData *CursorData) string {
+func GetCursorSQL(baseQuery string, req *PaginationRequest, cursorData *CursorData, table string) (string, error) {
+	// Validar coluna de ordenação
+	if err := ValidateSortColumn(table, req.SortBy); err != nil {
+		return "", err
+	}
+
 	if cursorData == nil {
-		return fmt.Sprintf(`
+		query := fmt.Sprintf(`
 			%s
 			ORDER BY %s %s
 			LIMIT %d
 		`, baseQuery, req.SortBy, req.Order, req.Limit+1)
+		return query, nil
 	}
 
 	operator := ">"
@@ -176,5 +223,5 @@ func GetCursorSQL(baseQuery string, req *PaginationRequest, cursorData *CursorDa
 		req.SortBy, cursorData.SortValue, cursorData.ID,
 		req.SortBy, req.Order, req.Limit+1)
 
-	return query
+	return query, nil
 }

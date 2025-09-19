@@ -102,7 +102,22 @@ func (r *OptimizedDespesaRepository) UpsertDespesasBatch(ctx context.Context, de
 			slog.Int("deputado_id", deputadoID),
 			slog.Int("total_despesas", len(despesas)))
 
-		return r.upsertIndividual(ctx, tx, deputadoID, ano, despesas)
+		if err := r.upsertIndividual(ctx, tx, deputadoID, ano, despesas); err != nil {
+			return fmt.Errorf("erro no upsert individual: %w", err)
+		}
+
+		// Commit da transação após upsert individual bem-sucedido
+		if err := tx.Commit(ctx); err != nil {
+			return fmt.Errorf("erro ao fazer commit da transação (fallback): %w", err)
+		}
+
+		r.logger.Info("despesas inseridas via upsert individual",
+			slog.Int("deputado_id", deputadoID),
+			slog.Int("ano", ano),
+			slog.Int("inserted_count", len(despesas)),
+			slog.Duration("duration", time.Since(start)))
+
+		return nil
 	}
 
 	if err := tx.Commit(ctx); err != nil {

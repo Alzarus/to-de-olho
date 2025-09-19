@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -269,13 +270,30 @@ func buildCacheKey(prefix string, params ...interface{}) string {
 }
 
 func toString(v interface{}) string {
+	if v == nil {
+		return "nil"
+	}
+
 	switch val := v.(type) {
 	case string:
 		return val
+	case int:
+		return strconv.Itoa(val)
+	case int64:
+		return strconv.FormatInt(val, 10)
+	case float64:
+		return strconv.FormatFloat(val, 'f', -1, 64)
+	case bool:
+		return strconv.FormatBool(val)
 	case *domain.PaginationRequest:
-		return strconv.Itoa(val.Page) + "_" + strconv.Itoa(val.Limit)
+		if val == nil {
+			return "pagination:nil"
+		}
+		return fmt.Sprintf("pagination:page=%d,limit=%d,sort=%s,order=%s,cursor=%s",
+			val.Page, val.Limit, val.SortBy, val.Order, val.Cursor)
 	default:
-		return ""
+		// Para outros tipos, usar reflexão para criar uma chave única
+		return fmt.Sprintf("type:%T,value:%+v", v, v)
 	}
 }
 

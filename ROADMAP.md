@@ -212,8 +212,7 @@ type Rankings struct {
 6. ✅ **Backfill Completo**: Executado `./ingestor -mode=strategic -start-year=2025`
 7. ✅ **API Testing**: Validação completa com Postman - todos endpoints funcionando
 8. ✅ **Despesas por Deputado**: Implementado método no repositório + endpoint
-4. **Frontend WCAG**: Correções de contraste e navegação por teclado
-5. **⚠️ RESOLVER DÉBITO TÉCNICO CI/CD**: Retornar cobertura de 70% → 80% com Testcontainers (Out/2025)
+9. ✅ **⚠️ RESOLVER DÉBITO TÉCNICO CI/CD**: Retornar cobertura de 70% → 80% com Testcontainers (Out/2025)
 
 ### 🧪 **Testing Infrastructure (CRÍTICO - Esta Sprint)**
 **Problema Identificado**: Módulos de infraestrutura com baixa cobertura afetam confiabilidade do core business

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -204,11 +205,24 @@ func (bp *BackgroundProcessor) processJob(workerID int, job *Job) {
 
 		// Retry se ainda temos tentativas
 		if job.Retries < job.MaxRetries {
-			// Backoff exponencial
-			delay := time.Duration(job.Retries*job.Retries) * time.Second
+			// Backoff exponencial: base 2^retry com jitter
+			baseDelay := time.Duration(1<<job.Retries) * time.Second
+
+			// Adicionar jitter (±25%) para evitar thundering herd
+			jitter := time.Duration(rand.Float64()*0.5-0.25) * baseDelay
+			delay := baseDelay + jitter
+
+			// Cap máximo de 5 minutos
+			maxDelay := 5 * time.Minute
+			if delay > maxDelay {
+				delay = maxDelay
+			}
+
 			bp.logger.Info("scheduling job retry",
 				slog.String("job_id", job.ID),
-				slog.Duration("delay", delay))
+				slog.Duration("delay", delay),
+				slog.Duration("base_delay", baseDelay),
+				slog.Duration("jitter", jitter))
 
 			go func() {
 				time.Sleep(delay)
