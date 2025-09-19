@@ -1,32 +1,18 @@
-# 🏛️ Tô De Olho - Plataforma de Transparência Política# 🏛️ Tô De Olho - Plataforma de Transparência Política
+# 🏛️ Tô De Olho - Plataforma de Transparência Política
 
+> **TCC - Análise e Desenvolvimento de Sistemas**  
+> **Autor**: Pedro Batista de Almeida Filho  
+> **IFBA - Campus Salvador** | **Setembro 2025**
 
+## 🎯 Visão Geral
 
-> **TCC - Análise e Desenvolvimento de Sistemas**  > **TCC - Análise e Desenvolvimento de Sistemas**  
+O **"Tô De Olho"** é uma plataforma inovadora de transparência política que democratiza o acesso aos dados da Câmara dos Deputados, promovendo maior engajamento cidadão através de três núcleos fundamentais:
 
-> **Autor**: Pedro Batista de Almeida Filho  > **Autor**: Pedro Batista de Almeida Filho  
-
-> **IFBA - Campus Salvador** | **Setembro 2025**> **IFBA - Campus Salvador** | **Setembro 2025**
-
-
-
-## 🎯 Visão Geral## 🎯 Visão Geral
-
-
-
-O **"Tô De Olho"** democratiza o acesso aos dados da Câmara dos Deputados através de uma plataforma com **arquitetura de ultra-performance** e interface acessível para todos os brasileiros.O **"Tô De Olho"** é uma plataforma inovadora de transparência política que democratiza o acesso aos dados da Câmara dos Deputados, promovendo maior engajamento cidadão através de três núcleos fundamentais:
-
-
-
-### 🏆 **Principais Conquistas**- 🌐 **Acessibilidade Universal**: Interface intuitiva para todos os usuários
-
+- 🌐 **Acessibilidade Universal**: Interface intuitiva para todos os usuários
 - 👥 **Gestão Social**: Participação cidadã nas decisões públicas  
+- 🎮 **Gamificação**: Sistema de pontos e conquistas para engajar usuários
 
-| **Sistema Ultra-Performance** | **Resultado** |- 🎮 **Gamificação**: Sistema de pontos e conquistas para engajar usuários
-
-|-------------------------------|---------------|
-
-| ⚡ **Cache L1 Hits** | **22.47ns/op** |## 🚀 Status do Projeto
+## 🚀 Status do Projeto
 
 | 🚀 **API Response** | **151.5µs/op** |
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"to-de-olho-backend/internal/domain"
@@ -148,7 +149,7 @@ func (s *DeputadosService) ListarDespesas(ctx context.Context, id, ano string) (
 	if s.despesaRepo != nil && len(despesas) > 0 {
 		if err := s.despesaRepo.UpsertDespesas(ctx, deputadoID, anoInt, despesas); err != nil {
 			// Log error mas não falha a requisição
-			fmt.Printf("Aviso: erro ao salvar despesas no banco: %v\n", err)
+			slog.Warn("Aviso: erro ao salvar despesas no banco", "error", err)
 		}
 	}
 

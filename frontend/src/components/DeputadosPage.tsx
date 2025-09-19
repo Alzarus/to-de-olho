@@ -397,7 +397,11 @@ export default function DeputadosPage() {
       {selectedDeputado && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={() => setSelectedDeputado(null)}
+          onClick={() => {
+            setSelectedDeputado(null);
+            setDespesas([]);
+            setDespesasError(null);
+          }}
         >
           <div 
             className="bg-white rounded-lg max-w-md w-full p-6"
@@ -435,7 +439,11 @@ export default function DeputadosPage() {
 
             <div className="flex space-x-3">
               <button 
-                onClick={() => setSelectedDeputado(null)}
+                onClick={() => {
+                  setSelectedDeputado(null);
+                  setDespesas([]);
+                  setDespesasError(null);
+                }}
                 className="flex-1 bg-gray-200 text-gray-900 text-base font-medium py-3 px-4 rounded-md 
                            hover:bg-gray-300"
               >
@@ -498,6 +506,12 @@ export default function DeputadosPage() {
               ) : despesasError ? (
                 <div className="text-center py-8">
                   <p className="text-red-700">{despesasError}</p>
+                  <button 
+                    onClick={() => selectedDeputado && fetchDespesas(selectedDeputado.id, selectedAno)}
+                    className="mt-2 text-blue-600 hover:text-blue-800"
+                  >
+                    Tentar novamente
+                  </button>
                 </div>
               ) : despesas.length === 0 ? (
                 <div className="text-center py-8">

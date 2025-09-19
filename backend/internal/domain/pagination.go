@@ -194,10 +194,13 @@ func GetPaginationSQL(baseQuery string, req *PaginationRequest, table string) (s
 }
 
 // GetCursorSQL gera SQL para paginação por cursor
-func GetCursorSQL(baseQuery string, req *PaginationRequest, cursorData *CursorData, table string) (string, error) {
+// IMPORTANT: Este método retorna apenas a query SQL com placeholders.
+// Os valores cursorData.SortValue e cursorData.ID devem ser passados
+// como argumentos para a query para evitar SQL injection.
+func GetCursorSQL(baseQuery string, req *PaginationRequest, cursorData *CursorData, table string) (string, []interface{}, error) {
 	// Validar coluna de ordenação
 	if err := ValidateSortColumn(table, req.SortBy); err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	if cursorData == nil {
@@ -206,7 +209,7 @@ func GetCursorSQL(baseQuery string, req *PaginationRequest, cursorData *CursorDa
 			ORDER BY %s %s
 			LIMIT %d
 		`, baseQuery, req.SortBy, req.Order, req.Limit+1)
-		return query, nil
+		return query, nil, nil
 	}
 
 	operator := ">"
@@ -216,12 +219,11 @@ func GetCursorSQL(baseQuery string, req *PaginationRequest, cursorData *CursorDa
 
 	query := fmt.Sprintf(`
 		%s
-		AND (%s %s '%s' OR (%s = '%s' AND id > '%s'))
+		AND (%s %s $1 OR (%s = $1 AND id > $2))
 		ORDER BY %s %s
 		LIMIT %d
-	`, baseQuery, req.SortBy, operator, cursorData.SortValue,
-		req.SortBy, cursorData.SortValue, cursorData.ID,
-		req.SortBy, req.Order, req.Limit+1)
+	`, baseQuery, req.SortBy, operator, req.SortBy, req.SortBy, req.Order, req.Limit+1)
 
-	return query, nil
+	args := []interface{}{cursorData.SortValue, cursorData.ID}
+	return query, args, nil
 }
