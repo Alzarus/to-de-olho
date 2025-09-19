@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import DeputadosPage from '@/components/DeputadosPageNew'
+import DeputadosPage from '@/components/DeputadosPage'
 import DashboardAnalytics from '@/components/DashboardAnalytics'
 import Header from '@/components/Header'
 import Navigation from '@/components/Navigation'
