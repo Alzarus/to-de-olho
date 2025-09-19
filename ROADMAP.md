@@ -336,7 +336,46 @@ type Rankings struct {
 5. ✅ **Performance Frontend**: Cache Redis integrado, <200ms vs 2s+ API externa
 6. ✅ **Dados Reais**: 513 deputados, R$ 59.3M gastos, rankings funcionando
 
-### 🧪 **Testing Infrastructure (CRÍTICO - Esta Sprint)**
+### � **LIMPEZA & REFATORAÇÃO DE CÓDIGO (URGENTE - Esta Sprint)**
+**Situação Atual**: Arquivos duplicados e inconsistentes após implementação do sistema ultra-performance
+
+#### **🗂️ Backend - Limpeza Necessária**
+**Problema**: Arquivos "optimized" criados durante desenvolvimento do sistema ultra-performance coexistem com versões originais
+- **Repositories**: `deputado_repository.go` vs `despesa_repository_optimized.go`
+- **Handlers**: `handlers.go` vs `optimized_handlers.go`  
+- **Benchmarks**: `performance_benchmark_test.go` vs `response_benchmark_test.go`
+- **Duplicação**: Funcionalidades espelhadas em arquivos diferentes
+
+**Ação Requerida**:
+1. **Auditoria Completa**: Mapear todos arquivos com sufixo "_optimized"
+2. **Merge Inteligente**: Consolidar melhor versão (performance + legibilidade)
+3. **Remoção Segura**: Eliminar duplicatas após validação de funcionalidade
+4. **Testing**: Garantir que consolidação não quebra funcionalidades existentes
+
+#### **🎨 Frontend - Organização Estrutural**
+**Problema**: Crescimento orgânico resultou em inconsistências de estrutura e padrões
+- **Componentes**: Estrutura de pastas não segue convenções estabelecidas
+- **Styles**: CSS espalhado entre arquivos sem padrão claro
+- **Assets**: Arquivos não utilizados acumulados na pasta `public/`
+- **Dependencies**: Packages não utilizados no `package.json`
+
+**Ação Requerida**:
+1. **Reorganização de Componentes**: Seguir padrão `components/ui/`, `components/features/`
+2. **Cleanup Dependencies**: Remover packages não utilizados (`npm-check` audit)
+3. **Asset Optimization**: Remover SVGs e imagens não referenciadas
+4. **Style Consolidation**: Centralizar classes Tailwind customizadas
+
+#### **📋 Checklist Limpeza (Próximas 48h)**
+- [ ] **Backend Audit**: Listar todos arquivos "*_optimized" e duplicatas
+- [ ] **Performance Impact**: Validar que versões "optimized" são realmente superiores
+- [ ] **Consolidation Plan**: Definir qual versão manter por arquivo
+- [ ] **Frontend Dependencies**: `npm audit` + remoção de packages órfãos
+- [ ] **Asset Cleanup**: Remover arquivos não referenciados em `public/`
+- [ ] **Documentation Update**: Atualizar docs após consolidação
+
+**Meta**: Codebase 100% consolidado antes da próxima sprint de desenvolvimento
+
+### �🧪 **Testing Infrastructure (CRÍTICO - Esta Sprint)**
 **Problema Identificado**: Módulos de infraestrutura com baixa cobertura afetam confiabilidade do core business
 
 > **⚠️ ATENÇÃO TEMPORÁRIA**: Pipeline CI/CD ajustada para 70% de cobertura (Set/17/2025)
