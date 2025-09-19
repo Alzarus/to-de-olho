@@ -64,8 +64,8 @@ func (h *OptimizedHandlers) ListDeputadosOptimized(c *gin.Context) {
 		return
 	}
 
-	// Buscar dados
-	deputados, _, err := h.deputadosService.ListarDeputados(
+	// Buscar todos os dados primeiro para aplicar paginação
+	allDeputados, _, err := h.deputadosService.ListarDeputados(
 		ctx, partido, uf, nome,
 	)
 	if err != nil {
@@ -75,8 +75,22 @@ func (h *OptimizedHandlers) ListDeputadosOptimized(c *gin.Context) {
 		return
 	}
 
-	// Simular total para paginação
-	total := int64(len(deputados))
+	// Aplicar paginação manual nos dados
+	total := int64(len(allDeputados))
+
+	// Calcular offset e limite
+	offset := (paginationReq.Page - 1) * paginationReq.Limit
+	end := offset + paginationReq.Limit
+
+	var deputados []domain.Deputado
+	if offset < len(allDeputados) {
+		if end > len(allDeputados) {
+			end = len(allDeputados)
+		}
+		deputados = allDeputados[offset:end]
+	} else {
+		deputados = []domain.Deputado{}
+	}
 
 	// Build response
 	response := domain.BuildPagination(&paginationReq, total, deputados)
