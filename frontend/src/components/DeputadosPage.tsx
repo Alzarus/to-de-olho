@@ -108,7 +108,7 @@ export default function DeputadosPage() {
 
   useEffect(() => {
     fetchDeputados();
-  }, [selectedUF, selectedPartido, currentPage]);
+  }, [currentPage]);
 
   const fetchDeputados = async () => {
     setLoading(true);
@@ -474,7 +474,11 @@ export default function DeputadosPage() {
                   Gastos Públicos - {selectedDeputado.nome}
                 </h2>
                 <button 
-                  onClick={() => setShowDespesas(false)}
+                  onClick={() => {
+                    setShowDespesas(false);
+                    setDespesas([]);
+                    setDespesasError(null);
+                  }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-6 w-6" />

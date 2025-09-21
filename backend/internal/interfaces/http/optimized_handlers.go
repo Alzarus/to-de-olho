@@ -306,8 +306,10 @@ func toString(v interface{}) string {
 		return fmt.Sprintf("pagination:page=%d,limit=%d,sort=%s,order=%s,cursor=%s",
 			val.Page, val.Limit, val.SortBy, val.Order, val.Cursor)
 	default:
-		// Para outros tipos, usar reflexão para criar uma chave única
-		return fmt.Sprintf("type:%T,value:%+v", v, v)
+		// AVISO: Novo tipo detectado! Implementação explícita necessária para performance e determinismo.
+		// Reflexão usada temporariamente - pode gerar chaves inconsistentes e performance degradada.
+		// TODO: Adicionar case específico para tipo %T
+		panic(fmt.Sprintf("toString: tipo %T não suportado - implementar case específico para garantir cache determinístico", v))
 	}
 }
 

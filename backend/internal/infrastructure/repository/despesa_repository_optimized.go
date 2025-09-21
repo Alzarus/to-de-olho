@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -177,20 +178,20 @@ func (r *OptimizedDespesaRepository) upsertIndividual(ctx context.Context, tx pg
 	defer results.Close()
 
 	// Coletar erros e retornar se algum falhou
-	var errors []error
+	var errorList []error
 	for i := 0; i < len(despesas); i++ {
 		_, err := results.Exec()
 		if err != nil {
 			r.logger.Error("erro no upsert individual",
 				slog.String("error", err.Error()),
 				slog.Int("index", i))
-			errors = append(errors, fmt.Errorf("erro no item %d do batch de upsert: %w", i, err))
+			errorList = append(errorList, fmt.Errorf("erro no item %d do batch de upsert: %w", i, err))
 		}
 	}
 
-	// Se houve erros, retornar o primeiro
-	if len(errors) > 0 {
-		return errors[0]
+	// Se houve erros, retornar todos os erros agregados (Go 1.20+)
+	if len(errorList) > 0 {
+		return errors.Join(errorList...)
 	}
 
 	return nil
