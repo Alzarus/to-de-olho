@@ -199,6 +199,10 @@ func (ism *IncrementalSyncManager) cleanupOldCache(ctx context.Context) error {
 
 // saveSyncMetrics persiste métricas da sincronização
 func (ism *IncrementalSyncManager) saveSyncMetrics(ctx context.Context, metrics *SyncMetrics) error {
+	if ism.db == nil {
+		return fmt.Errorf("database connection is nil")
+	}
+
 	query := `
 		INSERT INTO sync_metrics (
 			sync_type, start_time, end_time, duration_ms,
@@ -233,6 +237,14 @@ func (ism *IncrementalSyncManager) saveSyncMetrics(ctx context.Context, metrics 
 
 // GetSyncStats retorna estatísticas de sincronização
 func (ism *IncrementalSyncManager) GetSyncStats(ctx context.Context, days int) ([]SyncMetrics, error) {
+	if ism.db == nil {
+		return nil, fmt.Errorf("database connection is nil")
+	}
+
+	if days < 0 {
+		return nil, fmt.Errorf("days parameter must be non-negative")
+	}
+
 	query := `
 		SELECT sync_type, start_time, end_time, duration_ms,
 		       deputados_updated, proposicoes_updated, errors_count, errors

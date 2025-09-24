@@ -1,5 +1,27 @@
 # 🤖 GitHub Copilot - Instruções Core
 
+## 🎯 Contexto Automático & Eficiência
+
+### 📁 Referências Obrigatórias
+**SEMPRE** que trabalhar com frontend ou backend:
+- **Frontend**: Consulte automaticamente `#file:frontend` para estrutura, componentes e padrões
+- **Backend**: Consulte automaticamente `#file:backend` para arquitetura, domínios e serviços
+- **Documentação**: Utilize este `#file:copilot-instructions.md` como fonte da verdade
+
+### ⚡ Eficiência de Tokens
+- **Priorize**: Leitura de arquivos relevantes ao contexto específico
+- **Evite**: Leituras desnecessárias ou redundantes
+- **Use**: `semantic_search` para localizar implementações antes de criar
+- **Aplique**: Padrões já existentes no projeto antes de criar novos
+
+### 🔄 Workflow Inteligente
+1. **Analise** o contexto atual (frontend/backend)
+2. **Busque** referências nos diretórios relevantes
+3. **Aplique** padrões e convenções estabelecidas
+4. **Mantenha** consistência com o código existente
+
+---
+
 ## 🎯 Visão do Projeto
 
 O **"Tô De Olho"** é uma plataforma de transparência política que democratiza o acesso aos dados da Câmara dos Deputados, promovendo engajamento cidadão através de:
@@ -183,6 +205,38 @@ log.Info("deputado criado com sucesso",
 - Textos alternativos obrigatórios
 - Suporte a leitores de tela
 
+### Mobile-First (OBRIGATÓRIO)
+- **Contexto**: 70% dos brasileiros acessam via smartphone
+- **Breakpoints**: Mobile (375px) → Tablet (768px) → Desktop (1024px+)
+- **Touch targets**: Mínimo 44px x 44px para botões/links
+- **Typography**: Base 16px+ (evita zoom automático no mobile)
+- **Performance**: Bundle <200KB, images WebP + lazy loading
+- **Layout**: Grid responsivo (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`)
+
+```tsx
+// ✅ Pattern Mobile-First obrigatório
+<button className="
+  w-full py-3 px-4 text-base        // Mobile: botão full-width, touch-friendly
+  md:w-auto md:px-6                 // Desktop: width auto, padding maior
+  bg-blue-700 text-white rounded-lg // Core styles
+  focus:ring-4 focus:ring-blue-300  // Acessibilidade
+">
+  Buscar Deputados
+</button>
+
+// ✅ Cards responsivos
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <DeputadoCard />
+</div>
+
+// ✅ Navigation mobile com drawer
+<nav className="md:hidden">
+  <button aria-label="Abrir menu">
+    <Menu className="h-6 w-6" />
+  </button>
+</nav>
+```
+
 ## 📊 Dados da Câmara
 
 ### API Base: `https://dadosabertos.camara.leg.br/api/v2/`
@@ -210,6 +264,16 @@ Para detalhes específicos, consulte:
 - **Business Rules**: `.github/docs/business-rules.md`
 - **Testing Guide**: `.github/docs/testing-guide.md`
 - **CI/CD Pipeline**: `.github/docs/cicd-guide.md`
+
+### 🔧 Arquitetura & Performance
+- **`sistema-ultra-performance.md`**: Sistema de 6 camadas de otimização implementado
+- **`security-performance-best-practices.md`**: Lições do Gemini Code Assist e correções aplicadas
+- **`gcp-deployment-decision.md`**: Decisões de infraestrutura e deployment
+
+### 📋 Desenvolvimento & Qualidade  
+- **`testing-guide.md`**: Estratégias de teste e pyramid 80/15/5
+- **`coverage-improvement-plan.md`**: Plano para alcançar 80% de cobertura
+- **`environment-variables-best-practices.md`**: Gestão segura de configurações
 
 ---
 

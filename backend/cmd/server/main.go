@@ -48,13 +48,21 @@ func main() {
 		}
 	}
 
-	cacheClient := cache.NewFromConfig(&cfg.Redis)
+	// Cache otimizado (multi-level por padrão)
+	cacheConfig := cache.GetDefaultCacheConfig()
+	cacheClient, err := cache.NewOptimizedCache(cacheConfig, &cfg.Redis)
+	if err != nil {
+		log.Printf("Aviso: falha ao criar cache otimizado, usando Redis simples: %v", err)
+		cacheClient = cache.NewFromConfig(&cfg.Redis)
+	}
+
 	repo := repository.NewDeputadoRepository(pgPool)
+	despesaRepo := repository.NewDespesaRepository(pgPool)
 	proposicoesRepo := repository.NewProposicaoRepository(pgPool)
 	client := httpclient.NewCamaraClientFromConfig(&cfg.CamaraClient)
 
 	logger := slog.Default()
-	svc := app.NewDeputadosService(client, cacheClient, repo)
+	svc := app.NewDeputadosService(client, cacheClient, repo, despesaRepo)
 	proposicoesSvc := app.NewProposicoesService(client, cacheClient, proposicoesRepo, logger)
 	analyticsSvc := app.NewAnalyticsService(repo, proposicoesRepo, cacheClient, logger)
 
@@ -69,7 +77,14 @@ func main() {
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+	// Middlewares otimizados para performance
+	r.Use(middleware.GzipMiddleware())
+	r.Use(middleware.StreamingMiddleware())
+	r.Use(middleware.CompressionStatsMiddleware())
 	r.Use(middleware.RateLimitPerIP(cfg.Server.RateLimit, time.Minute))
+
+	// Handlers otimizados
+	optimizedHandlers := httpif.NewOptimizedHandlers(svc, proposicoesSvc, analyticsSvc)
 
 	api := r.Group("/api/v1")
 	{
@@ -82,18 +97,20 @@ func main() {
 			})
 		})
 
-		// Rotas para deputados
-		api.GET("/deputados", httpif.GetDeputadosHandler(svc))
-		api.GET("/deputados/:id", httpif.GetDeputadoByIDHandler(svc))
+		// Rotas otimizadas para deputados
+		api.GET("/deputados", optimizedHandlers.ListDeputadosOptimized)
+		api.GET("/deputados/stream", optimizedHandlers.StreamDeputados)
+		api.GET("/deputados/:id", optimizedHandlers.GetDeputadoOptimized)
 		api.GET("/deputados/:id/despesas", httpif.GetDespesasDeputadoHandler(svc))
 
 		// Rotas para proposições
 		api.GET("/proposicoes", httpif.GetProposicoesHandler(proposicoesSvc))
 		api.GET("/proposicoes/:id", httpif.GetProposicaoPorIDHandler(proposicoesSvc))
 
-		// Rotas para analytics
+		// Rotas otimizadas para analytics
 		analytics := api.Group("/analytics")
 		{
+			analytics.GET("/optimized", optimizedHandlers.GetAnalyticsOptimized)
 			analytics.GET("/rankings/gastos", httpif.GetRankingGastosHandler(analyticsSvc))
 			analytics.GET("/rankings/proposicoes", httpif.GetRankingProposicoesHandler(analyticsSvc))
 			analytics.GET("/rankings/presenca", httpif.GetRankingPresencaHandler(analyticsSvc))

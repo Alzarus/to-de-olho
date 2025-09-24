@@ -198,7 +198,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [docker-build]
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
-    environment: staging
+    # environment: staging  # TODO: Configure staging environment in GitHub repo settings
 
     steps:
     - name: 📂 Checkout code
@@ -209,6 +209,7 @@ jobs:
         echo "🚧 Staging deployment will be implemented with Docker registry"
         echo "🎯 Branch: ${{ github.ref }}"
         echo "📝 Commit: ${{ github.sha }}"
+        echo "📋 TODO: Configure 'staging' environment in GitHub repo settings"
         # Future: Deploy to staging environment
 
   # 🌟 Deploy to Production
@@ -217,7 +218,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [docker-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
+    # environment: production  # TODO: Configure production environment in GitHub repo settings
 
     steps:
     - name: 📂 Checkout code
@@ -228,6 +229,7 @@ jobs:
         echo "🚧 Production deployment will be implemented with Docker registry"
         echo "🎯 Branch: ${{ github.ref }}"
         echo "📝 Commit: ${{ github.sha }}"
+        echo "📋 TODO: Configure 'production' environment in GitHub repo settings"
         # Future: Deploy to production environment
 
   # 📊 Performance Tests

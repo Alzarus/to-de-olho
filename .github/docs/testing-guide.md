@@ -165,6 +165,52 @@ func TestCPF_NewCPF(t *testing.T) {
 }
 ```
 
+### 🚀 Mocking para Dependências Complexas (Database, HTTP)
+
+**Técnica: Interface Wrapper + Dependency Injection**
+
+```go
+// migrator_mockable.go - Wrapper para testes
+type MigratorWithMocks struct {
+    *Migrator
+    
+    // Funções mockáveis para dependências complexas
+    CreateMigrationsTableFunc func(ctx context.Context) error
+    GetAppliedMigrationsFunc  func(ctx context.Context) (map[int]bool, error)
+    ApplyMigrationFunc        func(ctx context.Context, migration Migration) error
+}
+
+func (m *MigratorWithMocks) Run(ctx context.Context) error {
+    // Use mocked functions if available, fallback to original
+    if m.CreateMigrationsTableFunc != nil {
+        if err := m.CreateMigrationsTableFunc(ctx); err != nil {
+            return fmt.Errorf("failed to create migrations table: %w", err)
+        }
+    } else {
+        if err := m.createMigrationsTable(ctx); err != nil {
+            return fmt.Errorf("failed to create migrations table: %w", err)
+        }
+    }
+    // ... resto da lógica
+}
+
+// Helper para configurar mocks
+func (m *MigratorWithMocks) MockedGetAppliedMigrations(appliedVersions []int, returnError error) {
+    m.GetAppliedMigrationsFunc = func(ctx context.Context) (map[int]bool, error) {
+        if returnError != nil {
+            return nil, returnError
+        }
+        applied := make(map[int]bool)
+        for _, version := range appliedVersions {
+            applied[version] = true
+        }
+        return applied, nil
+    }
+}
+```
+
+**Resultado: 25.0% → 42.5% cobertura (+17.5%), método Run: 6.2% → 84.6%**
+
 ### Testes de Use Cases com Mocks
 ```go
 func TestBuscarDeputadoUseCase_Execute(t *testing.T) {

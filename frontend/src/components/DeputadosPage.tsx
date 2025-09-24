@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, User, MapPin, Building2, Euro, AlertCircle, X } from 'lucide-react';
 import DeputadoCard from './DeputadoCard';
+import Tooltip from './Tooltip';
 
 export interface Deputado {
   id: number;
@@ -37,16 +38,33 @@ export interface Despesa {
   parcela?: number;
 }
 
-interface APIResponse {
-  data: Deputado[];
+interface PaginationInfo {
+  page: number;
+  limit: number;
   total: number;
-  source: string;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
+
+interface APIResponse {
+  data?: {
+    data?: Deputado[] | null;
+    pagination?: PaginationInfo;
+  };
+  meta?: {
+    cache_hit: boolean;
+    process_time: number;
+    timestamp: number;
+  };
 }
 
 interface DespesasAPIResponse {
-  data: Despesa[];
-  total: number;
-  source: string;
+  ano?: string;
+  data?: Despesa[] | null;
+  source?: string;
+  total?: number;
+  valor_total?: number;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
@@ -64,21 +82,33 @@ export default function DeputadosPage() {
   const [loadingDespesas, setLoadingDespesas] = useState(false);
   const [despesasError, setDespesasError] = useState<string | null>(null);
   const [selectedAno, setSelectedAno] = useState(new Date().getFullYear());
+  
+  // Estados para paginação
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    total_pages: 1,
+    has_next: false,
+    has_prev: false
+  });
+  const [currentPage, setCurrentPage] = useState(1);
 
   const estados = [
     'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
     'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 
     'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
   ];
-
+  
   const partidos = [
-    'PT', 'PL', 'UNIÃO', 'PP', 'MDB', 'PSD', 'REPUBLICANOS', 'PSDB', 
-    'PDT', 'PODE', 'PSOL', 'PSB', 'CIDADANIA', 'AVANTE', 'SOLIDARIEDADE'
+    'PT', 'PL', 'PP', 'MDB', 'PSD', 'REPUBLICANOS', 'PSB', 'UNIÃO', 
+    'PSDB', 'PDT', 'SOLIDARIEDADE', 'PSOL', 'PODE', 'AVANTE', 'PC do B',
+    'PV', 'CIDADANIA', 'PATRIOTA', 'PROS', 'PMB', 'AGIR', 'REDE'
   ];
 
   useEffect(() => {
     fetchDeputados();
-  }, [selectedUF, selectedPartido]);
+  }, [currentPage]);
 
   const fetchDeputados = async () => {
     setLoading(true);
@@ -89,15 +119,58 @@ export default function DeputadosPage() {
       if (selectedUF) params.append('uf', selectedUF);
       if (selectedPartido) params.append('partido', selectedPartido);
       if (searchTerm) params.append('nome', searchTerm);
+      params.append('page', currentPage.toString());
+      params.append('limit', '20');
 
       const response = await axios.get<APIResponse>(`${API_BASE_URL}/deputados?${params}`);
-      setDeputados(response.data.data || []);
+      
+      const deputadosData = response.data?.data?.data;
+      const paginationData = response.data?.data?.pagination;
+      
+      if (Array.isArray(deputadosData)) {
+        setDeputados(deputadosData);
+      } else {
+        console.warn('Sistema Ultra-Performance: Dados de deputados não são um array');
+        setDeputados([]);
+      }
+
+      if (paginationData) {
+        setPagination({
+          page: paginationData.page || currentPage,
+          limit: paginationData.limit || 20,
+          total: paginationData.total || 0,
+          total_pages: paginationData.total_pages || 1,
+          has_next: paginationData.has_next || false,
+          has_prev: paginationData.has_prev || false
+        });
+      }
     } catch (err) {
       console.error('Erro ao buscar deputados:', err);
       setError('Erro ao carregar deputados. Verifique se o backend está rodando.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    fetchDeputados();
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.total_pages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handleFilterChange = () => {
+    setCurrentPage(1);
+  };
+
+  const handleVerDespesas = (deputado: Deputado) => {
+    setSelectedDeputado(deputado);
+    setShowDespesas(true);
+    fetchDespesas(deputado.id, selectedAno);
   };
 
   const fetchDespesas = async (deputadoId: number, ano: number) => {
@@ -107,25 +180,19 @@ export default function DeputadosPage() {
     try {
       const url = `${API_BASE_URL}/deputados/${deputadoId}/despesas?ano=${ano}`;
       const response = await axios.get<DespesasAPIResponse>(url);
-      setDespesas(response.data.data || []);
+      
+      const despesasData = response.data?.data;
+      if (Array.isArray(despesasData)) {
+        setDespesas(despesasData);
+      } else {
+        setDespesas([]);
+      }
     } catch (err) {
       console.error('Erro ao buscar despesas:', err);
-      setDespesasError('Erro ao carregar despesas. Tente novamente.');
+      setDespesasError('Erro ao carregar despesas do deputado');
     } finally {
       setLoadingDespesas(false);
     }
-  };
-
-  const handleVerDespesas = (deputado: Deputado) => {
-    setSelectedDeputado(deputado);
-    setShowDespesas(true);
-    fetchDespesas(deputado.id, selectedAno);
-  };
-
-  const closeDespesasModal = () => {
-    setShowDespesas(false);
-    setDespesas([]);
-    setDespesasError(null);
   };
 
   const formatCurrency = (value: number) => {
@@ -136,24 +203,15 @@ export default function DeputadosPage() {
   };
 
   const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR');
-    } catch {
-      return dateString;
-    }
-  };
-
-  const handleSearch = () => {
-    fetchDeputados();
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Carregando deputados...</span>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+          <span className="ml-2 text-lg text-gray-900">Carregando deputados...</span>
         </div>
       </div>
     );
@@ -161,64 +219,72 @@ export default function DeputadosPage() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-center">
-            <AlertCircle className="h-6 w-6 text-red-600 mr-3" />
-            <div>
-              <h3 className="text-lg font-medium text-red-800">Erro ao carregar dados</h3>
-              <p className="text-red-600 mt-1">{error}</p>
-              <button 
-                onClick={fetchDeputados}
-                className="mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-              >
-                Tentar novamente
-              </button>
-            </div>
-          </div>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="text-center py-8">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <p className="text-red-700 text-lg">{error}</p>
+          <button 
+            onClick={fetchDeputados}
+            className="mt-4 bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">
-          Deputados Federais
-        </h1>
-        <p className="text-gray-600">
-          Explore os {deputados.length} deputados federais e seus dados de transparência
-        </p>
-      </div>
+    <div className="space-y-6">
+      {/* Informações e filtros */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="mb-6">
+          <div className="text-lg text-gray-800">
+            <span>
+              Mostrando {deputados.length} de {pagination.total} deputados federais. 
+              Acompanhe seus dados de transparência.
+            </span>
+            <Tooltip 
+              content="Os deputados federais são eleitos para representar a população brasileira na Câmara dos Deputados, onde criam e votam leis que afetam todo o país."
+              trigger="text"
+            >
+              <span className="ml-1">Saiba mais sobre deputados</span>
+            </Tooltip>
+          </div>
+        </div>
 
-      {/* Filtros */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+        {/* Filtros */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="search-input" className="block text-base font-medium text-gray-900 mb-2">
               <Search className="inline h-4 w-4 mr-1" />
               Buscar por nome
             </label>
             <input
+              id="search-input"
               type="text"
+              placeholder="Digite o nome do deputado"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Digite o nome do deputado..."
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-base border border-gray-300 rounded-md px-4 py-3 
+                         focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500"
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="uf-select" className="block text-base font-medium text-gray-900 mb-2">
               <MapPin className="inline h-4 w-4 mr-1" />
               Estado (UF)
             </label>
             <select
+              id="uf-select"
               value={selectedUF}
-              onChange={(e) => setSelectedUF(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                setSelectedUF(e.target.value);
+                handleFilterChange();
+              }}
+              className="w-full text-base border border-gray-300 rounded-md px-4 py-3 
+                         focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500"
             >
               <option value="">Todos os estados</option>
               {estados.map(uf => (
@@ -228,14 +294,19 @@ export default function DeputadosPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="partido-select" className="block text-base font-medium text-gray-900 mb-2">
               <Building2 className="inline h-4 w-4 mr-1" />
-              Partido
+              Partido Político
             </label>
             <select
+              id="partido-select"
               value={selectedPartido}
-              onChange={(e) => setSelectedPartido(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                setSelectedPartido(e.target.value);
+                handleFilterChange();
+              }}
+              className="w-full text-base border border-gray-300 rounded-md px-4 py-3 
+                         focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500"
             >
               <option value="">Todos os partidos</option>
               {partidos.map(partido => (
@@ -247,9 +318,10 @@ export default function DeputadosPage() {
           <div className="flex items-end">
             <button
               onClick={handleSearch}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-blue-700 text-white text-base font-medium px-6 py-3 rounded-md 
+                         hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300"
             >
-              Buscar
+              Buscar Deputados
             </button>
           </div>
         </div>
@@ -257,7 +329,7 @@ export default function DeputadosPage() {
 
       {/* Lista de Deputados */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {deputados.map((deputado) => (
+        {Array.isArray(deputados) && deputados.map((deputado) => (
           <DeputadoCard
             key={deputado.id}
             deputado={deputado}
@@ -267,27 +339,79 @@ export default function DeputadosPage() {
         ))}
       </div>
 
+      {/* Paginação */}
+      {pagination.total_pages > 1 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Página {pagination.page} de {pagination.total_pages} 
+              ({pagination.total} deputados no total)
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!pagination.has_prev}
+                className={`px-3 py-2 text-sm font-medium rounded-md ${
+                  pagination.has_prev
+                    ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                    : 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed'
+                }`}
+              >
+                Anterior
+              </button>
+
+              <span className="text-sm text-gray-500">
+                {pagination.page} / {pagination.total_pages}
+              </span>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!pagination.has_next}
+                className={`px-3 py-2 text-sm font-medium rounded-md ${
+                  pagination.has_next
+                    ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                    : 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed'
+                }`}
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deputados.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <User className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+          <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-900 mb-2">
             Nenhum deputado encontrado
           </h3>
-          <p className="text-gray-600">
-            Tente ajustar os filtros de busca
+          <p className="text-lg text-gray-800">
+            Tente ajustar os filtros de busca ou verifique se digitou o nome corretamente
           </p>
         </div>
       )}
 
       {/* Modal de Detalhes do Deputado */}
       {selectedDeputado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setSelectedDeputado(null);
+            setDespesas([]);
+            setDespesasError(null);
+          }}
+        >
+          <div 
+            className="bg-white rounded-lg max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center mb-4">
               {selectedDeputado.urlFoto ? (
                 <img
                   src={selectedDeputado.urlFoto}
-                  alt={selectedDeputado.nome}
+                  alt={`Foto de ${selectedDeputado.nome}`}
                   className="w-20 h-20 rounded-full object-cover mr-4"
                 />
               ) : (
@@ -299,13 +423,13 @@ export default function DeputadosPage() {
                 <h2 className="text-xl font-semibold text-gray-900">
                   {selectedDeputado.nome}
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-lg text-gray-800">
                   {selectedDeputado.siglaPartido} - {selectedDeputado.siglaUf}
                 </p>
               </div>
             </div>
             
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3 mb-6 text-base">
               <p><strong>ID:</strong> {selectedDeputado.id}</p>
               <p><strong>Situação:</strong> {selectedDeputado.condicaoEleitoral}</p>
               {selectedDeputado.email && (
@@ -315,49 +439,60 @@ export default function DeputadosPage() {
 
             <div className="flex space-x-3">
               <button 
-                onClick={() => setSelectedDeputado(null)}
-                className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300"
+                onClick={() => {
+                  setSelectedDeputado(null);
+                  setDespesas([]);
+                  setDespesasError(null);
+                }}
+                className="flex-1 bg-gray-200 text-gray-900 text-base font-medium py-3 px-4 rounded-md 
+                           hover:bg-gray-300"
               >
                 Fechar
               </button>
               <button 
                 onClick={() => handleVerDespesas(selectedDeputado)}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 flex items-center justify-center"
+                className="flex-1 bg-blue-700 text-white text-base font-medium py-3 px-4 rounded-md 
+                           hover:bg-blue-800 flex items-center justify-center"
               >
                 <Euro className="h-4 w-4 mr-2" />
-                Ver Despesas
+                Ver Gastos
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de Despesas */}
-      {showDespesas && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      {/* Modal de Despesas - Simplificado */}
+      {showDespesas && selectedDeputado && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        >
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Despesas do Deputado
+                  Gastos Públicos - {selectedDeputado.nome}
                 </h2>
                 <button 
-                  onClick={() => setShowDespesas(false)}
+                  onClick={() => {
+                    setShowDespesas(false);
+                    setDespesas([]);
+                    setDespesasError(null);
+                  }}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-6 w-6" />
                 </button>
               </div>
               
-              {/* Seletor de Ano */}
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ano:
-                </label>
                 <select
                   value={selectedAno}
-                  onChange={(e) => setSelectedAno(Number(e.target.value))}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setSelectedAno(Number(e.target.value));
+                    fetchDespesas(selectedDeputado.id, Number(e.target.value));
+                  }}
+                  className="border border-gray-300 rounded-md px-3 py-2"
                 >
                   {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
                     <option key={year} value={year}>{year}</option>
@@ -369,12 +504,12 @@ export default function DeputadosPage() {
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               {loadingDespesas ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-2 text-gray-600">Carregando despesas...</span>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-700"></div>
+                  <span className="ml-2">Carregando gastos...</span>
                 </div>
               ) : despesasError ? (
                 <div className="text-center py-8">
-                  <p className="text-red-600">{despesasError}</p>
+                  <p className="text-red-700">{despesasError}</p>
                   <button 
                     onClick={() => selectedDeputado && fetchDespesas(selectedDeputado.id, selectedAno)}
                     className="mt-2 text-blue-600 hover:text-blue-800"
@@ -384,8 +519,8 @@ export default function DeputadosPage() {
                 </div>
               ) : despesas.length === 0 ? (
                 <div className="text-center py-8">
-                  <Euro className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600">Nenhuma despesa encontrada para este período.</p>
+                  <Euro className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-800">Nenhum gasto encontrado para este período.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -399,36 +534,17 @@ export default function DeputadosPage() {
                       </div>
                       
                       {despesa.nomeFornecedor && (
-                        <p className="text-sm text-gray-600 mb-1">
+                        <p className="text-sm text-gray-600">
                           <strong>Fornecedor:</strong> {despesa.nomeFornecedor}
                         </p>
                       )}
                       
-                      {despesa.cnpjCpfFornecedor && (
-                        <p className="text-sm text-gray-600 mb-1">
-                          <strong>CNPJ/CPF:</strong> {despesa.cnpjCpfFornecedor}
-                        </p>
-                      )}
-                      
-                      <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
-                        <span>{formatDate(despesa.dataDocumento)}</span>
-                        {despesa.numDocumento && (
-                          <span>Doc: {despesa.numDocumento}</span>
-                        )}
+                      <div className="text-xs text-gray-500 mt-2">
+                        {formatDate(despesa.dataDocumento)}
                       </div>
-                      
-                      {despesa.valorBruto !== despesa.valorLiquido && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          <span>Valor bruto: {formatCurrency(despesa.valorBruto)}</span>
-                          {despesa.valorGlosa > 0 && (
-                            <span className="ml-2">Glosa: {formatCurrency(despesa.valorGlosa)}</span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   ))}
                   
-                  {/* Resumo Total */}
                   <div className="border-t border-gray-200 pt-4 mt-6">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-gray-900">Total:</span>

@@ -61,10 +61,11 @@ func run() error {
 
 	// Repositories
 	deputadoRepo := repository.NewDeputadoRepository(database)
+	despesaRepo := repository.NewDespesaRepository(database)
 	proposicaoRepo := repository.NewProposicaoRepository(database)
 
 	// Services
-	deputadosService := application.NewDeputadosService(camaraClient, redisCache, deputadoRepo)
+	deputadosService := application.NewDeputadosService(camaraClient, redisCache, deputadoRepo, despesaRepo)
 	proposicoesService := application.NewProposicoesService(camaraClient, redisCache, proposicaoRepo, logger)
 	analyticsService := application.NewAnalyticsService(deputadoRepo, proposicaoRepo, redisCache, logger)
 
