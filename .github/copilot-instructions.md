@@ -7,6 +7,7 @@
 - **Frontend**: Consulte automaticamente `#file:frontend` para estrutura, componentes e padrões
 - **Backend**: Consulte automaticamente `#file:backend` para arquitetura, domínios e serviços
 - **Documentação**: Utilize este `#file:copilot-instructions.md` como fonte da verdade
+- **API Câmara**: Consulte `.github/docs/api-docs.json` para detalhes dos endpoints
 
 ### ⚡ Eficiência de Tokens
 - **Priorize**: Leitura de arquivos relevantes ao contexto específico
@@ -19,6 +20,7 @@
 2. **Busque** referências nos diretórios relevantes
 3. **Aplique** padrões e convenções estabelecidas
 4. **Mantenha** consistência com o código existente
+5. **Divida** implementações complexas em partes menores
 
 ---
 
@@ -254,7 +256,7 @@ log.Info("deputado criado com sucesso",
 
 ---
 
-## 📚 Documentação Adicional
+## 📚 Documentação Adicional (Sempre que necessário, consulte o arquivo relacionado)
 
 Para detalhes específicos, consulte:
 - **Arquitetura**: `.github/docs/architecture.md`

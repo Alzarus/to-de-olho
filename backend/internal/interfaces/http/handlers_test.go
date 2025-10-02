@@ -553,6 +553,34 @@ func (m *MockAnalyticsService) AtualizarRankings(ctx context.Context) error {
 	return m.err
 }
 
+// Novos métodos de Analytics (stubs para testes)
+func (m *MockAnalyticsService) GetRankingDeputadosVotacao(ctx context.Context, ano int, limite int) ([]domain.RankingDeputadoVotacao, string, error) {
+	if m.err != nil {
+		return nil, "", m.err
+	}
+	return []domain.RankingDeputadoVotacao{}, m.source, nil
+}
+
+func (m *MockAnalyticsService) GetRankingPartidosDisciplina(ctx context.Context, ano int) ([]domain.VotacaoPartido, string, error) {
+	if m.err != nil {
+		return nil, "", m.err
+	}
+	return []domain.VotacaoPartido{}, m.source, nil
+}
+
+func (m *MockAnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string) (*domain.VotacaoStats, string, error) {
+	if m.err != nil {
+		return nil, "", m.err
+	}
+	stats := &domain.VotacaoStats{
+		TotalVotacoes:      100,
+		VotacoesAprovadas:  70,
+		VotacoesRejeitadas: 30,
+		MediaParticipacao:  75.0,
+	}
+	return stats, m.source, nil
+}
+
 func TestGetDespesasDeputadoHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

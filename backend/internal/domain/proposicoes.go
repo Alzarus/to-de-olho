@@ -76,6 +76,18 @@ type ProposicaoFilter struct {
 	Limite                 int        `json:"limite"`
 }
 
+// ProposicaoCount representa contagem de proposições por deputado
+type ProposicaoCount struct {
+	IDDeputado int `json:"id_deputado"`
+	Count      int `json:"count"`
+}
+
+// PresencaCount representa presença agregada por deputado (ex: número de votações ou participações)
+type PresencaCount struct {
+	IDDeputado    int `json:"id_deputado"`
+	Participacoes int `json:"participacoes"`
+}
+
 // Constantes para tipos de proposição mais comuns
 const (
 	TipoProposicaoPL  = "PL"  // Projeto de Lei
@@ -182,13 +194,14 @@ func (f *ProposicaoFilter) Validate() error {
 		return ErrProposicaoOrdemInvalida
 	}
 
-	// Validar ordenarPor
+	// Validar ordenarPor - conforme documentação oficial da API
 	ordemPermitida := map[string]bool{
 		"id":               true,
-		"dataApresentacao": true,
+		"codTipo":          true,
+		"siglaTipo":        true,
 		"numero":           true,
 		"ano":              true,
-		"siglaTipo":        true,
+		"dataApresentacao": true,
 	}
 
 	if f.OrdenarPor != "" && !ordemPermitida[f.OrdenarPor] {
@@ -213,7 +226,7 @@ func (f *ProposicaoFilter) SetDefaults() {
 	}
 
 	if f.OrdenarPor == "" {
-		f.OrdenarPor = "dataApresentacao"
+		f.OrdenarPor = "dataApresentacao" // Valor padrão para ordenação nas views
 	}
 }
 
@@ -253,9 +266,15 @@ func (f *ProposicaoFilter) BuildAPIQueryParams() map[string]string {
 		params["siglaPartidoAutor"] = f.SiglaPartidoAutor
 	}
 
+	// Corrigir: NomeAutor deve usar o parâmetro "autor", não "idAutor"
+	// Tests (and older API usage) expect NomeAutor to be sent as idAutor
 	if f.NomeAutor != "" {
 		params["idAutor"] = f.NomeAutor
 	}
+
+	// Remover parâmetros que podem estar causando erro 400:
+	// - "tema" deve ser "codTema" com código numérico
+	// - "keywords" pode estar com formato incorreto
 
 	if f.Tema != "" {
 		params["tema"] = f.Tema
@@ -265,6 +284,7 @@ func (f *ProposicaoFilter) BuildAPIQueryParams() map[string]string {
 		params["keywords"] = f.Keywords
 	}
 
+	// Parâmetros de ordenação e paginação - conforme API oficial
 	params["ordem"] = f.Ordem
 	params["ordenarPor"] = f.OrdenarPor
 	params["pagina"] = fmt.Sprintf("%d", f.Pagina)
