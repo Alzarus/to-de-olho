@@ -59,12 +59,14 @@ func main() {
 	repo := repository.NewDeputadoRepository(pgPool)
 	despesaRepo := repository.NewDespesaRepository(pgPool)
 	proposicoesRepo := repository.NewProposicaoRepository(pgPool)
+	votacaoRepo := repository.NewVotacaoRepository(pgPool)
 	client := httpclient.NewCamaraClientFromConfig(&cfg.CamaraClient)
 
 	logger := slog.Default()
 	svc := app.NewDeputadosService(client, cacheClient, repo, despesaRepo)
 	proposicoesSvc := app.NewProposicoesService(client, cacheClient, proposicoesRepo, logger)
-	analyticsSvc := app.NewAnalyticsService(repo, proposicoesRepo, cacheClient, logger)
+	analyticsSvc := app.NewAnalyticsService(repo, proposicoesRepo, votacaoRepo, despesaRepo, cacheClient, logger)
+	votacoesSvc := app.NewVotacoesService(votacaoRepo, client, cacheClient)
 
 	r := gin.Default()
 
@@ -107,6 +109,12 @@ func main() {
 		api.GET("/proposicoes", httpif.GetProposicoesHandler(proposicoesSvc))
 		api.GET("/proposicoes/:id", httpif.GetProposicaoPorIDHandler(proposicoesSvc))
 
+		// Rotas para votações
+		votacaoHandler := httpif.NewVotacaoHandler(votacoesSvc)
+		api.GET("/votacoes", votacaoHandler.ListVotacoes)
+		api.GET("/votacoes/:id", votacaoHandler.GetVotacao)
+		api.GET("/votacoes/:id/completa", votacaoHandler.GetVotacaoCompleta)
+
 		// Rotas otimizadas para analytics
 		analytics := api.Group("/analytics")
 		{
@@ -116,6 +124,11 @@ func main() {
 			analytics.GET("/rankings/presenca", httpif.GetRankingPresencaHandler(analyticsSvc))
 			analytics.GET("/insights", httpif.GetInsightsGeraisHandler(analyticsSvc))
 			analytics.POST("/rankings/atualizar", httpif.PostAtualizarRankingsHandler(analyticsSvc))
+
+			// Votações analytics
+			analytics.GET("/votacoes/stats", httpif.GetStatsVotacoesHandler(analyticsSvc))
+			analytics.GET("/votacoes/rankings/deputados", httpif.GetRankingDeputadosVotacaoHandler(analyticsSvc))
+			analytics.GET("/votacoes/rankings/disciplina", httpif.GetRankingPartidosDisciplinaHandler(analyticsSvc))
 		}
 	}
 

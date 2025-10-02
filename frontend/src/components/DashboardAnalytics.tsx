@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { TrendingUp, Award, Users, DollarSign, RefreshCw, AlertCircle } from 'lucide-react';
 import Tooltip from './Tooltip';
+import { API_CONFIG, PAGINATION_CONFIG } from '../config/constants';
 
 interface RankingItem {
   id: number;
@@ -16,12 +17,12 @@ interface RankingItem {
   posicao: number;
 }
 
-interface RankingResponse {
-  ano: number;
-  total_geral?: number;
-  media_gastos?: number;
-  deputados: RankingItem[];
-}
+// interface RankingResponse {
+//   ano: number;
+//   total_geral?: number;
+//   media_gastos?: number;
+//   deputados: RankingItem[];
+// }
 
 interface Insights {
   total_deputados: number;
@@ -33,7 +34,7 @@ interface Insights {
   ultima_atualizacao: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = API_CONFIG.BASE_URL;
 
 export default function DashboardAnalytics() {
   const [rankings, setRankings] = useState<{
@@ -58,9 +59,9 @@ export default function DashboardAnalytics() {
     try {
       // Buscar rankings e insights em paralelo
       const [gastosRes, proposicoesRes, presencaRes, insightsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/analytics/rankings/gastos?limit=10`),
-        axios.get(`${API_BASE_URL}/analytics/rankings/proposicoes?limit=10`),
-        axios.get(`${API_BASE_URL}/analytics/rankings/presenca?limit=10`),
+        axios.get(`${API_BASE_URL}/analytics/rankings/gastos?limit=${PAGINATION_CONFIG.ANALYTICS_RANKING_SIZE}`),
+        axios.get(`${API_BASE_URL}/analytics/rankings/proposicoes?limit=${PAGINATION_CONFIG.ANALYTICS_RANKING_SIZE}`),
+        axios.get(`${API_BASE_URL}/analytics/rankings/presenca?limit=${PAGINATION_CONFIG.ANALYTICS_RANKING_SIZE}`),
         axios.get(`${API_BASE_URL}/analytics/insights`)
       ]);
 

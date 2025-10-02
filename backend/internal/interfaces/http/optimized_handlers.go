@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -307,9 +308,10 @@ func toString(v interface{}) string {
 			val.Page, val.Limit, val.SortBy, val.Order, val.Cursor)
 	default:
 		// AVISO: Novo tipo detectado! Implementação explícita necessária para performance e determinismo.
-		// Reflexão usada temporariamente - pode gerar chaves inconsistentes e performance degradada.
-		// TODO: Adicionar case específico para tipo %T
-		panic(fmt.Sprintf("toString: tipo %T não suportado - implementar case específico para garantir cache determinístico", v))
+		// Logar o erro em vez de entrar em pânico em produção.
+		slog.Error("toString: tipo não suportado", "type", fmt.Sprintf("%T", v))
+		// Retornar um valor que evite colisões de cache, mas não derrube o servidor.
+		return fmt.Sprintf("unsupported_type:%T", v)
 	}
 }
 

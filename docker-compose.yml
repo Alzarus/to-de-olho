@@ -8,6 +8,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - TZ=America/Sao_Paulo
       - PORT=${PORT:-8080}
       - GIN_MODE=${GIN_MODE:-release}
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
@@ -24,6 +25,13 @@ services:
       - todo-network
     restart: unless-stopped
     command: ["./server"]
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   # Frontend Next.js
   frontend:
@@ -36,6 +44,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - TZ=America/Sao_Paulo
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080/api/v1}
     depends_on:
       - backend
@@ -48,6 +57,7 @@ services:
     image: postgres:16-alpine
     container_name: todo-postgres
     environment:
+      TZ: America/Sao_Paulo
       POSTGRES_DB: ${POSTGRES_DB:-to_de_olho}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
@@ -69,6 +79,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: todo-redis
+    environment:
+      - TZ=America/Sao_Paulo
     ports:
       - "6379:6379"
     volumes:
@@ -83,15 +95,16 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Ingestor (tarefas de backfill/daily). Executa e finaliza.
+  # Ingestor Inteligente (verifica automaticamente se precisa executar backfill)
   ingestor:
     build:
       context: ./backend
       dockerfile: Dockerfile
     depends_on:
-      postgres:
+      backend:
         condition: service_healthy
     environment:
+      - TZ=America/Sao_Paulo
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -99,9 +112,17 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-to_de_olho}
       - CAMARA_CLIENT_RPS=${CAMARA_CLIENT_RPS:-2}
       - CAMARA_CLIENT_BURST=${CAMARA_CLIENT_BURST:-4}
+      - CAMARA_CLIENT_TIMEOUT=${CAMARA_CLIENT_TIMEOUT:-30s}
+      - CAMARA_CLIENT_BASE_URL=${CAMARA_CLIENT_BASE_URL:-https://dadosabertos.camara.leg.br/api/v2}
+      # Configuração inteligente de backfill
+      - BACKFILL_START_YEAR=${BACKFILL_START_YEAR:-2022}
+      - BACKFILL_END_YEAR=${BACKFILL_END_YEAR:-0}
+      - BACKFILL_TRIGGERED_BY=docker-compose
+      - BACKFILL_WORKERS=${BACKFILL_WORKERS:-2}
+      - BACKFILL_BATCH_SIZE=${BACKFILL_BATCH_SIZE:-100}
     networks:
       - todo-network
-    command: ["./ingestor", "-mode", "daily", "-years", "5"]
+    command: ["./smart-init.sh"]
     restart: "no"
 
   # Scheduler (sincronização incremental automática)
@@ -115,7 +136,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      ingestor:
+        condition: service_started
     environment:
+      - TZ=America/Sao_Paulo
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -126,6 +150,7 @@ services:
       - CAMARA_CLIENT_BURST=${CAMARA_CLIENT_BURST:-4}
       - CAMARA_CLIENT_TIMEOUT=${CAMARA_CLIENT_TIMEOUT:-30s}
       - CAMARA_CLIENT_BASE_URL=${CAMARA_CLIENT_BASE_URL:-https://dadosabertos.camara.leg.br/api/v2}
+      - SCHEDULER_PARALLEL_WORKERS=${SCHEDULER_PARALLEL_WORKERS:-3}
     networks:
       - todo-network
     command: ["./scheduler"]
@@ -136,6 +161,7 @@ services:
     image: adminer:4.8.1
     container_name: todo-adminer
     environment:
+      - TZ=America/Sao_Paulo
       - ADMINER_DEFAULT_SERVER=postgres
     depends_on:
       postgres:
