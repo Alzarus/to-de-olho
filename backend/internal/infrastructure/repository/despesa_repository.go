@@ -57,7 +57,12 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 	if err != nil {
 		return fmt.Errorf("erro ao iniciar transação: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(ctx)
+		}
+	}()
 
 	// Preparar batch com CopyFrom para máxima performance
 	now := time.Now()
@@ -116,13 +121,19 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 			r.logger.Error("erro ao fazer rollback da transação abortada",
 				slog.String("error", rollbackErr.Error()))
 		}
+		committed = true // transação original já finalizada
 
 		// CRITICAL: Criar nova transação para upsert individual
 		newTx, err := r.db.Begin(ctx)
 		if err != nil {
 			return fmt.Errorf("erro ao iniciar nova transação para fallback: %w", err)
 		}
-		defer newTx.Rollback(ctx)
+		fallbackCommitted := false
+		defer func() {
+			if !fallbackCommitted {
+				_ = newTx.Rollback(ctx)
+			}
+		}()
 
 		if err := r.upsertIndividual(ctx, newTx, deputadoID, ano, despesas); err != nil {
 			return fmt.Errorf("erro no upsert individual: %w", err)
@@ -132,6 +143,7 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 		if err := newTx.Commit(ctx); err != nil {
 			return fmt.Errorf("erro ao fazer commit da transação (fallback): %w", err)
 		}
+		fallbackCommitted = true
 
 		r.logger.Info("despesas inseridas via upsert individual",
 			slog.Int("deputado_id", deputadoID),
@@ -145,6 +157,7 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("erro ao fazer commit da transação: %w", err)
 	}
+	committed = true
 
 	r.logger.Info("despesas inseridas em lote",
 		slog.Int("deputado_id", deputadoID),
@@ -247,11 +260,11 @@ func (r *DespesaRepository) ListDespesasByDeputadoAno(ctx context.Context, deput
 
 	query := `
 		SELECT 
-			tipo_despesa, cod_documento, tipo_documento, cod_tipo_documento,
+			tipo_despesa, cod_documento, tipo_documento, COALESCE(cod_tipo_documento, 0),
 			data_documento, num_documento, valor_documento, url_documento,
 			nome_fornecedor, cnpj_cpf_fornecedor, valor_liquido, valor_bruto,
 			valor_glosa, num_ressarcimento, cod_lote, parcela
-		FROM despesas_cache 
+		FROM despesas 
 		WHERE deputado_id = $1 AND ano = $2
 		ORDER BY mes DESC, valor_documento DESC
 	`
@@ -304,7 +317,7 @@ func (r *DespesaRepository) GetDespesasStats(ctx context.Context, deputadoID int
 			COALESCE(AVG(valor_liquido), 0) as media_valor,
 			COALESCE(MAX(valor_liquido), 0) as maior_valor,
 			COUNT(DISTINCT tipo_despesa) as tipos_distintos
-		FROM despesas_cache 
+		FROM despesas 
 		WHERE deputado_id = $1 AND ano = $2
 	`
 
@@ -322,4 +335,41 @@ func (r *DespesaRepository) GetDespesasStats(ctx context.Context, deputadoID int
 	}
 
 	return &stats, nil
+}
+
+// GetDespesasStatsByAno agrega estatísticas de despesas por deputado para o ano informado
+func (r *DespesaRepository) GetDespesasStatsByAno(ctx context.Context, ano int) (map[int]domain.DespesaStats, error) {
+	query := `
+		SELECT 
+			deputado_id,
+			COUNT(*) as total_despesas,
+			COALESCE(SUM(valor_liquido), 0) as total_valor,
+			COALESCE(AVG(valor_liquido), 0) as media_valor,
+			COALESCE(MAX(valor_liquido), 0) as maior_valor,
+			COUNT(DISTINCT tipo_despesa) as tipos_distintos
+		FROM despesas
+		WHERE ano = $1
+		GROUP BY deputado_id`
+
+	rows, err := r.db.Query(ctx, query, ano)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao agregar estatísticas de despesas: %w", err)
+	}
+	defer rows.Close()
+
+	result := make(map[int]domain.DespesaStats)
+	for rows.Next() {
+		var deputadoID int
+		var stats domain.DespesaStats
+		if err := rows.Scan(&deputadoID, &stats.TotalDespesas, &stats.TotalValor, &stats.ValorMedio, &stats.MaiorValor, &stats.TiposDiferentes); err != nil {
+			return nil, fmt.Errorf("erro ao escanear estatísticas de despesas: %w", err)
+		}
+		result[deputadoID] = stats
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar estatísticas de despesas: %w", err)
+	}
+
+	return result, nil
 }

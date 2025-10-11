@@ -168,8 +168,20 @@ func (e *BackfillExecution) CalculateProgress() float64 {
 		return 100.0
 	}
 
-	// Estimativa baseada em dados processados (simplificada)
-	totalProcessed := e.DeputadosProcessados + e.ProposicoesProcessadas + e.DespesasProcessadas + e.VotacoesProcessadas
+	return CalculateProgressFromMetrics(
+		e.DeputadosProcessados,
+		e.ProposicoesProcessadas,
+		e.DespesasProcessadas,
+		e.VotacoesProcessadas,
+	)
+}
+
+// CalculateProgressFromMetrics calcula o progresso percentual com base nas métricas acumuladas
+func CalculateProgressFromMetrics(deputados, proposicoes, despesas, votacoes int) float64 {
+	totalProcessed := deputados + proposicoes + despesas + votacoes
+	if totalProcessed <= 0 {
+		return 0
+	}
 
 	// Estimativa: ~600 deputados + 50k proposições + 500k despesas + 10k votações
 	estimatedTotal := 560600

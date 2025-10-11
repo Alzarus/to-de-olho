@@ -302,11 +302,11 @@ func TestCamaraClient_JSONInvalido(t *testing.T) {
 	}
 }
 
-func TestCamaraClient_RetryComSucessoNaTerceiraTentativa(t *testing.T) {
+func TestCamaraClient_RetryComSucessoNaSegundaTentativa(t *testing.T) {
 	var count int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := atomic.AddInt32(&count, 1)
-		if c < 3 {
+		if c < 2 { // Sucesso na 2ª tentativa (vs 3ª anteriormente)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -321,19 +321,19 @@ func TestCamaraClient_RetryComSucessoNaTerceiraTentativa(t *testing.T) {
 	if len(deps) != 1 {
 		t.Fatalf("esperava 1 dep, obteve %d", len(deps))
 	}
-	if count != 3 {
-		t.Fatalf("esperava 3 tentativas, obteve %d", count)
+	if count != 2 { // Esperamos 2 tentativas agora (vs 3 anteriormente)
+		t.Fatalf("esperava 2 tentativas, obteve %d", count)
 	}
 }
 
-func TestCamaraClient_RetryFalhaApos3Tentativas(t *testing.T) {
+func TestCamaraClient_RetryFalhaApos2Tentativas(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
 	}))
 	defer server.Close()
 	client := newTestCamaraClient(server.URL)
 	if _, err := client.FetchDeputados(context.Background(), "", "", ""); err == nil {
-		t.Fatalf("esperava erro após 3 tentativas sem sucesso")
+		t.Fatalf("esperava erro após 2 tentativas sem sucesso") // Atualizado para 2 tentativas
 	}
 }
 

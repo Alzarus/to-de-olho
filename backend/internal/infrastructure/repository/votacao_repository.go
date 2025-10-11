@@ -575,3 +575,190 @@ func (r *VotacaoRepository) GetPresencaPorDeputadoAno(ctx context.Context, ano i
 
 	return results, nil
 }
+
+// GetRankingDeputadosAggregated agrega estatísticas de votos por deputado para o ano informado
+func (r *VotacaoRepository) GetRankingDeputadosAggregated(ctx context.Context, ano int) ([]domain.RankingDeputadoVotacao, error) {
+	query := `
+		SELECT
+			v.id_deputado,
+			COUNT(*) AS total_votacoes,
+			SUM(CASE WHEN v.voto = 'Sim' THEN 1 ELSE 0 END) AS votos_favoraveis,
+			SUM(CASE WHEN v.voto = 'Não' THEN 1 ELSE 0 END) AS votos_contrarios,
+			SUM(CASE WHEN v.voto NOT IN ('Sim','Não') THEN 1 ELSE 0 END) AS abstencoes
+		FROM votos_deputados v
+		JOIN votacoes vt ON vt.id = v.id_votacao
+		WHERE EXTRACT(YEAR FROM vt.data_votacao) = $1
+		GROUP BY v.id_deputado`
+
+	rows, err := r.db.Query(ctx, query, ano)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao agregar ranking de deputados: %w", err)
+	}
+	defer rows.Close()
+
+	var results []domain.RankingDeputadoVotacao
+	for rows.Next() {
+		var row domain.RankingDeputadoVotacao
+		if err := rows.Scan(&row.IDDeputado, &row.TotalVotacoes, &row.VotosFavoraveis, &row.VotosContrarios, &row.Abstencoes); err != nil {
+			return nil, fmt.Errorf("erro ao escanear ranking de deputados: %w", err)
+		}
+		results = append(results, row)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar ranking de deputados: %w", err)
+	}
+
+	return results, nil
+}
+
+// GetDisciplinaPartidosAggregated agrega votos e orientações por partido para cálculo de disciplina
+func (r *VotacaoRepository) GetDisciplinaPartidosAggregated(ctx context.Context, ano int) ([]domain.VotacaoPartido, error) {
+	query := `
+	WITH votos_por_partido AS (
+		SELECT 
+			COALESCE(dc.payload->>'siglaPartido', 'SEM_PARTIDO') AS partido,
+			SUM(CASE WHEN v.voto = 'Sim' THEN 1 ELSE 0 END) AS favor,
+			SUM(CASE WHEN v.voto = 'Não' THEN 1 ELSE 0 END) AS contra,
+			SUM(CASE WHEN v.voto NOT IN ('Sim','Não') THEN 1 ELSE 0 END) AS abst
+		FROM votos_deputados v
+		JOIN votacoes vt ON vt.id = v.id_votacao
+		LEFT JOIN deputados_cache dc ON dc.id = v.id_deputado
+		WHERE EXTRACT(YEAR FROM vt.data_votacao) = $1
+		GROUP BY partido
+	), orientacoes_recente AS (
+		SELECT DISTINCT ON (op.partido)
+			op.partido,
+			op.orientacao
+		FROM orientacoes_partidos op
+		JOIN votacoes vt ON vt.id = op.id_votacao
+		WHERE EXTRACT(YEAR FROM vt.data_votacao) = $1
+		ORDER BY op.partido, vt.data_votacao DESC, op.created_at DESC
+	), membros AS (
+		SELECT 
+			COALESCE(payload->>'siglaPartido', 'SEM_PARTIDO') AS partido,
+			COUNT(*) AS total_membros
+		FROM deputados_cache
+		GROUP BY partido
+	)
+	SELECT 
+		vp.partido,
+		COALESCE(or_rec.orientacao, '') AS orientacao,
+		vp.favor,
+		vp.contra,
+		vp.abst,
+		COALESCE(m.total_membros, 0) AS total_membros
+	FROM votos_por_partido vp
+	LEFT JOIN orientacoes_recente or_rec ON or_rec.partido = vp.partido
+	LEFT JOIN membros m ON m.partido = vp.partido`
+
+	rows, err := r.db.Query(ctx, query, ano)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao agregar disciplina partidária: %w", err)
+	}
+	defer rows.Close()
+
+	var results []domain.VotacaoPartido
+	for rows.Next() {
+		var row domain.VotacaoPartido
+		if err := rows.Scan(&row.Partido, &row.Orientacao, &row.VotaramFavor, &row.VotaramContra, &row.VotaramAbstencao, &row.TotalMembros); err != nil {
+			return nil, fmt.Errorf("erro ao escanear disciplina partidária: %w", err)
+		}
+		results = append(results, row)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar disciplina partidária: %w", err)
+	}
+
+	return results, nil
+}
+
+// GetVotacaoStatsAggregated retorna estatísticas consolidadas de votações para o ano
+func (r *VotacaoRepository) GetVotacaoStatsAggregated(ctx context.Context, ano int) (*domain.VotacaoStats, error) {
+	stats := &domain.VotacaoStats{
+		VotacoesPorMes:        make([]int, 12),
+		VotacoesPorRelevancia: map[string]int{},
+	}
+
+	if ano == 0 {
+		return stats, nil
+	}
+
+	const totaisQuery = `
+		SELECT 
+			COUNT(*)::INT AS total,
+			COALESCE(SUM(CASE WHEN aprovacao = 'Aprovada' THEN 1 ELSE 0 END), 0)::INT AS aprovadas
+		FROM votacoes
+		WHERE EXTRACT(YEAR FROM data_votacao) = $1`
+
+	if err := r.db.QueryRow(ctx, totaisQuery, ano).Scan(&stats.TotalVotacoes, &stats.VotacoesAprovadas); err != nil {
+		return nil, fmt.Errorf("erro ao obter totais de votações: %w", err)
+	}
+	stats.VotacoesRejeitadas = stats.TotalVotacoes - stats.VotacoesAprovadas
+
+	mesesQuery := `
+		SELECT EXTRACT(MONTH FROM data_votacao)::INT AS mes, COUNT(*)
+		FROM votacoes
+		WHERE EXTRACT(YEAR FROM data_votacao) = $1
+		GROUP BY mes`
+	mesRows, err := r.db.Query(ctx, mesesQuery, ano)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao obter distribuição mensal de votações: %w", err)
+	}
+	for mesRows.Next() {
+		var mes, count int
+		if err := mesRows.Scan(&mes, &count); err != nil {
+			mesRows.Close()
+			return nil, fmt.Errorf("erro ao escanear distribuição mensal: %w", err)
+		}
+		if mes >= 1 && mes <= 12 {
+			stats.VotacoesPorMes[mes-1] = count
+		}
+	}
+	mesErr := mesRows.Err()
+	mesRows.Close()
+	if mesErr != nil {
+		return nil, fmt.Errorf("erro ao iterar distribuição mensal: %w", mesErr)
+	}
+
+	relevanciaQuery := `
+		SELECT relevancia, COUNT(*)
+		FROM votacoes
+		WHERE EXTRACT(YEAR FROM data_votacao) = $1
+		GROUP BY relevancia`
+	relRows, err := r.db.Query(ctx, relevanciaQuery, ano)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao obter distribuição por relevância: %w", err)
+	}
+	for relRows.Next() {
+		var relevancia string
+		var count int
+		if err := relRows.Scan(&relevancia, &count); err != nil {
+			relRows.Close()
+			return nil, fmt.Errorf("erro ao escanear distribuição por relevância: %w", err)
+		}
+		stats.VotacoesPorRelevancia[relevancia] = count
+	}
+	relErr := relRows.Err()
+	relRows.Close()
+	if relErr != nil {
+		return nil, fmt.Errorf("erro ao iterar distribuição por relevância: %w", relErr)
+	}
+
+	const votosTotaisQuery = `
+		SELECT COALESCE(COUNT(*), 0)
+		FROM votos_deputados v
+		JOIN votacoes vt ON vt.id = v.id_votacao
+		WHERE EXTRACT(YEAR FROM vt.data_votacao) = $1`
+	var votosTotais int
+	if err := r.db.QueryRow(ctx, votosTotaisQuery, ano).Scan(&votosTotais); err != nil {
+		return nil, fmt.Errorf("erro ao obter total de votos registrados: %w", err)
+	}
+
+	if stats.TotalVotacoes > 0 {
+		stats.MediaParticipacao = float64(votosTotais) / float64(stats.TotalVotacoes)
+	}
+
+	return stats, nil
+}

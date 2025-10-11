@@ -223,6 +223,11 @@ type VotacaoRepository interface {
 	UpsertVotacao(ctx context.Context, votacao *Votacao) error
 	// Agregação de presença (votos registrados por deputado em um ano)
 	GetPresencaPorDeputadoAno(ctx context.Context, ano int) ([]PresencaCount, error)
+
+	// Consultas agregadas para analytics (evitam N+1 queries)
+	GetRankingDeputadosAggregated(ctx context.Context, ano int) ([]RankingDeputadoVotacao, error)
+	GetDisciplinaPartidosAggregated(ctx context.Context, ano int) ([]VotacaoPartido, error)
+	GetVotacaoStatsAggregated(ctx context.Context, ano int) (*VotacaoStats, error)
 }
 
 // VotacaoStats representa estatísticas de votações

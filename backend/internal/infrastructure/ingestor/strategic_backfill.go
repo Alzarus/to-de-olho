@@ -289,12 +289,14 @@ func (sbe *StrategicBackfillExecutor) executeVotacoesBackfill(ctx context.Contex
 		return nil
 	}
 
-	if err := sbe.votacoesService.SincronizarVotacoes(ctx, dataInicio, dataFim); err != nil {
+	processed, err := sbe.votacoesService.SincronizarVotacoes(ctx, dataInicio, dataFim)
+	if err != nil {
 		return fmt.Errorf("erro ao sincronizar votações ano %d: %w", yearInt, err)
 	}
 
-	// A SincronizarVotacoes já faz logs e atualizações internas. Atualizamos o checkpoint de forma conservadora.
-	checkpoint.Progress.ProcessedItems = checkpoint.Progress.TotalItems // Desconhecido sem retorno; marcar como completo
+	// Atualizar progresso com os totais consolidados retornados pelo serviço
+	checkpoint.Progress.TotalItems += processed
+	checkpoint.Progress.ProcessedItems += processed
 	if err := sbe.manager.UpdateProgress(ctx, checkpoint,
 		checkpoint.Progress.ProcessedItems,
 		checkpoint.Progress.FailedItems,
@@ -302,7 +304,7 @@ func (sbe *StrategicBackfillExecutor) executeVotacoesBackfill(ctx context.Contex
 		log.Printf("⚠️  Erro ao atualizar progresso pós-sync votações: %v", err)
 	}
 
-	log.Printf("🎉 Backfill votações %d executado via VotacoesService.SincronizarVotacoes", yearInt)
+	log.Printf("🎉 Backfill votações %d executado via VotacoesService.SincronizarVotacoes (processadas: %d)", yearInt, processed)
 	return nil
 }
 

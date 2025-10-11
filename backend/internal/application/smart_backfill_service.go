@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"to-de-olho-backend/internal/domain"
+	"to-de-olho-backend/internal/infrastructure/resilience"
 )
 
 // BackfillRepositoryPort define interface para repositório de backfill
@@ -35,7 +36,79 @@ type SmartBackfillService struct {
 	currentExecutionID string
 	mu                 sync.Mutex // protege updates concorrentes de status
 	// currentStatus guarda último status conhecido em memória para exposição rápida
-	currentStatus domain.BackfillStatus
+	currentStatus   domain.BackfillStatus
+	progressTracker *backfillProgressTracker
+}
+
+type backfillProgressTracker struct {
+	mu             sync.Mutex
+	totalExpected  int
+	totalProcessed int
+	registered     map[string]int
+}
+
+func newBackfillProgressTracker() *backfillProgressTracker {
+	return &backfillProgressTracker{
+		registered: make(map[string]int),
+	}
+}
+
+func (t *backfillProgressTracker) registerExpected(key string, total int) {
+	if total <= 0 {
+		return
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if existing, ok := t.registered[key]; ok {
+		if total > existing {
+			increment := total - existing
+			t.totalExpected += increment
+			t.registered[key] = total
+		}
+		return
+	}
+	t.registered[key] = total
+	t.totalExpected += total
+}
+
+func (t *backfillProgressTracker) addProcessed(delta int) float64 {
+	if delta <= 0 {
+		return t.currentPercentage()
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.totalProcessed += delta
+	return t.percentageLocked()
+}
+
+func (t *backfillProgressTracker) currentPercentage() float64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.percentageLocked()
+}
+
+func (t *backfillProgressTracker) markCompleted() float64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.totalExpected == 0 {
+		return 100
+	}
+	t.totalProcessed = t.totalExpected
+	return 100
+}
+
+func (t *backfillProgressTracker) percentageLocked() float64 {
+	if t.totalExpected == 0 {
+		return 0
+	}
+	if t.totalProcessed >= t.totalExpected {
+		return 100
+	}
+	progress := (float64(t.totalProcessed) / float64(t.totalExpected)) * 100
+	if progress > 99 {
+		progress = 99
+	}
+	return progress
 }
 
 // NewSmartBackfillService cria nova instância do serviço
@@ -225,8 +298,16 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 		CurrentOperation: "Iniciando backfill",
 	}
 
+	tracker := newBackfillProgressTracker()
+	s.mu.Lock()
+	s.progressTracker = tracker
+	s.mu.Unlock()
+
 	var finalStatus = domain.BackfillStatusSuccess
 	var errorMessage *string
+	var finalStatusMu sync.Mutex
+	var partialFailuresMu sync.Mutex
+	partialFailures := make([]string, 0)
 
 	// 1. Sincronizar deputados
 	if config.IncluirDeputados {
@@ -245,8 +326,14 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 			s.logger.Error("Erro ao sincronizar deputados", slog.Any("error", err))
 		} else {
 			if source == "api" {
-				status.DeputadosProcessados = len(deputados)
+				total := len(deputados)
+				tracker.registerExpected("deputados", total)
+				status.DeputadosProcessados = total
+				status.ProgressPercentage = tracker.addProcessed(total)
+			} else {
+				status.ProgressPercentage = tracker.currentPercentage()
 			}
+			status.LastUpdate = time.Now()
 			s.logger.Info("✅ Deputados sincronizados", slog.Int("total", len(deputados)))
 		}
 
@@ -275,6 +362,8 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 	if config.IncluirVotacoes && finalStatus != domain.BackfillStatusFailed {
 		s.logger.Info("🗳️ Iniciando sincronização de votações históricas (paralelo)")
 		status.CurrentOperation = "Sincronizando votações históricas"
+		status.ProgressPercentage = tracker.currentPercentage()
+		status.LastUpdate = time.Now()
 		s.mu.Lock()
 		s.currentStatus = status
 		s.mu.Unlock()
@@ -299,6 +388,7 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 					s.mu.Lock()
 					st := status
 					st.CurrentOperation = fmt.Sprintf("worker-%d: Sincronizando votações de %d", workerID, ano)
+					st.ProgressPercentage = tracker.currentPercentage()
 					// atualizar repositório com cópia local
 					_ = s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, st)
 					s.currentStatus = st
@@ -307,64 +397,144 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 					dataInicio := time.Date(ano, time.January, 1, 0, 0, 0, 0, time.UTC)
 					dataFim := time.Date(ano, time.December, 31, 23, 59, 59, 0, time.UTC)
 
-					votacoes, err := s.votacoesService.camaraClient.GetVotacoes(ctx, dataInicio, dataFim)
-					if err != nil {
-						// Se for timeout/504 do gateway, tentar estratégia fallback por dia
-						errStr := err.Error()
-						s.logger.Warn("erro ao buscar lista de votações da API", slog.Int("ano", ano), slog.String("error", errStr))
-						if strings.Contains(errStr, "504") || strings.Contains(strings.ToLower(errStr), "gateway timeout") || strings.Contains(strings.ToLower(errStr), "upstream request timeout") {
-							s.logger.Info("Tentando fallback diário devido a 504/timeout para o período", slog.Int("ano", ano))
-							// iterar dia a dia
-							day := dataInicio
-							for !day.After(dataFim) {
-								dayEnd := time.Date(day.Year(), day.Month(), day.Day(), 23, 59, 59, 0, day.Location())
-								single, errDay := s.votacoesService.camaraClient.GetVotacoes(ctx, day, dayEnd)
-								if errDay != nil {
-									s.logger.Warn("fallback diário falhou para dia", slog.String("dia", day.Format("2006-01-02")), slog.String("error", errDay.Error()))
-									day = day.AddDate(0, 0, 1)
-									continue
-								}
-								// sincronizar apenas o dia
-								if len(single) > 0 {
-									if err := s.votacoesService.SincronizarVotacoes(ctx, day, dayEnd); err != nil {
-										s.logger.Warn("erro ao sincronizar votações para o dia", slog.String("dia", day.Format("2006-01-02")), slog.String("error", err.Error()))
-									}
-								}
-								// contabilizar
-								s.mu.Lock()
-								status.VotacoesProcessadas += len(single)
-								// atualizar currentStatus para refletir progresso na DB
-								st2 := status
-								st2.CurrentOperation = fmt.Sprintf("worker-%d: Sincronizando votações de %d (fallback diário em %s)", workerID, ano, day.Format("2006-01-02"))
-								_ = s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, st2)
-								s.currentStatus = st2
-								s.mu.Unlock()
-								day = day.AddDate(0, 0, 1)
-								// pequeno sleep entre dias para ser gentil
-								time.Sleep(time.Duration(config.DelayBetweenBatches) * time.Millisecond)
-							}
-							// depois do fallback, continuar para próximo ano
-							continue
+					progressThreshold := config.BatchSize / 2
+					if progressThreshold < 100 {
+						progressThreshold = 100
+					}
+					lastReported := 0
+					pendingVotacoes := 0
+					pendingProgressUnits := 0
+					lastFlush := time.Now()
+					progressKey := fmt.Sprintf("votacoes-%d", ano)
+					totalDays := int(dataFim.Sub(dataInicio).Hours()/24) + 1
+					if totalDays < 0 {
+						totalDays = 0
+					}
+					if totalDays > 0 {
+						tracker.registerExpected(progressKey+":coverage", totalDays)
+					}
+					dayFlushThreshold := progressThreshold / 4
+					if dayFlushThreshold < 10 {
+						dayFlushThreshold = 10
+					}
+
+					flushProgress := func(reason string, force bool) {
+						if !force && pendingProgressUnits == 0 {
+							return
 						}
-						// outro erro: pular ano
+
+						incrementVotacoes := pendingVotacoes
+						incrementUnits := pendingProgressUnits
+						pendingVotacoes = 0
+						pendingProgressUnits = 0
+						lastFlush = time.Now()
+						var progress float64
+						if incrementUnits > 0 {
+							progress = tracker.addProcessed(incrementUnits)
+						} else {
+							progress = tracker.currentPercentage()
+						}
+
+						s.mu.Lock()
+						if incrementVotacoes > 0 {
+							status.VotacoesProcessadas += incrementVotacoes
+						}
+						status.ProgressPercentage = progress
+						status.LastUpdate = time.Now()
+						status.CurrentOperation = fmt.Sprintf("worker-%d: Sincronizando votações de %d (%s, total=%d)",
+							workerID, ano, reason, status.VotacoesProcessadas)
+						_ = s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status)
+						s.currentStatus = status
+						s.mu.Unlock()
+					}
+
+					chunkAwareCtx := domain.WithVotacoesChunkProgress(ctx, func(start, end time.Time, success bool) {
+						if !success {
+							return
+						}
+						days := int(end.Sub(start).Hours()/24) + 1
+						if days <= 0 {
+							days = 1
+						}
+						pendingProgressUnits += days
+						if pendingProgressUnits >= dayFlushThreshold || time.Since(lastFlush) >= 15*time.Second {
+							flushProgress("janela concluída", false)
+						}
+					})
+
+					reporterCtx := WithVotacoesProgressReporter(chunkAwareCtx, func(totalProcessed, total int) {
+						if total > 0 {
+							tracker.registerExpected(progressKey, total)
+						}
+						delta := totalProcessed - lastReported
+						if delta <= 0 {
+							return
+						}
+						lastReported = totalProcessed
+						pendingVotacoes += delta
+						pendingProgressUnits += delta
+
+						if pendingVotacoes >= progressThreshold || pendingProgressUnits >= dayFlushThreshold || time.Since(lastFlush) >= 15*time.Second {
+							flushProgress("progresso parcial", false)
+						}
+					})
+
+					processed, err := s.votacoesService.SincronizarVotacoes(reporterCtx, dataInicio, dataFim)
+					flushProgress("progresso parcial", false)
+					if err != nil {
+						partialFailuresMu.Lock()
+						partialFailures = append(partialFailures, fmt.Sprintf("ano %d: %s", ano, err.Error()))
+						partialFailuresMu.Unlock()
+
+						finalStatusMu.Lock()
+						if finalStatus == domain.BackfillStatusSuccess {
+							finalStatus = domain.BackfillStatusPartial
+						}
+						finalStatusMu.Unlock()
+
+						if resilience.IsCircuitBreakerOpen(err) {
+							cooldown := time.Duration(config.DelayBetweenBatches) * time.Millisecond
+							if cooldown < 30*time.Second { // Cooldown maior para circuit breaker (vs 15s)
+								cooldown = 30 * time.Second
+							}
+							s.logger.Warn("circuit breaker aberto durante sincronização anual de votações",
+								slog.Int("ano", ano),
+								slog.String("cooldown", cooldown.String()),
+								slog.String("error", err.Error()))
+							time.Sleep(cooldown)
+						} else if isGatewayTimeoutError(err) {
+							cooldown := time.Duration(config.DelayBetweenBatches) * time.Millisecond
+							if cooldown < 15*time.Second { // Cooldown maior para gateway timeout (vs 5s)
+								cooldown = 15 * time.Second
+							}
+							s.logger.Warn("gateway timeout ao sincronizar votações para o ano",
+								slog.Int("ano", ano),
+								slog.String("cooldown", cooldown.String()),
+								slog.String("error", err.Error()))
+							time.Sleep(cooldown)
+						} else {
+							s.logger.Warn("erro ao sincronizar votações para o ano", slog.Int("ano", ano), slog.String("error", err.Error()))
+						}
+						flushProgress("erro ao processar ano", true)
+						s.mu.Lock()
+						status.ErrorsCount++
+						msg := err.Error()
+						status.LatestError = &msg
+						s.currentStatus = status
+						s.mu.Unlock()
 						_ = s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status)
 						continue
 					}
 
-					if err := s.votacoesService.SincronizarVotacoes(ctx, dataInicio, dataFim); err != nil {
-						s.logger.Warn("erro ao sincronizar votações para o ano", slog.Int("ano", ano), slog.String("error", err.Error()))
-						_ = s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status)
-						continue
-					}
+					flushProgress("ano concluído", true)
+					s.logger.Info("✅ Backfill de votações concluído para o ano",
+						slog.Int("ano", ano),
+						slog.Int("processadas", processed))
 
 					s.mu.Lock()
-					status.VotacoesProcessadas += len(votacoes)
-					s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status)
-					s.currentStatus = status
-
-					// Restaurar operação atual genérica após concluir o ano para evitar que o
-					// campo fique preso no último ano processado.
 					status.CurrentOperation = "Sincronizando votações históricas"
+					status.ProgressPercentage = tracker.currentPercentage()
+					status.LastUpdate = time.Now()
 					s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status)
 					s.currentStatus = status
 					s.mu.Unlock()
@@ -379,7 +549,21 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 			}
 
 			go func() {
-				for ano := config.AnoInicio; ano <= config.AnoFim; ano++ {
+				diff := config.AnoFim - config.AnoInicio
+				if diff < 0 {
+					diff = -diff
+				}
+				years := make([]int, 0, diff+1)
+				if config.AnoFim >= config.AnoInicio {
+					for ano := config.AnoFim; ano >= config.AnoInicio; ano-- {
+						years = append(years, ano)
+					}
+				} else {
+					for ano := config.AnoInicio; ano >= config.AnoFim; ano-- {
+						years = append(years, ano)
+					}
+				}
+				for _, ano := range years {
 					anos <- ano
 				}
 				close(anos)
@@ -389,6 +573,28 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 		}
 	}
 
+	// Atualizar progresso final em memória antes de completar execução
+	if len(partialFailures) > 0 && errorMessage == nil {
+		summary := fmt.Sprintf("pendências ao sincronizar votações: %s", strings.Join(partialFailures, "; "))
+		errorMessage = &summary
+	}
+
+	if finalStatus == domain.BackfillStatusSuccess {
+		status.ProgressPercentage = tracker.markCompleted()
+	} else {
+		status.ProgressPercentage = tracker.currentPercentage()
+	}
+	status.Status = finalStatus
+	status.LastUpdate = time.Now()
+	if finalStatus == domain.BackfillStatusSuccess {
+		status.CurrentOperation = "Backfill concluído"
+	} else {
+		status.CurrentOperation = "Backfill finalizado com alerta"
+	}
+	s.mu.Lock()
+	s.currentStatus = status
+	s.mu.Unlock()
+
 	// Completar execução
 	duration := time.Since(execution.StartedAt)
 	s.logger.Info("🎯 Backfill histórico concluído",
@@ -397,6 +603,10 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 		slog.Int("deputados", status.DeputadosProcessados),
 		slog.Int("proposicoes", status.ProposicoesProcessadas),
 		slog.Int("votacoes", status.VotacoesProcessadas))
+
+	if err := s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status); err != nil {
+		s.logger.Warn("erro ao atualizar progresso final do backfill", slog.Any("error", err))
+	}
 
 	if err := s.backfillRepo.CompleteExecution(ctx, execution.ExecutionID, finalStatus, errorMessage); err != nil {
 		s.logger.Error("Erro ao completar execução", slog.Any("error", err))
@@ -417,6 +627,15 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 	}
 }
 
+func isGatewayTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "504") || strings.Contains(msg, "gateway timeout") || strings.Contains(msg, "upstream request timeout") || strings.Contains(msg, "deadline exceeded") || strings.Contains(msg, "context deadline")
+}
+
 // GetCurrentStatus retorna status da execução atual
 func (s *SmartBackfillService) GetCurrentStatus(ctx context.Context) (*domain.BackfillStatus, error) {
 	if s.currentExecutionID == "" {
@@ -434,6 +653,17 @@ func (s *SmartBackfillService) GetCurrentStatus(ctx context.Context) (*domain.Ba
 
 	progress := execution.CalculateProgress()
 
+	s.mu.Lock()
+	current := s.currentStatus
+	tracker := s.progressTracker
+	s.mu.Unlock()
+
+	progressResolved := false
+	if tracker != nil && current.ExecutionID == execution.ExecutionID {
+		progress = tracker.currentPercentage()
+		progressResolved = true
+	}
+
 	status := &domain.BackfillStatus{
 		ExecutionID:            execution.ExecutionID,
 		Status:                 execution.Status,
@@ -446,22 +676,36 @@ func (s *SmartBackfillService) GetCurrentStatus(ctx context.Context) (*domain.Ba
 		LastUpdate:             time.Now(),
 	}
 
-	// Merge CurrentOperation from in-memory status if available
-	s.mu.Lock()
-	if s.currentStatus.ExecutionID == execution.ExecutionID && s.currentStatus.CurrentOperation != "" {
-		status.CurrentOperation = s.currentStatus.CurrentOperation
-		// if in-memory has more recent counters, prefer them
-		if s.currentStatus.DeputadosProcessados > 0 {
-			status.DeputadosProcessados = s.currentStatus.DeputadosProcessados
+	if current.ExecutionID == execution.ExecutionID {
+		if current.CurrentOperation != "" {
+			status.CurrentOperation = current.CurrentOperation
 		}
-		if s.currentStatus.ProposicoesProcessadas > 0 {
-			status.ProposicoesProcessadas = s.currentStatus.ProposicoesProcessadas
+		if current.DeputadosProcessados > 0 {
+			status.DeputadosProcessados = current.DeputadosProcessados
 		}
-		if s.currentStatus.VotacoesProcessadas > 0 {
-			status.VotacoesProcessadas = s.currentStatus.VotacoesProcessadas
+		if current.ProposicoesProcessadas > 0 {
+			status.ProposicoesProcessadas = current.ProposicoesProcessadas
+		}
+		if current.VotacoesProcessadas > 0 {
+			status.VotacoesProcessadas = current.VotacoesProcessadas
+		}
+		if current.DespesasProcessadas > 0 {
+			status.DespesasProcessadas = current.DespesasProcessadas
+		}
+		if !progressResolved {
+			status.ProgressPercentage = current.ProgressPercentage
+			progressResolved = true
 		}
 	}
-	s.mu.Unlock()
+
+	if !progressResolved {
+		status.ProgressPercentage = domain.CalculateProgressFromMetrics(
+			status.DeputadosProcessados,
+			status.ProposicoesProcessadas,
+			status.DespesasProcessadas,
+			status.VotacoesProcessadas,
+		)
+	}
 
 	return status, nil
 }

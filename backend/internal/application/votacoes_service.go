@@ -3,11 +3,13 @@ package application
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"to-de-olho-backend/internal/domain"
+	"to-de-olho-backend/internal/infrastructure/resilience"
 )
 
 // CamaraAPIPort define interface para API da Câmara para votações
@@ -24,6 +26,31 @@ type VotacoesService struct {
 	camaraClient CamaraAPIPort
 	cache        CachePort
 	logger       *slog.Logger
+}
+
+type votacoesProgressContextKey struct{}
+
+var progressReporterKey = votacoesProgressContextKey{}
+
+// WithVotacoesProgressReporter injeta um callback opcional no contexto para acompanhar progresso.
+// O service chamará esse callback com o total processado e o total previsto sempre que registrar um progresso relevante.
+func WithVotacoesProgressReporter(ctx context.Context, reporter func(processed, total int)) context.Context {
+	if ctx == nil || reporter == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, progressReporterKey, reporter)
+}
+
+func getVotacoesProgressReporter(ctx context.Context) func(int, int) {
+	if ctx == nil {
+		return nil
+	}
+	if v := ctx.Value(progressReporterKey); v != nil {
+		if reporter, ok := v.(func(int, int)); ok {
+			return reporter
+		}
+	}
+	return nil
 }
 
 // NewVotacoesService cria um novo service de votações
@@ -109,19 +136,36 @@ func (vs *VotacoesService) ObterVotacaoDetalhada(ctx context.Context, votacaoID 
 }
 
 // SincronizarVotacoes sincroniza votações de um período da API da Câmara
-func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, dataFim time.Time) error {
+func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, dataFim time.Time) (int, error) {
 	vs.logger.Info("iniciando sincronização de votações",
 		slog.Time("data_inicio", dataInicio),
 		slog.Time("data_fim", dataFim))
 
-	// Buscar votações da API da Câmara
+	// Buscar votações da API da Câmara com tratamento melhorado de circuit breaker
 	votacoes, err := vs.camaraClient.GetVotacoes(ctx, dataInicio, dataFim)
 	if err != nil {
-		vs.logger.Error("erro ao buscar votações da API da Câmara", slog.String("error", err.Error()))
-		return fmt.Errorf("erro ao buscar votações da API da Câmara: %w", err)
+		if resilience.IsCircuitBreakerOpen(err) {
+			vs.logger.Warn("circuit breaker aberto ao buscar votações - pulando período",
+				slog.Time("data_inicio", dataInicio),
+				slog.Time("data_fim", dataFim),
+				slog.String("error", err.Error()))
+			return 0, fmt.Errorf("circuit breaker aberto para período %s-%s: %w",
+				dataInicio.Format("2006-01-02"), dataFim.Format("2006-01-02"), err)
+		}
+		vs.logger.Error("erro ao buscar votações da API da Câmara",
+			slog.String("error", err.Error()),
+			slog.Time("data_inicio", dataInicio),
+			slog.Time("data_fim", dataFim))
+		return 0, fmt.Errorf("erro ao buscar votações da API da Câmara: %w", err)
 	}
 
 	vs.logger.Info("votações obtidas da API da Câmara", slog.Int("count", len(votacoes)))
+
+	processedCount := 0
+	skippedByCircuit := 0
+	voteErrors := 0
+	var breakerErr error
+	reporter := getVotacoesProgressReporter(ctx)
 
 	// Sincronizar cada votação
 	for _, votacao := range votacoes {
@@ -129,18 +173,45 @@ func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, 
 			vs.logger.Error("erro ao salvar votação",
 				slog.Int64("id", votacao.ID),
 				slog.String("error", err.Error()))
+			voteErrors++
 			continue
+		}
+
+		processedCount++
+		if reporter != nil {
+			reporter(processedCount, len(votacoes))
 		}
 
 		// Sincronizar votos dos deputados
 		if err := vs.sincronizarVotos(ctx, votacao.ID); err != nil {
+			if resilience.IsCircuitBreakerOpen(err) || errors.Is(err, context.DeadlineExceeded) {
+				vs.logger.Warn("circuit breaker ativo ao sincronizar votos; interrompendo processamento restante",
+					slog.Int64("votacao_id", votacao.ID),
+					slog.String("error", err.Error()))
+				skippedByCircuit++
+				breakerErr = err
+				break
+			}
+
 			vs.logger.Error("erro ao sincronizar votos da votação",
 				slog.Int64("votacao_id", votacao.ID),
 				slog.String("error", err.Error()))
 		}
 
 		// Sincronizar orientações partidárias
+		if breakerErr != nil {
+			break
+		}
 		if err := vs.sincronizarOrientacoes(ctx, votacao.ID); err != nil {
+			if resilience.IsCircuitBreakerOpen(err) || errors.Is(err, context.DeadlineExceeded) {
+				vs.logger.Warn("circuit breaker ativo ao sincronizar orientações; interrompendo processamento restante",
+					slog.Int64("votacao_id", votacao.ID),
+					slog.String("error", err.Error()))
+				skippedByCircuit++
+				breakerErr = err
+				break
+			}
+
 			vs.logger.Error("erro ao sincronizar orientações da votação",
 				slog.Int64("votacao_id", votacao.ID),
 				slog.String("error", err.Error()))
@@ -151,9 +222,16 @@ func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, 
 	vs.invalidarCachesVotacao(ctx)
 
 	vs.logger.Info("sincronização de votações concluída",
-		slog.Int("total_votacoes", len(votacoes)))
+		slog.Int("total_votacoes", len(votacoes)),
+		slog.Int("processadas", processedCount),
+		slog.Int("erros_votos", voteErrors),
+		slog.Int("circuit_breaker_skips", skippedByCircuit))
 
-	return nil
+	if breakerErr != nil {
+		return processedCount, fmt.Errorf("circuit breaker interrompeu sincronização de votações: %w", breakerErr)
+	}
+
+	return processedCount, nil
 }
 
 // sincronizarVotos sincroniza votos dos deputados para uma votação

@@ -5,15 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"to-de-olho-backend/internal/config"
 	"to-de-olho-backend/internal/domain"
 	"to-de-olho-backend/internal/infrastructure/resilience"
+	"to-de-olho-backend/internal/pkg/metrics"
 
 	"golang.org/x/time/rate"
 )
@@ -27,6 +30,32 @@ func isRetryableServerError(err error) bool {
 	s := strings.ToLower(err.Error())
 	if strings.Contains(s, "504") || strings.Contains(s, "gateway") || strings.Contains(s, "timeout") || strings.Contains(s, "502") || strings.Contains(s, "503") {
 		return true
+	}
+	if strings.Contains(s, "deadline") || strings.Contains(s, "context deadline") || strings.Contains(s, "client.timeout") {
+		return true
+	}
+	return false
+}
+
+// isAPIOverloaded detects when the API is overloaded and needs back-pressure
+func isAPIOverloaded(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := strings.ToLower(err.Error())
+	// Padrões que indicam sobrecarga da API
+	overloadIndicators := []string{
+		"504", "gateway timeout", "upstream timeout",
+		"503", "service unavailable", "temporarily unavailable",
+		"502", "bad gateway", "connection failed",
+		"context deadline exceeded", "timeout",
+		"too many requests", "rate limit", "throttled",
+	}
+
+	for _, indicator := range overloadIndicators {
+		if strings.Contains(s, indicator) {
+			return true
+		}
 	}
 	return false
 }
@@ -75,6 +104,21 @@ func (i *Int64String) UnmarshalJSON(b []byte) error {
 }
 
 func (i Int64String) Int64() int64 { return int64(i) }
+
+var (
+	jitterRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+	jitterMu   sync.Mutex
+)
+
+func randomIntn(n int) int {
+	if n <= 0 {
+		return 0
+	}
+	jitterMu.Lock()
+	v := jitterRand.Intn(n)
+	jitterMu.Unlock()
+	return v
+}
 
 // parseTimeFlexible tenta vários formatos comuns retornados pela API da Câmara
 func parseTimeFlexible(value string, loc *time.Location) (time.Time, error) {
@@ -131,29 +175,29 @@ func NewCamaraClient(baseURL string, timeout time.Duration, rps int, burst int) 
 	}
 
 	// Configuração otimizada para API da Câmara
-	circuitConfig := resilience.CircuitBreakerConfig{
-		MaxFailures:      3,                // 3 falhas para abrir
-		ResetTimeout:     60 * time.Second, // 1 minuto para retry (API pode estar sobrecarregada)
-		SuccessThreshold: 2,                // 2 sucessos para fechar
-		Timeout:          timeout,          // Mesmo timeout do HTTP client
+	cbConfig := resilience.CircuitBreakerConfig{
+		MaxFailures:      8,                 // Mais tolerante para API da Câmara
+		ResetTimeout:     120 * time.Second, // 2 minutos para retry (API pode estar sobrecarregada)
+		SuccessThreshold: 3,                 // 3 sucessos para fechar
+		Timeout:          timeout,           // Mesmo timeout do HTTP client
 	}
 
 	return &CamaraClient{
 		httpClient:     &http.Client{Timeout: timeout},
 		baseURL:        baseURL,
 		limiter:        rate.NewLimiter(rate.Limit(float64(rps)), burst),
-		circuitBreaker: resilience.NewCircuitBreaker(circuitConfig),
+		circuitBreaker: resilience.NewCircuitBreaker(cbConfig),
 	}
 }
 
 // NewCamaraClientFromConfig creates a client from config
 func NewCamaraClientFromConfig(cfg *config.CamaraClientConfig) *CamaraClient {
-	// Configuração otimizada para API da Câmara
+	// Configuração otimizada para API da Câmara baseada nos logs de timeout
 	circuitConfig := resilience.CircuitBreakerConfig{
-		MaxFailures:      3,                // 3 falhas para abrir
-		ResetTimeout:     60 * time.Second, // 1 minuto para retry
-		SuccessThreshold: 2,                // 2 sucessos para fechar
-		Timeout:          cfg.Timeout,      // Timeout da configuração
+		MaxFailures:      8,                 // Mais tolerante: 8 falhas para abrir
+		ResetTimeout:     120 * time.Second, // 2 minutos para retry
+		SuccessThreshold: 3,                 // 3 sucessos para fechar
+		Timeout:          cfg.Timeout,       // Timeout da configuração
 	}
 
 	return &CamaraClient{
@@ -187,12 +231,12 @@ func (c *CamaraClient) doRequest(ctx context.Context, method, url string) ([]byt
 		var lastErr error
 		backoff := c.backoffBase
 		if backoff <= 0 {
-			backoff = 200 * time.Millisecond
+			backoff = 500 * time.Millisecond // Backoff inicial maior (vs 200ms)
 		}
 
 		maxRetries := c.maxRetries
 		if maxRetries <= 0 {
-			maxRetries = 3
+			maxRetries = 2 // Menos tentativas para evitar circuit breaker (vs 3)
 		}
 
 		for i := 0; i < maxRetries; i++ {
@@ -200,7 +244,12 @@ func (c *CamaraClient) doRequest(ctx context.Context, method, url string) ([]byt
 			if err != nil {
 				lastErr = fmt.Errorf("erro na requisição HTTP (tentativa %d/%d): %w", i+1, maxRetries, err)
 				if i < maxRetries-1 {
-					time.Sleep(backoff)
+					// Back-pressure: se detectar sobrecarga da API, aguardar mais tempo
+					delay := backoff
+					if isAPIOverloaded(err) {
+						delay = backoff * 2 // Dobrar delay se API estiver sobrecarregada
+					}
+					time.Sleep(delay)
 					backoff *= 2
 				}
 				continue
@@ -523,19 +572,29 @@ func (c *CamaraClient) GetVotacoes(ctx context.Context, dataInicio, dataFim time
 	start := time.Date(dataInicio.Year(), dataInicio.Month(), dataInicio.Day(), 0, 0, 0, 0, loc)
 	end := time.Date(dataFim.Year(), dataFim.Month(), dataFim.Day(), 0, 0, 0, 0, loc)
 
-	// Estratégia de chunking adaptativo: tenta ranges maiores e degrada para menores
-	// quando encontra erros retryable (ex: 504). Sequência configurada aqui:
-	// 30 dias -> 7 dias -> 1 dia. Isso reduz o número de requests quando a API
-	// está saudável, e permite recuperação granular quando há problemas.
-	chunkStrategy := []int{30, 7, 1}
+	// Estratégia de chunking adaptativo mais conservadora baseada nos logs de timeout.
+	// Começamos com períodos menores e ajustamos com cuidado para evitar circuit breaker.
+	// Após mais sucessos consecutivos aumentamos gradualmente o tamanho para recuperar throughput.
+	chunkLevels := []int{14, 7, 3, 1} // Começar com 14 dias (mais conservador)
+	levelIndex := 0
+	successStreak := 0
+	errorStreak := 0
+	const minSuccessBeforeLevelExpand = 10    // Mais sucessos antes de expandir (vs 6)
+	const minSecondsBetweenLevelChanges = 180 // 3 minutos entre mudanças (vs 90s)
+	lastLevelChange := time.Now()
+	dayAttempts := make(map[string]int)
+	var skippedDays []string
+	const maxRetryPerDay = 2                  // Menos tentativas por dia (vs 3)
+	const minDailyCooldown = 15 * time.Second // Cooldown maior (vs 8s)
+	chunkProgress := domain.GetVotacoesChunkProgress(ctx)
 
-	fetchRange := func(rangeStart, rangeEnd time.Time) error {
+	fetchRange := func(rangeStart, rangeEnd time.Time, itensPagina int, delayBetweenPages time.Duration) error {
 		params := url.Values{}
 		params.Add("dataInicio", rangeStart.In(loc).Format("2006-01-02"))
 		params.Add("dataFim", rangeEnd.In(loc).Format("2006-01-02"))
 		params.Add("ordenarPor", "dataHoraRegistro")
 		params.Add("ordem", "DESC")
-		params.Add("itens", "100")
+		params.Add("itens", strconv.Itoa(itensPagina))
 
 		pageURL := fmt.Sprintf("%s/votacoes?%s", c.baseURL, params.Encode())
 
@@ -651,8 +710,8 @@ func (c *CamaraClient) GetVotacoes(ctx context.Context, dataInicio, dataFim time
 			}
 
 			pageURL = next
-			if c.pageDelay > 0 {
-				time.Sleep(c.pageDelay)
+			if delayBetweenPages > 0 {
+				time.Sleep(delayBetweenPages)
 			} else {
 				time.Sleep(50 * time.Millisecond)
 			}
@@ -663,39 +722,145 @@ func (c *CamaraClient) GetVotacoes(ctx context.Context, dataInicio, dataFim time
 
 	// Cursor para o dia atual a processar
 	for cur := start; !cur.After(end); {
-		progressed := false
+		dayKey := cur.Format("2006-01-02")
+		chunkDays := chunkLevels[levelIndex]
+		candidateEnd := cur.AddDate(0, 0, chunkDays-1)
+		if candidateEnd.After(end) {
+			candidateEnd = end
+		}
 
-		for _, days := range chunkStrategy {
-			candidateEnd := cur.AddDate(0, 0, days-1)
-			if candidateEnd.After(end) {
-				candidateEnd = end
-			}
+		itensPagina := 100
+		switch {
+		case chunkDays <= 1:
+			itensPagina = 10
+		case chunkDays <= 3:
+			itensPagina = 30
+		case chunkDays <= 7:
+			itensPagina = 50
+		case chunkDays <= 14:
+			itensPagina = 80
+		}
 
-			if err := fetchRange(cur, candidateEnd); err != nil {
-				if isRetryableServerError(err) {
-					// tentar próximo tamanho menor
-					fmt.Printf("WARN: chunk %s - %s falhou com erro transitório: %v. Tentando próximo tamanho menor...\n", cur.Format("2006-01-02"), candidateEnd.Format("2006-01-02"), err)
-					// pequena pausa antes de tentar subdividir
-					time.Sleep(50 * time.Millisecond)
+		delayBetweenPages := c.pageDelay
+		if delayBetweenPages <= 0 {
+			delayBetweenPages = 50 * time.Millisecond
+		}
+		if levelIndex >= 2 && delayBetweenPages < 120*time.Millisecond {
+			delayBetweenPages = 120 * time.Millisecond
+		}
+		if levelIndex >= 3 && delayBetweenPages < 180*time.Millisecond {
+			delayBetweenPages = 180 * time.Millisecond
+		}
+		if levelIndex >= len(chunkLevels)-1 && delayBetweenPages < 600*time.Millisecond {
+			delayBetweenPages = 600 * time.Millisecond
+		}
+		if chunkDays <= 1 && delayBetweenPages < 600*time.Millisecond {
+			delayBetweenPages = 600 * time.Millisecond
+		}
+
+		err := fetchRange(cur, candidateEnd, itensPagina, delayBetweenPages)
+		if err != nil {
+			metrics.IncCamaraChunkFailure(chunkDays)
+
+			if isRetryableServerError(err) {
+				errorStreak++
+				successStreak = 0
+				if levelIndex < len(chunkLevels)-1 {
+					nextLevel := levelIndex + 1
+					fmt.Printf("WARN: chunk %s - %s falhou com erro transitório: %v. Reduzindo janela para %d dias...\n",
+						cur.Format("2006-01-02"), candidateEnd.Format("2006-01-02"), err, chunkLevels[nextLevel])
+					levelIndex = nextLevel
+					lastLevelChange = time.Now()
+				} else {
+					dayAttempts[dayKey]++
+					attempt := dayAttempts[dayKey]
+					if attempt < maxRetryPerDay {
+						cooldown := time.Duration(1<<min(attempt-1, 4)) * 5 * time.Second
+						if cooldown < minDailyCooldown {
+							cooldown = minDailyCooldown
+						}
+						jitterRange := 1500
+						if levelIndex == len(chunkLevels)-1 {
+							jitterRange = 4000
+						}
+						jitter := time.Duration(randomIntn(jitterRange)) * time.Millisecond
+						fmt.Printf("WARN: todos os tamanhos de chunk falharam para %s (tentativa %d/%d). Aguardando %s antes de tentar novamente com janela mínima...\n",
+							dayKey, attempt, maxRetryPerDay, (cooldown + jitter).Round(time.Millisecond))
+						levelIndex = len(chunkLevels) - 1
+						effectiveCooldown := cooldown
+						if levelIndex == len(chunkLevels)-1 && effectiveCooldown < 20*time.Second {
+							effectiveCooldown = 20 * time.Second
+						}
+						time.Sleep(effectiveCooldown + jitter)
+						continue
+					}
+					fmt.Printf("ERROR: esgotadas %d tentativas para %s; registrando para retry futuro e seguindo em frente\n", attempt, dayKey)
+					skippedDays = append(skippedDays, dayKey)
+					if chunkProgress != nil {
+						chunkProgress(cur, cur, false)
+					}
+					cur = cur.AddDate(0, 0, 1)
+					errorStreak = 0
+					successStreak = 0
+					time.Sleep(250 * time.Millisecond)
 					continue
 				}
-				return nil, fmt.Errorf("erro ao buscar votações: %w", err)
+
+				baseBackoff := time.Duration(1<<min(errorStreak-1, 5)) * time.Second
+				if baseBackoff < 5*time.Second {
+					baseBackoff = 5 * time.Second
+				}
+				if levelIndex == len(chunkLevels)-1 && baseBackoff < 15*time.Second {
+					baseBackoff = 15 * time.Second
+				}
+				jitterRange := 750
+				if levelIndex == len(chunkLevels)-1 {
+					jitterRange = 2000
+				}
+				jitter := time.Duration(randomIntn(jitterRange)) * time.Millisecond
+				time.Sleep(baseBackoff + jitter)
+				continue
 			}
-
-			// sucesso no chunk candidate
-			cur = candidateEnd.AddDate(0, 0, 1)
-			// ser gentil entre chunks
-			time.Sleep(100 * time.Millisecond)
-			progressed = true
-			break
+			return nil, fmt.Errorf("erro ao buscar votações: %w", err)
+		}
+		metrics.IncCamaraChunkSuccess(chunkDays)
+		if chunkProgress != nil {
+			chunkProgress(cur, candidateEnd, true)
 		}
 
-		if !progressed {
-			// mesmo um chunk de 1 dia falhou com erro retryable — pular 1 dia para evitar loop
-			fmt.Printf("ERROR: todos os tamanhos de chunk falharam para %s; pulando 1 dia\n", cur.Format("2006-01-02"))
-			cur = cur.AddDate(0, 0, 1)
-			time.Sleep(100 * time.Millisecond)
+		delete(dayAttempts, dayKey)
+		cur = candidateEnd.AddDate(0, 0, 1)
+		successStreak++
+		errorStreak = 0
+
+		var postDelay time.Duration
+		switch {
+		case chunkDays <= 1:
+			postDelay = 1200 * time.Millisecond
+		case chunkDays <= 3:
+			postDelay = 800 * time.Millisecond
+		case chunkDays <= 7:
+			postDelay = 480 * time.Millisecond
+		default:
+			postDelay = time.Duration(levelIndex+1) * 80 * time.Millisecond
+			if postDelay < 80*time.Millisecond {
+				postDelay = 80 * time.Millisecond
+			}
 		}
+		time.Sleep(postDelay)
+
+		if successStreak >= minSuccessBeforeLevelExpand && levelIndex > 0 {
+			if time.Since(lastLevelChange) >= minSecondsBetweenLevelChanges*time.Second {
+				levelIndex--
+				successStreak = 0
+				lastLevelChange = time.Now()
+				fmt.Printf("INFO: aumentando janela para %d dias após sequência de sucesso\n", chunkLevels[levelIndex])
+			}
+		}
+	}
+
+	if len(skippedDays) > 0 {
+		return all, fmt.Errorf("falha ao coletar votações em %d intervalos (%s)", len(skippedDays), strings.Join(skippedDays, ", "))
 	}
 
 	return all, nil

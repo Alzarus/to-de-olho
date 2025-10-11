@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -351,6 +352,14 @@ func waitForBackfillCompletion(ctx context.Context, service *app.SmartBackfillSe
 
 	logger.Info("⏳ Monitorando progresso do backfill...", slog.String("execution_id", executionID))
 
+	const heartbeatInterval = 1 * time.Minute
+	lastLoggedAt := time.Time{}
+	lastStatusCode := ""
+	lastOperation := ""
+	lastDeputados := -1
+	lastProposicoes := -1
+	lastProgress := -1.0
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -373,12 +382,27 @@ func waitForBackfillCompletion(ctx context.Context, service *app.SmartBackfillSe
 				continue
 			}
 
-			logger.Info("📊 Status do backfill",
-				slog.String("status", string(status.Status)),
-				slog.Int("deputados", status.DeputadosProcessados),
-				slog.Int("proposicoes", status.ProposicoesProcessadas),
-				slog.Float64("progresso", status.ProgressPercentage),
-				slog.String("operacao_atual", status.CurrentOperation))
+			progressChanged := lastProgress < 0 || math.Abs(status.ProgressPercentage-lastProgress) >= 0.05
+			operationChanged := status.CurrentOperation != lastOperation
+			statusChanged := string(status.Status) != lastStatusCode
+			deputadosChanged := status.DeputadosProcessados != lastDeputados
+			proposicoesChanged := status.ProposicoesProcessadas != lastProposicoes
+			heartbeatElapsed := time.Since(lastLoggedAt) >= heartbeatInterval
+
+			if progressChanged || operationChanged || statusChanged || deputadosChanged || proposicoesChanged || heartbeatElapsed {
+				logger.Info("📊 Status do backfill",
+					slog.String("status", string(status.Status)),
+					slog.Int("deputados", status.DeputadosProcessados),
+					slog.Int("proposicoes", status.ProposicoesProcessadas),
+					slog.Float64("progresso", status.ProgressPercentage),
+					slog.String("operacao_atual", status.CurrentOperation))
+				lastLoggedAt = time.Now()
+				lastStatusCode = string(status.Status)
+				lastOperation = status.CurrentOperation
+				lastDeputados = status.DeputadosProcessados
+				lastProposicoes = status.ProposicoesProcessadas
+				lastProgress = status.ProgressPercentage
+			}
 
 			switch status.Status {
 			case domain.BackfillStatusSuccess:
@@ -387,6 +411,15 @@ func waitForBackfillCompletion(ctx context.Context, service *app.SmartBackfillSe
 					slog.String("duracao", duration.String()),
 					slog.Int("deputados", status.DeputadosProcessados),
 					slog.Int("proposicoes", status.ProposicoesProcessadas))
+				return nil
+			case domain.BackfillStatusPartial:
+				duration := time.Since(status.StartedAt)
+				logger.Warn("⚠️ Backfill concluído com pendências",
+					slog.String("duracao", duration.String()),
+					slog.Int("deputados", status.DeputadosProcessados),
+					slog.Int("proposicoes", status.ProposicoesProcessadas),
+					slog.Float64("progresso", status.ProgressPercentage),
+					slog.String("operacao_atual", status.CurrentOperation))
 				return nil
 			case domain.BackfillStatusFailed:
 				return fmt.Errorf("backfill falhou")

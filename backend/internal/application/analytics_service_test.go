@@ -64,6 +64,12 @@ func (m *MockDespesaRepoAnalytics) ListDespesasByDeputadoAno(ctx context.Context
 func (m *MockDespesaRepoAnalytics) GetDespesasStats(ctx context.Context, deputadoID int, ano int) (*domain.DespesaStats, error) {
 	return &domain.DespesaStats{TotalDespesas: 10, TotalValor: float64(10000 + deputadoID), ValorMedio: 1000, MaiorValor: 2000, TiposDiferentes: 5}, nil
 }
+func (m *MockDespesaRepoAnalytics) GetDespesasStatsByAno(ctx context.Context, ano int) (map[int]domain.DespesaStats, error) {
+	return map[int]domain.DespesaStats{
+		1: {TotalDespesas: 10, TotalValor: 11000, ValorMedio: 1100, MaiorValor: 2000, TiposDiferentes: 4},
+		2: {TotalDespesas: 8, TotalValor: 9000, ValorMedio: 1125, MaiorValor: 1800, TiposDiferentes: 3},
+	}, nil
+}
 
 // MockVotacaoRepository implements required domain.VotacaoRepository methods used by analytics
 type MockVotacaoRepository struct{}
@@ -105,6 +111,32 @@ func (m *MockVotacaoRepository) UpsertVotacao(ctx context.Context, votacao *doma
 func (m *MockVotacaoRepository) GetPresencaPorDeputadoAno(ctx context.Context, ano int) ([]domain.PresencaCount, error) {
 	// Return example participations for deputies 1 and 2
 	return []domain.PresencaCount{{IDDeputado: 1, Participacoes: 50}, {IDDeputado: 2, Participacoes: 40}}, nil
+}
+func (m *MockVotacaoRepository) GetRankingDeputadosAggregated(ctx context.Context, ano int) ([]domain.RankingDeputadoVotacao, error) {
+	return []domain.RankingDeputadoVotacao{
+		{IDDeputado: 1, TotalVotacoes: 80, VotosFavoraveis: 60, VotosContrarios: 15, Abstencoes: 5},
+		{IDDeputado: 2, TotalVotacoes: 70, VotosFavoraveis: 40, VotosContrarios: 20, Abstencoes: 10},
+	}, nil
+}
+func (m *MockVotacaoRepository) GetDisciplinaPartidosAggregated(ctx context.Context, ano int) ([]domain.VotacaoPartido, error) {
+	return []domain.VotacaoPartido{
+		{Partido: "PT", Orientacao: "Sim", VotaramFavor: 120, VotaramContra: 10, VotaramAbstencao: 5, TotalMembros: 50},
+		{Partido: "PSDB", Orientacao: "Não", VotaramFavor: 40, VotaramContra: 80, VotaramAbstencao: 5, TotalMembros: 45},
+	}, nil
+}
+func (m *MockVotacaoRepository) GetVotacaoStatsAggregated(ctx context.Context, ano int) (*domain.VotacaoStats, error) {
+	stats := &domain.VotacaoStats{
+		TotalVotacoes:         12,
+		VotacoesAprovadas:     7,
+		VotacoesRejeitadas:    5,
+		MediaParticipacao:     480.0,
+		VotacoesPorMes:        make([]int, 12),
+		VotacoesPorRelevancia: map[string]int{"alta": 5, "média": 4, "baixa": 3},
+	}
+	stats.VotacoesPorMes[0] = 2
+	stats.VotacoesPorMes[1] = 3
+	stats.VotacoesPorMes[2] = 7
+	return stats, nil
 }
 
 func TestAnalyticsService_GetRankingGastos(t *testing.T) {

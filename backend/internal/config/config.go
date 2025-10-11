@@ -127,10 +127,10 @@ func LoadConfig() (*Config, error) {
 			Version:     getEnv("APP_VERSION", "1.0.0"),
 		},
 		Ingestor: IngestorConfig{
-			BackfillStartYear: getInt("INGESTOR_BACKFILL_START_YEAR", 2025),
+			BackfillStartYear: getIntPrefer("BACKFILL_START_YEAR", "INGESTOR_BACKFILL_START_YEAR", 2025),
 			// Aumentar default para evitar páginas muito pequenas no backfill histórico
-			BatchSize:  getInt("INGESTOR_BATCH_SIZE", 100),
-			MaxRetries: getInt("INGESTOR_MAX_RETRIES", 3),
+			BatchSize:  getIntPrefer("BACKFILL_BATCH_SIZE", "INGESTOR_BATCH_SIZE", 100),
+			MaxRetries: getIntPrefer("BACKFILL_MAX_RETRIES", "INGESTOR_MAX_RETRIES", 3),
 			// Default aumentado para 2h para respeitar .env local quando godotenv não for carregado
 			MonitorTimeout: getDuration("BACKFILL_MONITOR_TIMEOUT", 2*time.Hour),
 		},
@@ -197,6 +197,31 @@ func getEnvRequired(key string) string {
 		log.Fatalf("Required environment variable %s is not set", key)
 	}
 	return value
+}
+
+func getIntPrefer(primary, fallback string, defaultValue int) int {
+	if v, ok := getOptionalInt(primary); ok {
+		return v
+	}
+	if fallback != "" {
+		if v, ok := getOptionalInt(fallback); ok {
+			return v
+		}
+	}
+	return defaultValue
+}
+
+func getOptionalInt(key string) (int, bool) {
+	value := os.Getenv(key)
+	if value == "" {
+		return 0, false
+	}
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		log.Printf("invalid integer value for %s: %v", key, err)
+		return 0, false
+	}
+	return v, true
 }
 
 func getInt(key string, defaultValue int) int {

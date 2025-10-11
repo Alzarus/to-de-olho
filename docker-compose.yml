@@ -120,6 +120,7 @@ services:
       - BACKFILL_TRIGGERED_BY=docker-compose
       - BACKFILL_WORKERS=${BACKFILL_WORKERS:-2}
       - BACKFILL_BATCH_SIZE=${BACKFILL_BATCH_SIZE:-100}
+      - BACKFILL_MONITOR_TIMEOUT=${BACKFILL_MONITOR_TIMEOUT:-4h}
     networks:
       - todo-network
     command: ["./smart-init.sh"]
