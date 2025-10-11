@@ -16,6 +16,7 @@ import (
 type IncrementalSyncManager struct {
 	deputadosService   *application.DeputadosService
 	proposicoesService *application.ProposicoesService
+	votacoesService    *application.VotacoesService
 	analyticsService   application.AnalyticsServiceInterface
 	db                 *pgxpool.Pool
 	cache              application.CachePort
@@ -28,23 +29,25 @@ type SyncMetrics struct {
 	Duration           time.Duration `json:"duration"`
 	DeputadosUpdated   int           `json:"deputados_updated"`
 	ProposicoesUpdated int           `json:"proposicoes_updated"`
+	DespesasUpdated    int           `json:"despesas_updated"`
+	VotacoesUpdated    int           `json:"votacoes_updated"`
 	ErrorsCount        int           `json:"errors_count"`
 	Errors             []string      `json:"errors,omitempty"`
 	SyncType           string        `json:"sync_type"` // "daily", "quick"
 }
 
-// NewIncrementalSyncManager cria novo gerenciador de sync incremental
+// NewIncrementalSyncManager cria nova instância do gerenciador
 func NewIncrementalSyncManager(
 	deputadosService *application.DeputadosService,
 	proposicoesService *application.ProposicoesService,
-	analyticsService application.AnalyticsServiceInterface,
+	votacoesService *application.VotacoesService,
 	db *pgxpool.Pool,
 	cache application.CachePort,
 ) *IncrementalSyncManager {
 	return &IncrementalSyncManager{
 		deputadosService:   deputadosService,
 		proposicoesService: proposicoesService,
-		analyticsService:   analyticsService,
+		votacoesService:    votacoesService,
 		db:                 db,
 		cache:              cache,
 	}
@@ -74,7 +77,21 @@ func (ism *IncrementalSyncManager) ExecuteDailySync(ctx context.Context) error {
 		log.Printf("❌ Erro na sincronização de proposições: %v", err)
 	}
 
-	// 3. Limpar cache antigo
+	// 3. Sincronizar despesas do mês atual (dados críticos para analytics)
+	if err := ism.syncCurrentMonthDespesas(ctx, metrics); err != nil {
+		metrics.Errors = append(metrics.Errors, fmt.Sprintf("Despesas: %v", err))
+		metrics.ErrorsCount++
+		log.Printf("❌ Erro na sincronização de despesas: %v", err)
+	}
+
+	// 4. Sincronizar votações recentes (transparência das decisões)
+	if err := ism.syncRecentVotacoes(ctx, metrics); err != nil {
+		metrics.Errors = append(metrics.Errors, fmt.Sprintf("Votações: %v", err))
+		metrics.ErrorsCount++
+		log.Printf("❌ Erro na sincronização de votações: %v", err)
+	}
+
+	// 5. Limpar cache antigo
 	if err := ism.cleanupOldCache(ctx); err != nil {
 		log.Printf("⚠️  Aviso: erro na limpeza de cache: %v", err)
 	}
@@ -100,8 +117,8 @@ func (ism *IncrementalSyncManager) ExecuteDailySync(ctx context.Context) error {
 		log.Printf("⚠️  Erro ao salvar métricas: %v", err)
 	}
 
-	log.Printf("📊 Sync diário: %d deputados, %d proposições, %d erros em %v",
-		metrics.DeputadosUpdated, metrics.ProposicoesUpdated,
+	log.Printf("📊 Sync diário: %d deputados, %d proposições, %d despesas, %d erros em %v",
+		metrics.DeputadosUpdated, metrics.ProposicoesUpdated, metrics.DespesasUpdated,
 		metrics.ErrorsCount, metrics.Duration)
 
 	if metrics.ErrorsCount > 0 {
@@ -161,15 +178,12 @@ func (ism *IncrementalSyncManager) syncDeputados(ctx context.Context, metrics *S
 func (ism *IncrementalSyncManager) syncRecentProposicoes(ctx context.Context, metrics *SyncMetrics) error {
 	log.Println("📜 Sincronizando proposições recentes...")
 
-	// Filtro para proposições das últimas 24h
+	// Filtro mínimo conforme documentação oficial da API
 	filtros := &domain.ProposicaoFilter{
-		DataApresentacaoInicio: func() *time.Time {
-			t := time.Now().AddDate(0, 0, -1) // Últimas 24h
-			return &t
-		}(),
 		Ordem:      "DESC",
-		OrdenarPor: "dataApresentacao",
-		Limite:     50, // Limite conservador para sync incremental
+		OrdenarPor: "id", // Campo seguro conforme API
+		Limite:     100,  // Limite máximo permitido pela API
+		Pagina:     1,
 	}
 
 	proposicoes, _, source, err := ism.proposicoesService.ListarProposicoes(ctx, filtros)
@@ -206,8 +220,8 @@ func (ism *IncrementalSyncManager) saveSyncMetrics(ctx context.Context, metrics 
 	query := `
 		INSERT INTO sync_metrics (
 			sync_type, start_time, end_time, duration_ms,
-			deputados_updated, proposicoes_updated, errors_count, errors
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			deputados_updated, proposicoes_updated, despesas_updated, errors_count, errors
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
 	durationMS := int(metrics.Duration.Milliseconds())
@@ -224,6 +238,7 @@ func (ism *IncrementalSyncManager) saveSyncMetrics(ctx context.Context, metrics 
 		durationMS,
 		metrics.DeputadosUpdated,
 		metrics.ProposicoesUpdated,
+		metrics.DespesasUpdated,
 		metrics.ErrorsCount,
 		errorsJSON,
 	)
@@ -247,7 +262,7 @@ func (ism *IncrementalSyncManager) GetSyncStats(ctx context.Context, days int) (
 
 	query := `
 		SELECT sync_type, start_time, end_time, duration_ms,
-		       deputados_updated, proposicoes_updated, errors_count, errors
+		       deputados_updated, proposicoes_updated, despesas_updated, errors_count, errors
 		FROM sync_metrics 
 		WHERE start_time >= NOW() - INTERVAL '%d days'
 		ORDER BY start_time DESC
@@ -273,6 +288,7 @@ func (ism *IncrementalSyncManager) GetSyncStats(ctx context.Context, days int) (
 			&durationMS,
 			&metric.DeputadosUpdated,
 			&metric.ProposicoesUpdated,
+			&metric.DespesasUpdated,
 			&metric.ErrorsCount,
 			&errorsJSON,
 		)
@@ -289,4 +305,90 @@ func (ism *IncrementalSyncManager) GetSyncStats(ctx context.Context, days int) (
 	}
 
 	return stats, nil
+}
+
+// syncCurrentMonthDespesas sincroniza despesas do mês atual para manter rankings atualizados
+func (ism *IncrementalSyncManager) syncCurrentMonthDespesas(ctx context.Context, metrics *SyncMetrics) error {
+	currentYear := time.Now().Year()
+	currentMonth := time.Now().Month()
+
+	log.Printf("💰 Sincronizando despesas do mês atual (%d/%d)", int(currentMonth), currentYear)
+
+	// Buscar todos os deputados para obter suas despesas do mês atual
+	deputados, _, err := ism.deputadosService.ListarDeputados(ctx, "", "", "")
+	if err != nil {
+		return fmt.Errorf("erro ao buscar deputados para sync de despesas: %w", err)
+	}
+
+	var totalDespesasUpdated int
+
+	// Processar despesas de cada deputado do mês atual (amostra para manter rankings)
+	for i, deputado := range deputados {
+		// Limitar a 50 deputados para sync diário (performance)
+		if i >= 50 {
+			break
+		}
+
+		despesas, _, err := ism.deputadosService.ListarDespesas(ctx,
+			fmt.Sprintf("%d", deputado.ID),
+			fmt.Sprintf("%d", currentYear))
+
+		if err != nil {
+			log.Printf("⚠️ Erro ao buscar despesas do deputado %d: %v", deputado.ID, err)
+			continue
+		}
+
+		// Filtrar apenas despesas do mês atual
+		var despesasMesAtual int
+		for _, despesa := range despesas {
+			if despesa.Mes == int(currentMonth) {
+				despesasMesAtual++
+			}
+		}
+
+		if despesasMesAtual > 0 {
+			totalDespesasUpdated += despesasMesAtual
+			log.Printf("📊 Deputado %s: %d despesas em %d/%d",
+				deputado.Nome, despesasMesAtual, int(currentMonth), currentYear)
+		}
+	}
+
+	metrics.DespesasUpdated = totalDespesasUpdated
+	log.Printf("✅ Sync despesas: %d despesas do mês atual processadas", totalDespesasUpdated)
+
+	return nil
+}
+
+// syncRecentVotacoes sincroniza votações recentes para transparência das decisões
+func (ism *IncrementalSyncManager) syncRecentVotacoes(ctx context.Context, metrics *SyncMetrics) error {
+	log.Printf("🗳️ Iniciando sincronização de votações recentes...")
+
+	if ism.votacoesService == nil {
+		log.Printf("⚠️ VotacoesService não disponível, pulando sync de votações")
+		return nil
+	}
+
+	// Buscar votações das últimas 7 dias (dados mais relevantes para cidadãos)
+	dataInicial := time.Now().AddDate(0, 0, -7)
+	dataFinal := time.Now()
+
+	log.Printf("📅 Buscando votações entre %s e %s",
+		dataInicial.Format("2006-01-02"), dataFinal.Format("2006-01-02"))
+
+	// Usar o service para buscar e processar as votações
+	filtros := map[string]interface{}{
+		"dataInicio": dataInicial,
+		"dataFim":    dataFinal,
+		"limite":     100,
+	}
+
+	totalVotacoesUpdated, err := ism.votacoesService.SincronizarVotacoesRecentes(ctx, filtros)
+	if err != nil {
+		return fmt.Errorf("erro ao sincronizar votações recentes: %w", err)
+	}
+
+	metrics.VotacoesUpdated = totalVotacoesUpdated
+	log.Printf("✅ Sync votações: %d votações processadas", totalVotacoesUpdated)
+
+	return nil
 }

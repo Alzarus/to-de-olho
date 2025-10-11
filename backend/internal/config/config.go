@@ -11,25 +11,15 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config estrutura centralizada para todas as configurações
+// Config estrutura principal de configuração
 type Config struct {
-	// Servidor
-	Server ServerConfig
-
-	// Banco de Dados
-	Database DatabaseConfig
-
-	// Cache Redis
-	Redis RedisConfig
-
-	// Cliente API Câmara
+	Server       ServerConfig
+	Database     DatabaseConfig
+	Redis        RedisConfig
 	CamaraClient CamaraClientConfig
-
-	// Aplicação
-	App AppConfig
-
-	// Ingestor
-	Ingestor IngestorConfig
+	App          AppConfig
+	Ingestor     IngestorConfig
+	Timeouts     *TimeoutConfig // Configurações centralizadas de timeout
 }
 
 type ServerConfig struct {
@@ -83,6 +73,8 @@ type IngestorConfig struct {
 	BackfillStartYear int // Ano inicial para backfill histórico
 	BatchSize         int // Tamanho dos lotes para processamento
 	MaxRetries        int // Máximo de tentativas por lote
+	// MonitorTimeout define quanto tempo o monitor do ingestor aguardará a conclusão do backfill
+	MonitorTimeout time.Duration
 }
 
 // LoadConfig carrega configurações de variáveis de ambiente
@@ -100,7 +92,8 @@ func LoadConfig() (*Config, error) {
 			RateLimit:       getInt("RATE_LIMIT_RPS", 100),
 		},
 		Database: DatabaseConfig{
-			Host:            getEnv("POSTGRES_HOST", "localhost"),
+			// Default to docker-compose service name so containers resolve the DB correctly
+			Host:            getEnv("POSTGRES_HOST", "postgres"),
 			Port:            getEnv("POSTGRES_PORT", "5432"),
 			User:            getEnv("POSTGRES_USER", "postgres"),
 			Password:        getEnvRequired("POSTGRES_PASSWORD"),
@@ -112,7 +105,8 @@ func LoadConfig() (*Config, error) {
 			MaxConnIdleTime: getDuration("POSTGRES_MAX_CONN_IDLE_TIME", 30*time.Minute),
 		},
 		Redis: RedisConfig{
-			Addr:         getEnv("REDIS_ADDR", "localhost:6379"),
+			// Default to docker-compose service name so containers resolve correctly
+			Addr:         getEnv("REDIS_ADDR", "redis:6379"),
 			Password:     getEnv("REDIS_PASSWORD", ""),
 			DB:           getInt("REDIS_DB", 0),
 			ReadTimeout:  getDuration("REDIS_READ_TIMEOUT", 500*time.Millisecond),
@@ -133,11 +127,17 @@ func LoadConfig() (*Config, error) {
 			Version:     getEnv("APP_VERSION", "1.0.0"),
 		},
 		Ingestor: IngestorConfig{
-			BackfillStartYear: getInt("INGESTOR_BACKFILL_START_YEAR", 2025),
-			BatchSize:         getInt("INGESTOR_BATCH_SIZE", 50),
-			MaxRetries:        getInt("INGESTOR_MAX_RETRIES", 3),
+			BackfillStartYear: getIntPrefer("BACKFILL_START_YEAR", "INGESTOR_BACKFILL_START_YEAR", 2025),
+			// Aumentar default para evitar páginas muito pequenas no backfill histórico
+			BatchSize:  getIntPrefer("BACKFILL_BATCH_SIZE", "INGESTOR_BATCH_SIZE", 100),
+			MaxRetries: getIntPrefer("BACKFILL_MAX_RETRIES", "INGESTOR_MAX_RETRIES", 3),
+			// Default aumentado para 2h para respeitar .env local quando godotenv não for carregado
+			MonitorTimeout: getDuration("BACKFILL_MONITOR_TIMEOUT", 2*time.Hour),
 		},
 	}
+
+	// Adicionar configurações de timeout centralizadas
+	config.Timeouts = NewTimeoutConfig()
 
 	// Validar configurações críticas
 	if err := config.Validate(); err != nil {
@@ -197,6 +197,31 @@ func getEnvRequired(key string) string {
 		log.Fatalf("Required environment variable %s is not set", key)
 	}
 	return value
+}
+
+func getIntPrefer(primary, fallback string, defaultValue int) int {
+	if v, ok := getOptionalInt(primary); ok {
+		return v
+	}
+	if fallback != "" {
+		if v, ok := getOptionalInt(fallback); ok {
+			return v
+		}
+	}
+	return defaultValue
+}
+
+func getOptionalInt(key string) (int, bool) {
+	value := os.Getenv(key)
+	if value == "" {
+		return 0, false
+	}
+	v, err := strconv.Atoi(value)
+	if err != nil {
+		log.Printf("invalid integer value for %s: %v", key, err)
+		return 0, false
+	}
+	return v, true
 }
 
 func getInt(key string, defaultValue int) int {

@@ -389,6 +389,72 @@ func TestBuscarDeputadoUseCase_Execute(t *testing.T) {
 }
 ```
 
+## 🔄 Arquitetura de Ingestão de Dados
+
+### **Componentes de Ingestão**
+
+#### 1. **Strategic Backfill** (`cmd/ingestor`)
+- **Execução**: Uma única vez no deploy inicial
+- **Período**: 2022-2025 (dados históricos + atuais)
+- **Estratégia**: Prioridade deputados → proposições → despesas
+- **Resilência**: Checkpoints, retry exponencial, resumable
+
+#### 2. **Incremental Sync** (`cmd/scheduler`) 
+- **Execução**: Diária às 6h (cron job)
+- **Objetivo**: Manter dados atualizados
+- **Escopo**: Delta sync + analytics pre-computados
+
+#### 3. **Pipeline de Dados**
+```
+API Câmara → Strategic Backfill → PostgreSQL → Cache Redis → Frontend
+     ↓              ↓                  ↓           ↓
+Rate Limit    Checkpoints     Transações    TTL 1h    Rankings
+(100/min)     Resumable       ACID          Cache     Analytics
+```
+
+### **Tabelas de Dados**
+
+#### **Deputados** (Base fundamental)
+```sql
+CREATE TABLE deputados_cache (
+    id INT PRIMARY KEY,
+    payload JSONB NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### **Proposições** (Por ano 2022-2025)
+```sql  
+CREATE TABLE proposicoes_cache (
+    id INTEGER PRIMARY KEY,
+    payload JSONB NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+#### **Despesas** (Analytics críticos)
+```sql
+CREATE TABLE despesas (
+    id BIGSERIAL PRIMARY KEY,
+    deputado_id INTEGER NOT NULL,
+    ano INTEGER NOT NULL,
+    mes INTEGER NOT NULL,
+    tipo_despesa VARCHAR(100) NOT NULL,
+    valor_liquido DECIMAL(15,2) NOT NULL,
+    valor_bruto DECIMAL(15,2),
+    fornecedor VARCHAR(255),
+    documento_url TEXT,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **Configuração Auto-Deploy**
+- **Trigger**: `docker-compose up` executa backfill automático
+- **Dados**: 2022-2025 completo (4 anos de histórico)
+- **Failsafe**: Checkpoints permitem resumar em caso de falha
+- **Monitoramento**: Métricas em `sync_metrics` table
+
 ---
 
 > **🎯 Benefícios**: Código testável, manutenível, escalável e independente de frameworks externos.

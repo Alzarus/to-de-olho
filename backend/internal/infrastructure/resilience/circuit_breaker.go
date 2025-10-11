@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -30,13 +31,13 @@ type CircuitBreakerConfig struct {
 	Timeout          time.Duration // Timeout para operações
 }
 
-// DefaultCircuitBreakerConfig configuração padrão seguindo as melhores práticas
+// DefaultCircuitBreakerConfig configuração padrão otimizada para API da Câmara
 func DefaultCircuitBreakerConfig() CircuitBreakerConfig {
 	return CircuitBreakerConfig{
-		MaxFailures:      5,                // 5 falhas consecutivas
-		ResetTimeout:     30 * time.Second, // 30s para retry
-		SuccessThreshold: 2,                // 2 sucessos para fechar
-		Timeout:          10 * time.Second, // 10s timeout por operação
+		MaxFailures:      8,                 // Mais tolerante: 8 falhas antes de abrir (vs 5)
+		ResetTimeout:     120 * time.Second, // Maior intervalo: 2 minutos para dar tempo da API se recuperar
+		SuccessThreshold: 3,                 // 3 sucessos para fechar (mais conservador)
+		Timeout:          90 * time.Second,  // Timeout maior para operações lentas da API
 	}
 }
 
@@ -189,4 +190,18 @@ func (s CircuitBreakerState) String() string {
 	default:
 		return "UNKNOWN"
 	}
+}
+
+// IsCircuitBreakerOpen verifica se o erro informado (ou algum erro encadeado) indica circuito aberto
+func IsCircuitBreakerOpen(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if errors.Is(err, ErrCircuitBreakerOpen) {
+		return true
+	}
+
+	// Alguns clientes podem encapsular a mensagem sem preservar o sentinel; fazer fallback textual
+	return strings.Contains(strings.ToLower(err.Error()), "circuit breaker is open")
 }

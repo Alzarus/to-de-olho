@@ -38,8 +38,17 @@ COPY --from=builder /app/server ./server
 COPY --from=builder /app/ingestor ./ingestor
 COPY --from=builder /app/scheduler ./scheduler
 
+# Copiar scripts de inicialização
+COPY scripts/smart-init.sh ./smart-init.sh
+RUN chmod +x ./smart-init.sh
+
+# Instalar curl para health checks
+RUN apk add --no-cache curl
+
 # Mudar ownership para usuário não-root
 RUN chown -R appuser:appuser /app
+
+# Mudar para usuário não-root
 USER appuser
 
 # Expor porta
