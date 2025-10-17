@@ -263,10 +263,10 @@ func (r *DespesaRepository) ListDespesasByDeputadoAno(ctx context.Context, deput
 			tipo_despesa, cod_documento, tipo_documento, COALESCE(cod_tipo_documento, 0),
 			data_documento, num_documento, valor_documento, url_documento,
 			nome_fornecedor, cnpj_cpf_fornecedor, valor_liquido, valor_bruto,
-			valor_glosa, num_ressarcimento, cod_lote, parcela
+			valor_glosa, num_ressarcimento, cod_lote, parcela, mes
 		FROM despesas 
 		WHERE deputado_id = $1 AND ano = $2
-		ORDER BY mes DESC, valor_documento DESC
+		ORDER BY mes DESC, valor_liquido DESC
 	`
 
 	rows, err := r.db.Query(ctx, query, deputadoID, ano)
@@ -284,7 +284,7 @@ func (r *DespesaRepository) ListDespesasByDeputadoAno(ctx context.Context, deput
 			&d.TipoDespesa, &d.CodDocumento, &d.TipoDocumento, &d.CodTipoDocumento,
 			&dataDocumento, &d.NumDocumento, &d.ValorDocumento, &d.URLDocumento,
 			&d.NomeFornecedor, &d.CNPJCPFFornecedor, &d.ValorLiquido, &d.ValorBruto,
-			&d.ValorGlosa, &d.NumRessarcimento, &d.CodLote, &d.Parcela,
+			&d.ValorGlosa, &d.NumRessarcimento, &d.CodLote, &d.Parcela, &d.Mes,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("erro ao fazer scan: %w", err)

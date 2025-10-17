@@ -312,6 +312,11 @@ func (s *SmartSchedulerService) sincronizarDespesas(ctx context.Context, executi
 
 	var totalFound int64
 
+	// TODO: Otimizar para evitar problema N+1 queries
+	// Atualmente fazemos uma query para cada deputado (N+1 pattern)
+	// Considerar criar método ListarDespesasPorPeriodoBatch no repositório
+	// para buscar despesas de múltiplos deputados de uma vez
+
 	// worker pool to process deputies in parallel
 	deputiesCh := make(chan domain.Deputado)
 	var wg sync.WaitGroup
@@ -319,6 +324,10 @@ func (s *SmartSchedulerService) sincronizarDespesas(ctx context.Context, executi
 	workers := runtime.NumCPU()
 	if workers < 2 {
 		workers = 2
+	}
+	// Limitar workers para reduzir carga no banco durante sync diário
+	if workers > 4 {
+		workers = 4
 	}
 
 	worker := func() {

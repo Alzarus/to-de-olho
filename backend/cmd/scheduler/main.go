@@ -220,6 +220,7 @@ func run() error {
 		select {
 		case <-waitCtx.Done():
 			// Timeout: sair do loop e usar o resultado (possivelmente nenhum backfill em andamento)
+			goto afterPolling
 		case <-tick.C:
 			if exec, err := backfillRepo.GetRunningExecution(context.Background()); err == nil && exec != nil {
 				log.Printf("ℹ️ Backfill em andamento detectado (execution_id=%s, tipo=%s). Pulando verificação inicial do scheduler.", exec.ExecutionID, exec.Tipo)

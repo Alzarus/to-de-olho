@@ -17,6 +17,12 @@ O projeto Tô De Olho tem como objetivo ampliar o acesso público aos dados da C
 ```bash
 git clone https://github.com/alzarus/to-de-olho.git
 cd to-de-olho
+
+# Configurar variáveis de ambiente (OBRIGATÓRIO)
+cp .env.example .env
+# Edite o arquivo .env com suas configurações específicas
+
+# Iniciar os serviços
 docker compose up -d --build
 ```
 

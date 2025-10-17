@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"strconv"
 	"time"
 
 	"to-de-olho-backend/internal/domain"
@@ -709,7 +710,12 @@ func (s *AnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string)
 	// Se periodo for um ano numérico, usamos esse ano; caso contrário usamos o ano atual
 	var ano int
 	if len(periodo) == 4 {
-		fmt.Sscanf(periodo, "%d", &ano)
+		var err error
+		ano, err = strconv.Atoi(periodo)
+		if err != nil {
+			// Se não conseguir converter, usar ano atual como fallback
+			ano = 0
+		}
 	}
 	if ano == 0 {
 		ano = time.Now().Year()

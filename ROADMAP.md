@@ -13,7 +13,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 | Funcionalidade                | Situação atual                    | Prioridade | Deadline     |
 |------------------------------|----------------------------------|------------|--------------|
 | Sistema de votações          | Concluído                         | Baixa      | set/2025     |
-| Sincronização + API Câmara   | Em ajuste (ingestão de despesas)  | Crítica    | out/2025     |
+| Sincronização + API Câmara   | Backfill sem despesas; scheduler parcial | Crítica    | out/2025     |
 | Engine de analytics          | Concluído, aguardando dados reais | Média      | set/2025     |
 | Frontend WCAG                | Concluído                         | Média      | set/2025     |
 | API REST v1                  | Concluído                         | Média      | set/2025     |
@@ -25,13 +25,15 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 - Revisar componentes de interface que dificultam a filtragem de deputados (exemplo: seletor de partido).
 - Implementar exibição de votações no frontend principal.
+- Habilitar ingestão completa (deputados, despesas, votações e proposições) em backfill e scheduler com as flags correspondentes.
 
 ## Backfill Histórico (API Câmara)
 
 > Objetivo: garantir backfill idempotente, confiável e observável cobrindo todas as entidades do `api-docs.json`, permitindo carga inicial completa e sincronizações incrementais diárias.
 
 ### Resumo do estado atual
-- Concluído: Deputados, Proposições, Despesas, Votações (checkpoints + executor via `VotacoesService.SincronizarVotacoes`), Partidos (upsert + checkpoint dedicado).
+- Concluído: Deputados (backfill e scheduler), Votações históricas (executor rodando com circuit breaker monitorado) e Partidos (upsert + checkpoint dedicado).
+- Pendente crítico: Despesas ainda não possuem etapa no backfill histórico; scheduler diário só registra despesas quando o banco já está populado. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`).
 - Em andamento: testes unitários do executor de votações, validação de performance em staging, cobertura de repositórios sem integração automatizada.
 - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
 - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
@@ -41,6 +43,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - Backfill inicial até **yesterday** (configurável) para evitar dados em trânsito
 - Reprocessar diariamente o dia anterior (overlap de 1 dia) para capturar alterações tardias
 - Utilizar consistentemente **upsert + checkpoints por entidade/ano** para idempotência
+- Garantir execução de todas as entidades no backfill e no scheduler, habilitando `BACKFILL_INCLUDE_*` e `SCHEDULER_INCLUDE_*` em produção.
 
 ### Checkpoints sugeridos (prioridade)
 1. Deputados
@@ -51,6 +54,11 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 6. Eventos / Blocos / Frentes / Grupos
 
 ### Tarefas concretas
+
+**Despesas (altíssima prioridade)**
+- [ ] Implementar etapa dedicada no backfill histórico usando `DespesaRepository.UpsertDespesas` com checkpoints anuais.
+- [ ] Consolidar aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes.
+- [ ] Habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`).
 
 **Votações (alta prioridade)**
 - [x] Checkpoint "votacoes" no plano anual (`StrategicBackfillExecutor.createBackfillPlan`)
@@ -89,6 +97,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Padronizar logs estruturados por checkpoint (substituir `log.Printf` por `slog`)
 - [ ] Exportar métricas Prometheus (usar `pkg/metrics`)
 - [ ] Dashboards Grafana + alertas
+- [ ] Monitorar métricas `*_processadas`/`*_sincronizadas` e alertar quando permanecerem zeradas após execuções planejadas.
 
 **QA / Release**
 - [ ] Cobertura ≥80% (unit + integration) — faltam cenários para executor e partidos
@@ -96,10 +105,11 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Planejamento de janelas de execução (backfill inicial custoso)
 
 **Próximos passos imediatos**
-1. Aplicar a migration `014_alter_despesas_add_columns.sql`, implantar o `DespesaRepository` atualizado e reprocessar o backfill de despesas.
-2. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
-3. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
-4. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
+1. Aplicar a migration `014_alter_despesas_add_columns.sql`, implementar a etapa de despesas no backfill histórico e reprocessar dados com `BACKFILL_INCLUDE_DESPESAS=true`.
+2. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando uma execução completa via métricas.
+3. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
+4. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
+5. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
 
 ### 1. Deploy GCP (crítico - nov/2025)
 **Objetivo**: Colocar plataforma no ar para uso público
@@ -241,10 +251,10 @@ func (s *AnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string)
 
 ## Bloqueadores Identificados
 
-### 0. Ingestão de despesas indisponível (registrado em 02/out/2025)
-Problema: a tabela `despesas` foi criada sem as colunas `cod_tipo_documento` e `valor_documento`, requisitadas pelo `DespesaRepository`. O `COPY FROM` falha e a transação é abortada.
-Impacto: nenhuma despesa é persistida; as tabelas `despesas`, `scheduler_executions` e `sync_metrics` permanecem vazias e o scheduler repete a operação em loop.
-Plano: aplicar a migration `014_alter_despesas_add_columns.sql`, confirmar o sucesso nos logs do backend, reiniciar o scheduler e validar a inserção de dados.
+### 0. Ingestão de despesas indisponível (registrado em 02/out/2025, atualizado em 16/out/2025)
+Problema: além da migration pendente, o backfill histórico não executa qualquer etapa de despesas e o scheduler diário depende do banco já populado (caindo em fallback para API sem persistir resultados).
+Impacto: nenhuma despesa é persistida; a UI e o analytics não refletem gastos reais.
+Plano: aplicar a migration `014_alter_despesas_add_columns.sql`, criar a etapa de despesas no backfill, habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, monitorando métricas até que `despesas_processadas` > 0.
 
 ### 1. Analytics de votações incompletos (registrado em 24/set/2025)
 Problema: a infraestrutura de coleta está disponível, porém falta implementação de métodos agregadores no `AnalyticsService`.

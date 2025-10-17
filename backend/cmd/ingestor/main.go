@@ -370,12 +370,31 @@ func waitForBackfillCompletion(ctx context.Context, service *app.SmartBackfillSe
 			// Verificar status através do SmartBackfillService
 			status, err := service.GetCurrentStatus(ctx)
 			if err != nil {
-				// Se a execução não for encontrada, isso geralmente significa que o backfill terminou
-				// (CompleteExecution atualizou o registro e não há execução "running").
-				// Tratar isso como finalização bem-sucedida para encerrar o monitoramento.
+				// Se a execução não for encontrada, verificar se houve alguma execução concluída
+				// recentemente antes de assumir sucesso
 				if errors.Is(err, domain.ErrBackfillNaoEncontrado) {
-					logger.Info("✅ Execução de backfill não encontrada — assumindo que foi concluída")
-					return nil
+					// Verificar histórico de execuções para confirmar se foi realmente concluída
+					executions, _, histErr := service.ListExecutions(ctx, 1, 0)
+					if histErr == nil && len(executions) > 0 {
+						lastExecution := executions[0]
+						// Só assumir conclusão se houve uma execução recente (últimas 2 horas)
+						// e foi completada com sucesso ou parcialmente
+						if lastExecution.CompletedAt != nil {
+							timeSinceCompletion := time.Since(*lastExecution.CompletedAt)
+							if timeSinceCompletion < 2*time.Hour {
+								logger.Info("✅ Execução de backfill não encontrada, mas última execução foi recente",
+									slog.String("last_execution_id", lastExecution.ExecutionID),
+									slog.Time("completed_at", *lastExecution.CompletedAt),
+									slog.String("status", lastExecution.Status))
+								return nil
+							}
+						}
+					}
+
+					// Se não conseguir confirmar execução recente, tratar como erro crítico
+					logger.Error("❌ Execução de backfill não encontrada e não há histórico de execução recente",
+						slog.Any("history_error", histErr))
+					return fmt.Errorf("execução de backfill perdida sem confirmação de conclusão: %w", err)
 				}
 
 				logger.Warn("Erro ao verificar status do backfill", slog.Any("error", err))

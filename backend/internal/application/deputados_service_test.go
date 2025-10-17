@@ -326,6 +326,8 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 		mockDespesas   []domain.Despesa
 		mockError      error
 		cacheData      map[string]string
+		repoDespesas   []domain.Despesa
+		repoError      error
 		expectedSource string
 		expectError    bool
 		expectedCount  int
@@ -354,11 +356,14 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 			expectedCount:  1,
 		},
 		{
-			name:        "erro na API",
-			deputadoID:  "123",
-			ano:         "2024",
-			mockError:   errors.New("erro de rede"),
-			expectError: true,
+			name:           "API indisponível retorna dados vazios do banco",
+			deputadoID:     "123",
+			ano:            "2024",
+			mockError:      errors.New("erro de rede"),
+			repoDespesas:   []domain.Despesa{},
+			expectedSource: "database",
+			expectError:    false,
+			expectedCount:  0,
 		},
 		{
 			name:           "nenhuma despesa encontrada",
@@ -368,6 +373,26 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 			expectedSource: "api",
 			expectError:    false,
 			expectedCount:  0,
+		},
+		{
+			name:       "usa dados do banco quando disponíveis",
+			deputadoID: "789",
+			ano:        "2023",
+			repoDespesas: []domain.Despesa{
+				{Ano: 2023, Mes: 5, ValorLiquido: 500.0, TipoDespesa: "DIVULGAÇÃO DA ATIVIDADE PARLAMENTAR"},
+			},
+			mockError:      errors.New("API não deveria ser chamada"),
+			expectedSource: "database",
+			expectError:    false,
+			expectedCount:  1,
+		},
+		{
+			name:        "erro quando banco e API falham",
+			deputadoID:  "555",
+			ano:         "2022",
+			mockError:   errors.New("API indisponível"),
+			repoError:   errors.New("DB indisponível"),
+			expectError: true,
 		},
 	}
 
@@ -388,7 +413,12 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 
 			mockRepo := &MockRepository{}
 
-			service := NewDeputadosService(mockClient, mockCache, mockRepo, &MockDespesaRepository{})
+			mockDespesaRepo := &MockDespesaRepository{
+				despesas: tt.repoDespesas,
+				err:      tt.repoError,
+			}
+
+			service := NewDeputadosService(mockClient, mockCache, mockRepo, mockDespesaRepo)
 
 			// Execute
 			ctx := context.Background()
