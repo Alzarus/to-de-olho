@@ -4,12 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	app "to-de-olho-backend/internal/application"
 	"to-de-olho-backend/internal/domain"
 	"to-de-olho-backend/internal/infrastructure/repository"
 )
+
+// DespesaUpserter abstrai operações de persistência utilizadas pelo backfill histórico de despesas.
+type DespesaUpserter interface {
+	UpsertDespesas(ctx context.Context, deputadoID int, ano int, despesas []domain.Despesa) error
+}
 
 // StrategicBackfillExecutor executa backfill histórico com estratégia inteligente
 type StrategicBackfillExecutor struct {
@@ -19,6 +25,7 @@ type StrategicBackfillExecutor struct {
 	deputadoRepo       *repository.DeputadoRepository
 	proposicaoRepo     *repository.ProposicaoRepository
 	votacoesService    *app.VotacoesService
+	despesaRepo        DespesaUpserter
 	partidosService    *app.PartidosService
 	analyticsService   *app.AnalyticsService
 	strategy           BackfillStrategy
@@ -32,6 +39,7 @@ func NewStrategicBackfillExecutor(
 	deputadoRepo *repository.DeputadoRepository,
 	proposicaoRepo *repository.ProposicaoRepository,
 	votacoesService *app.VotacoesService,
+	despesaRepo DespesaUpserter,
 	partidosService *app.PartidosService,
 	analyticsService *app.AnalyticsService,
 	strategy BackfillStrategy,
@@ -43,6 +51,7 @@ func NewStrategicBackfillExecutor(
 		deputadoRepo:       deputadoRepo,
 		proposicaoRepo:     proposicaoRepo,
 		votacoesService:    votacoesService,
+		despesaRepo:        despesaRepo,
 		partidosService:    partidosService,
 		analyticsService:   analyticsService,
 		strategy:           strategy,
@@ -507,67 +516,113 @@ func (sbe *StrategicBackfillExecutor) executeDespesasBackfill(ctx context.Contex
 	yearInt := int(year)
 	log.Printf("💰 Executando backfill de despesas para o ano %d", yearInt)
 
-	// Buscar todos os deputados para obter suas despesas
-	deputados, _, err := sbe.deputadosService.ListarDeputados(ctx, "", "", "")
+	if sbe.deputadosService == nil || sbe.despesaRepo == nil {
+		log.Printf("⚠️ Dependências de despesas indisponíveis; checkpoint %s será pulado", checkpoint.ID)
+		return nil
+	}
+
+	deputados, source, err := sbe.deputadosService.ListarDeputados(ctx, "", "", "")
 	if err != nil {
 		return fmt.Errorf("erro ao buscar deputados para despesas: %w", err)
 	}
 
-	checkpoint.Progress.TotalItems = len(deputados)
-	var totalDespesas int
-
-	// Processar despesas por deputado em lotes menores
-	batchSize := sbe.strategy.BatchSize / 4 // Lotes menores para despesas (volume maior)
-	if batchSize < 10 {
-		batchSize = 10
+	if len(deputados) == 0 {
+		log.Printf("⚠️ Nenhum deputado retornado para despesas do ano %d (source=%s)", yearInt, source)
+		checkpoint.Progress.TotalItems = 0
+		return nil
 	}
 
-	for i := 0; i < len(deputados); i += batchSize {
-		end := i + batchSize
-		if end > len(deputados) {
-			end = len(deputados)
+	checkpoint.Progress.TotalItems = len(deputados)
+	log.Printf("📋 %d deputados carregados para despesas %d (source=%s)", len(deputados), yearInt, source)
+
+	startIndex := checkpoint.Progress.ProcessedItems
+	if lastID := checkpoint.Progress.LastProcessedID; lastID != "" {
+		if parsedID, parseErr := strconv.Atoi(lastID); parseErr == nil {
+			for idx, dep := range deputados {
+				if dep.ID == parsedID {
+					startIndex = idx + 1
+					break
+				}
+			}
 		}
+	}
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if startIndex > len(deputados) {
+		startIndex = len(deputados)
+	}
 
-		batch := deputados[i:end]
+	maxRetries := sbe.strategy.MaxRetries
+	if maxRetries <= 0 {
+		maxRetries = 3
+	}
+	retryDelay := sbe.strategy.RetryDelay
+	if retryDelay <= 0 {
+		retryDelay = 3 * time.Second
+	}
 
-		// Processar cada deputado do lote
-		for _, deputado := range batch {
-			// Buscar despesas do deputado no ano específico
+	var totalDespesas int
+
+	for idx := startIndex; idx < len(deputados); idx++ {
+		dep := deputados[idx]
+		log.Printf("🔎 Ingerindo despesas do deputado %d (%s) para %d [%d/%d]",
+			dep.ID, dep.Nome, yearInt, idx+1, len(deputados))
+
+		var lastErr error
+		for attempt := 0; attempt < maxRetries; attempt++ {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
 			despesas, _, err := sbe.deputadosService.ListarDespesas(ctx,
-				fmt.Sprintf("%d", deputado.ID),
+				fmt.Sprintf("%d", dep.ID),
 				fmt.Sprintf("%d", yearInt))
-
 			if err != nil {
-				log.Printf("⚠️ Erro ao buscar despesas do deputado %d (%s) no ano %d: %v",
-					deputado.ID, deputado.Nome, yearInt, err)
-				checkpoint.Progress.FailedItems++
-				continue
+				lastErr = err
+			} else {
+				if len(despesas) == 0 {
+					lastErr = nil
+					break
+				}
+
+				if err := sbe.despesaRepo.UpsertDespesas(ctx, dep.ID, yearInt, despesas); err != nil {
+					lastErr = err
+				} else {
+					totalDespesas += len(despesas)
+					lastErr = nil
+					break
+				}
 			}
 
-			if len(despesas) > 0 {
-				totalDespesas += len(despesas)
-				log.Printf("📊 Deputado %s (%d): %d despesas em %d",
-					deputado.Nome, deputado.ID, len(despesas), yearInt)
+			if attempt < maxRetries-1 {
+				time.Sleep(retryDelay * time.Duration(attempt+1))
 			}
-
-			checkpoint.Progress.ProcessedItems++
 		}
 
-		// Atualizar progresso a cada lote
-		checkpoint.Progress.LastProcessedID = fmt.Sprintf("lote_%d_de_%d", end, len(deputados))
+		if lastErr != nil {
+			checkpoint.Progress.FailedItems++
+			if err := sbe.manager.UpdateProgress(ctx, checkpoint,
+				checkpoint.Progress.ProcessedItems,
+				checkpoint.Progress.FailedItems,
+				checkpoint.Progress.LastProcessedID); err != nil {
+				log.Printf("⚠️ Erro ao atualizar progresso após falha em despesas: %v", err)
+			}
+			log.Printf("⚠️ Falha ao sincronizar despesas do deputado %d no ano %d: %v", dep.ID, yearInt, lastErr)
+			continue
+		}
+
+		checkpoint.Progress.ProcessedItems = idx + 1
+		checkpoint.Progress.LastProcessedID = strconv.Itoa(dep.ID)
 
 		if err := sbe.manager.UpdateProgress(ctx, checkpoint,
 			checkpoint.Progress.ProcessedItems,
 			checkpoint.Progress.FailedItems,
 			checkpoint.Progress.LastProcessedID); err != nil {
-			log.Printf("⚠️ Erro ao atualizar progresso: %v", err)
+			log.Printf("⚠️ Erro ao atualizar progresso de despesas: %v", err)
 		}
 
-		log.Printf("✅ Lote despesas %d-%d processado: %d deputados, progresso: %d/%d",
-			i, end-1, len(batch), checkpoint.Progress.ProcessedItems, checkpoint.Progress.TotalItems)
-
-		// Pausa pequena para não sobrecarregar a API
-		time.Sleep(1 * time.Second)
+		time.Sleep(150 * time.Millisecond)
 	}
 
 	log.Printf("✅ Backfill despesas %d concluído: %d deputados processados, %d despesas ingeridas",

@@ -72,7 +72,7 @@ func main() {
 	analyticsSvc := app.NewAnalyticsService(deputadoRepo, proposicaoRepo, votacaoRepo, despesaRepo, cacheClient, logger)
 
 	// 🧠 Sistema Inteligente de Backfill
-	smartBackfillService := app.NewSmartBackfillService(backfillRepo, deputadosService, proposicoesService, votacoesService, analyticsSvc, logger)
+	smartBackfillService := app.NewSmartBackfillService(backfillRepo, deputadosService, proposicoesService, votacoesService, despesaRepo, analyticsSvc, logger)
 
 	switch *mode {
 	case "auto":
@@ -211,6 +211,7 @@ func runStrategicBackfill(
 		deputadoRepo,
 		proposicaoRepo,
 		votacoesSvcLocal,
+		despesaRepoLocal,
 		partidosSvcLocal,
 		analyticsSvcLocal,
 		strategy,
@@ -309,6 +310,10 @@ func parseBackfillConfigFromEnv(cfg *config.Config) *domain.BackfillConfig {
 	// Allow disabling heavy entities via env (useful during deployments)
 	if inc := os.Getenv("BACKFILL_INCLUDE_PROPOSICOES"); inc != "" {
 		backfillConfig.IncluirProposicoes = inc == "true"
+	}
+
+	if inc := os.Getenv("BACKFILL_INCLUDE_DESPESAS"); inc != "" {
+		backfillConfig.IncluirDespesas = inc == "true"
 	}
 
 	if inc := os.Getenv("BACKFILL_INCLUDE_VOTACOES"); inc != "" {

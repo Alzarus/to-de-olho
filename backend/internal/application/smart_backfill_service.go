@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -31,6 +32,7 @@ type SmartBackfillService struct {
 	deputadosService   *DeputadosService
 	proposicoesService *ProposicoesService
 	votacoesService    *VotacoesService
+	despesaRepo        DespesaRepositoryPort
 	analyticsService   AnalyticsServiceInterface
 	logger             *slog.Logger
 	currentExecutionID string
@@ -117,6 +119,7 @@ func NewSmartBackfillService(
 	deputadosService *DeputadosService,
 	proposicoesService *ProposicoesService,
 	votacoesService *VotacoesService,
+	despesaRepo DespesaRepositoryPort,
 	analyticsService AnalyticsServiceInterface,
 	logger *slog.Logger,
 ) *SmartBackfillService {
@@ -125,6 +128,7 @@ func NewSmartBackfillService(
 		deputadosService:   deputadosService,
 		proposicoesService: proposicoesService,
 		votacoesService:    votacoesService,
+		despesaRepo:        despesaRepo,
 		analyticsService:   analyticsService,
 		logger:             logger,
 	}
@@ -273,6 +277,24 @@ func (s *SmartBackfillService) GetBackfillConfigFromEnv() *domain.BackfillConfig
 	}
 
 	config.SetDefaults()
+
+	// Permitir desativar entidades específicas via variáveis de ambiente
+	if include := os.Getenv("BACKFILL_INCLUDE_DEPUTADOS"); include != "" {
+		config.IncluirDeputados = include == "true"
+	}
+
+	if include := os.Getenv("BACKFILL_INCLUDE_PROPOSICOES"); include != "" {
+		config.IncluirProposicoes = include == "true"
+	}
+
+	if include := os.Getenv("BACKFILL_INCLUDE_DESPESAS"); include != "" {
+		config.IncluirDespesas = include == "true"
+	}
+
+	if include := os.Getenv("BACKFILL_INCLUDE_VOTACOES"); include != "" {
+		config.IncluirVotacoes = include == "true"
+	}
+
 	return config
 }
 
@@ -358,7 +380,149 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 		}
 	}
 
-	// 3. Sincronizar votações históricas por ano
+	// 3. Sincronizar despesas históricas por ano
+	if config.IncluirDespesas && finalStatus != domain.BackfillStatusFailed {
+		if s.deputadosService == nil || s.despesaRepo == nil {
+			s.logger.Warn("💸 Dependências de despesas indisponíveis; etapa será pulada")
+		} else {
+			s.logger.Info("💰 Iniciando sincronização histórica de despesas")
+			status.CurrentOperation = "Sincronizando despesas históricas"
+			status.ProgressPercentage = tracker.currentPercentage()
+			status.LastUpdate = time.Now()
+			s.mu.Lock()
+			s.currentStatus = status
+			s.mu.Unlock()
+			if err := s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status); err != nil {
+				s.logger.Warn("erro ao registrar início da etapa de despesas", slog.Any("error", err))
+			}
+
+			deputados, source, err := s.deputadosService.ListarDeputados(ctx, "", "", "")
+			if err != nil {
+				errMsg := fmt.Sprintf("Erro ao listar deputados para despesas: %v", err)
+				errorMessage = &errMsg
+				finalStatus = domain.BackfillStatusFailed
+				s.logger.Error("Erro ao listar deputados para despesas", slog.Any("error", err))
+			} else if len(deputados) == 0 {
+				s.logger.Warn("Nenhum deputado retornado; etapa de despesas não executada", slog.String("source", source))
+			} else {
+				s.logger.Info("📋 Deputados carregados para despesas", slog.Int("total", len(deputados)), slog.String("source", source))
+				years := buildYearRange(config.AnoInicio, config.AnoFim)
+				if len(years) == 0 {
+					s.logger.Warn("Intervalo de anos vazio para despesas; etapa ignorada")
+				} else {
+					delayBetween := time.Duration(config.DelayBetweenBatches) * time.Millisecond
+					if delayBetween <= 0 {
+						delayBetween = 150 * time.Millisecond
+					}
+
+					cancelled := false
+					totalDespesas := 0
+
+					for _, ano := range years {
+						if cancelled {
+							break
+						}
+
+						progressKey := fmt.Sprintf("despesas-%d", ano)
+						tracker.registerExpected(progressKey, len(deputados))
+						s.logger.Info("💾 Processando despesas históricas do ano", slog.Int("ano", ano))
+
+						for idx, dep := range deputados {
+							if ctx.Err() != nil {
+								cancelled = true
+								errCtx := ctx.Err()
+								s.logger.Warn("Contexto cancelado durante sincronização de despesas", slog.Any("error", errCtx))
+								break
+							}
+
+							s.mu.Lock()
+							status.CurrentOperation = fmt.Sprintf("Despesas %d (%d/%d) - %s", ano, idx+1, len(deputados), dep.Nome)
+							status.ProgressPercentage = tracker.currentPercentage()
+							status.LastUpdate = time.Now()
+							s.currentStatus = status
+							s.mu.Unlock()
+
+							if err := s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status); err != nil {
+								s.logger.Warn("erro ao atualizar progresso de despesas", slog.Any("error", err))
+							}
+
+							processedCount, err := s.syncDeputadoDespesas(ctx, dep.ID, ano, config)
+							if err != nil {
+								if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+									cancelled = true
+									s.logger.Warn("sincronização de despesas interrompida por cancelamento", slog.Any("error", err))
+									break
+								}
+
+								partialFailuresMu.Lock()
+								partialFailures = append(partialFailures, fmt.Sprintf("despesas %d - deputado %d: %s", ano, dep.ID, err.Error()))
+								partialFailuresMu.Unlock()
+
+								finalStatusMu.Lock()
+								if finalStatus == domain.BackfillStatusSuccess {
+									finalStatus = domain.BackfillStatusPartial
+								}
+								finalStatusMu.Unlock()
+
+								s.mu.Lock()
+								status.ErrorsCount++
+								errMsg := err.Error()
+								status.LatestError = &errMsg
+								status.LastUpdate = time.Now()
+								s.currentStatus = status
+								s.mu.Unlock()
+
+								if err := s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status); err != nil {
+									s.logger.Warn("erro ao marcar falha em despesas", slog.Any("error", err))
+								}
+								continue
+							}
+
+							totalDespesas += processedCount
+							progress := tracker.addProcessed(1)
+
+							s.mu.Lock()
+							status.DespesasProcessadas += processedCount
+							status.ProgressPercentage = progress
+							status.LastUpdate = time.Now()
+							status.LatestError = nil
+							s.currentStatus = status
+							s.mu.Unlock()
+
+							if err := s.backfillRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, status); err != nil {
+								s.logger.Warn("erro ao atualizar progresso de despesas", slog.Any("error", err))
+							}
+
+							if delayBetween > 0 {
+								time.Sleep(delayBetween)
+							}
+						}
+
+						if cancelled {
+							break
+						}
+
+						s.logger.Info("✅ Ano de despesas processado", slog.Int("ano", ano))
+					}
+
+					if cancelled {
+						finalStatusMu.Lock()
+						if finalStatus == domain.BackfillStatusSuccess {
+							finalStatus = domain.BackfillStatusPartial
+						}
+						finalStatusMu.Unlock()
+					}
+
+					s.logger.Info("💰 Sincronização histórica de despesas finalizada",
+						slog.Int("anos", len(years)),
+						slog.Int("deputados", len(deputados)),
+						slog.Int("despesas_ingestadas", totalDespesas))
+				}
+			}
+		}
+	}
+
+	// 4. Sincronizar votações históricas por ano
 	if config.IncluirVotacoes && finalStatus != domain.BackfillStatusFailed {
 		s.logger.Info("🗳️ Iniciando sincronização de votações históricas (paralelo)")
 		status.CurrentOperation = "Sincronizando votações históricas"
@@ -625,6 +789,77 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 			}
 		}()
 	}
+}
+
+func buildYearRange(start, end int) []int {
+	if start == 0 && end == 0 {
+		return nil
+	}
+
+	if end >= start {
+		years := make([]int, 0, end-start+1)
+		for year := end; year >= start; year-- {
+			years = append(years, year)
+		}
+		return years
+	}
+
+	// Caso início seja maior que fim (entrada invertida), mantém ordem decrescente
+	years := make([]int, 0, start-end+1)
+	for year := start; year >= end; year-- {
+		years = append(years, year)
+	}
+	return years
+}
+
+func (s *SmartBackfillService) syncDeputadoDespesas(ctx context.Context, deputadoID int, ano int, config *domain.BackfillConfig) (int, error) {
+	if s.deputadosService == nil || s.despesaRepo == nil {
+		return 0, fmt.Errorf("serviços de despesas não configurados")
+	}
+
+	deputadoIDStr := strconv.Itoa(deputadoID)
+	anoStr := strconv.Itoa(ano)
+	maxRetries := 3
+	delayBetween := time.Duration(config.DelayBetweenBatches) * time.Millisecond
+	if delayBetween <= 0 {
+		delayBetween = 200 * time.Millisecond
+	}
+
+	var lastErr error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if ctx.Err() != nil {
+			return 0, ctx.Err()
+		}
+
+		despesas, _, err := s.deputadosService.ListarDespesas(ctx, deputadoIDStr, anoStr)
+		if err != nil {
+			lastErr = err
+		} else {
+			if len(despesas) == 0 {
+				return 0, nil
+			}
+
+			if err := s.despesaRepo.UpsertDespesas(ctx, deputadoID, ano, despesas); err != nil {
+				lastErr = err
+			} else {
+				return len(despesas), nil
+			}
+		}
+
+		if attempt < maxRetries-1 {
+			sleep := delayBetween * time.Duration(attempt+1)
+			if sleep > 2*time.Second {
+				sleep = 2 * time.Second
+			}
+			time.Sleep(sleep)
+		}
+	}
+
+	if lastErr == nil {
+		lastErr = fmt.Errorf("nenhuma resposta válida da API após %d tentativas", maxRetries)
+	}
+
+	return 0, fmt.Errorf("falha ao sincronizar despesas do deputado %d para %d: %w", deputadoID, ano, lastErr)
 }
 
 func isGatewayTimeoutError(err error) bool {

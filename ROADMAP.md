@@ -13,7 +13,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 | Funcionalidade                | Situação atual                    | Prioridade | Deadline     |
 |------------------------------|----------------------------------|------------|--------------|
 | Sistema de votações          | Concluído                         | Baixa      | set/2025     |
-| Sincronização + API Câmara   | Backfill sem despesas; scheduler parcial | Crítica    | out/2025     |
+| Sincronização + API Câmara   | Backfill com despesas; scheduler parcial | Crítica    | out/2025     |
 | Engine de analytics          | Concluído, aguardando dados reais | Média      | set/2025     |
 | Frontend WCAG                | Concluído                         | Média      | set/2025     |
 | API REST v1                  | Concluído                         | Média      | set/2025     |
@@ -33,7 +33,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 ### Resumo do estado atual
 - Concluído: Deputados (backfill e scheduler), Votações históricas (executor rodando com circuit breaker monitorado) e Partidos (upsert + checkpoint dedicado).
-- Pendente crítico: Despesas ainda não possuem etapa no backfill histórico; scheduler diário só registra despesas quando o banco já está populado. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`).
+- Atualizado: Despesas agora possuem etapa dedicada no backfill histórico (upsert + checkpoints anuais); scheduler diário segue aguardando ativação das flags e validação de métricas. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`).
 - Em andamento: testes unitários do executor de votações, validação de performance em staging, cobertura de repositórios sem integração automatizada.
 - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
 - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
@@ -56,7 +56,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 ### Tarefas concretas
 
 **Despesas (altíssima prioridade)**
-- [ ] Implementar etapa dedicada no backfill histórico usando `DespesaRepository.UpsertDespesas` com checkpoints anuais.
+- [x] Implementar etapa dedicada no backfill histórico usando `DespesaRepository.UpsertDespesas` com checkpoints anuais (21/out/2025).
 - [ ] Consolidar aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes.
 - [ ] Habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`).
 
@@ -251,10 +251,10 @@ func (s *AnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string)
 
 ## Bloqueadores Identificados
 
-### 0. Ingestão de despesas indisponível (registrado em 02/out/2025, atualizado em 16/out/2025)
-Problema: além da migration pendente, o backfill histórico não executa qualquer etapa de despesas e o scheduler diário depende do banco já populado (caindo em fallback para API sem persistir resultados).
-Impacto: nenhuma despesa é persistida; a UI e o analytics não refletem gastos reais.
-Plano: aplicar a migration `014_alter_despesas_add_columns.sql`, criar a etapa de despesas no backfill, habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, monitorando métricas até que `despesas_processadas` > 0.
+### 0. Ingestão de despesas (atualizado em 21/out/2025)
+Status: etapa histórica implementada com `DespesaRepository.UpsertDespesas` e checkpoints anuais; falta validar execução em staging e habilitar o scheduler diário.
+Impacto: métricas e UI ainda podem ficar desatualizadas até a primeira execução completa do scheduler com as flags ativas.
+Plano: aplicar/confirmar a migration `014_alter_despesas_add_columns.sql` em todos os ambientes, habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true` e monitorar `despesas_processadas`/`despesas_sincronizadas` após o reprocesso.
 
 ### 1. Analytics de votações incompletos (registrado em 24/set/2025)
 Problema: a infraestrutura de coleta está disponível, porém falta implementação de métodos agregadores no `AnalyticsService`.

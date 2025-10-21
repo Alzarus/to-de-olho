@@ -72,7 +72,7 @@ func TestSmartBackfillService_TriggersAnalyticsOnSuccess(t *testing.T) {
 	backfillRepo := &mockBackfillRepo{}
 	analytics := &mockAnalyticsSvc{}
 
-	svc := NewSmartBackfillService(backfillRepo, nil, nil, nil, analytics, logger)
+	svc := NewSmartBackfillService(backfillRepo, nil, nil, nil, nil, analytics, logger)
 
 	// Criar execução e config mínima
 	exec := &domain.BackfillExecution{ExecutionID: "exec-1", StartedAt: time.Now()}
@@ -91,5 +91,27 @@ func TestSmartBackfillService_TriggersAnalyticsOnSuccess(t *testing.T) {
 
 	if !analytics.called {
 		t.Fatalf("Esperava que analytics.AtualizarRankings fosse chamado após backfill bem-sucedido")
+	}
+}
+
+func TestGetBackfillConfigFromEnv_Flags(t *testing.T) {
+	svc := &SmartBackfillService{}
+
+	t.Setenv("BACKFILL_INCLUDE_DESPESAS", "false")
+	t.Setenv("BACKFILL_INCLUDE_VOTACOES", "false")
+	t.Setenv("BACKFILL_INCLUDE_PROPOSICOES", "false")
+
+	cfg := svc.GetBackfillConfigFromEnv()
+
+	if cfg.IncluirDespesas {
+		t.Fatalf("esperava IncluirDespesas desativado via env")
+	}
+
+	if cfg.IncluirVotacoes {
+		t.Fatalf("esperava IncluirVotacoes desativado via env")
+	}
+
+	if cfg.IncluirProposicoes {
+		t.Fatalf("esperava IncluirProposicoes desativado via env")
 	}
 }
