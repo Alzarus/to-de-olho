@@ -127,7 +127,7 @@ func main() {
 		}
 
 	case "strategic":
-		if err := runStrategicBackfill(ctx, pgPool, deputadosService, proposicoesService, deputadoRepo, proposicaoRepo, cfg, *years, *startYear); err != nil {
+		if err := runStrategicBackfill(ctx, pgPool, deputadosService, proposicoesService, deputadoRepo, proposicaoRepo, cfg, *years, *startYear, logger); err != nil {
 			log.Fatalf("strategic backfill failed: %v", err)
 		}
 	case "backfill":
@@ -154,8 +154,9 @@ func runStrategicBackfill(
 	cfg *config.Config,
 	years int,
 	startYear int,
+	logger *slog.Logger,
 ) error {
-	log.Println("🚀 Iniciando Backfill Histórico Estratégico")
+	logger.Info("🚀 Iniciando Backfill Histórico Estratégico")
 
 	// Configurar estratégia baseada nos parâmetros ou configuração
 	strategy := ingestor.DefaultBackfillStrategy()
@@ -167,26 +168,34 @@ func runStrategicBackfill(
 		// Usar ano específico fornecido via flag
 		strategy.YearStart = startYear
 		strategy.YearEnd = currentYear
-		log.Printf("📅 Usando ano inicial específico: %d", startYear)
+		logger.Info("📅 Usando ano inicial específico", slog.Int("start_year", startYear))
 	} else if years > 0 {
 		// Usar número de anos atrás
 		strategy.YearStart = currentYear - years + 1
 		strategy.YearEnd = currentYear
-		log.Printf("📅 Usando %d anos atrás: %d-%d", years, strategy.YearStart, strategy.YearEnd)
+		logger.Info("📅 Usando intervalo definido via flag",
+			slog.Int("anos", years),
+			slog.Int("start_year", strategy.YearStart),
+			slog.Int("end_year", strategy.YearEnd))
 	} else {
 		// Usar configuração padrão
 		strategy.YearStart = cfg.Ingestor.BackfillStartYear
 		strategy.YearEnd = currentYear
-		log.Printf("📅 Usando configuração padrão: %d-%d", strategy.YearStart, strategy.YearEnd)
+		logger.Info("📅 Usando configuração padrão",
+			slog.Int("start_year", strategy.YearStart),
+			slog.Int("end_year", strategy.YearEnd))
 	}
 
 	// Aplicar configurações do ingestor
 	strategy.BatchSize = cfg.Ingestor.BatchSize
 	strategy.MaxRetries = cfg.Ingestor.MaxRetries
 
-	log.Printf("📊 Estratégia: %d-%d (%d anos), lotes de %d, %d tentativas",
-		strategy.YearStart, strategy.YearEnd, strategy.YearEnd-strategy.YearStart+1,
-		strategy.BatchSize, strategy.MaxRetries)
+	logger.Info("📊 Estratégia configurada",
+		slog.Int("start_year", strategy.YearStart),
+		slog.Int("end_year", strategy.YearEnd),
+		slog.Int("anos", strategy.YearEnd-strategy.YearStart+1),
+		slog.Int("batch_size", strategy.BatchSize),
+		slog.Int("max_retries", strategy.MaxRetries))
 
 	// Criar gerenciador de backfill e executor estratégico
 	backfillManager := ingestor.NewBackfillManager(pgPool)
@@ -202,7 +211,7 @@ func runStrategicBackfill(
 
 	// Criar analytics service para atualizar rankings após backfill
 	despesaRepoLocal := repository.NewDespesaRepository(pgPool)
-	analyticsSvcLocal := app.NewAnalyticsService(deputadoRepo, proposicaoRepo, votacaoRepo, despesaRepoLocal, cacheLocal, slog.New(slog.NewTextHandler(os.Stdout, nil)))
+	analyticsSvcLocal := app.NewAnalyticsService(deputadoRepo, proposicaoRepo, votacaoRepo, despesaRepoLocal, cacheLocal, logger)
 
 	executor := ingestor.NewStrategicBackfillExecutor(
 		backfillManager,
