@@ -80,6 +80,15 @@ type Despesa struct {
 	Parcela           int     `json:"parcela,omitempty"`
 }
 
+// DespesaStats representa estatísticas agregadas sobre despesas
+type DespesaStats struct {
+	TotalDespesas   int     `json:"total_despesas"`
+	TotalValor      float64 `json:"total_valor"`
+	ValorMedio      float64 `json:"valor_medio"`
+	MaiorValor      float64 `json:"maior_valor"`
+	TiposDiferentes int     `json:"tipos_diferentes"`
+}
+
 // Validate valida os dados da despesa
 func (d *Despesa) Validate() error {
 	currentYear := time.Now().Year()

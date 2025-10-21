@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Search, User, MapPin, Building2, Euro, AlertCircle, X } from 'lucide-react';
 import DeputadoCard from './DeputadoCard';
 import Tooltip from './Tooltip';
+import { API_CONFIG, PAGINATION_CONFIG, TIMING_CONFIG, BRASIL_CONFIG, ANALYTICS_CONFIG } from '../config/constants';
 
 export interface Deputado {
   id: number;
@@ -67,13 +68,12 @@ interface DespesasAPIResponse {
   valor_total?: number;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-
 export default function DeputadosPage() {
   const [deputados, setDeputados] = useState<Deputado[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedUF, setSelectedUF] = useState('');
   const [selectedPartido, setSelectedPartido] = useState('');
   const [selectedDeputado, setSelectedDeputado] = useState<Deputado | null>(null);
@@ -83,10 +83,13 @@ export default function DeputadosPage() {
   const [despesasError, setDespesasError] = useState<string | null>(null);
   const [selectedAno, setSelectedAno] = useState(new Date().getFullYear());
   
+  // Ref para controle de debouncing
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  
   // Estados para paginação
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
-    limit: 20,
+    limit: PAGINATION_CONFIG.DEFAULT_PAGE_SIZE,
     total: 0,
     total_pages: 1,
     has_next: false,
@@ -94,23 +97,32 @@ export default function DeputadosPage() {
   });
   const [currentPage, setCurrentPage] = useState(1);
 
-  const estados = [
-    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
-    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 
-    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-  ];
+  const estados = BRASIL_CONFIG.ESTADOS;
   
-  const partidos = [
-    'PT', 'PL', 'PP', 'MDB', 'PSD', 'REPUBLICANOS', 'PSB', 'UNIÃO', 
-    'PSDB', 'PDT', 'SOLIDARIEDADE', 'PSOL', 'PODE', 'AVANTE', 'PC do B',
-    'PV', 'CIDADANIA', 'PATRIOTA', 'PROS', 'PMB', 'AGIR', 'REDE'
-  ];
+  const partidos = BRASIL_CONFIG.PARTIDOS;
 
   useEffect(() => {
     fetchDeputados();
   }, [currentPage]);
 
-  const fetchDeputados = async () => {
+  // Debounce effect para o searchTerm
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, TIMING_CONFIG.SEARCH_DEBOUNCE_MS); // Debounce configurável via env
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [searchTerm]);
+
+  const fetchDeputados = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -118,11 +130,11 @@ export default function DeputadosPage() {
       const params = new URLSearchParams();
       if (selectedUF) params.append('uf', selectedUF);
       if (selectedPartido) params.append('partido', selectedPartido);
-      if (searchTerm) params.append('nome', searchTerm);
+      if (debouncedSearchTerm) params.append('nome', debouncedSearchTerm);
       params.append('page', currentPage.toString());
-      params.append('limit', '20');
+      params.append('limit', PAGINATION_CONFIG.DEFAULT_PAGE_SIZE.toString());
 
-      const response = await axios.get<APIResponse>(`${API_BASE_URL}/deputados?${params}`);
+      const response = await axios.get<APIResponse>(`${API_CONFIG.BASE_URL}/deputados?${params}`);
       
       const deputadosData = response.data?.data?.data;
       const paginationData = response.data?.data?.pagination;
@@ -137,7 +149,7 @@ export default function DeputadosPage() {
       if (paginationData) {
         setPagination({
           page: paginationData.page || currentPage,
-          limit: paginationData.limit || 20,
+          limit: paginationData.limit || PAGINATION_CONFIG.DEFAULT_PAGE_SIZE,
           total: paginationData.total || 0,
           total_pages: paginationData.total_pages || 1,
           has_next: paginationData.has_next || false,
@@ -150,7 +162,11 @@ export default function DeputadosPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedUF, selectedPartido, debouncedSearchTerm, currentPage]);
+
+  useEffect(() => {
+    fetchDeputados();
+  }, [fetchDeputados]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -178,7 +194,7 @@ export default function DeputadosPage() {
     setDespesasError(null);
     
     try {
-      const url = `${API_BASE_URL}/deputados/${deputadoId}/despesas?ano=${ano}`;
+      const url = `${API_CONFIG.BASE_URL}/deputados/${deputadoId}/despesas?ano=${ano}`;
       const response = await axios.get<DespesasAPIResponse>(url);
       
       const despesasData = response.data?.data;
@@ -255,20 +271,35 @@ export default function DeputadosPage() {
 
         {/* Filtros */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
+          <div className="relative">
             <label htmlFor="search-input" className="block text-base font-medium text-gray-900 mb-2">
               <Search className="inline h-4 w-4 mr-1" />
               Buscar por nome
+              {searchTerm !== debouncedSearchTerm && (
+                <span className="ml-2 text-sm text-blue-600">⏳ Buscando...</span>
+              )}
             </label>
             <input
               id="search-input"
               type="text"
-              placeholder="Digite o nome do deputado"
+              placeholder={`Digite o nome do deputado (aguarda ${TIMING_CONFIG.SEARCH_DEBOUNCE_MS}ms)`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full text-base border border-gray-300 rounded-md px-4 py-3 
                          focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500"
             />
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setDebouncedSearchTerm('');
+                }}
+                className="absolute right-3 top-11 text-gray-400 hover:text-gray-600"
+                aria-label="Limpar busca"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <div>
@@ -294,25 +325,29 @@ export default function DeputadosPage() {
           </div>
 
           <div>
-            <label htmlFor="partido-select" className="block text-base font-medium text-gray-900 mb-2">
+            <label htmlFor="partido-input" className="block text-base font-medium text-gray-900 mb-2">
               <Building2 className="inline h-4 w-4 mr-1" />
               Partido Político
             </label>
-            <select
-              id="partido-select"
+            <input
+              id="partido-input"
+              list="partidos-list"
               value={selectedPartido}
               onChange={(e) => {
                 setSelectedPartido(e.target.value);
                 handleFilterChange();
               }}
+              placeholder="Digite ou selecione um partido"
               className="w-full text-base border border-gray-300 rounded-md px-4 py-3 
                          focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500"
-            >
+              aria-label="Filtrar por partido político"
+            />
+            <datalist id="partidos-list">
               <option value="">Todos os partidos</option>
               {partidos.map(partido => (
                 <option key={partido} value={partido}>{partido}</option>
               ))}
-            </select>
+            </datalist>
           </div>
 
           <div className="flex items-end">
@@ -494,7 +529,7 @@ export default function DeputadosPage() {
                   }}
                   className="border border-gray-300 rounded-md px-3 py-2"
                 >
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                  {ANALYTICS_CONFIG.ANOS_DISPONIVEIS.map(year => (
                     <option key={year} value={year}>{year}</option>
                   ))}
                 </select>

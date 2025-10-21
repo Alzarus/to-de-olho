@@ -122,12 +122,21 @@ func (s *DeputadosService) ListarDespesas(ctx context.Context, id, ano string) (
 	}
 
 	// Prioridade 1: Verificar no banco de dados (source of truth)
+	var (
+		dbDespesas  []domain.Despesa
+		dbErr       error
+		dbAttempted bool
+	)
+
 	if s.despesaRepo != nil {
-		despesas, err := s.despesaRepo.ListDespesasByDeputadoAno(ctx, deputadoID, anoInt)
-		if err == nil && len(despesas) > 0 {
-			return despesas, "database", nil
+		dbAttempted = true
+		dbDespesas, dbErr = s.despesaRepo.ListDespesasByDeputadoAno(ctx, deputadoID, anoInt)
+		if dbErr != nil {
+			slog.Warn("falha ao consultar despesas no banco", "error", dbErr, "deputado_id", deputadoID, "ano", anoInt)
+		} else if len(dbDespesas) > 0 {
+			return dbDespesas, "database", nil
 		}
-		// Se erro ou vazio, continua para próxima source
+		// Se vazio, continua para próxima source
 	}
 
 	// Prioridade 2: Verificar cache Redis
@@ -142,6 +151,13 @@ func (s *DeputadosService) ListarDespesas(ctx context.Context, id, ano string) (
 	// Prioridade 3: Buscar na API da Câmara (fallback)
 	despesas, err := s.client.FetchDespesas(ctx, id, ano)
 	if err != nil {
+		if dbAttempted && dbErr == nil {
+			slog.Warn("API da Câmara indisponível, retornando despesas do banco", "deputado_id", deputadoID, "ano", anoInt, "error", err)
+			if dbDespesas == nil {
+				dbDespesas = []domain.Despesa{}
+			}
+			return dbDespesas, "database", nil
+		}
 		return nil, "", fmt.Errorf("erro ao buscar despesas na API da Câmara: %w", err)
 	}
 

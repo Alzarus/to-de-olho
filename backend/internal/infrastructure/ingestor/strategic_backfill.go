@@ -4,12 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	app "to-de-olho-backend/internal/application"
 	"to-de-olho-backend/internal/domain"
 	"to-de-olho-backend/internal/infrastructure/repository"
 )
+
+// DespesaUpserter abstrai operações de persistência utilizadas pelo backfill histórico de despesas.
+type DespesaUpserter interface {
+	UpsertDespesas(ctx context.Context, deputadoID int, ano int, despesas []domain.Despesa) error
+}
 
 // StrategicBackfillExecutor executa backfill histórico com estratégia inteligente
 type StrategicBackfillExecutor struct {
@@ -18,6 +24,10 @@ type StrategicBackfillExecutor struct {
 	proposicoesService *app.ProposicoesService
 	deputadoRepo       *repository.DeputadoRepository
 	proposicaoRepo     *repository.ProposicaoRepository
+	votacoesService    *app.VotacoesService
+	despesaRepo        DespesaUpserter
+	partidosService    *app.PartidosService
+	analyticsService   *app.AnalyticsService
 	strategy           BackfillStrategy
 }
 
@@ -28,6 +38,10 @@ func NewStrategicBackfillExecutor(
 	proposicoesService *app.ProposicoesService,
 	deputadoRepo *repository.DeputadoRepository,
 	proposicaoRepo *repository.ProposicaoRepository,
+	votacoesService *app.VotacoesService,
+	despesaRepo DespesaUpserter,
+	partidosService *app.PartidosService,
+	analyticsService *app.AnalyticsService,
 	strategy BackfillStrategy,
 ) *StrategicBackfillExecutor {
 	return &StrategicBackfillExecutor{
@@ -36,6 +50,10 @@ func NewStrategicBackfillExecutor(
 		proposicoesService: proposicoesService,
 		deputadoRepo:       deputadoRepo,
 		proposicaoRepo:     proposicaoRepo,
+		votacoesService:    votacoesService,
+		despesaRepo:        despesaRepo,
+		partidosService:    partidosService,
+		analyticsService:   analyticsService,
 		strategy:           strategy,
 	}
 }
@@ -114,7 +132,33 @@ func (sbe *StrategicBackfillExecutor) createBackfillPlan(ctx context.Context) er
 		}
 	}
 
-	log.Printf("✅ Plano criado: 1 checkpoint deputados + %d proposições + %d despesas",
+	// Prioridade 4: Votações por ano (usar upsert existente) - criar checkpoints uma vez por ano
+	for year := sbe.strategy.YearStart; year <= sbe.strategy.YearEnd; year++ {
+		votacoesMetadata := map[string]interface{}{
+			"year":        year,
+			"description": fmt.Sprintf("Backfill votações do ano %d", year),
+			"priority":    4,
+			"batch_size":  sbe.strategy.BatchSize,
+		}
+
+		if _, err := sbe.manager.CreateCheckpoint(ctx, "votacoes", votacoesMetadata); err != nil {
+			log.Printf("⚠️  Erro ao criar checkpoint para votações %d: %v", year, err)
+		}
+	}
+
+	// Partidos - baixa volumetria, executar uma vez por backfill
+	partidosMetadata := map[string]interface{}{
+		"description": "Backfill partidos - lista completa",
+		"priority":    2,
+		"batch_size":  sbe.strategy.BatchSize,
+	}
+
+	if _, err := sbe.manager.CreateCheckpoint(ctx, "partidos", partidosMetadata); err != nil {
+		log.Printf("⚠️  Erro ao criar checkpoint para partidos: %v", err)
+	}
+
+	log.Printf("✅ Plano criado: 1 checkpoint deputados + %d proposições + %d despesas + %d votações",
+		sbe.strategy.YearEnd-sbe.strategy.YearStart+1,
 		sbe.strategy.YearEnd-sbe.strategy.YearStart+1,
 		sbe.strategy.YearEnd-sbe.strategy.YearStart+1)
 
@@ -160,6 +204,16 @@ func (sbe *StrategicBackfillExecutor) executeBackfillPlan(ctx context.Context) e
 		log.Printf("📈 Estatísticas finais do backfill: %+v", stats)
 	}
 
+	// 🔧 CORREÇÃO: Atualizar analytics após backfill histórico concluído
+	log.Println("📊 Atualizando rankings e analytics após backfill histórico...")
+	if sbe.analyticsService != nil {
+		if err := sbe.analyticsService.AtualizarRankings(ctx); err != nil {
+			log.Printf("⚠️ Erro ao atualizar analytics após backfill: %v", err)
+		} else {
+			log.Println("✅ Analytics atualizados com sucesso após backfill histórico")
+		}
+	}
+
 	return nil
 }
 
@@ -177,9 +231,90 @@ func (sbe *StrategicBackfillExecutor) executeCheckpoint(ctx context.Context, che
 		return sbe.executeProposicoesBackfill(ctx, checkpoint)
 	case "despesas":
 		return sbe.executeDespesasBackfill(ctx, checkpoint)
+	case "votacoes":
+		return sbe.executeVotacoesBackfill(ctx, checkpoint)
+	case "partidos":
+		return sbe.executePartidosBackfill(ctx, checkpoint)
 	default:
 		return fmt.Errorf("tipo de checkpoint desconhecido: %s", checkpoint.Type)
 	}
+}
+
+// executePartidosBackfill sincroniza a lista de partidos (low volume)
+func (sbe *StrategicBackfillExecutor) executePartidosBackfill(ctx context.Context, checkpoint *BackfillCheckpoint) error {
+	log.Printf("🏳️ Executando backfill de partidos")
+
+	if sbe.partidosService == nil {
+		log.Printf("⚠️  PartidosService não injetada no executor; pulando partidos")
+		return nil
+	}
+
+	partidos, err := sbe.partidosService.ListarPartidos(ctx)
+	if err != nil {
+		checkpoint.Progress.FailedItems = len(partidos)
+		if markErr := sbe.manager.UpdateProgress(ctx, checkpoint, checkpoint.Progress.ProcessedItems, checkpoint.Progress.FailedItems, checkpoint.Progress.LastProcessedID); markErr != nil {
+			log.Printf("⚠️  Erro ao atualizar progresso de partidos: %v", markErr)
+		}
+		return fmt.Errorf("erro ao listar/sincronizar partidos: %w", err)
+	}
+
+	checkpoint.Progress.TotalItems = len(partidos)
+	checkpoint.Progress.ProcessedItems = len(partidos)
+	if err := sbe.manager.UpdateProgress(ctx, checkpoint, checkpoint.Progress.ProcessedItems, checkpoint.Progress.FailedItems, checkpoint.Progress.LastProcessedID); err != nil {
+		log.Printf("⚠️  Erro ao atualizar progresso pós-sync partidos: %v", err)
+	}
+
+	log.Printf("🎉 Backfill partidos concluído: %d processados", len(partidos))
+	return nil
+}
+
+// executeVotacoesBackfill executa backfill de votações por ano
+func (sbe *StrategicBackfillExecutor) executeVotacoesBackfill(ctx context.Context, checkpoint *BackfillCheckpoint) error {
+	year, ok := checkpoint.Metadata["year"].(float64)
+	if !ok {
+		return fmt.Errorf("metadado 'year' não encontrado ou inválido no checkpoint")
+	}
+
+	yearInt := int(year)
+	log.Printf("🗳️ Executando backfill de votações para o ano %d", yearInt)
+
+	// Paginação simples - página baseada em ID ou página numérica dependendo do client
+	itensPorPagina := sbe.strategy.BatchSize
+	if itensPorPagina <= 0 {
+		itensPorPagina = 100
+	}
+	if itensPorPagina > 100 {
+		itensPorPagina = 100
+	}
+
+	// Use VotacoesService.SincronizarVotacoes which accepts date ranges and performs upserts internally.
+	// Construir período do ano
+	dataInicio := time.Date(yearInt, time.January, 1, 0, 0, 0, 0, time.UTC)
+	dataFim := time.Date(yearInt, time.December, 31, 23, 59, 59, 0, time.UTC)
+
+	// A SincronizarVotacoes já faz Upsert e sincroniza votos/orientações
+	if sbe.votacoesService == nil {
+		log.Printf("⚠️  VotacoesService não injetada no executor; pulando votações %d", yearInt)
+		return nil
+	}
+
+	processed, err := sbe.votacoesService.SincronizarVotacoes(ctx, dataInicio, dataFim)
+	if err != nil {
+		return fmt.Errorf("erro ao sincronizar votações ano %d: %w", yearInt, err)
+	}
+
+	// Atualizar progresso com os totais consolidados retornados pelo serviço
+	checkpoint.Progress.TotalItems += processed
+	checkpoint.Progress.ProcessedItems += processed
+	if err := sbe.manager.UpdateProgress(ctx, checkpoint,
+		checkpoint.Progress.ProcessedItems,
+		checkpoint.Progress.FailedItems,
+		checkpoint.Progress.LastProcessedID); err != nil {
+		log.Printf("⚠️  Erro ao atualizar progresso pós-sync votações: %v", err)
+	}
+
+	log.Printf("🎉 Backfill votações %d executado via VotacoesService.SincronizarVotacoes (processadas: %d)", yearInt, processed)
+	return nil
 }
 
 // executeDeputadosBackfill executa backfill de deputados
@@ -262,7 +397,21 @@ func (sbe *StrategicBackfillExecutor) executeProposicoesBackfill(ctx context.Con
 	// Buscar proposições por ano com paginação
 	var allProposicoes []domain.Proposicao
 	pagina := 1
+
+	// Determinar itens por página (preferir metadado do checkpoint -> strategy.BatchSize -> fallback 100)
 	itensPorPagina := 100
+	if bs, ok := checkpoint.Metadata["batch_size"].(float64); ok {
+		// JSON numbers são float64
+		if int(bs) > 0 {
+			itensPorPagina = int(bs)
+		}
+	} else if sbe.strategy.BatchSize > 0 {
+		itensPorPagina = sbe.strategy.BatchSize
+	}
+	// Respeitar limite máximo da API da Câmara (100 itens por página)
+	if itensPorPagina > 100 {
+		itensPorPagina = 100
+	}
 
 	for {
 		// Criar filtros para o ano
@@ -357,7 +506,7 @@ func (sbe *StrategicBackfillExecutor) executeProposicoesBackfill(ctx context.Con
 	return nil
 }
 
-// executeDespesasBackfill executa backfill de despesas por ano (placeholder)
+// executeDespesasBackfill executa backfill de despesas por ano
 func (sbe *StrategicBackfillExecutor) executeDespesasBackfill(ctx context.Context, checkpoint *BackfillCheckpoint) error {
 	year, ok := checkpoint.Metadata["year"].(float64)
 	if !ok {
@@ -365,17 +514,120 @@ func (sbe *StrategicBackfillExecutor) executeDespesasBackfill(ctx context.Contex
 	}
 
 	yearInt := int(year)
-	log.Printf("💰 Executando backfill de despesas para o ano %d (PLACEHOLDER)", yearInt)
+	log.Printf("💰 Executando backfill de despesas para o ano %d", yearInt)
 
-	// TODO: Implementar quando tivermos repositório de despesas
-	// Por enquanto, simular processamento para não bloquear o desenvolvimento
-	time.Sleep(2 * time.Second)
+	if sbe.deputadosService == nil || sbe.despesaRepo == nil {
+		log.Printf("⚠️ Dependências de despesas indisponíveis; checkpoint %s será pulado", checkpoint.ID)
+		return nil
+	}
 
-	checkpoint.Progress.TotalItems = 1
-	checkpoint.Progress.ProcessedItems = 1
-	checkpoint.Progress.LastProcessedID = fmt.Sprintf("despesas_%d_placeholder", yearInt)
+	deputados, source, err := sbe.deputadosService.ListarDeputados(ctx, "", "", "")
+	if err != nil {
+		return fmt.Errorf("erro ao buscar deputados para despesas: %w", err)
+	}
 
-	log.Printf("✅ Backfill despesas %d simulado com sucesso", yearInt)
+	if len(deputados) == 0 {
+		log.Printf("⚠️ Nenhum deputado retornado para despesas do ano %d (source=%s)", yearInt, source)
+		checkpoint.Progress.TotalItems = 0
+		return nil
+	}
+
+	checkpoint.Progress.TotalItems = len(deputados)
+	log.Printf("📋 %d deputados carregados para despesas %d (source=%s)", len(deputados), yearInt, source)
+
+	startIndex := checkpoint.Progress.ProcessedItems
+	if lastID := checkpoint.Progress.LastProcessedID; lastID != "" {
+		if parsedID, parseErr := strconv.Atoi(lastID); parseErr == nil {
+			for idx, dep := range deputados {
+				if dep.ID == parsedID {
+					startIndex = idx + 1
+					break
+				}
+			}
+		}
+	}
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if startIndex > len(deputados) {
+		startIndex = len(deputados)
+	}
+
+	maxRetries := sbe.strategy.MaxRetries
+	if maxRetries <= 0 {
+		maxRetries = 3
+	}
+	retryDelay := sbe.strategy.RetryDelay
+	if retryDelay <= 0 {
+		retryDelay = 3 * time.Second
+	}
+
+	var totalDespesas int
+
+	for idx := startIndex; idx < len(deputados); idx++ {
+		dep := deputados[idx]
+		log.Printf("🔎 Ingerindo despesas do deputado %d (%s) para %d [%d/%d]",
+			dep.ID, dep.Nome, yearInt, idx+1, len(deputados))
+
+		var lastErr error
+		for attempt := 0; attempt < maxRetries; attempt++ {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
+			despesas, _, err := sbe.deputadosService.ListarDespesas(ctx,
+				fmt.Sprintf("%d", dep.ID),
+				fmt.Sprintf("%d", yearInt))
+			if err != nil {
+				lastErr = err
+			} else {
+				if len(despesas) == 0 {
+					lastErr = nil
+					break
+				}
+
+				if err := sbe.despesaRepo.UpsertDespesas(ctx, dep.ID, yearInt, despesas); err != nil {
+					lastErr = err
+				} else {
+					totalDespesas += len(despesas)
+					lastErr = nil
+					break
+				}
+			}
+
+			if attempt < maxRetries-1 {
+				time.Sleep(retryDelay * time.Duration(attempt+1))
+			}
+		}
+
+		if lastErr != nil {
+			checkpoint.Progress.FailedItems++
+			if err := sbe.manager.UpdateProgress(ctx, checkpoint,
+				checkpoint.Progress.ProcessedItems,
+				checkpoint.Progress.FailedItems,
+				checkpoint.Progress.LastProcessedID); err != nil {
+				log.Printf("⚠️ Erro ao atualizar progresso após falha em despesas: %v", err)
+			}
+			log.Printf("⚠️ Falha ao sincronizar despesas do deputado %d no ano %d: %v", dep.ID, yearInt, lastErr)
+			continue
+		}
+
+		checkpoint.Progress.ProcessedItems = idx + 1
+		checkpoint.Progress.LastProcessedID = strconv.Itoa(dep.ID)
+
+		if err := sbe.manager.UpdateProgress(ctx, checkpoint,
+			checkpoint.Progress.ProcessedItems,
+			checkpoint.Progress.FailedItems,
+			checkpoint.Progress.LastProcessedID); err != nil {
+			log.Printf("⚠️ Erro ao atualizar progresso de despesas: %v", err)
+		}
+
+		time.Sleep(150 * time.Millisecond)
+	}
+
+	log.Printf("✅ Backfill despesas %d concluído: %d deputados processados, %d despesas ingeridas",
+		yearInt, checkpoint.Progress.ProcessedItems, totalDespesas)
+
 	return nil
 }
 

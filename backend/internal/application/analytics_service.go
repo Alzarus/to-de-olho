@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"strconv"
 	"time"
 
 	"to-de-olho-backend/internal/domain"
@@ -20,6 +21,15 @@ type DeputadoRepositoryInterface interface {
 type ProposicaoRepositoryInterface interface {
 	ListProposicoes(ctx context.Context, filtros *domain.ProposicaoFilter) ([]domain.Proposicao, int, error)
 	UpsertProposicoes(ctx context.Context, proposicoes []domain.Proposicao) error
+	// GetProposicoesCountByDeputadoAno retorna contagens por deputado para um ano
+	GetProposicoesCountByDeputadoAno(ctx context.Context, ano int) ([]domain.ProposicaoCount, error)
+}
+
+// DespesaRepositoryInterface define o contrato necessário para despesas usado pelo Analytics
+type DespesaRepositoryInterface interface {
+	ListDespesasByDeputadoAno(ctx context.Context, deputadoID int, ano int) ([]domain.Despesa, error)
+	GetDespesasStats(ctx context.Context, deputadoID int, ano int) (*domain.DespesaStats, error)
+	GetDespesasStatsByAno(ctx context.Context, ano int) (map[int]domain.DespesaStats, error)
 }
 
 // AnalyticsServiceInterface define o contrato para o serviço de analytics
@@ -34,6 +44,11 @@ type AnalyticsServiceInterface interface {
 
 	// Atualização de rankings
 	AtualizarRankings(ctx context.Context) error
+
+	// Votações
+	GetRankingDeputadosVotacao(ctx context.Context, ano int, limite int) ([]domain.RankingDeputadoVotacao, string, error)
+	GetRankingPartidosDisciplina(ctx context.Context, ano int) ([]domain.VotacaoPartido, string, error)
+	GetStatsVotacoes(ctx context.Context, periodo string) (*domain.VotacaoStats, string, error)
 }
 
 // Estruturas dos Rankings
@@ -106,6 +121,8 @@ type InsightsGerais struct {
 type AnalyticsService struct {
 	deputadoRepo   DeputadoRepositoryInterface
 	proposicaoRepo ProposicaoRepositoryInterface
+	votacaoRepo    domain.VotacaoRepository
+	despesaRepo    DespesaRepositoryInterface
 	cache          CachePort
 	logger         *slog.Logger
 }
@@ -114,12 +131,16 @@ type AnalyticsService struct {
 func NewAnalyticsService(
 	deputadoRepo DeputadoRepositoryInterface,
 	proposicaoRepo ProposicaoRepositoryInterface,
+	votacaoRepo domain.VotacaoRepository,
+	despesaRepo DespesaRepositoryInterface,
 	cache CachePort,
 	logger *slog.Logger,
 ) *AnalyticsService {
 	return &AnalyticsService{
 		deputadoRepo:   deputadoRepo,
 		proposicaoRepo: proposicaoRepo,
+		votacaoRepo:    votacaoRepo,
+		despesaRepo:    despesaRepo,
 		cache:          cache,
 		logger:         logger,
 	}
@@ -162,48 +183,43 @@ func (s *AnalyticsService) GetRankingGastos(ctx context.Context, ano int, limite
 		slog.Int("deputados_count", len(deputados)),
 		slog.Int("ano", ano))
 
+	// Buscar estatísticas agregadas por deputado para o ano, evitando N+1 no banco
+	statsPorDeputado := make(map[int]domain.DespesaStats)
+	if s.despesaRepo != nil {
+		if statsMap, err := s.despesaRepo.GetDespesasStatsByAno(timeoutCtx, ano); err == nil && statsMap != nil {
+			statsPorDeputado = statsMap
+		} else if err != nil {
+			s.logger.Warn("erro ao obter estatísticas agregadas de despesas", slog.String("error", err.Error()))
+		}
+	}
+
 	// Calcular gastos para cada deputado com processamento otimizado
 	deputadosRanking := make([]DeputadoRankingGastos, 0, len(deputados))
 	var totalGeral float64
 
-	// Processar em batches para melhor performance
-	batchSize := 50
-	var processedCount int
-
-deputadosBatchLoop:
-	for i := 0; i < len(deputados); i += batchSize {
-		// Verificar timeout a cada batch
-		select {
-		case <-timeoutCtx.Done():
-			s.logger.Warn("timeout calculando gastos",
-				slog.Int("deputados_processados", processedCount),
-				slog.Int("total_deputados", len(deputados)))
-			break deputadosBatchLoop
-		default:
+	for _, deputado := range deputados {
+		var totalGasto float64
+		if stats, ok := statsPorDeputado[deputado.ID]; ok {
+			totalGasto = stats.TotalValor
+		} else if s.despesaRepo != nil {
+			// Fallback individual apenas se necessário (mantém compatibilidade)
+			if stat, err := s.despesaRepo.GetDespesasStats(timeoutCtx, deputado.ID, ano); err == nil && stat != nil {
+				totalGasto = stat.TotalValor
+			} else if err != nil {
+				s.logger.Debug("erro ao obter despesas individuais, usando 0",
+					slog.Int("deputado_id", deputado.ID),
+					slog.String("error", err.Error()))
+			}
 		}
 
-		end := i + batchSize
-		if end > len(deputados) {
-			end = len(deputados)
-		}
-
-		// Processar batch
-		for j := i; j < end; j++ {
-			deputado := deputados[j]
-			// TODO: Implementar busca de despesas por deputado no repositório
-			// Por enquanto, simular gastos para demonstração
-			totalGasto := s.simularGastoDeputado(deputado.ID, ano)
-
-			deputadosRanking = append(deputadosRanking, DeputadoRankingGastos{
-				ID:         deputado.ID,
-				Nome:       deputado.Nome,
-				Partido:    deputado.Partido,
-				UF:         deputado.UF,
-				TotalGasto: totalGasto,
-			})
-			totalGeral += totalGasto
-			processedCount++
-		}
+		deputadosRanking = append(deputadosRanking, DeputadoRankingGastos{
+			ID:         deputado.ID,
+			Nome:       deputado.Nome,
+			Partido:    deputado.Partido,
+			UF:         deputado.UF,
+			TotalGasto: totalGasto,
+		})
+		totalGeral += totalGasto
 	}
 
 	// Calcular média (verificar se há deputados para evitar divisão por zero)
@@ -270,15 +286,24 @@ func (s *AnalyticsService) GetRankingProposicoes(ctx context.Context, ano int, l
 		deputados[i] = &deputadosCache[i]
 	}
 
-	// Buscar proposições por autor (simulação - seria necessário implementar busca por autor na API)
+	// Usar repository aggregation para obter contagem de proposições por deputado
+	counts := make(map[int]int)
+	if s.proposicaoRepo != nil {
+		if rows, err := s.proposicaoRepo.GetProposicoesCountByDeputadoAno(ctx, ano); err == nil {
+			for _, r := range rows {
+				counts[r.IDDeputado] = r.Count
+			}
+		} else {
+			s.logger.Debug("erro ao obter contagens de proposições, fallback para 0",
+				slog.String("error", err.Error()))
+		}
+	}
+
 	deputadosRanking := make([]DeputadoRankingProposicoes, 0, len(deputados))
 	var totalGeral int
 
 	for _, deputado := range deputados {
-		// Por enquanto simular contagem de proposições
-		// Na implementação real seria necessário buscar proposições por autor
-		totalProposicoes := s.simularContagemProposicoes(deputado.ID, ano)
-
+		totalProposicoes := counts[deputado.ID]
 		deputadosRanking = append(deputadosRanking, DeputadoRankingProposicoes{
 			ID:               deputado.ID,
 			Nome:             deputado.Nome,
@@ -286,7 +311,6 @@ func (s *AnalyticsService) GetRankingProposicoes(ctx context.Context, ano int, l
 			UF:               deputado.UF,
 			TotalProposicoes: totalProposicoes,
 		})
-
 		totalGeral += totalProposicoes
 	}
 
@@ -342,8 +366,7 @@ func (s *AnalyticsService) GetRankingPresenca(ctx context.Context, ano int, limi
 		}
 	}
 
-	// Por enquanto simular dados de presença
-	// Na implementação real seria necessário integrar com API de presença da Câmara
+	// Usar repositório para agregar presença (votos registrados por deputado) no ano
 	deputadosCache, err := s.deputadoRepo.ListFromCache(ctx, 600)
 	if err != nil {
 		return nil, "", fmt.Errorf("erro ao buscar deputados: %w", err)
@@ -355,15 +378,33 @@ func (s *AnalyticsService) GetRankingPresenca(ctx context.Context, ano int, limi
 		deputados[i] = &deputadosCache[i]
 	}
 
-	totalSessoes := 100 // Simular total de sessões no ano
+	// Obter contagens de presença do repositório de votações (votos registrados por deputado)
+	presencas := map[int]int{}
+	totalSessoes := 0
+	if s.votacaoRepo != nil {
+		if rows, err := s.votacaoRepo.GetPresencaPorDeputadoAno(ctx, ano); err == nil {
+			for _, p := range rows {
+				presencas[p.IDDeputado] = p.Participacoes
+				if p.Participacoes > totalSessoes {
+					totalSessoes = p.Participacoes
+				}
+			}
+		} else {
+			s.logger.Debug("erro ao obter presencas por deputado", slog.String("error", err.Error()))
+		}
+	}
+
 	deputadosRanking := make([]DeputadoRankingPresenca, 0, len(deputados))
 	var somaPresenca float64
 
 	for _, deputado := range deputados {
-		// Simular dados de presença
-		sessoesPresente := s.simularPresenca(deputado.ID, totalSessoes)
-		sessoesFaltou := totalSessoes - sessoesPresente
-		percentualPresenca := (float64(sessoesPresente) / float64(totalSessoes)) * 100
+		sessoesPresente := presencas[deputado.ID]
+		sessoesFaltou := 0
+		percentualPresenca := 0.0
+		if totalSessoes > 0 {
+			percentualPresenca = (float64(sessoesPresente) / float64(totalSessoes)) * 100
+			sessoesFaltou = totalSessoes - sessoesPresente
+		}
 
 		deputadosRanking = append(deputadosRanking, DeputadoRankingPresenca{
 			ID:                 deputado.ID,
@@ -444,11 +485,18 @@ func (s *AnalyticsService) GetInsightsGerais(ctx context.Context) (*InsightsGera
 	var totalGastoAno float64
 	gastoPorPartido := make(map[string]float64)
 	gastoPorUF := make(map[string]float64)
+	statsPorDeputado := make(map[int]domain.DespesaStats)
+	if s.despesaRepo != nil {
+		if statsMap, err := s.despesaRepo.GetDespesasStatsByAno(timeoutCtx, anoAtual); err == nil && statsMap != nil {
+			statsPorDeputado = statsMap
+		} else if err != nil {
+			s.logger.Warn("erro ao agregar despesas para insights", slog.String("error", err.Error()))
+		}
+	}
 
-	// Calcular gastos totais e por categoria (amostra limitada)
+	// Calcular gastos totais e por categoria usando DespesaRepository
 	for _, deputado := range deputados {
-		// Usar dados simulados para evitar timeout nas chamadas API
-		gastoDeputado := s.simularGastoDeputado(deputado.ID, anoAtual)
+		gastoDeputado := statsPorDeputado[deputado.ID].TotalValor
 
 		totalGastoAno += gastoDeputado
 		gastoPorPartido[deputado.Partido] += gastoDeputado
@@ -459,14 +507,28 @@ func (s *AnalyticsService) GetInsightsGerais(ctx context.Context) (*InsightsGera
 	partidoMaiorGasto := findMaxKey(gastoPorPartido)
 	ufMaiorGasto := findMaxKey(gastoPorUF)
 
-	// Buscar total de proposições (simulado)
-	totalProposicoesAno := 1000 // Simular
+	// Buscar total de proposições (usar repositorio de proposicoes para contagem)
+	totalProposicoesAno := 0
+	if s.proposicaoRepo != nil {
+		filtros := &domain.ProposicaoFilter{Pagina: 1, Limite: 1}
+		ano := time.Now().Year()
+		filtros.Ano = &ano
+		// Lista apenas para obter total aproximado (repo simplificado retorna len as total)
+		if _, total, err := s.proposicaoRepo.ListProposicoes(timeoutCtx, filtros); err == nil {
+			totalProposicoesAno = total
+		}
+	}
+
+	var mediaGastoDeputado float64
+	if len(deputados) > 0 {
+		mediaGastoDeputado = totalGastoAno / float64(len(deputados))
+	}
 
 	insights := &InsightsGerais{
 		TotalDeputados:      len(deputados),
 		TotalGastoAno:       totalGastoAno,
 		TotalProposicoesAno: totalProposicoesAno,
-		MediaGastosDeputado: totalGastoAno / float64(len(deputados)),
+		MediaGastosDeputado: mediaGastoDeputado,
 		PartidoMaiorGasto:   partidoMaiorGasto,
 		UFMaiorGasto:        ufMaiorGasto,
 		UltimaAtualizacao:   time.Now(),
@@ -487,6 +549,20 @@ func (s *AnalyticsService) AtualizarRankings(ctx context.Context) error {
 	// O Redis tem TTL automático, então apenas forçar recálculo
 	s.logger.Info("iniciando atualização de rankings",
 		slog.Int("ano", anoAtual))
+
+	// 🔧 MELHORIA: Invalidar cache sobrescrevendo com valores vazios e TTL zero
+	cacheKeys := []string{
+		fmt.Sprintf("ranking:gastos:%d:50", anoAtual),
+		fmt.Sprintf("ranking:proposicoes:%d:50", anoAtual),
+		fmt.Sprintf("ranking:presenca:%d:50", anoAtual),
+		"insights:gerais",
+	}
+
+	for _, key := range cacheKeys {
+		s.cache.Set(ctx, key, "", time.Millisecond) // TTL mínimo compatível com Redis para invalidar
+	}
+
+	s.logger.Info("cache de rankings invalidado, recalculando...")
 
 	// Pré-computar rankings principais
 	_, _, err := s.GetRankingGastos(ctx, anoAtual, 50)
@@ -513,22 +589,163 @@ func (s *AnalyticsService) AtualizarRankings(ctx context.Context) error {
 	return nil
 }
 
-// Funções auxiliares para simulação (temporárias)
+// GetRankingDeputadosVotacao retorna ranking de deputados baseado em participação e votos no ano
+func (s *AnalyticsService) GetRankingDeputadosVotacao(ctx context.Context, ano int, limite int) ([]domain.RankingDeputadoVotacao, string, error) {
+	cacheKey := fmt.Sprintf("ranking:votacao:deputados:%d:%d", ano, limite)
 
-func (s *AnalyticsService) simularGastoDeputado(deputadoID, ano int) float64 {
-	// Simulação baseada em hash do ID e ano para dados consistentes
-	seed := deputadoID + ano
-	base := float64(seed % 200000) // Entre 0 e R$ 200.000
-	return base + 50000.0          // Entre R$ 50.000 e R$ 250.000
+	if cached, ok := s.cache.Get(ctx, cacheKey); ok && cached != "" {
+		var ranking []domain.RankingDeputadoVotacao
+		if err := json.Unmarshal([]byte(cached), &ranking); err == nil {
+			return ranking, "cache", nil
+		}
+	}
+
+	// Buscar deputados
+	deputadosCache, err := s.deputadoRepo.ListFromCache(ctx, 600)
+	if err != nil {
+		return nil, "", fmt.Errorf("erro ao buscar deputados: %w", err)
+	}
+
+	deputados := make([]*domain.Deputado, len(deputadosCache))
+	for i := range deputadosCache {
+		deputados[i] = &deputadosCache[i]
+	}
+
+	// Map para acumular estatísticas por deputado (pré-populado com zeros)
+	stats := make(map[int]*domain.RankingDeputadoVotacao, len(deputados))
+	for _, d := range deputados {
+		stats[d.ID] = &domain.RankingDeputadoVotacao{IDDeputado: d.ID}
+	}
+
+	aggregated, err := s.votacaoRepo.GetRankingDeputadosAggregated(ctx, ano)
+	if err != nil {
+		return nil, "", fmt.Errorf("erro ao agregar ranking de deputados: %w", err)
+	}
+
+	for _, row := range aggregated {
+		entry, ok := stats[row.IDDeputado]
+		if !ok {
+			entry = &domain.RankingDeputadoVotacao{IDDeputado: row.IDDeputado}
+			stats[row.IDDeputado] = entry
+		}
+		entry.TotalVotacoes = row.TotalVotacoes
+		entry.VotosFavoraveis = row.VotosFavoraveis
+		entry.VotosContrarios = row.VotosContrarios
+		entry.Abstencoes = row.Abstencoes
+	}
+
+	// Converter mapa em slice e calcular taxa
+	rankings := make([]domain.RankingDeputadoVotacao, 0, len(stats))
+	for _, st := range stats {
+		if st.TotalVotacoes > 0 {
+			st.TaxaAprovacao = float64(st.VotosFavoraveis) / float64(st.TotalVotacoes) * 100
+		}
+		rankings = append(rankings, *st)
+	}
+
+	// Ordenar por TotalVotacoes desc, depois por TaxaAprovacao desc
+	sort.Slice(rankings, func(i, j int) bool {
+		if rankings[i].TotalVotacoes == rankings[j].TotalVotacoes {
+			return rankings[i].TaxaAprovacao > rankings[j].TaxaAprovacao
+		}
+		return rankings[i].TotalVotacoes > rankings[j].TotalVotacoes
+	})
+
+	if limite > 0 && limite < len(rankings) {
+		rankings = rankings[:limite]
+	}
+
+	if data, err := json.Marshal(rankings); err == nil {
+		s.cache.Set(ctx, cacheKey, string(data), 2*time.Hour)
+	}
+
+	return rankings, "computed", nil
+}
+
+// GetRankingPartidosDisciplina calcula disciplina partidária agregada por partido no ano
+func (s *AnalyticsService) GetRankingPartidosDisciplina(ctx context.Context, ano int) ([]domain.VotacaoPartido, string, error) {
+	cacheKey := fmt.Sprintf("ranking:votacao:partidos:disciplina:%d", ano)
+
+	if cached, ok := s.cache.Get(ctx, cacheKey); ok && cached != "" {
+		var resp []domain.VotacaoPartido
+		if err := json.Unmarshal([]byte(cached), &resp); err == nil {
+			return resp, "cache", nil
+		}
+	}
+
+	resultados, err := s.votacaoRepo.GetDisciplinaPartidosAggregated(ctx, ano)
+	if err != nil {
+		return nil, "", fmt.Errorf("erro ao agregar disciplina de partidos: %w", err)
+	}
+
+	for i := range resultados {
+		resultados[i].CalcularDisciplina()
+	}
+
+	// Ordenar por disciplina desc
+	sort.Slice(resultados, func(i, j int) bool {
+		return resultados[i].Disciplina > resultados[j].Disciplina
+	})
+
+	if data, err := json.Marshal(resultados); err == nil {
+		s.cache.Set(ctx, cacheKey, string(data), 6*time.Hour)
+	}
+
+	return resultados, "computed", nil
+}
+
+// GetStatsVotacoes retorna estatísticas agregadas de votações para um período (ex: "ano", "mes")
+func (s *AnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string) (*domain.VotacaoStats, string, error) {
+	cacheKey := fmt.Sprintf("stats:votacoes:%s", periodo)
+
+	if cached, ok := s.cache.Get(ctx, cacheKey); ok && cached != "" {
+		var stats domain.VotacaoStats
+		if err := json.Unmarshal([]byte(cached), &stats); err == nil {
+			return &stats, "cache", nil
+		}
+	}
+
+	// Agregar estatísticas a partir do repositório de votações
+	// Para 'periodo' suportamos 'ano' com valor numérico (ex: "2024") ou "ano"(current year)
+	// Se periodo for um ano numérico, usamos esse ano; caso contrário usamos o ano atual
+	var ano int
+	if len(periodo) == 4 {
+		var err error
+		ano, err = strconv.Atoi(periodo)
+		if err != nil {
+			// Se não conseguir converter, usar ano atual como fallback
+			ano = 0
+		}
+	}
+	if ano == 0 {
+		ano = time.Now().Year()
+	}
+
+	stats, err := s.votacaoRepo.GetVotacaoStatsAggregated(ctx, ano)
+	if err != nil {
+		return nil, "", fmt.Errorf("erro ao agregar estatísticas de votações: %w", err)
+	}
+	if stats == nil {
+		stats = &domain.VotacaoStats{
+			VotacoesPorMes:        make([]int, 12),
+			VotacoesPorRelevancia: map[string]int{},
+		}
+	}
+
+	if data, err := json.Marshal(stats); err == nil {
+		s.cache.Set(ctx, cacheKey, string(data), 6*time.Hour)
+	}
+
+	return stats, "computed", nil
 }
 
 // Funções auxiliares para simulação (temporárias)
 
-func (s *AnalyticsService) simularContagemProposicoes(deputadoID, ano int) int {
-	// Simulação baseada em hash do ID
-	seed := deputadoID + ano
-	return (seed % 50) + 1 // Entre 1 e 50 proposições
-}
+// simularGastoDeputado removed - replaced by repository-backed implementation
+
+// Funções auxiliares para simulação (temporárias)
+
+// simularContagemProposicoes removed - replaced by repository-backed implementation
 
 func (s *AnalyticsService) simularPresenca(deputadoID, totalSessoes int) int {
 	// Simulação de presença entre 60% e 95%
@@ -550,3 +767,6 @@ func findMaxKey(m map[string]float64) string {
 
 	return maxKey
 }
+
+// Funções de simulação para votações (temporárias até integrar repositório real)
+// Note: previously there were simulation helpers here; analytics now uses repository-backed queries.

@@ -261,3 +261,63 @@ func (r *ProposicaoRepository) buildWhereClause(filtros *domain.ProposicaoFilter
 	whereClause := strings.Join(conditions, " AND ")
 	return whereClause, args
 }
+
+// GetProposicoesCountByDeputadoAno retorna contagem de proposições por deputado para um ano
+func (r *ProposicaoRepository) GetProposicoesCountByDeputadoAno(ctx context.Context, ano int) ([]domain.ProposicaoCount, error) {
+	logger := slog.Default()
+
+	if r == nil || r.db == nil {
+		logger.Warn("repository não inicializado")
+		return nil, nil
+	}
+
+	// As proposições estão armazenadas em payload JSON na tabela proposicoes_cache
+	// Extrair autor/id do payload e agrupar por idAutor (campo esperado em payload)
+	// Tentar extrair o autor/deputado a partir de diferentes formatos de payload:
+	// - payload->'autores' array (usar primeiro autor)
+	// - payload->>'idAutor' campo simples
+	// - payload->'ultimoRelator'->>'id' como fallback
+	query := `SELECT COALESCE(
+								(payload::jsonb->'autores'->0->>'id')::int,
+								(payload::jsonb->>'idAutor')::int,
+								(payload::jsonb->'ultimoRelator'->>'id')::int
+							) as id_deputado,
+							COUNT(*) as cnt
+							FROM proposicoes_cache
+							WHERE (payload::jsonb->>'ano')::int = $1
+							GROUP BY id_deputado
+							HAVING COALESCE(
+								(payload::jsonb->'autores'->0->>'id')::int,
+								(payload::jsonb->>'idAutor')::int,
+								(payload::jsonb->'ultimoRelator'->>'id')::int
+							) IS NOT NULL
+							ORDER BY cnt DESC`
+
+	rows, err := r.db.Query(ctx, query, ano)
+	if err != nil {
+		logger.Error("erro ao executar query agregada de proposições",
+			slog.String("error", err.Error()))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.ProposicaoCount
+	for rows.Next() {
+		var idDeputado int
+		var cnt int
+		if err := rows.Scan(&idDeputado, &cnt); err != nil {
+			logger.Error("erro ao scan agregacao proposicoes",
+				slog.String("error", err.Error()))
+			continue
+		}
+		results = append(results, domain.ProposicaoCount{IDDeputado: idDeputado, Count: cnt})
+	}
+
+	if err := rows.Err(); err != nil {
+		logger.Error("erro ao iterar resultados agregacao proposicoes",
+			slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	return results, nil
+}

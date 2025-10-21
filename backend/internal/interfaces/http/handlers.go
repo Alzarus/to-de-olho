@@ -427,3 +427,67 @@ func PostAtualizarRankingsHandler(svc application.AnalyticsServiceInterface) gin
 		})
 	}
 }
+
+// GetRankingDeputadosVotacaoHandler retorna ranking de deputados por participação/votos
+func GetRankingDeputadosVotacaoHandler(svc application.AnalyticsServiceInterface) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		anoStr := c.DefaultQuery("ano", strconv.Itoa(time.Now().Year()))
+		limiteStr := c.DefaultQuery("limite", "50")
+
+		ano, err := strconv.Atoi(anoStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetro 'ano' inválido"})
+			return
+		}
+
+		limite, err := strconv.Atoi(limiteStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetro 'limite' inválido"})
+			return
+		}
+
+		ranking, source, err := svc.GetRankingDeputadosVotacao(c.Request.Context(), ano, limite)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao gerar ranking de votações", "details": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": ranking, "source": source})
+	}
+}
+
+// GetRankingPartidosDisciplinaHandler retorna ranking de disciplina partidária
+func GetRankingPartidosDisciplinaHandler(svc application.AnalyticsServiceInterface) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		anoStr := c.DefaultQuery("ano", strconv.Itoa(time.Now().Year()))
+
+		ano, err := strconv.Atoi(anoStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetro 'ano' inválido"})
+			return
+		}
+
+		ranking, source, err := svc.GetRankingPartidosDisciplina(c.Request.Context(), ano)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao gerar ranking de disciplina", "details": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": ranking, "source": source})
+	}
+}
+
+// GetStatsVotacoesHandler retorna estatísticas agregadas de votações
+func GetStatsVotacoesHandler(svc application.AnalyticsServiceInterface) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		periodo := c.DefaultQuery("periodo", "ano")
+
+		stats, source, err := svc.GetStatsVotacoes(c.Request.Context(), periodo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao gerar estatísticas de votações", "details": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"data": stats, "source": source})
+	}
+}

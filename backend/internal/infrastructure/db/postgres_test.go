@@ -90,8 +90,8 @@ func TestNewPostgresPool_DefaultValues(t *testing.T) {
 	}()
 
 	// Testar valores padrão
-	if host := getenv("POSTGRES_HOST", "localhost"); host != "localhost" {
-		t.Errorf("esperava host padrão 'localhost', obteve '%s'", host)
+	if host := getenv("POSTGRES_HOST", "postgres"); host != "postgres" {
+		t.Errorf("esperava host padrão 'postgres', obteve '%s'", host)
 	}
 
 	if port := getenv("POSTGRES_PORT", "5432"); port != "5432" {
