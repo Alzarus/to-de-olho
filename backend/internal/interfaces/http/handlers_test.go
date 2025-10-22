@@ -491,6 +491,9 @@ func BenchmarkGetDeputadosHandler(b *testing.B) {
 type MockAnalyticsService struct {
 	rankings         interface{}
 	insights         *application.InsightsGerais
+	rankingDeputados []domain.RankingDeputadoVotacao
+	rankingPartidos  []domain.VotacaoPartido
+	statsVotacoes    *domain.VotacaoStats
 	err              error
 	source           string
 	atualizarChamado bool
@@ -558,27 +561,37 @@ func (m *MockAnalyticsService) GetRankingDeputadosVotacao(ctx context.Context, a
 	if m.err != nil {
 		return nil, "", m.err
 	}
-	return []domain.RankingDeputadoVotacao{}, m.source, nil
+	if len(m.rankingDeputados) == 0 {
+		m.rankingDeputados = []domain.RankingDeputadoVotacao{
+			{IDDeputado: 1, TotalVotacoes: 80, VotosFavoraveis: 60, VotosContrarios: 15, Abstencoes: 5},
+		}
+	}
+	return m.rankingDeputados, m.source, nil
 }
 
 func (m *MockAnalyticsService) GetRankingPartidosDisciplina(ctx context.Context, ano int) ([]domain.VotacaoPartido, string, error) {
 	if m.err != nil {
 		return nil, "", m.err
 	}
-	return []domain.VotacaoPartido{}, m.source, nil
+	if len(m.rankingPartidos) == 0 {
+		m.rankingPartidos = []domain.VotacaoPartido{{Partido: "PT", Orientacao: "Sim", VotaramFavor: 10, VotaramContra: 2, VotaramAbstencao: 1, TotalMembros: 15}}
+	}
+	return m.rankingPartidos, m.source, nil
 }
 
 func (m *MockAnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string) (*domain.VotacaoStats, string, error) {
 	if m.err != nil {
 		return nil, "", m.err
 	}
-	stats := &domain.VotacaoStats{
-		TotalVotacoes:      100,
-		VotacoesAprovadas:  70,
-		VotacoesRejeitadas: 30,
-		MediaParticipacao:  75.0,
+	if m.statsVotacoes == nil {
+		m.statsVotacoes = &domain.VotacaoStats{
+			TotalVotacoes:      100,
+			VotacoesAprovadas:  70,
+			VotacoesRejeitadas: 30,
+			MediaParticipacao:  75.0,
+		}
 	}
-	return stats, m.source, nil
+	return m.statsVotacoes, m.source, nil
 }
 
 func TestGetDespesasDeputadoHandler(t *testing.T) {
@@ -853,6 +866,141 @@ func TestPostAtualizarRankingsHandler(t *testing.T) {
 
 			if tt.expectedCode == http.StatusOK && !tt.mockService.atualizarChamado {
 				t.Error("AtualizarRankings should have been called")
+			}
+		})
+	}
+}
+
+func TestGetRankingDeputadosVotacaoHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		query        string
+		mockService  *MockAnalyticsService
+		expectedCode int
+	}{
+		{
+			name:         "success - ranking retornado",
+			query:        "?ano=2024&limite=5",
+			mockService:  &MockAnalyticsService{source: "computed"},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:  "error - serviço falha",
+			query: "?ano=2024",
+			mockService: &MockAnalyticsService{
+				err: errors.New("falha"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		{
+			name:         "error - ano inválido",
+			query:        "?ano=abc",
+			mockService:  &MockAnalyticsService{},
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/analytics/votacoes/ranking", GetRankingDeputadosVotacaoHandler(tt.mockService))
+
+			req := httptest.NewRequest("GET", "/analytics/votacoes/ranking"+tt.query, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
+			}
+		})
+	}
+}
+
+func TestGetRankingPartidosDisciplinaHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		query        string
+		mockService  *MockAnalyticsService
+		expectedCode int
+	}{
+		{
+			name:         "success - ranking retornado",
+			query:        "?ano=2024",
+			mockService:  &MockAnalyticsService{source: "computed"},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:  "error - serviço falha",
+			query: "?ano=2024",
+			mockService: &MockAnalyticsService{
+				err: errors.New("falha"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+		{
+			name:         "error - ano inválido",
+			query:        "?ano=abc",
+			mockService:  &MockAnalyticsService{},
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/analytics/votacoes/partidos", GetRankingPartidosDisciplinaHandler(tt.mockService))
+
+			req := httptest.NewRequest("GET", "/analytics/votacoes/partidos"+tt.query, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
+			}
+		})
+	}
+}
+
+func TestGetStatsVotacoesHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name         string
+		query        string
+		mockService  *MockAnalyticsService
+		expectedCode int
+	}{
+		{
+			name:         "success - estatísticas retornadas",
+			query:        "?periodo=2024",
+			mockService:  &MockAnalyticsService{source: "computed"},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:  "error - serviço falha",
+			query: "?periodo=2024",
+			mockService: &MockAnalyticsService{
+				err: errors.New("falha"),
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.New()
+			router.GET("/analytics/votacoes/stats", GetStatsVotacoesHandler(tt.mockService))
+
+			req := httptest.NewRequest("GET", "/analytics/votacoes/stats"+tt.query, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedCode {
+				t.Errorf("Status code = %v, want %v", w.Code, tt.expectedCode)
 			}
 		})
 	}

@@ -14,10 +14,10 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 |------------------------------|----------------------------------|------------|--------------|
 | Sistema de votações          | Concluído                         | Baixa      | set/2025     |
 | Sincronização + API Câmara   | Backfill com despesas; scheduler parcial | Crítica    | out/2025     |
-| Engine de analytics          | Concluído, aguardando dados reais | Média      | set/2025     |
+| Engine de analytics          | Concluído, testes cobrindo votações | Média      | set/2025     |
 | Frontend WCAG                | Concluído                         | Média      | set/2025     |
 | API REST v1                  | Concluído                         | Média      | set/2025     |
-| Esquema do banco             | Em ajuste (migration 014)         | Crítica    | out/2025     |
+| Esquema do banco             | Migration 014 aplicada via migrator | Média      | out/2025     |
 | Deploy em produção           | Não iniciado                      | Alta       | nov/2025     |
 | Integração IA Gemini         | Não iniciado                      | Média      | dez/2025     |
 
@@ -57,7 +57,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 **Despesas (altíssima prioridade)**
 - [x] Implementar etapa dedicada no backfill histórico usando `DespesaRepository.UpsertDespesas` com checkpoints anuais (21/out/2025).
-- [ ] Consolidar aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes.
+- [ ] Validar a aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes (migrator já executa automaticamente no bootstrap).
 - [ ] Habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`).
 
 **Votações (alta prioridade)**
@@ -143,17 +143,10 @@ services:
 - **📈 Rankings Avançados**: Presença, participação, histórico
 - **🔄 Histórico Político**: Mudanças de partido e carreira
 
-**⚠️ Analytics de Votações - AÇÃO NECESSÁRIA**:
-```go
-// Status: Infraestrutura completa, faltam endpoints analytics
-// Temos: VotacaoStats, VotacaoAnalysis.tsx, dados da API
-// Falta: Implementar no AnalyticsService
-
-GET /api/v1/analytics/votacoes/stats              - Estatísticas gerais
-GET /api/v1/analytics/votacoes/rankings/deputados - Ranking participação
-GET /api/v1/analytics/votacoes/rankings/disciplina - Disciplina partidária  
-GET /api/v1/analytics/votacoes/tendencias         - Análise temporal
-```
+**✅ Analytics de Votações - Situação**
+- Endpoints `/api/v1/analytics/votacoes/stats`, `/analytics/votacoes/rankings/deputados` e `/analytics/votacoes/rankings/disciplina` implementados e cobertos por testes unitários (out/2025).
+- Serviço `AnalyticsService` gera rankings e estatísticas a partir do repositório de votações; caches validados em testes.
+- Próximos passos: validar consistência com dados reais após novo backfill e publicar dashboards consolidados no frontend (`VotacoesAnalytics.tsx`, `RankingDisciplina.tsx`).
 
 **Novos Endpoints API**:
 ```go
@@ -202,30 +195,26 @@ GET /api/v1/analytics/presenca           - Ranking presença eventos
 - ✅ Cache Redis implementado
 - ✅ API da Câmara v2 integrada
 
-## 🔍 Descoberta Crítica - Analytics de Votações (Set/24/2025)
+## 🔍 Descoberta Crítica - Analytics de Votações (Atualizado em 21/out/2025)
 
-**⚠️ Status**: Sistema de votações implementado, mas **analytics agregadas incompletas**
+**✅ Status**: Sistema de votações implementado e analytics agregados disponíveis; aguardando validação com dados reais e publicação no frontend
 
 **✅ O que JÁ temos**:
 - ✅ `VotacaoStats`, `RankingDeputadoVotacao`, `VotacaoPartido` (domain models)
-- ✅ Endpoints: `/votacoes`, `/votacoes/:id`, `/votacoes/:id/completa`  
-- ✅ `VotacaoAnalysis.tsx` - Análise detalhada individual
-- ✅ API integration completa (votos + orientações partidárias)
-- ✅ Repository patterns e cache Redis
+- ✅ Endpoints: `/votacoes`, `/votacoes/:id`, `/votacoes/:id/completa`, `/api/v1/analytics/votacoes/stats`, `/api/v1/analytics/votacoes/rankings/deputados`, `/api/v1/analytics/votacoes/rankings/disciplina`
+- ✅ `AnalyticsService` calculando rankings e estatísticas com cache Redis
+- ✅ Testes unitários cobrindo ranking de deputados, disciplina partidária e estatísticas agregadas
+- ✅ `VotacaoAnalysis.tsx` para análise detalhada individual
 
-**❌ O que está FALTANDO**:
-- ❌ Rankings agregados (disciplina partidária, participação deputados)
-- ❌ Endpoints `/analytics/votacoes/*` (não existem no AnalyticsService)
-- ❌ Dashboard comparativo no frontend
-- ❌ Estatísticas temporais e tendências
+**⚠️ O que falta validar**:
+- ⚠️ Dashboards comparativos no frontend com dados reais (`VotacoesAnalytics.tsx`, `RankingDisciplina.tsx`)
+- ⚠️ Tendências e séries temporais (avaliar necessidade de endpoint dedicado ou extensão de `GetStatsVotacoes`)
+- ⚠️ Auditoria dos resultados após backfill completo para garantir fidelidade dos indicadores
 
-**🎯 Ação Necessária** (ALTA prioridade):
-```go
-// Implementar no AnalyticsService:
-func (s *AnalyticsService) GetRankingDeputadosVotacao(ctx context.Context, ano int) 
-func (s *AnalyticsService) GetRankingPartidosDisciplina(ctx context.Context, ano int)
-func (s *AnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string)
-```
+**🎯 Próximas ações**:
+- Executar backfill com despesas e votações habilitadas e comparar amostras com dados oficiais
+- Integrar endpoints nos componentes de frontend e validar acessibilidade/performance
+- Definir requisitos para endpoint de tendências (quando necessário) e planejar implementação
 
 ## 🎯 Cronograma Realista
 
@@ -256,10 +245,10 @@ Status: etapa histórica implementada com `DespesaRepository.UpsertDespesas` e c
 Impacto: métricas e UI ainda podem ficar desatualizadas até a primeira execução completa do scheduler com as flags ativas.
 Plano: aplicar/confirmar a migration `014_alter_despesas_add_columns.sql` em todos os ambientes, habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true` e monitorar `despesas_processadas`/`despesas_sincronizadas` após o reprocesso.
 
-### 1. Analytics de votações incompletos (registrado em 24/set/2025)
-Problema: a infraestrutura de coleta está disponível, porém falta implementação de métodos agregadores no `AnalyticsService`.
-Impacto: dashboards sem indicadores de disciplina partidária e participação global.
-Plano: implementar métodos agregadores e expor endpoints REST correspondentes; revisar componentes frontend.
+### 1. Validação de analytics de votações (atualizado em 21/out/2025)
+Problema: endpoints e cálculos foram implementados e testados, mas ainda falta confrontar os resultados com dados reais após o novo backfill.
+Impacto: risco de discrepâncias em dashboards e métricas públicas caso haja divergência entre dados reais e agregações.
+Plano: executar backfill completo com despesas e votações habilitadas, auditar amostras no frontend e ajustar caching/normalização conforme necessário.
 
 ### 2. Alinhamento com dados reais de votação
 Problema: possíveis diferenças entre a especificação e a estrutura retornada pela API da Câmara.

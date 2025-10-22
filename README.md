@@ -33,12 +33,6 @@ O conjunto de serviços disponibiliza:
 - Interface administrativa do banco: http://localhost:8081
 - Verificação de saúde da API: http://localhost:8080/health
 
-## Situação atual do pipeline de dados (out/2025)
-
-- O histórico de despesas encontra-se temporariamente indisponível porque a tabela `despesas` exige as colunas `cod_tipo_documento` e `valor_documento`. A migration `014_alter_despesas_add_columns.sql` e o `DespesaRepository` atualizado corrigem o problema.
-- Após aplicar a migration, execute novamente os serviços `ingestor` e `scheduler` para repopular as tabelas.
-- Demais entidades (deputados, proposições, votações, partidos) estão preparadas para ingestão e analytics, aguardando o restabelecimento das despesas para completar os dashboards.
-
 ## Monitoramento e diagnóstico
 
 ```bash
