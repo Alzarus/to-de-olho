@@ -2,7 +2,7 @@
 
 > Transparência política para todos os brasileiros.
 >
-> Status consolidado em 02/out/2025.
+> Status consolidado em 25/out/2025.
 
 ## Prioridades Gerais
 
@@ -13,11 +13,11 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 | Funcionalidade                | Situação atual                    | Prioridade | Deadline     |
 |------------------------------|----------------------------------|------------|--------------|
 | Sistema de votações          | Concluído                         | Baixa      | set/2025     |
-| Sincronização + API Câmara   | Backfill com despesas; scheduler parcial | Crítica    | out/2025     |
 | Engine de analytics          | Concluído, testes cobrindo votações | Média      | set/2025     |
 | Frontend WCAG                | Concluído                         | Média      | set/2025     |
 | API REST v1                  | Concluído                         | Média      | set/2025     |
-| Esquema do banco             | Migration 014 aplicada via migrator | Média      | out/2025     |
+| Sincronização + API Câmara   | Backfill despesas em execução; scheduler aguardando flags | Crítica    | out/2025     |
+| Esquema do banco             | Migrations 014-016 aplicadas no dev | Média      | out/2025     |
 | Deploy em produção           | Não iniciado                      | Alta       | nov/2025     |
 | Integração IA Gemini         | Não iniciado                      | Média      | dez/2025     |
 
@@ -25,7 +25,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 - Revisar componentes de interface que dificultam a filtragem de deputados (exemplo: seletor de partido).
 - Implementar exibição de votações no frontend principal.
-- Habilitar ingestão completa (deputados, despesas, votações e proposições) em backfill e scheduler com as flags correspondentes.
+- Habilitar ingestão completa (deputados, despesas, votações e proposições) em backfill e scheduler com as flags correspondentes assim que a execução atual finalizar.
 
 ## Backfill Histórico (API Câmara)
 
@@ -33,8 +33,8 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 ### Resumo do estado atual
 - Concluído: Deputados (backfill e scheduler), Votações históricas (executor rodando com circuit breaker monitorado) e Partidos (upsert + checkpoint dedicado).
-- Atualizado: Despesas agora possuem etapa dedicada no backfill histórico (upsert + checkpoints anuais); scheduler diário segue aguardando ativação das flags e validação de métricas. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`).
-- Em andamento: testes unitários do executor de votações, validação de performance em staging, cobertura de repositórios sem integração automatizada.
+- Atualizado: Despesas agora possuem etapa dedicada no backfill histórico (upsert + checkpoints anuais); constraint de `valor_liquido` ajustada via migration 016 e validações de dados concluídas. Backfill histórico em execução (`Despesas 2023` 440/513) e scheduler diário segue aguardando ativação das flags e validação de métricas. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`).
+- Em andamento: acompanhamento da execução atual de despesas (reiniciar com `BACKFILL_FORCE=true` se travar), testes unitários do executor de votações, validação de performance em staging, cobertura de repositórios sem integração automatizada.
 - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
 - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
 - Backlog (prioridade baixa): Eventos, Blocos, Frentes, Grupos.
@@ -57,8 +57,10 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 **Despesas (altíssima prioridade)**
 - [x] Implementar etapa dedicada no backfill histórico usando `DespesaRepository.UpsertDespesas` com checkpoints anuais (21/out/2025).
-- [ ] Validar a aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes (migrator já executa automaticamente no bootstrap).
+- [ ] Validar a aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes (dev confirmado até a versão 016; falta staging/prod).
+- [x] Ajustar constraint de `valor_liquido` para aceitar estornos (migration 016 aplicada e validada em dev).
 - [ ] Habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`).
+- [ ] Monitorar conclusão do backfill histórico atual (`ef924048-2457-4dab-b5c0-40c2a4ef8d9b`) e registrar checkpoints anuais.
 
 **Votações (alta prioridade)**
 - [x] Checkpoint "votacoes" no plano anual (`StrategicBackfillExecutor.createBackfillPlan`)
@@ -105,8 +107,8 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Planejamento de janelas de execução (backfill inicial custoso)
 
 **Próximos passos imediatos**
-1. Aplicar a migration `014_alter_despesas_add_columns.sql`, implementar a etapa de despesas no backfill histórico e reprocessar dados com `BACKFILL_INCLUDE_DESPESAS=true`.
-2. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando uma execução completa via métricas.
+1. Acompanhar o backfill histórico de despesas (`ef924048-2457-4dab-b5c0-40c2a4ef8d9b`) até concluir os anos 2022-2025; reiniciar com `BACKFILL_FORCE=true` caso permaneça em `running`.
+2. Após o backfill finalizar, habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`).
 3. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
 4. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
 5. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
@@ -240,10 +242,10 @@ GET /api/v1/analytics/presenca           - Ranking presença eventos
 
 ## Bloqueadores Identificados
 
-### 0. Ingestão de despesas (atualizado em 21/out/2025)
-Status: etapa histórica implementada com `DespesaRepository.UpsertDespesas` e checkpoints anuais; falta validar execução em staging e habilitar o scheduler diário.
+### 0. Ingestão de despesas (atualizado em 25/out/2025)
+Status: etapa histórica implementada com `DespesaRepository.UpsertDespesas`, checkpoints anuais e constraint ajustada (migration 016). Backfill corrente (`Despesas 2023` 440/513) permanece em `running` e aguarda finalização para liberar agendamentos.
 Impacto: métricas e UI ainda podem ficar desatualizadas até a primeira execução completa do scheduler com as flags ativas.
-Plano: aplicar/confirmar a migration `014_alter_despesas_add_columns.sql` em todos os ambientes, habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true` e monitorar `despesas_processadas`/`despesas_sincronizadas` após o reprocesso.
+Plano: acompanhar a execução atual e reiniciar se necessário; após concluir, habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true` e monitorar `despesas_processadas`/`despesas_sincronizadas` após o reprocesso.
 
 ### 1. Validação de analytics de votações (atualizado em 21/out/2025)
 Problema: endpoints e cálculos foram implementados e testados, mas ainda falta confrontar os resultados com dados reais após o novo backfill.

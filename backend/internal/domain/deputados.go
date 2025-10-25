@@ -101,10 +101,6 @@ func (d *Despesa) Validate() error {
 		return errors.New("mês deve ser entre 1 e 12")
 	}
 
-	if d.ValorLiquido < 0 {
-		return errors.New("valor deve ser positivo")
-	}
-
 	return nil
 }
 

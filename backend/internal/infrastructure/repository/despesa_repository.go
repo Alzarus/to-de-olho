@@ -180,7 +180,7 @@ func (r *DespesaRepository) upsertIndividual(ctx context.Context, tx pgx.Tx, dep
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW()
 		)
-		ON CONFLICT (deputado_id, ano, cod_documento)
+		ON CONFLICT ON CONSTRAINT uq_despesas_deputado_ano_cod_documento
 		DO UPDATE SET
 			mes = EXCLUDED.mes,
 			tipo_documento = EXCLUDED.tipo_documento,
