@@ -58,6 +58,10 @@ type VotacaoDetalhada struct {
 // RankingDeputadoVotacao representa ranking de deputados por votações
 type RankingDeputadoVotacao struct {
 	IDDeputado      int     `json:"idDeputado"`
+	Nome            string  `json:"nome"`
+	SiglaPartido    string  `json:"siglaPartido"`
+	SiglaUF         string  `json:"siglaUf"`
+	URLFoto         string  `json:"urlFoto,omitempty"`
 	TotalVotacoes   int     `json:"totalVotacoes"`
 	VotosFavoraveis int     `json:"votosFavoraveis"`
 	VotosContrarios int     `json:"votosContrarios"`

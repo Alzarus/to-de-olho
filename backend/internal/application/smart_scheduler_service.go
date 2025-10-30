@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"to-de-olho-backend/internal/domain"
+	"to-de-olho-backend/internal/pkg/envutils"
 	"to-de-olho-backend/internal/pkg/metrics"
 )
 
@@ -160,9 +161,9 @@ func (s *SmartSchedulerService) runSchedulerExecution(ctx context.Context, execu
 		}
 	}
 
-	// Proposições: temporariamente puladas por volume. Para reativar, exporte SCHEDULER_INCLUDE_PROPOSICOES=true
+	// Proposições: podem ser desabilitadas via SCHEDULER_INCLUDE_PROPOSICOES=false quando necessário
 	if config.IncluirProposicoes && executionError == nil {
-		if os.Getenv("SCHEDULER_INCLUDE_PROPOSICOES") == "true" {
+		if envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_PROPOSICOES"), true) {
 			if count, err := s.sincronizarProposicoes(ctx, execution.ExecutionID); err != nil {
 				s.logger.Error("❌ Erro ao sincronizar proposições", slog.String("error", err.Error()))
 				executionError = err
@@ -173,25 +174,29 @@ func (s *SmartSchedulerService) runSchedulerExecution(ctx context.Context, execu
 				})
 			}
 		} else {
-			s.logger.Info("📋 Sincronização de proposições pulada (SCHEDULER_INCLUDE_PROPOSICOES!=true)", slog.String("execution_id", execution.ExecutionID))
+			s.logger.Info("📋 Sincronização de proposições desativada via flag", slog.String("execution_id", execution.ExecutionID))
 		}
 	}
 
 	if config.IncluirDespesas && executionError == nil {
-		if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
-			s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
-			executionError = err
+		if !envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
+			s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
 		} else {
-			totalSincronizados += count
-			s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
-				"despesas_sincronizadas": count,
-			})
+			if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
+				s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
+				executionError = err
+			} else {
+				totalSincronizados += count
+				s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
+					"despesas_sincronizadas": count,
+				})
+			}
 		}
 	}
 
-	// Votações: opcional via SCHEDULER_INCLUDE_VOTACOES=true (padrão desativado para reduzir volume)
+	// Votações: podem ser desabilitadas via SCHEDULER_INCLUDE_VOTACOES=false em situações de mitigação de carga
 	if config.IncluirVotacoes && executionError == nil {
-		if os.Getenv("SCHEDULER_INCLUDE_VOTACOES") == "true" {
+		if envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_VOTACOES"), true) {
 			if count, err := s.sincronizarVotacoes(ctx, execution.ExecutionID); err != nil {
 				s.logger.Error("❌ Erro ao sincronizar votações", slog.String("error", err.Error()))
 				executionError = err
@@ -202,7 +207,7 @@ func (s *SmartSchedulerService) runSchedulerExecution(ctx context.Context, execu
 				})
 			}
 		} else {
-			s.logger.Info("🗳️ Sincronização de votações pulada (SCHEDULER_INCLUDE_VOTACOES!=true)", slog.String("execution_id", execution.ExecutionID))
+			s.logger.Info("🗳️ Sincronização de votações desativada via flag", slog.String("execution_id", execution.ExecutionID))
 		}
 	}
 

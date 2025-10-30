@@ -213,6 +213,9 @@ func TestAnalyticsService_GetRankingDeputadosVotacao(t *testing.T) {
 	if len(resp) == 0 {
 		t.Fatal("expected ranking entries")
 	}
+	if resp[0].Nome == "" {
+		t.Fatal("expected ranking entry to include deputy name")
+	}
 	if source != "computed" && source != "cache" {
 		t.Fatalf("unexpected source: %s", source)
 	}

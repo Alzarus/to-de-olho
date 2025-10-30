@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PAGINATION_CONFIG } from '../config/constants';
@@ -6,15 +8,15 @@ interface VotacaoResumo {
   id: number;
   titulo: string;
   ementa: string;
-  data: string;
+  dataVotacao: string;
   aprovacao: string;
   placarSim: number;
   placarNao: number;
   placarAbstencao: number;
-  totalVotos: number;
+  placarOutros?: number;
   tipoProposicao: string;
   numeroProposicao: string;
-  relevancia: 'alta' | 'média' | 'baixa';
+  relevancia: 'alta' | 'média' | 'baixa' | string;
 }
 
 interface VotacoesPageProps {
@@ -41,26 +43,29 @@ const VotacoesPage: React.FC<VotacoesPageProps> = ({ className = "" }) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
-        pagina: paginacao.pagina.toString(),
-        limite: PAGINATION_CONFIG.DEFAULT_PAGE_SIZE.toString(),
+        page: paginacao.pagina.toString(),
+        limit: Math.min(PAGINATION_CONFIG.DEFAULT_PAGE_SIZE, PAGINATION_CONFIG.MAX_PAGE_SIZE).toString(),
         ...(filtros.busca && { busca: filtros.busca }),
         ...(filtros.ano && { ano: filtros.ano }),
         ...(filtros.aprovacao && { aprovacao: filtros.aprovacao }),
         ...(filtros.relevancia && { relevancia: filtros.relevancia })
       });
 
-      const response = await fetch(`/api/v1/votacoes?${params}`);
+      const response = await fetch(`/api/v1/votacoes?${params.toString()}`);
       
       if (!response.ok) {
         throw new Error('Erro ao carregar votações');
       }
       
       const data = await response.json();
-      setVotacoes(data.votacoes || []);
+      const votacoesResponse: VotacaoResumo[] = Array.isArray(data?.data) ? data.data : [];
+      const pagination = data?.pagination ?? {};
+
+      setVotacoes(votacoesResponse);
       setPaginacao(prev => ({
         ...prev,
-        totalPaginas: data.totalPaginas || 1,
-        total: data.total || 0
+        totalPaginas: pagination.total_pages || pagination.totalPages || 1,
+        total: pagination.total || 0
       }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -101,8 +106,16 @@ const VotacoesPage: React.FC<VotacoesPageProps> = ({ className = "" }) => {
     return total > 0 ? (votos / total) * 100 : 0;
   };
 
+  const obterTotalVotos = (votacao: VotacaoResumo): number => {
+    return votacao.placarSim + votacao.placarNao + votacao.placarAbstencao + (votacao.placarOutros || 0);
+  };
+
   const anosDisponiveis = Array.from(new Set(
-    votacoes.map(v => new Date(v.data).getFullYear())
+    votacoes
+      .map(v => v.dataVotacao)
+      .filter(Boolean)
+      .map(data => new Date(data).getFullYear())
+      .filter(ano => !Number.isNaN(ano))
   )).sort((a, b) => b - a);
 
   if (error) {
@@ -272,93 +285,97 @@ const VotacoesPage: React.FC<VotacoesPageProps> = ({ className = "" }) => {
             </p>
           </div>
         ) : (
-          votacoes.map((votacao) => (
-            <div key={votacao.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-              <div className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                  {/* Conteúdo Principal */}
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getCorAprovacao(votacao.aprovacao)}`}>
-                        {votacao.aprovacao}
-                      </span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getCorRelevancia(votacao.relevancia)}`}>
-                        {votacao.relevancia} relevância
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {votacao.tipoProposicao} {votacao.numeroProposicao}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        📅 {new Date(votacao.data).toLocaleDateString('pt-BR')}
-                      </span>
+          votacoes.map((votacao) => {
+            const totalVotos = obterTotalVotos(votacao);
+
+            return (
+              <div key={votacao.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+                <div className="p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-4">
+                    {/* Conteúdo Principal */}
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getCorAprovacao(votacao.aprovacao)}`}>
+                          {votacao.aprovacao}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getCorRelevancia(votacao.relevancia)}`}>
+                          {votacao.relevancia} relevância
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {votacao.tipoProposicao} {votacao.numeroProposicao}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          📅 {new Date(votacao.dataVotacao).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2 leading-tight">
+                        {votacao.titulo}
+                      </h3>
+
+                      <p className="text-gray-700 text-sm mb-4 leading-relaxed line-clamp-2">
+                        {votacao.ementa}
+                      </p>
+
+                      {/* Estatísticas da Votação */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                        <div>
+                          <div className="text-lg font-bold text-green-600">{votacao.placarSim}</div>
+                          <div className="text-xs text-gray-500">
+                            Favoráveis ({calcularPorcentagem(votacao.placarSim, totalVotos).toFixed(1)}%)
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-red-600">{votacao.placarNao}</div>
+                          <div className="text-xs text-gray-500">
+                            Contrários ({calcularPorcentagem(votacao.placarNao, totalVotos).toFixed(1)}%)
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-yellow-600">{votacao.placarAbstencao}</div>
+                          <div className="text-xs text-gray-500">
+                            Abstenções ({calcularPorcentagem(votacao.placarAbstencao, totalVotos).toFixed(1)}%)
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-gray-600">{totalVotos}</div>
+                          <div className="text-xs text-gray-500">Total de votos</div>
+                        </div>
+                      </div>
                     </div>
 
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 leading-tight">
-                      {votacao.titulo}
-                    </h3>
-
-                    <p className="text-gray-700 text-sm mb-4 leading-relaxed line-clamp-2">
-                      {votacao.ementa}
-                    </p>
-
-                    {/* Estatísticas da Votação */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                      <div>
-                        <div className="text-lg font-bold text-green-600">{votacao.placarSim}</div>
-                        <div className="text-xs text-gray-500">
-                          Favoráveis ({calcularPorcentagem(votacao.placarSim, votacao.totalVotos).toFixed(1)}%)
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-bold text-red-600">{votacao.placarNao}</div>
-                        <div className="text-xs text-gray-500">
-                          Contrários ({calcularPorcentagem(votacao.placarNao, votacao.totalVotos).toFixed(1)}%)
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-bold text-yellow-600">{votacao.placarAbstencao}</div>
-                        <div className="text-xs text-gray-500">
-                          Abstenções ({calcularPorcentagem(votacao.placarAbstencao, votacao.totalVotos).toFixed(1)}%)
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-lg font-bold text-gray-600">{votacao.totalVotos}</div>
-                        <div className="text-xs text-gray-500">Total de votos</div>
-                      </div>
+                    {/* Ações */}
+                    <div className="flex-shrink-0">
+                      <Link 
+                        href={`/votacoes/${votacao.id}`}
+                        className="block w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700 transition-colors"
+                      >
+                        📊 Ver Análise
+                      </Link>
                     </div>
                   </div>
 
-                  {/* Ações */}
-                  <div className="flex-shrink-0">
-                    <Link 
-                      href={`/votacoes/${votacao.id}`}
-                      className="block w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700 transition-colors"
-                    >
-                      📊 Ver Análise
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Barra de Progresso Visual */}
-                <div className="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div className="h-full flex">
-                    <div 
-                      className="bg-green-500"
-                      style={{ width: `${calcularPorcentagem(votacao.placarSim, votacao.totalVotos)}%` }}
-                    ></div>
-                    <div 
-                      className="bg-red-500"
-                      style={{ width: `${calcularPorcentagem(votacao.placarNao, votacao.totalVotos)}%` }}
-                    ></div>
-                    <div 
-                      className="bg-yellow-500"
-                      style={{ width: `${calcularPorcentagem(votacao.placarAbstencao, votacao.totalVotos)}%` }}
-                    ></div>
+                  {/* Barra de Progresso Visual */}
+                  <div className="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div className="h-full flex">
+                      <div 
+                        className="bg-green-500"
+                        style={{ width: `${calcularPorcentagem(votacao.placarSim, totalVotos)}%` }}
+                      ></div>
+                      <div 
+                        className="bg-red-500"
+                        style={{ width: `${calcularPorcentagem(votacao.placarNao, totalVotos)}%` }}
+                      ></div>
+                      <div 
+                        className="bg-yellow-500"
+                        style={{ width: `${calcularPorcentagem(votacao.placarAbstencao, totalVotos)}%` }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

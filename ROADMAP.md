@@ -2,7 +2,7 @@
 
 > Transparência política para todos os brasileiros.
 >
-> Status consolidado em 29/out/2025.
+> Status consolidado em 30/out/2025.
 
 ## Prioridades Gerais
 
@@ -24,7 +24,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 ## Demandas Urgentes
 
 - Revisar componentes de interface que dificultam a filtragem de deputados (exemplo: seletor de partido).
-- Implementar exibição de votações no frontend principal.
+- Implementar exibição de votações no frontend principal. *(Concluído em 30/out/2025 — componentes `VotacoesAnalytics` e `VotacoesRanking` publicados na página principal)*
 - Habilitar ingestão completa (deputados, despesas, votações e proposições) em backfill e scheduler com as flags correspondentes, validando métricas após ativação.
 
 ## Backfill Histórico (API Câmara)
@@ -33,7 +33,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 ### Resumo do estado atual
 - Concluído: Deputados (backfill e scheduler), Votações históricas (executor com circuit breaker monitorado), Despesas 2025-2022 com checkpoints anuais e Partidos (upsert + checkpoint dedicado).
-- Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário permanece aguardando habilitação das flags (`SCHEDULER_INCLUDE_*`) e validação de métricas. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`).
+- Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário permanece aguardando habilitação das flags (`SCHEDULER_INCLUDE_*`) e validação de métricas. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`). Frontend principal já exibe analytics e ranking de votações com dados em tempo real (30/out/2025).
 - Em andamento: habilitação e observabilidade do scheduler pós-backfill, testes unitários do executor de votações, validação de performance em staging e cobertura de repositórios sem integração automatizada.
 - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
 - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
@@ -108,7 +108,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 **Próximos passos imediatos**
 1. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`) após a primeira janela de execução.
-2. Auditar os dashboards de votações no frontend com os dados do novo backfill e ajustar caching conforme necessário.
+2. Auditar os dashboards de votações no frontend com os dados do novo backfill e ajustar caching conforme necessário (componentes foram integrados em 30/out/2025; falta validação com dados reais).
 3. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
 4. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
 5. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
@@ -160,7 +160,8 @@ GET /api/v1/analytics/presenca           - Ranking presença eventos
 ```
 
 **Componentes Frontend**:
-- `VotacoesAnalytics.tsx` - Dashboard estatísticas votações *(NOVA - Set/24/2025)*
+- `VotacoesAnalytics.tsx` - Dashboard estatísticas votações *(atualizado em 30/out/2025)*
+- `VotacoesRanking.tsx` - Ranking de atuação em plenário *(NOVA - 30/out/2025)*
 - `RankingDisciplina.tsx` - Disciplina partidária *(NOVA - Set/24/2025)*  
 - `EventosProximos.tsx` - Agenda de reuniões e sessões
 - `HistoricoParlamentar.tsx` - Timeline de mudanças
@@ -207,9 +208,10 @@ GET /api/v1/analytics/presenca           - Ranking presença eventos
 - ✅ `AnalyticsService` calculando rankings e estatísticas com cache Redis
 - ✅ Testes unitários cobrindo ranking de deputados, disciplina partidária e estatísticas agregadas
 - ✅ `VotacaoAnalysis.tsx` para análise detalhada individual
+- ✅ `VotacoesAnalytics.tsx` e `VotacoesRanking.tsx` integrados à página principal de votações (30/out/2025)
 
 **⚠️ O que falta validar**:
-- ⚠️ Dashboards comparativos no frontend com dados reais (`VotacoesAnalytics.tsx`, `RankingDisciplina.tsx`)
+- ⚠️ Dashboards comparativos no frontend com dados reais (`VotacoesAnalytics.tsx`, `VotacoesRanking.tsx`, `RankingDisciplina.tsx`)
 - ⚠️ Tendências e séries temporais (avaliar necessidade de endpoint dedicado ou extensão de `GetStatsVotacoes`)
 - ⚠️ Auditoria dos resultados após backfill completo para garantir fidelidade dos indicadores
 

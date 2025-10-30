@@ -563,7 +563,7 @@ func (m *MockAnalyticsService) GetRankingDeputadosVotacao(ctx context.Context, a
 	}
 	if len(m.rankingDeputados) == 0 {
 		m.rankingDeputados = []domain.RankingDeputadoVotacao{
-			{IDDeputado: 1, TotalVotacoes: 80, VotosFavoraveis: 60, VotosContrarios: 15, Abstencoes: 5},
+			{IDDeputado: 1, Nome: "Deputado de Teste", SiglaPartido: "PT", SiglaUF: "SP", URLFoto: "https://example.com/foto.jpg", TotalVotacoes: 80, VotosFavoraveis: 60, VotosContrarios: 15, Abstencoes: 5},
 		}
 	}
 	return m.rankingDeputados, m.source, nil
