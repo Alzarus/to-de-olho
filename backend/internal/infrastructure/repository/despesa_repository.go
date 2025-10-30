@@ -50,6 +50,26 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 		return nil
 	}
 
+	// Eliminar duplicatas por (ano, cod_documento) antes do COPY para evitar conflitos
+	// Mantemos o último registro visto para preservar dados mais recentes retornados pela API
+	// e reduzir quedas para o fallback individual mais lento.
+	type dedupeKey struct {
+		ano          int
+		codDocumento int
+	}
+	seenIndex := make(map[dedupeKey]int, len(despesas))
+	unique := make([]domain.Despesa, 0, len(despesas))
+	for _, d := range despesas {
+		key := dedupeKey{ano: d.Ano, codDocumento: d.CodDocumento}
+		if idx, ok := seenIndex[key]; ok {
+			unique[idx] = d
+			continue
+		}
+		seenIndex[key] = len(unique)
+		unique = append(unique, d)
+	}
+	despesas = unique
+
 	start := time.Now()
 
 	// Usar transação para batch
@@ -63,6 +83,11 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 			_ = tx.Rollback(ctx)
 		}
 	}()
+
+	// Remover registros existentes do mesmo deputado/ano para garantir idempotência do COPY
+	if _, err := tx.Exec(ctx, "DELETE FROM despesas WHERE deputado_id = $1 AND ano = $2", deputadoID, ano); err != nil {
+		return fmt.Errorf("erro ao limpar despesas antigas (%d/%d): %w", deputadoID, ano, err)
+	}
 
 	// Preparar batch com CopyFrom para máxima performance
 	now := time.Now()
