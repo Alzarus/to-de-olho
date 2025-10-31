@@ -201,9 +201,6 @@ func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, 
 		}
 
 		// Sincronizar orientações partidárias
-		if breakerErr != nil {
-			break
-		}
 		if err := vs.sincronizarOrientacoes(ctx, votacao); err != nil {
 			if resilience.IsCircuitBreakerOpen(err) || errors.Is(err, context.DeadlineExceeded) {
 				vs.logger.Warn("circuit breaker ativo ao sincronizar orientações; interrompendo processamento restante",
