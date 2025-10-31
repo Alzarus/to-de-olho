@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -34,8 +35,10 @@ func TestVotacaoRepository(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("CreateVotacao", func(t *testing.T) {
+		numericID := int64(12345)
 		votacao := &domain.Votacao{
-			IDVotacaoCamara:  12345,
+			IDCamara:         fmt.Sprintf("%d", numericID),
+			IDVotacaoCamara:  &numericID,
 			Titulo:           "PEC da Blindagem Fiscal",
 			Ementa:           "Proposta de Emenda à Constituição que estabelece blindagem fiscal...",
 			DataVotacao:      time.Now(),
@@ -64,8 +67,10 @@ func TestVotacaoRepository(t *testing.T) {
 
 	t.Run("GetVotacaoByID", func(t *testing.T) {
 		// Primeiro, criar uma votação
+		numericID := int64(12346)
 		votacao := &domain.Votacao{
-			IDVotacaoCamara:  12346,
+			IDCamara:         fmt.Sprintf("%d", numericID),
+			IDVotacaoCamara:  &numericID,
 			Titulo:           "PL do Marco Legal das Startups",
 			Ementa:           "Estabelece marco legal para startups no Brasil",
 			DataVotacao:      time.Now(),
@@ -92,8 +97,10 @@ func TestVotacaoRepository(t *testing.T) {
 
 	t.Run("CreateVotoDeputado", func(t *testing.T) {
 		// Criar votação primeiro
+		numericID := int64(12347)
 		votacao := &domain.Votacao{
-			IDVotacaoCamara: 12347,
+			IDCamara:        fmt.Sprintf("%d", numericID),
+			IDVotacaoCamara: &numericID,
 			Titulo:          "Votação de Teste",
 			DataVotacao:     time.Now(),
 			Aprovacao:       "Aprovada",
@@ -119,8 +126,10 @@ func TestVotacaoRepository(t *testing.T) {
 
 	t.Run("CreateOrientacaoPartido", func(t *testing.T) {
 		// Criar votação primeiro
+		numericID := int64(12348)
 		votacao := &domain.Votacao{
-			IDVotacaoCamara: 12348,
+			IDCamara:        fmt.Sprintf("%d", numericID),
+			IDVotacaoCamara: &numericID,
 			Titulo:          "Orientação de Teste",
 			DataVotacao:     time.Now(),
 			Aprovacao:       "Rejeitada",
@@ -166,8 +175,10 @@ func TestVotacaoRepository(t *testing.T) {
 
 	t.Run("GetVotacaoDetalhada", func(t *testing.T) {
 		// Criar votação com votos e orientações
+		numericID := int64(12349)
 		votacao := &domain.Votacao{
-			IDVotacaoCamara: 12349,
+			IDCamara:        fmt.Sprintf("%d", numericID),
+			IDVotacaoCamara: &numericID,
 			Titulo:          "Votação Completa",
 			DataVotacao:     time.Now(),
 			Aprovacao:       "Aprovada",
@@ -210,8 +221,10 @@ func TestVotacaoRepository(t *testing.T) {
 	})
 
 	t.Run("UpsertVotacao", func(t *testing.T) {
+		numericID := int64(99999)
 		votacao := &domain.Votacao{
-			IDVotacaoCamara: 99999,
+			IDCamara:        fmt.Sprintf("%d", numericID),
+			IDVotacaoCamara: &numericID,
 			Titulo:          "Votação Original",
 			DataVotacao:     time.Now(),
 			Aprovacao:       "Aprovada",
@@ -245,8 +258,10 @@ func TestVotacaoRepository(t *testing.T) {
 func TestVotacaoValidation(t *testing.T) {
 	t.Run("ValidateVotacao", func(t *testing.T) {
 		// Votação válida
+		numericID := int64(123)
 		votacao := &domain.Votacao{
-			IDVotacaoCamara: 123,
+			IDCamara:        fmt.Sprintf("%d", numericID),
+			IDVotacaoCamara: &numericID,
 			Titulo:          "Título válido",
 			DataVotacao:     time.Now(),
 			Aprovacao:       "Aprovada",
@@ -257,9 +272,9 @@ func TestVotacaoValidation(t *testing.T) {
 		}
 		assert.NoError(t, votacao.Validate())
 
-		// Votação inválida - sem ID
+		// Votação inválida - sem ID textual
 		votacaoInvalida := *votacao
-		votacaoInvalida.IDVotacaoCamara = 0
+		votacaoInvalida.IDCamara = ""
 		assert.Error(t, votacaoInvalida.Validate())
 
 		// Votação inválida - sem título

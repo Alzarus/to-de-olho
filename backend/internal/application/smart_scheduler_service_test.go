@@ -196,10 +196,10 @@ func TestRunSchedulerExecution_RespectsFeatureFlags(t *testing.T) {
 
 	execution := &domain.SchedulerExecution{ExecutionID: "exec-flag", Tipo: domain.SchedulerTipoRapido, StartedAt: time.Now(), Status: domain.BackfillStatusRunning}
 	cfg := &domain.SchedulerConfig{
-		Tipo:             domain.SchedulerTipoRapido,
-		IncluirDeputados: true,
-		IncluirDespesas:  true,
-		IncluirVotacoes:  false,
+		Tipo:               domain.SchedulerTipoRapido,
+		IncluirDeputados:   true,
+		IncluirDespesas:    true,
+		IncluirVotacoes:    false,
 		IncluirProposicoes: false,
 	}
 

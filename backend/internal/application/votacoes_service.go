@@ -15,9 +15,9 @@ import (
 // CamaraAPIPort define interface para API da Câmara para votações
 type CamaraAPIPort interface {
 	GetVotacoes(ctx context.Context, dataInicio, dataFim time.Time) ([]*domain.Votacao, error)
-	GetVotacao(ctx context.Context, id int64) (*domain.Votacao, error)
-	GetVotosPorVotacao(ctx context.Context, idVotacao int64) ([]*domain.VotoDeputado, error)
-	GetOrientacoesPorVotacao(ctx context.Context, idVotacao int64) ([]*domain.OrientacaoPartido, error)
+	GetVotacao(ctx context.Context, id string) (*domain.Votacao, error)
+	GetVotosPorVotacao(ctx context.Context, idVotacao string) ([]*domain.VotoDeputado, error)
+	GetOrientacoesPorVotacao(ctx context.Context, idVotacao string) ([]*domain.OrientacaoPartido, error)
 }
 
 // VotacoesService gerencia operações relacionadas a votações
@@ -183,10 +183,11 @@ func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, 
 		}
 
 		// Sincronizar votos dos deputados
-		if err := vs.sincronizarVotos(ctx, votacao.ID); err != nil {
+		if err := vs.sincronizarVotos(ctx, votacao); err != nil {
 			if resilience.IsCircuitBreakerOpen(err) || errors.Is(err, context.DeadlineExceeded) {
 				vs.logger.Warn("circuit breaker ativo ao sincronizar votos; interrompendo processamento restante",
 					slog.Int64("votacao_id", votacao.ID),
+					slog.String("id_camara", votacao.IDCamara),
 					slog.String("error", err.Error()))
 				skippedByCircuit++
 				breakerErr = err
@@ -195,6 +196,7 @@ func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, 
 
 			vs.logger.Error("erro ao sincronizar votos da votação",
 				slog.Int64("votacao_id", votacao.ID),
+				slog.String("id_camara", votacao.IDCamara),
 				slog.String("error", err.Error()))
 		}
 
@@ -202,10 +204,11 @@ func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, 
 		if breakerErr != nil {
 			break
 		}
-		if err := vs.sincronizarOrientacoes(ctx, votacao.ID); err != nil {
+		if err := vs.sincronizarOrientacoes(ctx, votacao); err != nil {
 			if resilience.IsCircuitBreakerOpen(err) || errors.Is(err, context.DeadlineExceeded) {
 				vs.logger.Warn("circuit breaker ativo ao sincronizar orientações; interrompendo processamento restante",
 					slog.Int64("votacao_id", votacao.ID),
+					slog.String("id_camara", votacao.IDCamara),
 					slog.String("error", err.Error()))
 				skippedByCircuit++
 				breakerErr = err
@@ -214,6 +217,7 @@ func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, 
 
 			vs.logger.Error("erro ao sincronizar orientações da votação",
 				slog.Int64("votacao_id", votacao.ID),
+				slog.String("id_camara", votacao.IDCamara),
 				slog.String("error", err.Error()))
 		}
 	}
@@ -235,16 +239,25 @@ func (vs *VotacoesService) SincronizarVotacoes(ctx context.Context, dataInicio, 
 }
 
 // sincronizarVotos sincroniza votos dos deputados para uma votação
-func (vs *VotacoesService) sincronizarVotos(ctx context.Context, votacaoID int64) error {
-	votos, err := vs.camaraClient.GetVotosPorVotacao(ctx, votacaoID)
+func (vs *VotacoesService) sincronizarVotos(ctx context.Context, votacao *domain.Votacao) error {
+	if votacao == nil {
+		return fmt.Errorf("votação inválida para sincronização de votos")
+	}
+	if votacao.IDCamara == "" {
+		return fmt.Errorf("votação %d sem idCamara associado", votacao.ID)
+	}
+
+	votos, err := vs.camaraClient.GetVotosPorVotacao(ctx, votacao.IDCamara)
 	if err != nil {
-		return fmt.Errorf("erro ao buscar votos da votação %d: %w", votacaoID, err)
+		return fmt.Errorf("erro ao buscar votos da votação %s: %w", votacao.IDCamara, err)
 	}
 
 	for _, voto := range votos {
+		voto.IDVotacao = votacao.ID
 		if err := vs.votacaoRepo.CreateVotoDeputado(ctx, voto); err != nil {
 			vs.logger.Error("erro ao salvar voto do deputado",
-				slog.Int64("votacao_id", votacaoID),
+				slog.Int64("votacao_id", votacao.ID),
+				slog.String("id_camara", votacao.IDCamara),
 				slog.Int("deputado_id", voto.IDDeputado),
 				slog.String("error", err.Error()))
 		}
@@ -254,16 +267,25 @@ func (vs *VotacoesService) sincronizarVotos(ctx context.Context, votacaoID int64
 }
 
 // sincronizarOrientacoes sincroniza orientações partidárias para uma votação
-func (vs *VotacoesService) sincronizarOrientacoes(ctx context.Context, votacaoID int64) error {
-	orientacoes, err := vs.camaraClient.GetOrientacoesPorVotacao(ctx, votacaoID)
+func (vs *VotacoesService) sincronizarOrientacoes(ctx context.Context, votacao *domain.Votacao) error {
+	if votacao == nil {
+		return fmt.Errorf("votação inválida para sincronização de orientações")
+	}
+	if votacao.IDCamara == "" {
+		return fmt.Errorf("votação %d sem idCamara associado", votacao.ID)
+	}
+
+	orientacoes, err := vs.camaraClient.GetOrientacoesPorVotacao(ctx, votacao.IDCamara)
 	if err != nil {
-		return fmt.Errorf("erro ao buscar orientações da votação %d: %w", votacaoID, err)
+		return fmt.Errorf("erro ao buscar orientações da votação %s: %w", votacao.IDCamara, err)
 	}
 
 	for _, orientacao := range orientacoes {
+		orientacao.IDVotacao = votacao.ID
 		if err := vs.votacaoRepo.CreateOrientacaoPartido(ctx, orientacao); err != nil {
 			vs.logger.Error("erro ao salvar orientação do partido",
-				slog.Int64("votacao_id", votacaoID),
+				slog.Int64("votacao_id", votacao.ID),
+				slog.String("id_camara", votacao.IDCamara),
 				slog.String("partido", orientacao.Partido),
 				slog.String("error", err.Error()))
 		}
@@ -312,29 +334,32 @@ func (vs *VotacoesService) SincronizarVotacoesRecentes(ctx context.Context, filt
 	for _, votacao := range votacoes {
 		if err := vs.votacaoRepo.UpsertVotacao(ctx, votacao); err != nil {
 			vs.logger.Error("erro ao salvar votação",
-				slog.Int64("idVotacaoCamara", votacao.IDVotacaoCamara),
+				slog.String("idCamara", votacao.IDCamara),
 				slog.String("titulo", votacao.Titulo),
 				slog.String("error", err.Error()))
 			continue
 		}
 
 		// Sincronizar votos individuais dos deputados para esta votação
-		if err := vs.sincronizarVotosPorVotacao(ctx, votacao.IDVotacaoCamara); err != nil {
+		if err := vs.sincronizarVotosPorVotacao(ctx, votacao); err != nil {
 			vs.logger.Warn("erro ao sincronizar votos da votação",
-				slog.Int64("idVotacao", votacao.IDVotacaoCamara),
+				slog.Int64("votacao_id", votacao.ID),
+				slog.String("idCamara", votacao.IDCamara),
 				slog.String("error", err.Error()))
 		}
 
 		// Sincronizar orientações partidárias para esta votação
-		if err := vs.sincronizarOrientacoesPorVotacao(ctx, votacao.IDVotacaoCamara); err != nil {
+		if err := vs.sincronizarOrientacoesPorVotacao(ctx, votacao); err != nil {
 			vs.logger.Warn("erro ao sincronizar orientações da votação",
-				slog.Int64("idVotacao", votacao.IDVotacaoCamara),
+				slog.Int64("votacao_id", votacao.ID),
+				slog.String("idCamara", votacao.IDCamara),
 				slog.String("error", err.Error()))
 		}
 
 		totalProcessadas++
 		vs.logger.Debug("votação processada",
-			slog.Int64("idVotacaoCamara", votacao.IDVotacaoCamara),
+			slog.Int64("votacao_id", votacao.ID),
+			slog.String("idCamara", votacao.IDCamara),
 			slog.String("titulo", votacao.Titulo))
 	} // Invalidar caches
 	vs.invalidarCachesVotacao(ctx)
@@ -347,46 +372,66 @@ func (vs *VotacoesService) SincronizarVotacoesRecentes(ctx context.Context, filt
 }
 
 // sincronizarVotosPorVotacao sincroniza votos individuais dos deputados
-func (vs *VotacoesService) sincronizarVotosPorVotacao(ctx context.Context, idVotacao int64) error {
-	votos, err := vs.camaraClient.GetVotosPorVotacao(ctx, idVotacao)
+func (vs *VotacoesService) sincronizarVotosPorVotacao(ctx context.Context, votacao *domain.Votacao) error {
+	if votacao == nil {
+		return fmt.Errorf("votação inválida para sincronização de votos")
+	}
+	if votacao.IDCamara == "" {
+		return fmt.Errorf("votação %d sem idCamara associado", votacao.ID)
+	}
+
+	votos, err := vs.camaraClient.GetVotosPorVotacao(ctx, votacao.IDCamara)
 	if err != nil {
-		return fmt.Errorf("erro ao buscar votos da votação %d: %w", idVotacao, err)
+		return fmt.Errorf("erro ao buscar votos da votação %s: %w", votacao.IDCamara, err)
 	}
 
 	for _, voto := range votos {
+		voto.IDVotacao = votacao.ID
 		if err := vs.votacaoRepo.CreateVotoDeputado(ctx, voto); err != nil {
 			vs.logger.Debug("erro ao salvar voto (pode já existir)",
-				slog.Int64("idVotacao", idVotacao),
+				slog.Int64("votacao_id", votacao.ID),
+				slog.String("idCamara", votacao.IDCamara),
 				slog.Int("idDeputado", voto.IDDeputado),
 				slog.String("error", err.Error()))
 		}
 	}
 
 	vs.logger.Debug("votos sincronizados",
-		slog.Int64("idVotacao", idVotacao),
+		slog.Int64("votacao_id", votacao.ID),
+		slog.String("idCamara", votacao.IDCamara),
 		slog.Int("totalVotos", len(votos)))
 
 	return nil
 }
 
 // sincronizarOrientacoesPorVotacao sincroniza orientações partidárias
-func (vs *VotacoesService) sincronizarOrientacoesPorVotacao(ctx context.Context, idVotacao int64) error {
-	orientacoes, err := vs.camaraClient.GetOrientacoesPorVotacao(ctx, idVotacao)
+func (vs *VotacoesService) sincronizarOrientacoesPorVotacao(ctx context.Context, votacao *domain.Votacao) error {
+	if votacao == nil {
+		return fmt.Errorf("votação inválida para sincronização de orientações")
+	}
+	if votacao.IDCamara == "" {
+		return fmt.Errorf("votação %d sem idCamara associado", votacao.ID)
+	}
+
+	orientacoes, err := vs.camaraClient.GetOrientacoesPorVotacao(ctx, votacao.IDCamara)
 	if err != nil {
-		return fmt.Errorf("erro ao buscar orientações da votação %d: %w", idVotacao, err)
+		return fmt.Errorf("erro ao buscar orientações da votação %s: %w", votacao.IDCamara, err)
 	}
 
 	for _, orientacao := range orientacoes {
+		orientacao.IDVotacao = votacao.ID
 		if err := vs.votacaoRepo.CreateOrientacaoPartido(ctx, orientacao); err != nil {
 			vs.logger.Debug("erro ao salvar orientação (pode já existir)",
-				slog.Int64("idVotacao", idVotacao),
+				slog.Int64("votacao_id", votacao.ID),
+				slog.String("idCamara", votacao.IDCamara),
 				slog.String("partido", orientacao.Partido),
 				slog.String("error", err.Error()))
 		}
 	}
 
 	vs.logger.Debug("orientações sincronizadas",
-		slog.Int64("idVotacao", idVotacao),
+		slog.Int64("votacao_id", votacao.ID),
+		slog.String("idCamara", votacao.IDCamara),
 		slog.Int("totalOrientacoes", len(orientacoes)))
 
 	return nil

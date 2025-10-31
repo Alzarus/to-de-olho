@@ -9,6 +9,7 @@ import (
 	"to-de-olho-backend/internal/domain"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type VotacaoRepository struct {
@@ -21,13 +22,20 @@ func NewVotacaoRepository(db DB) *VotacaoRepository {
 
 // CreateVotacao cria uma nova votação no banco de dados
 func (r *VotacaoRepository) CreateVotacao(ctx context.Context, votacao *domain.Votacao) error {
+	if votacao == nil {
+		return fmt.Errorf("votação inválida para criação")
+	}
+	if strings.TrimSpace(votacao.IDCamara) == "" {
+		return fmt.Errorf("id_camara é obrigatório para criar votação")
+	}
+
 	query := `
 		INSERT INTO votacoes (
-			id_votacao_camara, titulo, ementa, data_votacao, aprovacao,
+			id_camara, id_votacao_camara, titulo, ementa, data_votacao, aprovacao,
 			placar_sim, placar_nao, placar_abstencao, placar_outros,
 			id_proposicao_principal, tipo_proposicao, numero_proposicao, 
 			ano_proposicao, relevancia, payload
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		RETURNING id, created_at, updated_at`
 
 	payloadJSON, err := json.Marshal(votacao.Payload)
@@ -36,6 +44,7 @@ func (r *VotacaoRepository) CreateVotacao(ctx context.Context, votacao *domain.V
 	}
 
 	err = r.db.QueryRow(ctx, query,
+		votacao.IDCamara,
 		votacao.IDVotacaoCamara,
 		votacao.Titulo,
 		votacao.Ementa,
@@ -62,7 +71,7 @@ func (r *VotacaoRepository) CreateVotacao(ctx context.Context, votacao *domain.V
 // GetVotacaoByID busca uma votação pelo ID
 func (r *VotacaoRepository) GetVotacaoByID(ctx context.Context, id int64) (*domain.Votacao, error) {
 	query := `
-		SELECT id, id_votacao_camara, titulo, ementa, data_votacao, aprovacao,
+		SELECT id, id_camara, id_votacao_camara, titulo, ementa, data_votacao, aprovacao,
 			   placar_sim, placar_nao, placar_abstencao, placar_outros,
 			   id_proposicao_principal, tipo_proposicao, numero_proposicao,
 			   ano_proposicao, relevancia, payload, created_at, updated_at
@@ -71,10 +80,12 @@ func (r *VotacaoRepository) GetVotacaoByID(ctx context.Context, id int64) (*doma
 
 	votacao := &domain.Votacao{}
 	var payloadStr string
+	var idVotacaoCamara pgtype.Int8
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&votacao.ID,
-		&votacao.IDVotacaoCamara,
+		&votacao.IDCamara,
+		&idVotacaoCamara,
 		&votacao.Titulo,
 		&votacao.Ementa,
 		&votacao.DataVotacao,
@@ -102,6 +113,11 @@ func (r *VotacaoRepository) GetVotacaoByID(ctx context.Context, id int64) (*doma
 	// Parse do payload JSON
 	if err := json.Unmarshal([]byte(payloadStr), &votacao.Payload); err != nil {
 		return nil, fmt.Errorf("erro ao deserializar payload: %w", err)
+	}
+
+	if idVotacaoCamara.Valid {
+		val := idVotacaoCamara.Int64
+		votacao.IDVotacaoCamara = &val
 	}
 
 	return votacao, nil
@@ -156,7 +172,7 @@ func (r *VotacaoRepository) ListVotacoes(ctx context.Context, filtros domain.Fil
 	// Query principal com paginação
 	offset := (pag.Page - 1) * pag.Limit
 	query := fmt.Sprintf(`
-		SELECT id, id_votacao_camara, titulo, ementa, data_votacao, aprovacao,
+		SELECT id, id_camara, id_votacao_camara, titulo, ementa, data_votacao, aprovacao,
 			   placar_sim, placar_nao, placar_abstencao, placar_outros,
 			   id_proposicao_principal, tipo_proposicao, numero_proposicao,
 			   ano_proposicao, relevancia, payload, created_at, updated_at
@@ -177,10 +193,12 @@ func (r *VotacaoRepository) ListVotacoes(ctx context.Context, filtros domain.Fil
 	for rows.Next() {
 		votacao := &domain.Votacao{}
 		var payloadStr string
+		var idVotacaoCamara pgtype.Int8
 
 		err := rows.Scan(
 			&votacao.ID,
-			&votacao.IDVotacaoCamara,
+			&votacao.IDCamara,
+			&idVotacaoCamara,
 			&votacao.Titulo,
 			&votacao.Ementa,
 			&votacao.DataVotacao,
@@ -205,6 +223,11 @@ func (r *VotacaoRepository) ListVotacoes(ctx context.Context, filtros domain.Fil
 		// Parse do payload JSON
 		if err := json.Unmarshal([]byte(payloadStr), &votacao.Payload); err != nil {
 			return nil, 0, fmt.Errorf("erro ao deserializar payload: %w", err)
+		}
+
+		if idVotacaoCamara.Valid {
+			val := idVotacaoCamara.Int64
+			votacao.IDVotacaoCamara = &val
 		}
 
 		votacoes = append(votacoes, votacao)
@@ -289,15 +312,23 @@ func (r *VotacaoRepository) DeleteVotacao(ctx context.Context, id int64) error {
 
 // UpsertVotacao insere ou atualiza uma votação
 func (r *VotacaoRepository) UpsertVotacao(ctx context.Context, votacao *domain.Votacao) error {
+	if votacao == nil {
+		return fmt.Errorf("votação inválida para upsert")
+	}
+	if strings.TrimSpace(votacao.IDCamara) == "" {
+		return fmt.Errorf("id_camara é obrigatório para upsert de votação")
+	}
+
 	query := `
 		INSERT INTO votacoes (
-			id_votacao_camara, titulo, ementa, data_votacao, aprovacao,
+			id_camara, id_votacao_camara, titulo, ementa, data_votacao, aprovacao,
 			placar_sim, placar_nao, placar_abstencao, placar_outros,
 			id_proposicao_principal, tipo_proposicao, numero_proposicao, 
 			ano_proposicao, relevancia, payload
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-		ON CONFLICT (id_votacao_camara) 
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		ON CONFLICT (id_camara) 
 		DO UPDATE SET
+			id_votacao_camara = EXCLUDED.id_votacao_camara,
 			titulo = EXCLUDED.titulo,
 			ementa = EXCLUDED.ementa,
 			data_votacao = EXCLUDED.data_votacao,
@@ -321,6 +352,7 @@ func (r *VotacaoRepository) UpsertVotacao(ctx context.Context, votacao *domain.V
 	}
 
 	err = r.db.QueryRow(ctx, query,
+		votacao.IDCamara,
 		votacao.IDVotacaoCamara,
 		votacao.Titulo,
 		votacao.Ementa,

@@ -67,7 +67,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [x] Executor integrado ao `VotacoesService` (`executeVotacoesBackfill`)
 - [x] Janela anual com `SincronizarVotacoes` (upsert + votos/orientações)
 - [x] Testes de integração no `VotacaoRepository`
-- [ ] Ajustar domínio/repos para IDs alfanuméricos (persistir `id` string, manter `IDVotacaoCamara` opcional)
+ - [x] Ajustar domínio/repos para IDs alfanuméricos (persistir `id` string, manter `IDVotacaoCamara` opcional) *(concluído em 30/out/2025)*
 - [ ] Revisar `CamaraClient` para filtros oficiais (`idProposicao`, `idEvento`, `idOrgao`, datas no mesmo ano) e paginação (≤200 itens)
 - [ ] Testes unitários/mocks do executor e regressões de checkpoint
 - [ ] Backfill completo em staging (performance/governança)
