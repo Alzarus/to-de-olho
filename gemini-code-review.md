@@ -1,68 +1,21 @@
-Este pull request introduz uma vasta gama de melhorias, desde uma refatoração significativa dos serviços de backend para lidar com inconsistências da API (como IDs alfanuméricos para votações) até o aprimoramento do frontend com novos componentes de análise. A introdução do pacote envutils para centralizar a análise de feature flags é um ótimo passo para um código mais limpo. A documentação também foi substancialmente melhorada, tornando o projeto mais fácil de entender e navegar.
+@gemini-code-assist[bot] commented on this pull request.
 
-Minha revisão foca em alguns pontos: um risco potencial de perda de dados na lógica de upsert de despesas e uma oportunidade de melhoria de legibilidade no serviço de agendamento. No geral, são excelentes mudanças que amadurecem significativamente a base de código.
+Code Review
+Este pull request introduz uma vasta gama de melhorias significativas no backend, frontend e documentação. As principais mudanças incluem uma grande refatoração do backend para lidar de forma robusta com IDs alfanuméricos da API externa, um processo de ingestão de dados de despesas muito mais seguro e eficiente, e a introdução de novos componentes de análise no frontend. A documentação também foi substancialmente reescrita para maior clareza e estrutura. Minha revisão identifica uma pequena redundância na lógica do serviço de análise. No geral, são excelentes mudanças que amadurecem significativamente a base de código.
 
-In backend/internal/infrastructure/repository/despesa_repository.go:
+In backend/internal/application/analytics_service.go:
 
-> +	if _, err := tx.Exec(ctx, "DELETE FROM despesas WHERE deputado_id = $1 AND ano = $2", deputadoID, ano); err != nil {
-+		return fmt.Errorf("erro ao limpar despesas antigas (%d/%d): %w", deputadoID, ano, err)
-+	}
-high
-
-A estratégia atual de deletar todas as despesas de um deputado para um ano inteiro antes de inserir o novo lote (DELETE FROM despesas WHERE deputado_id = $1 AND ano = $2) introduz um risco de perda de dados. Se a chamada à API para buscar as despesas daquele ano retornar dados parciais ou falhar após o DELETE mas antes do COPY ser efetivado, todas as despesas daquele deputado para aquele ano podem ser permanentemente perdidas. Uma abordagem mais segura, embora mais complexa, seria realizar um UPSERT para cada registro ou gerenciar a transação de forma mais granular (por exemplo, por mês). Dado o potencial de perda de dados, esta é uma preocupação de alta severidade.
-
-In backend/internal/application/smart_scheduler_service.go:
-
-> +		if !envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
-+			s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
- 		} else {
--			totalSincronizados += count
--			s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
--				"despesas_sincronizadas": count,
--			})
-+			if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
-+				s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
-+				executionError = err
-+			} else {
-+				totalSincronizados += count
-+				s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
-+					"despesas_sincronizadas": count,
-+				})
+> +			if dep, found := deputadoByID[row.IDDeputado]; found {
++				entry.Nome = dep.Nome
++				entry.SiglaPartido = dep.Partido
++				entry.SiglaUF = dep.UF
++				entry.URLFoto = dep.URLFoto
 +			}
- 		}
 medium
 
-A lógica para verificar a feature flag SCHEDULER_INCLUDE_DESPESAS está invertida (if !enabled { log } else { sync }), o que a torna um pouco menos intuitiva de ler em comparação com um padrão direto if enabled { sync } else { log }. Para maior clareza e consistência com a forma como outras flags são verificadas neste arquivo (por exemplo, SCHEDULER_INCLUDE_VOTACOES), sugiro refatorar este bloco.
+A verificação if dep, found := deputadoByID[row.IDDeputado]; found dentro do bloco if !ok parece ser redundante. O mapa deputadoByID é construído diretamente a partir do slice deputadosCache, que também é usado para popular o mapa inicial stats. Portanto, se um ID de deputado não for encontrado em stats (ou seja, !ok), ele logicamente não pode existir em deputadoByID. Consequentemente, este bloco if nunca será executado. A remoção desta verificação redundante melhorará a clareza do código. O comportamento de fallback atual, de criar uma entrada apenas com o ID e as estatísticas para deputados não encontrados no cache, está correto.
 
-⬇️ Suggested change
--		if !envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
--			s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
--		} else {
--			totalSincronizados += count
--			s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
--				"despesas_sincronizadas": count,
--			})
--			if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
--				s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
--				executionError = err
--			} else {
--				totalSincronizados += count
--				s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
--					"despesas_sincronizadas": count,
--				})
--			}
--		}
-+                if envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
-+                        if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
-+                                s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
-+                                executionError = err
-+                        } else {
-+                                totalSincronizados += count
-+                                s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
-+                                        "despesas_sincronizadas": count,
-+                                })
-+                        }
-+                } else {
-+                        s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
-+                }
 —
+Reply to this email directly, view it on GitHub, or unsubscribe.
+You are receiving this because you were mentioned.
+
