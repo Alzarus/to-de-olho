@@ -138,6 +138,12 @@ log.Info("deputado criado com sucesso",
   slog.Duration("tempo", time.Since(start)))
 ```
 
+#### Resiliência HTTP
+- Configure `http.Client{Timeout: ...}` para limitar o tempo total de requisições externas; defina `ReadTimeout`/`WriteTimeout` em servidores HTTP.
+- Propague `context.WithTimeout` a partir dos handlers e encerre rotinas internas quando `ctx.Done()` for disparado.
+- Classifique erros transitórios via `errors.Is`/`Timeout()`/`Temporary()` para aplicar retries com backoff e circuit breakers.
+- Ajuste `http.Transport` (por exemplo `MaxIdleConns`, `IdleConnTimeout`) ao lidar com alto throughput ou múltiplas integrações.
+
 ### 5.3 Frontend (Next.js 15)
 
 ```
@@ -173,6 +179,12 @@ log.Info("deputado criado com sucesso",
   <DeputadoCard />
 </div>
 ```
+
+#### Data fetching e caching (App Router)
+- Prefira componentes servidor `async` com `fetch` e ajuste o cache conforme o caso: `cache: 'force-cache'` (estático), `cache: 'no-store'` (dinâmico) ou `next: { revalidate: <segundos> }` para revalidação automática.
+- Exporte `revalidate` ou `dynamic` em cada segmento quando precisar forçar comportamento estático/dinâmico global.
+- Após mutações via Server Actions, chame `revalidatePath('/rota')` ou `revalidateTag('tag')` para manter a UI consistente.
+- Para scripts globais, utilize `next/script` no layout raiz; isso garante carregamento único e evita bloqueio de renderização.
 
 ## 6. Dados da Câmara
 

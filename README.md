@@ -120,6 +120,22 @@ Consulte `ROADMAP.md` para visão macro do produto.
 5. Rode `go test ./...` no backend e `npm run test` no frontend antes de abrir PR.
 6. Atualize documentação relevante e inclua migrações/seed quando necessário.
 
+## Guia Frontend Next.js (App Router)
+
+- **Data fetching co-localizado**: use componentes servidor `async` com `fetch` e configure o cache conforme a necessidade (`cache: 'no-store'`, `cache: 'force-cache'` ou `next: { revalidate: N }`) para replicar comportamentos de `getServerSideProps` e `getStaticProps`.
+- **Revalidação on-demand**: após Server Actions ou mutações, invoque `revalidatePath` ou `revalidateTag` para invalidar caches e atualizar a UI.
+- **Configuração de rotas**: exporte `dynamic` ou `revalidate` em layouts/páginas quando precisar forçar comportamento estático ou dinâmico em segmentos específicos.
+- **Scripts globais**: importe `next/script` no `app/layout.tsx` para carregar scripts de terceiros uma única vez em toda a aplicação.
+- **APIs internas**: quanto possível, encapsule chamadas à API da Câmara em libs reutilizáveis para manter consistência de cache, tratamento de erro e logging.
+
+## Guia Backend Go (Resiliência)
+
+- **Timeouts explícitos**: configure `http.Client{Timeout: ...}` para limitar o tempo total de cada requisição (conexão, envio e leitura) e utilize `http.Server{ReadTimeout, WriteTimeout}` para proteger handlers de bloqueios prolongados.
+- **Propagação de contexto**: derive `context.WithTimeout` a partir de `r.Context()` em handlers e encaminhe o contexto para chamadas downstream, cancelando operações quando o prazo expira.
+- **Detecção de erros transitórios**: verifique `err.(interface{ Timeout() bool })` ou `Temporary()` em erros de rede para decidir sobre retentativas com backoff exponencial e jitter.
+- **Políticas de retry/circuit breaker**: isole integrações externas (API Câmara, bancos) em clientes que apliquem retries limitados, circuit breaker e métricas; atualize `internal/infrastructure` conforme padrões definidos.
+- **Pool de conexões**: ajuste `http.Transport{MaxIdleConns, IdleConnTimeout}` quando necessário para reutilização segura de conexões em cenários de alto throughput.
+
 ## Qualidade e Conformidade
 
 - Cobertura mínima: 80% (unitária + integração) conforme `.github/docs/testing-guide.md`.

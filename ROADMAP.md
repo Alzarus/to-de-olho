@@ -109,6 +109,9 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 **Próximos passos imediatos**
 1. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`) após a primeira janela de execução.
 2. Auditar os dashboards de votações no frontend com os dados do novo backfill e ajustar caching conforme necessário (componentes foram integrados em 30/out/2025; falta validação com dados reais).
+  - [ ] Confrontar resultados exibidos em `VotacoesAnalytics.tsx` e `VotacoesRanking.tsx` com amostras oficiais após o backfill completo.
+  - [ ] Revisar a estratégia de data fetching (migrar para Server Components quando viável) seguindo o guia do App Router (`fetch` + `revalidate`/`revalidatePath`) referenciado em #upstash/context7.
+  - [ ] Documentar o comportamento esperado de cache e revalidação no README e garantir que `revalidatePath`/`revalidateTag` sejam acionados após Server Actions relevantes.
 3. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
 4. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
 5. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
