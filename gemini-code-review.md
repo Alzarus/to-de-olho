@@ -1,69 +1,68 @@
-In backend/internal/application/smart_backfill_service_test.go:
+Este pull request introduz uma vasta gama de melhorias, desde uma refatoração significativa dos serviços de backend para lidar com inconsistências da API (como IDs alfanuméricos para votações) até o aprimoramento do frontend com novos componentes de análise. A introdução do pacote envutils para centralizar a análise de feature flags é um ótimo passo para um código mais limpo. A documentação também foi substancialmente melhorada, tornando o projeto mais fácil de entender e navegar.
 
-> @@ -0,0 +1,117 @@
-+package application
+Minha revisão foca em alguns pontos: um risco potencial de perda de dados na lógica de upsert de despesas e uma oportunidade de melhoria de legibilidade no serviço de agendamento. No geral, são excelentes mudanças que amadurecem significativamente a base de código.
+
+In backend/internal/infrastructure/repository/despesa_repository.go:
+
+> +	if _, err := tx.Exec(ctx, "DELETE FROM despesas WHERE deputado_id = $1 AND ano = $2", deputadoID, ano); err != nil {
++		return fmt.Errorf("erro ao limpar despesas antigas (%d/%d): %w", deputadoID, ano, err)
++	}
 high
 
-Os testes para o SmartBackfillService são muito limitados e cobrem apenas alguns cenários de configuração e o gatilho de analytics. Dada a complexidade do serviço (lógica de decisão, execução em goroutine, paralelismo, tratamento de erros, etc.), é crucial adicionar mais testes unitários e de integração para garantir sua robustez. Recomendo testar a lógica de ShouldRunHistoricalBackfill em diferentes cenários, o fluxo de execução de runHistoricalBackfill com mocks para os serviços dependentes, e o tratamento de erros e retries.
+A estratégia atual de deletar todas as despesas de um deputado para um ano inteiro antes de inserir o novo lote (DELETE FROM despesas WHERE deputado_id = $1 AND ano = $2) introduz um risco de perda de dados. Se a chamada à API para buscar as despesas daquele ano retornar dados parciais ou falhar após o DELETE mas antes do COPY ser efetivado, todas as despesas daquele deputado para aquele ano podem ser permanentemente perdidas. Uma abordagem mais segura, embora mais complexa, seria realizar um UPSERT para cada registro ou gerenciar a transação de forma mais granular (por exemplo, por mês). Dado o potencial de perda de dados, esta é uma preocupação de alta severidade.
 
-In backend/internal/application/smart_scheduler_service_concurrency_test.go:
+In backend/internal/application/smart_scheduler_service.go:
 
-> @@ -0,0 +1,82 @@
-+package application
-high
-
-Este teste cobre bem o cenário de concorrência, mas a cobertura de testes para o SmartSchedulerService como um todo é baixa. Recomendo adicionar mais testes para cobrir a lógica de ShouldRunScheduler, os diferentes fluxos de sincronização de entidades, e o tratamento de erros durante a execução do scheduler.
-
-In .env.example:
-
-> @@ -4,6 +4,64 @@
- # Este arquivo contém todas as variáveis de ambiente necessárias para o projeto.
- # Copie para .env e ajuste os valores conforme necessário.
- 
-+# =============================================================================
-+# 🧠 CONFIGURAÇÕES INTELIGENTES DE BACKFILL
-+# =============================================================================
-+# O sistema decide automaticamente se precisa executar backfill
-+BACKFILL_START_YEAR=2022
-+BACKFILL_END_YEAR=0
+> +		if !envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
++			s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
+ 		} else {
+-			totalSincronizados += count
+-			s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
+-				"despesas_sincronizadas": count,
+-			})
++			if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
++				s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
++				executionError = err
++			} else {
++				totalSincronizados += count
++				s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
++					"despesas_sincronizadas": count,
++				})
++			}
+ 		}
 medium
 
-O valor 0 para BACKFILL_END_YEAR não é autoexplicativo. Sugiro adicionar um comentário para esclarecer seu significado, por exemplo, se 0 significa o ano atual, para melhorar a clareza da configuração.
+A lógica para verificar a feature flag SCHEDULER_INCLUDE_DESPESAS está invertida (if !enabled { log } else { sync }), o que a torna um pouco menos intuitiva de ler em comparação com um padrão direto if enabled { sync } else { log }. Para maior clareza e consistência com a forma como outras flags são verificadas neste arquivo (por exemplo, SCHEDULER_INCLUDE_VOTACOES), sugiro refatorar este bloco.
 
-BACKFILL_END_YEAR=0 # Usar 0 para definir o ano atual
-In .env.example:
-
-> +SCHEDULER_INCLUIR_DEPUTADOS=true
-+SCHEDULER_INCLUIR_PROPOSICOES=true
-+SCHEDULER_INCLUIR_DESPESAS=true
-+SCHEDULER_INCLUIR_VOTACOES=true
-medium
-
-Há uma inconsistência na nomeação das variáveis de ambiente para controle de inclusão de entidades. Algumas usam o prefixo SCHEDULER_INCLUIR_ (em português), enquanto outras usam SCHEDULER_INCLUDE_ (em inglês, como nas linhas 56-57). Para manter a consistência e evitar confusão, sugiro padronizar para o inglês, que é o padrão para a maioria das outras variáveis.
-
-SCHEDULER_INCLUDE_DEPUTADOS=true
-SCHEDULER_INCLUDE_PROPOSICOES=true
-SCHEDULER_INCLUDE_DESPESAS=true
-SCHEDULER_INCLUDE_VOTACOES=true
-In backend/cmd/ingestor/main.go:
-
-> @@ -125,12 +190,30 @@ func runStrategicBackfill(
- 
- 	// Criar gerenciador de backfill e executor estratégico
- 	backfillManager := ingestor.NewBackfillManager(pgPool)
-+	votacaoRepo := repository.NewVotacaoRepository(pgPool)
-+
-+	// Construir VotacoesService e PartidosService localmente (precisa de client e cache)
-+	clientLocal := httpclient.NewCamaraClientFromConfig(&cfg.CamaraClient)
-+	cacheLocal := cache.NewFromConfig(&cfg.Redis)
-+	votacoesSvcLocal := app.NewVotacoesService(votacaoRepo, clientLocal, cacheLocal)
-+
-+	partidoRepoLocal := repository.NewPartidoRepository(pgPool)
-+	partidosSvcLocal := app.NewPartidosService(clientLocal, partidoRepoLocal)
-+
-+	// Criar analytics service para atualizar rankings após backfill
-+	despesaRepoLocal := repository.NewDespesaRepository(pgPool)
-+	analyticsSvcLocal := app.NewAnalyticsService(deputadoRepo, proposicaoRepo, votacaoRepo, despesaRepoLocal, cacheLocal, slog.New(slog.NewTextHandler(os.Stdout, nil)))
-medium
-
-Um novo logger está sendo criado aqui (slog.New(...)), enquanto um logger já foi configurado no início da função main. Para manter a consistência e centralizar a configuração de logs, o logger existente deveria ser passado para a função runStrategicBackfill e reutilizado aqui.
+⬇️ Suggested change
+-		if !envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
+-			s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
+-		} else {
+-			totalSincronizados += count
+-			s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
+-				"despesas_sincronizadas": count,
+-			})
+-			if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
+-				s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
+-				executionError = err
+-			} else {
+-				totalSincronizados += count
+-				s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
+-					"despesas_sincronizadas": count,
+-				})
+-			}
+-		}
++                if envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
++                        if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
++                                s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
++                                executionError = err
++                        } else {
++                                totalSincronizados += count
++                                s.schedulerRepo.UpdateExecutionProgress(ctx, execution.ExecutionID, map[string]interface{}{
++                                        "despesas_sincronizadas": count,
++                                })
++                        }
++                } else {
++                        s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
++                }
+—

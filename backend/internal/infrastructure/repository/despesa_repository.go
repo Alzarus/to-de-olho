@@ -84,9 +84,38 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 		}
 	}()
 
-	// Remover registros existentes do mesmo deputado/ano para garantir idempotência do COPY
-	if _, err := tx.Exec(ctx, "DELETE FROM despesas WHERE deputado_id = $1 AND ano = $2", deputadoID, ano); err != nil {
-		return fmt.Errorf("erro ao limpar despesas antigas (%d/%d): %w", deputadoID, ano, err)
+	// Criar tabela temporária para estágios seguros antes do merge com a tabela real
+	createTempTableSQL := `
+		CREATE TEMP TABLE tmp_despesas_upsert
+		ON COMMIT DROP AS
+		SELECT 
+			deputado_id,
+			ano,
+			mes,
+			tipo_despesa,
+			cod_documento,
+			tipo_documento,
+			cod_tipo_documento,
+			data_documento,
+			num_documento,
+			valor_documento,
+			url_documento,
+			nome_fornecedor,
+			cnpj_cpf_fornecedor,
+			valor_liquido,
+			valor_bruto,
+			valor_glosa,
+			num_ressarcimento,
+			cod_lote,
+			parcela,
+			payload,
+			updated_at
+		FROM despesas
+		WHERE 1=0
+	`
+
+	if _, err := tx.Exec(ctx, createTempTableSQL); err != nil {
+		return fmt.Errorf("erro ao criar tabela temporária para despesas: %w", err)
 	}
 
 	// Preparar batch com CopyFrom para máxima performance
@@ -123,7 +152,7 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 
 	// Usar COPY para inserção em massa ultra-rápida
 	copyCount, err := tx.CopyFrom(ctx,
-		pgx.Identifier{"despesas"},
+		pgx.Identifier{"tmp_despesas_upsert"},
 		[]string{
 			"deputado_id", "ano", "mes", "tipo_despesa", "cod_documento",
 			"tipo_documento", "cod_tipo_documento", "data_documento", "num_documento",
@@ -179,6 +208,47 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 		return nil
 	}
 
+	mergeSQL := `
+		INSERT INTO despesas (
+			deputado_id, ano, mes, tipo_despesa, cod_documento,
+			tipo_documento, cod_tipo_documento, data_documento, num_documento,
+			valor_documento, url_documento, nome_fornecedor, cnpj_cpf_fornecedor,
+			valor_liquido, valor_bruto, valor_glosa, num_ressarcimento,
+			cod_lote, parcela, payload, updated_at
+		)
+		SELECT 
+			deputado_id, ano, mes, tipo_despesa, cod_documento,
+			tipo_documento, cod_tipo_documento, data_documento, num_documento,
+			valor_documento, url_documento, nome_fornecedor, cnpj_cpf_fornecedor,
+			valor_liquido, valor_bruto, valor_glosa, num_ressarcimento,
+			cod_lote, parcela, payload, updated_at
+		FROM tmp_despesas_upsert
+		ON CONFLICT ON CONSTRAINT uq_despesas_deputado_ano_cod_documento
+		DO UPDATE SET
+			mes = EXCLUDED.mes,
+			tipo_documento = EXCLUDED.tipo_documento,
+			cod_tipo_documento = EXCLUDED.cod_tipo_documento,
+			data_documento = EXCLUDED.data_documento,
+			num_documento = EXCLUDED.num_documento,
+			valor_documento = EXCLUDED.valor_documento,
+			valor_liquido = EXCLUDED.valor_liquido,
+			valor_bruto = EXCLUDED.valor_bruto,
+			valor_glosa = EXCLUDED.valor_glosa,
+			nome_fornecedor = EXCLUDED.nome_fornecedor,
+			cnpj_cpf_fornecedor = EXCLUDED.cnpj_cpf_fornecedor,
+			url_documento = EXCLUDED.url_documento,
+			num_ressarcimento = EXCLUDED.num_ressarcimento,
+			cod_lote = EXCLUDED.cod_lote,
+			parcela = EXCLUDED.parcela,
+			payload = EXCLUDED.payload,
+			updated_at = EXCLUDED.updated_at
+	`
+
+	commandTag, err := tx.Exec(ctx, mergeSQL)
+	if err != nil {
+		return fmt.Errorf("erro ao realizar merge de despesas: %w", err)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("erro ao fazer commit da transação: %w", err)
 	}
@@ -187,7 +257,8 @@ func (r *DespesaRepository) UpsertDespesas(ctx context.Context, deputadoID int, 
 	r.logger.Info("despesas inseridas em lote",
 		slog.Int("deputado_id", deputadoID),
 		slog.Int("ano", ano),
-		slog.Int64("inserted_count", copyCount),
+		slog.Int64("staged_count", copyCount),
+		slog.Int64("merged_count", commandTag.RowsAffected()),
 		slog.Duration("duration", time.Since(start)))
 
 	return nil

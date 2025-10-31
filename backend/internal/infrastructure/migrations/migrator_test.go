@@ -613,7 +613,7 @@ func TestMigrator_Migration_Safety(t *testing.T) {
 				t.Errorf("migração %s contém comando perigoso: %s", migration.Name, cmd)
 			}
 		} // Verificar que tem apenas comandos seguros
-		safeCommands := []string{"CREATE TABLE", "CREATE INDEX", "CREATE EXTENSION", "COMMENT ON"}
+		safeCommands := []string{"CREATE TABLE", "CREATE INDEX", "CREATE UNIQUE INDEX", "CREATE EXTENSION", "COMMENT ON", "ALTER TABLE"}
 		hasSafeCommand := false
 		for _, cmd := range safeCommands {
 			if containsString(migration.SQL, cmd) {

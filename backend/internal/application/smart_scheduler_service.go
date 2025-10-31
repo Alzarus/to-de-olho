@@ -179,9 +179,7 @@ func (s *SmartSchedulerService) runSchedulerExecution(ctx context.Context, execu
 	}
 
 	if config.IncluirDespesas && executionError == nil {
-		if !envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
-			s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
-		} else {
+		if envutils.IsEnabled(os.Getenv("SCHEDULER_INCLUDE_DESPESAS"), true) {
 			if count, err := s.sincronizarDespesas(ctx, execution.ExecutionID); err != nil {
 				s.logger.Error("❌ Erro ao sincronizar despesas", slog.String("error", err.Error()))
 				executionError = err
@@ -191,6 +189,8 @@ func (s *SmartSchedulerService) runSchedulerExecution(ctx context.Context, execu
 					"despesas_sincronizadas": count,
 				})
 			}
+		} else {
+			s.logger.Info("💤 Sincronização de despesas desativada via flag", slog.String("execution_id", execution.ExecutionID))
 		}
 	}
 

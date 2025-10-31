@@ -2,7 +2,7 @@
 
 > Transparência política para todos os brasileiros.
 >
-> Status consolidado em 30/out/2025.
+> Status consolidado em 31/out/2025.
 
 ## Prioridades Gerais
 
@@ -16,7 +16,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 | Engine de analytics          | Concluído, testes cobrindo votações | Média      | set/2025     |
 | Frontend WCAG                | Concluído                         | Média      | set/2025     |
 | API REST v1                  | Concluído                         | Média      | set/2025     |
-| Sincronização + API Câmara   | Backfill histórico concluído; scheduler aguardando flags finais | Crítica    | out/2025     |
+| Sincronização + API Câmara   | Backfill histórico concluído; repositório de despesas com merge seguro; scheduler aguardando flags finais | Crítica    | out/2025     |
 | Esquema do banco             | Migrations 014-016 aplicadas no dev | Média      | out/2025     |
 | Deploy em produção           | Não iniciado                      | Alta       | nov/2025     |
 | Integração IA Gemini         | Não iniciado                      | Média      | dez/2025     |
@@ -25,7 +25,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 - Revisar componentes de interface que dificultam a filtragem de deputados (exemplo: seletor de partido).
 - Implementar exibição de votações no frontend principal. *(Concluído em 30/out/2025 — componentes `VotacoesAnalytics` e `VotacoesRanking` publicados na página principal)*
-- Habilitar ingestão completa (deputados, despesas, votações e proposições) em backfill e scheduler com as flags correspondentes, validando métricas após ativação.
+- Habilitar ingestão completa (deputados, despesas, votações e proposições) em backfill e scheduler com as flags correspondentes, validando métricas após ativação (pipeline de despesas atualizado para evitar perda de dados em 31/out/2025).
 
 ## Backfill Histórico (API Câmara)
 
@@ -33,7 +33,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 ### Resumo do estado atual
 - Concluído: Deputados (backfill e scheduler), Votações históricas (executor com circuit breaker monitorado), Despesas 2025-2022 com checkpoints anuais e Partidos (upsert + checkpoint dedicado).
-- Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário permanece aguardando habilitação das flags (`SCHEDULER_INCLUDE_*`) e validação de métricas. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`). Frontend principal já exibe analytics e ranking de votações com dados em tempo real (30/out/2025).
+- Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário permanece aguardando habilitação das flags (`SCHEDULER_INCLUDE_*`) e validação de métricas. Pipeline de despesas agora realiza merge transacional sem `DELETE` destrutivo. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`). Frontend principal já exibe analytics e ranking de votações com dados em tempo real (30/out/2025).
 - Em andamento: habilitação e observabilidade do scheduler pós-backfill, testes unitários do executor de votações, validação de performance em staging e cobertura de repositórios sem integração automatizada.
 - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
 - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
@@ -55,10 +55,11 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 ### Tarefas concretas
 
-**Despesas (altíssima prioridade)**
+- **Despesas (altíssima prioridade)**
 - [x] Implementar etapa dedicada no backfill histórico usando `DespesaRepository.UpsertDespesas` com checkpoints anuais (21/out/2025).
 - [ ] Validar a aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes (dev confirmado até a versão 016; falta staging/prod).
 - [x] Ajustar constraint de `valor_liquido` para aceitar estornos (migration 016 aplicada e validada em dev).
+- [x] Mitigar risco de perda de dados substituindo `DELETE` por merge transacional no `DespesaRepository` (31/out/2025).
 - [ ] Habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`).
 - [x] Monitorar conclusão do backfill histórico atual (`ef924048-2457-4dab-b5c0-40c2a4ef8d9b`) e registrar checkpoints anuais (finalizado em 29/out/2025 às 04:14 BRT).
 
@@ -107,14 +108,15 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Planejamento de janelas de execução (backfill inicial custoso)
 
 **Próximos passos imediatos**
-1. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`) após a primeira janela de execução.
+1. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`) após a primeira janela de execução e monitorando o novo merge transacional para garantir contagens consistentes.
 2. Auditar os dashboards de votações no frontend com os dados do novo backfill e ajustar caching conforme necessário (componentes foram integrados em 30/out/2025; falta validação com dados reais).
   - [ ] Confrontar resultados exibidos em `VotacoesAnalytics.tsx` e `VotacoesRanking.tsx` com amostras oficiais após o backfill completo.
   - [ ] Revisar a estratégia de data fetching (migrar para Server Components quando viável) seguindo o guia do App Router (`fetch` + `revalidate`/`revalidatePath`) referenciado em #upstash/context7.
   - [ ] Documentar o comportamento esperado de cache e revalidação no README e garantir que `revalidatePath`/`revalidateTag` sejam acionados após Server Actions relevantes.
-3. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
-4. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
-5. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
+3. Documentar o fluxo de merge de despesas atualizado e orientar SRE sobre rollback seguro antes de habilitar as flags.
+4. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
+5. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
+6. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
 
 ### 1. Deploy GCP (crítico - nov/2025)
 **Objetivo**: Colocar plataforma no ar para uso público
