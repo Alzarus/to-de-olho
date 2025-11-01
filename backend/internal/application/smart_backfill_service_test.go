@@ -96,6 +96,7 @@ func (m *mockBackfillRepo) lastProgress() *domain.BackfillStatus {
 }
 
 type mockAnalyticsSvc struct {
+	mu     sync.Mutex
 	called bool
 }
 
@@ -111,7 +112,12 @@ func (m *mockAnalyticsSvc) GetRankingPresenca(ctx context.Context, ano int, limi
 func (m *mockAnalyticsSvc) GetInsightsGerais(ctx context.Context) (*InsightsGerais, string, error) {
 	return nil, "", nil
 }
-func (m *mockAnalyticsSvc) AtualizarRankings(ctx context.Context) error { m.called = true; return nil }
+func (m *mockAnalyticsSvc) AtualizarRankings(ctx context.Context) error {
+	m.mu.Lock()
+	m.called = true
+	m.mu.Unlock()
+	return nil
+}
 func (m *mockAnalyticsSvc) GetRankingDeputadosVotacao(ctx context.Context, ano int, limite int) ([]domain.RankingDeputadoVotacao, string, error) {
 	return nil, "", nil
 }
@@ -120,6 +126,12 @@ func (m *mockAnalyticsSvc) GetRankingPartidosDisciplina(ctx context.Context, ano
 }
 func (m *mockAnalyticsSvc) GetStatsVotacoes(ctx context.Context, periodo string) (*domain.VotacaoStats, string, error) {
 	return nil, "", nil
+}
+
+func (m *mockAnalyticsSvc) WasCalled() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.called
 }
 
 // Mocks mínimos para serviços usados pelo SmartBackfillService
@@ -150,7 +162,7 @@ func TestSmartBackfillService_TriggersAnalyticsOnSuccess(t *testing.T) {
 	// Dar um tempo para a goroutine de AtualizarRankings executar caso tenha sido disparada
 	time.Sleep(200 * time.Millisecond)
 
-	if !analytics.called {
+	if !analytics.WasCalled() {
 		t.Fatalf("Esperava que analytics.AtualizarRankings fosse chamado após backfill bem-sucedido")
 	}
 }
@@ -274,7 +286,7 @@ func TestRunHistoricalBackfill_SyncsDespesasAndUpdatesProgress(t *testing.T) {
 	if trackingRepo.upsertCount == 0 {
 		t.Fatal("esperava UpsertDespesas chamado ao menos uma vez")
 	}
-	if !analytics.called {
+	if !analytics.WasCalled() {
 		t.Fatal("esperava analytics.AtualizarRankings chamado após sincronização")
 	}
 }
