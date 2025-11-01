@@ -175,3 +175,41 @@ func TestRunSchedulerExecution_CompletesSuccessfully(t *testing.T) {
 		t.Fatalf("não encontrou atualização de deputados_sincronizados nas chamadas: %#v", repo.updateCalls)
 	}
 }
+
+func TestRunSchedulerExecution_RespectsFeatureFlags(t *testing.T) {
+	t.Setenv("SCHEDULER_INCLUDE_DESPESAS", "false")
+	t.Setenv("SCHEDULER_INCLUDE_VOTACOES", "false")
+	t.Setenv("SCHEDULER_INCLUDE_PROPOSICOES", "false")
+
+	repo := &schedulerRepoStub{}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	// preparar serviço de deputados mínimo
+	deputadosClient := &stubCamaraClient{
+		deputados: []domain.Deputado{{ID: 101, Nome: "Deputada Teste"}},
+	}
+	cache := newStubCache()
+	depRepo := &stubDeputadoRepo{}
+	deputadosService := NewDeputadosService(deputadosClient, cache, depRepo, newTrackingDespesaRepository())
+
+	svc := NewSmartSchedulerService(repo, nil, deputadosService, nil, nil, logger)
+
+	execution := &domain.SchedulerExecution{ExecutionID: "exec-flag", Tipo: domain.SchedulerTipoRapido, StartedAt: time.Now(), Status: domain.BackfillStatusRunning}
+	cfg := &domain.SchedulerConfig{
+		Tipo:               domain.SchedulerTipoRapido,
+		IncluirDeputados:   true,
+		IncluirDespesas:    true,
+		IncluirVotacoes:    false,
+		IncluirProposicoes: false,
+	}
+
+	svc.runSchedulerExecution(context.Background(), execution, cfg)
+
+	repo.mu.Lock()
+	defer repo.mu.Unlock()
+	for _, update := range repo.updateCalls {
+		if _, ok := update["despesas_sincronizadas"]; ok {
+			t.Fatalf("despesas_sincronizadas não deveria ser registrado quando flag está desativada: %#v", update)
+		}
+	}
+}

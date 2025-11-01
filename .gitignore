@@ -133,6 +133,9 @@ docker-logs/
 pg_log/
 postgresql-*.log
 
+# Allow tracked database migrations
+!backend/internal/infrastructure/migrations/sql/*.sql
+
 # SQLite
 *.sqlite
 *.sqlite3

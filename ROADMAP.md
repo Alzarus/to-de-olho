@@ -2,7 +2,7 @@
 
 > Transparência política para todos os brasileiros.
 >
-> Status consolidado em 02/out/2025.
+> Status consolidado em 31/out/2025.
 
 ## Prioridades Gerais
 
@@ -13,28 +13,28 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 | Funcionalidade                | Situação atual                    | Prioridade | Deadline     |
 |------------------------------|----------------------------------|------------|--------------|
 | Sistema de votações          | Concluído                         | Baixa      | set/2025     |
-| Sincronização + API Câmara   | Backfill com despesas; scheduler parcial | Crítica    | out/2025     |
-| Engine de analytics          | Concluído, aguardando dados reais | Média      | set/2025     |
+| Engine de analytics          | Concluído, testes cobrindo votações | Média      | set/2025     |
 | Frontend WCAG                | Concluído                         | Média      | set/2025     |
 | API REST v1                  | Concluído                         | Média      | set/2025     |
-| Esquema do banco             | Em ajuste (migration 014)         | Crítica    | out/2025     |
+| Sincronização + API Câmara   | Backfill histórico concluído; repositório de despesas com merge seguro; scheduler aguardando flags finais | Crítica    | out/2025     |
+| Esquema do banco             | Migrations 014-016 aplicadas no dev | Média      | out/2025     |
 | Deploy em produção           | Não iniciado                      | Alta       | nov/2025     |
 | Integração IA Gemini         | Não iniciado                      | Média      | dez/2025     |
 
 ## Demandas Urgentes
 
 - Revisar componentes de interface que dificultam a filtragem de deputados (exemplo: seletor de partido).
-- Implementar exibição de votações no frontend principal.
-- Habilitar ingestão completa (deputados, despesas, votações e proposições) em backfill e scheduler com as flags correspondentes.
+- Implementar exibição de votações no frontend principal. *(Concluído em 30/out/2025 — componentes `VotacoesAnalytics` e `VotacoesRanking` publicados na página principal)*
+- Habilitar ingestão completa (deputados, despesas, votações e proposições) em backfill e scheduler com as flags correspondentes, validando métricas após ativação (pipeline de despesas atualizado para evitar perda de dados em 31/out/2025).
 
 ## Backfill Histórico (API Câmara)
 
 > Objetivo: garantir backfill idempotente, confiável e observável cobrindo todas as entidades do `api-docs.json`, permitindo carga inicial completa e sincronizações incrementais diárias.
 
 ### Resumo do estado atual
-- Concluído: Deputados (backfill e scheduler), Votações históricas (executor rodando com circuit breaker monitorado) e Partidos (upsert + checkpoint dedicado).
-- Atualizado: Despesas agora possuem etapa dedicada no backfill histórico (upsert + checkpoints anuais); scheduler diário segue aguardando ativação das flags e validação de métricas. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`).
-- Em andamento: testes unitários do executor de votações, validação de performance em staging, cobertura de repositórios sem integração automatizada.
+- Concluído: Deputados (backfill e scheduler), Votações históricas (executor com circuit breaker monitorado), Despesas 2025-2022 com checkpoints anuais e Partidos (upsert + checkpoint dedicado).
+- Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário permanece aguardando habilitação das flags (`SCHEDULER_INCLUDE_*`) e validação de métricas. Pipeline de despesas agora realiza merge transacional sem `DELETE` destrutivo. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`). Frontend principal já exibe analytics e ranking de votações com dados em tempo real (30/out/2025).
+- Em andamento: habilitação e observabilidade do scheduler pós-backfill, testes unitários do executor de votações, validação de performance em staging e cobertura de repositórios sem integração automatizada.
 - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
 - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
 - Backlog (prioridade baixa): Eventos, Blocos, Frentes, Grupos.
@@ -55,17 +55,20 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 ### Tarefas concretas
 
-**Despesas (altíssima prioridade)**
+- **Despesas (altíssima prioridade)**
 - [x] Implementar etapa dedicada no backfill histórico usando `DespesaRepository.UpsertDespesas` com checkpoints anuais (21/out/2025).
-- [ ] Consolidar aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes.
+- [ ] Validar a aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes (dev confirmado até a versão 016; falta staging/prod).
+- [x] Ajustar constraint de `valor_liquido` para aceitar estornos (migration 016 aplicada e validada em dev).
+- [x] Mitigar risco de perda de dados substituindo `DELETE` por merge transacional no `DespesaRepository` (31/out/2025).
 - [ ] Habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`).
+- [x] Monitorar conclusão do backfill histórico atual (`ef924048-2457-4dab-b5c0-40c2a4ef8d9b`) e registrar checkpoints anuais (finalizado em 29/out/2025 às 04:14 BRT).
 
 **Votações (alta prioridade)**
 - [x] Checkpoint "votacoes" no plano anual (`StrategicBackfillExecutor.createBackfillPlan`)
 - [x] Executor integrado ao `VotacoesService` (`executeVotacoesBackfill`)
 - [x] Janela anual com `SincronizarVotacoes` (upsert + votos/orientações)
 - [x] Testes de integração no `VotacaoRepository`
-- [ ] Ajustar domínio/repos para IDs alfanuméricos (persistir `id` string, manter `IDVotacaoCamara` opcional)
+ - [x] Ajustar domínio/repos para IDs alfanuméricos (persistir `id` string, manter `IDVotacaoCamara` opcional) *(concluído em 30/out/2025)*
 - [ ] Revisar `CamaraClient` para filtros oficiais (`idProposicao`, `idEvento`, `idOrgao`, datas no mesmo ano) e paginação (≤200 itens)
 - [ ] Testes unitários/mocks do executor e regressões de checkpoint
 - [ ] Backfill completo em staging (performance/governança)
@@ -105,11 +108,15 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Planejamento de janelas de execução (backfill inicial custoso)
 
 **Próximos passos imediatos**
-1. Aplicar a migration `014_alter_despesas_add_columns.sql`, implementar a etapa de despesas no backfill histórico e reprocessar dados com `BACKFILL_INCLUDE_DESPESAS=true`.
-2. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando uma execução completa via métricas.
-3. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
-4. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
-5. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
+1. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`) após a primeira janela de execução e monitorando o novo merge transacional para garantir contagens consistentes.
+2. Auditar os dashboards de votações no frontend com os dados do novo backfill e ajustar caching conforme necessário (componentes foram integrados em 30/out/2025; falta validação com dados reais).
+  - [ ] Confrontar resultados exibidos em `VotacoesAnalytics.tsx` e `VotacoesRanking.tsx` com amostras oficiais após o backfill completo.
+  - [ ] Revisar a estratégia de data fetching (migrar para Server Components quando viável) seguindo o guia do App Router (`fetch` + `revalidate`/`revalidatePath`) referenciado em #upstash/context7.
+  - [ ] Documentar o comportamento esperado de cache e revalidação no README e garantir que `revalidatePath`/`revalidateTag` sejam acionados após Server Actions relevantes.
+3. Documentar o fluxo de merge de despesas atualizado e orientar SRE sobre rollback seguro antes de habilitar as flags.
+4. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
+5. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
+6. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
 
 ### 1. Deploy GCP (crítico - nov/2025)
 **Objetivo**: Colocar plataforma no ar para uso público
@@ -143,17 +150,10 @@ services:
 - **📈 Rankings Avançados**: Presença, participação, histórico
 - **🔄 Histórico Político**: Mudanças de partido e carreira
 
-**⚠️ Analytics de Votações - AÇÃO NECESSÁRIA**:
-```go
-// Status: Infraestrutura completa, faltam endpoints analytics
-// Temos: VotacaoStats, VotacaoAnalysis.tsx, dados da API
-// Falta: Implementar no AnalyticsService
-
-GET /api/v1/analytics/votacoes/stats              - Estatísticas gerais
-GET /api/v1/analytics/votacoes/rankings/deputados - Ranking participação
-GET /api/v1/analytics/votacoes/rankings/disciplina - Disciplina partidária  
-GET /api/v1/analytics/votacoes/tendencias         - Análise temporal
-```
+**✅ Analytics de Votações - Situação**
+- Endpoints `/api/v1/analytics/votacoes/stats`, `/analytics/votacoes/rankings/deputados` e `/analytics/votacoes/rankings/disciplina` implementados e cobertos por testes unitários (out/2025).
+- Serviço `AnalyticsService` gera rankings e estatísticas a partir do repositório de votações; caches validados em testes.
+- Próximos passos: validar consistência com dados reais após novo backfill e publicar dashboards consolidados no frontend (`VotacoesAnalytics.tsx`, `RankingDisciplina.tsx`).
 
 **Novos Endpoints API**:
 ```go
@@ -165,7 +165,8 @@ GET /api/v1/analytics/presenca           - Ranking presença eventos
 ```
 
 **Componentes Frontend**:
-- `VotacoesAnalytics.tsx` - Dashboard estatísticas votações *(NOVA - Set/24/2025)*
+- `VotacoesAnalytics.tsx` - Dashboard estatísticas votações *(atualizado em 30/out/2025)*
+- `VotacoesRanking.tsx` - Ranking de atuação em plenário *(NOVA - 30/out/2025)*
 - `RankingDisciplina.tsx` - Disciplina partidária *(NOVA - Set/24/2025)*  
 - `EventosProximos.tsx` - Agenda de reuniões e sessões
 - `HistoricoParlamentar.tsx` - Timeline de mudanças
@@ -202,30 +203,27 @@ GET /api/v1/analytics/presenca           - Ranking presença eventos
 - ✅ Cache Redis implementado
 - ✅ API da Câmara v2 integrada
 
-## 🔍 Descoberta Crítica - Analytics de Votações (Set/24/2025)
+## 🔍 Descoberta Crítica - Analytics de Votações (Atualizado em 29/out/2025)
 
-**⚠️ Status**: Sistema de votações implementado, mas **analytics agregadas incompletas**
+**✅ Status**: Sistema de votações implementado e analytics agregados disponíveis; aguardando validação com dados reais e publicação no frontend
 
 **✅ O que JÁ temos**:
 - ✅ `VotacaoStats`, `RankingDeputadoVotacao`, `VotacaoPartido` (domain models)
-- ✅ Endpoints: `/votacoes`, `/votacoes/:id`, `/votacoes/:id/completa`  
-- ✅ `VotacaoAnalysis.tsx` - Análise detalhada individual
-- ✅ API integration completa (votos + orientações partidárias)
-- ✅ Repository patterns e cache Redis
+- ✅ Endpoints: `/votacoes`, `/votacoes/:id`, `/votacoes/:id/completa`, `/api/v1/analytics/votacoes/stats`, `/api/v1/analytics/votacoes/rankings/deputados`, `/api/v1/analytics/votacoes/rankings/disciplina`
+- ✅ `AnalyticsService` calculando rankings e estatísticas com cache Redis
+- ✅ Testes unitários cobrindo ranking de deputados, disciplina partidária e estatísticas agregadas
+- ✅ `VotacaoAnalysis.tsx` para análise detalhada individual
+- ✅ `VotacoesAnalytics.tsx` e `VotacoesRanking.tsx` integrados à página principal de votações (30/out/2025)
 
-**❌ O que está FALTANDO**:
-- ❌ Rankings agregados (disciplina partidária, participação deputados)
-- ❌ Endpoints `/analytics/votacoes/*` (não existem no AnalyticsService)
-- ❌ Dashboard comparativo no frontend
-- ❌ Estatísticas temporais e tendências
+**⚠️ O que falta validar**:
+- ⚠️ Dashboards comparativos no frontend com dados reais (`VotacoesAnalytics.tsx`, `VotacoesRanking.tsx`, `RankingDisciplina.tsx`)
+- ⚠️ Tendências e séries temporais (avaliar necessidade de endpoint dedicado ou extensão de `GetStatsVotacoes`)
+- ⚠️ Auditoria dos resultados após backfill completo para garantir fidelidade dos indicadores
 
-**🎯 Ação Necessária** (ALTA prioridade):
-```go
-// Implementar no AnalyticsService:
-func (s *AnalyticsService) GetRankingDeputadosVotacao(ctx context.Context, ano int) 
-func (s *AnalyticsService) GetRankingPartidosDisciplina(ctx context.Context, ano int)
-func (s *AnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string)
-```
+**🎯 Próximas ações**:
+- Auditar amostras com os dados do backfill concluído e comparar com fontes oficiais
+- Integrar endpoints nos componentes de frontend e validar acessibilidade/performance
+- Definir requisitos para endpoint de tendências (quando necessário) e planejar implementação
 
 ## 🎯 Cronograma Realista
 
@@ -251,15 +249,15 @@ func (s *AnalyticsService) GetStatsVotacoes(ctx context.Context, periodo string)
 
 ## Bloqueadores Identificados
 
-### 0. Ingestão de despesas (atualizado em 21/out/2025)
-Status: etapa histórica implementada com `DespesaRepository.UpsertDespesas` e checkpoints anuais; falta validar execução em staging e habilitar o scheduler diário.
-Impacto: métricas e UI ainda podem ficar desatualizadas até a primeira execução completa do scheduler com as flags ativas.
-Plano: aplicar/confirmar a migration `014_alter_despesas_add_columns.sql` em todos os ambientes, habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true` e monitorar `despesas_processadas`/`despesas_sincronizadas` após o reprocesso.
+### 0. Scheduler de despesas e votações (atualizado em 29/out/2025)
+Status: backfill histórico concluído às 29/out/2025 04:14 BRT (513 deputados, 517.086 despesas e 26.475 votações processadas). Flags do scheduler (`SCHEDULER_INCLUDE_*`) ainda desativadas aguardando validação de métricas antes do go-live.
+Impacto: sem o scheduler, atualizações diárias não serão executadas e dashboards podem voltar a desatualizar após novos dias úteis.
+Plano: habilitar flags de scheduler com monitoramento de métricas (`*_processadas`/`*_sincronizadas`), validar alertas e confirmar ausência de regressões de performance na API da Câmara.
 
-### 1. Analytics de votações incompletos (registrado em 24/set/2025)
-Problema: a infraestrutura de coleta está disponível, porém falta implementação de métodos agregadores no `AnalyticsService`.
-Impacto: dashboards sem indicadores de disciplina partidária e participação global.
-Plano: implementar métodos agregadores e expor endpoints REST correspondentes; revisar componentes frontend.
+### 1. Validação de analytics de votações (atualizado em 21/out/2025)
+Problema: endpoints e cálculos foram implementados e testados, mas ainda falta confrontar os resultados com dados reais após o novo backfill.
+Impacto: risco de discrepâncias em dashboards e métricas públicas caso haja divergência entre dados reais e agregações.
+Plano: executar backfill completo com despesas e votações habilitadas, auditar amostras no frontend e ajustar caching/normalização conforme necessário.
 
 ### 2. Alinhamento com dados reais de votação
 Problema: possíveis diferenças entre a especificação e a estrutura retornada pela API da Câmara.

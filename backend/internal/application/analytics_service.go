@@ -614,7 +614,13 @@ func (s *AnalyticsService) GetRankingDeputadosVotacao(ctx context.Context, ano i
 	// Map para acumular estatísticas por deputado (pré-populado com zeros)
 	stats := make(map[int]*domain.RankingDeputadoVotacao, len(deputados))
 	for _, d := range deputados {
-		stats[d.ID] = &domain.RankingDeputadoVotacao{IDDeputado: d.ID}
+		stats[d.ID] = &domain.RankingDeputadoVotacao{
+			IDDeputado:   d.ID,
+			Nome:         d.Nome,
+			SiglaPartido: d.Partido,
+			SiglaUF:      d.UF,
+			URLFoto:      d.URLFoto,
+		}
 	}
 
 	aggregated, err := s.votacaoRepo.GetRankingDeputadosAggregated(ctx, ano)

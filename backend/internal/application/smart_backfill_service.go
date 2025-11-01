@@ -13,6 +13,7 @@ import (
 
 	"to-de-olho-backend/internal/domain"
 	"to-de-olho-backend/internal/infrastructure/resilience"
+	"to-de-olho-backend/internal/pkg/envutils"
 )
 
 // BackfillRepositoryPort define interface para repositório de backfill
@@ -278,22 +279,11 @@ func (s *SmartBackfillService) GetBackfillConfigFromEnv() *domain.BackfillConfig
 
 	config.SetDefaults()
 
-	// Permitir desativar entidades específicas via variáveis de ambiente
-	if include := os.Getenv("BACKFILL_INCLUDE_DEPUTADOS"); include != "" {
-		config.IncluirDeputados = include == "true"
-	}
-
-	if include := os.Getenv("BACKFILL_INCLUDE_PROPOSICOES"); include != "" {
-		config.IncluirProposicoes = include == "true"
-	}
-
-	if include := os.Getenv("BACKFILL_INCLUDE_DESPESAS"); include != "" {
-		config.IncluirDespesas = include == "true"
-	}
-
-	if include := os.Getenv("BACKFILL_INCLUDE_VOTACOES"); include != "" {
-		config.IncluirVotacoes = include == "true"
-	}
+	// Permitir desativar entidades específicas via variáveis de ambiente (padrão: habilitadas)
+	config.IncluirDeputados = envutils.IsEnabled(os.Getenv("BACKFILL_INCLUDE_DEPUTADOS"), config.IncluirDeputados)
+	config.IncluirProposicoes = envutils.IsEnabled(os.Getenv("BACKFILL_INCLUDE_PROPOSICOES"), config.IncluirProposicoes)
+	config.IncluirDespesas = envutils.IsEnabled(os.Getenv("BACKFILL_INCLUDE_DESPESAS"), config.IncluirDespesas)
+	config.IncluirVotacoes = envutils.IsEnabled(os.Getenv("BACKFILL_INCLUDE_VOTACOES"), config.IncluirVotacoes)
 
 	return config
 }
@@ -370,13 +360,12 @@ func (s *SmartBackfillService) runHistoricalBackfill(ctx context.Context, execut
 	// OBS: Temporariamente desativado por volume de dados (conforme solicitação).
 	// Comentamos o bloco de processamento pesado para evitar ingestão de proposições agora.
 	if config.IncluirProposicoes && finalStatus != domain.BackfillStatusFailed {
-		// Allow explicit opt-in via env var BACKFILL_INCLUDE_PROPOSICOES=true
-		if os.Getenv("BACKFILL_INCLUDE_PROPOSICOES") == "true" {
-			s.logger.Info("📜 Sincronização de proposições RE-ativada via BACKFILL_INCLUDE_PROPOSICOES")
+		if envutils.IsEnabled(os.Getenv("BACKFILL_INCLUDE_PROPOSICOES"), true) {
+			s.logger.Info("📜 Sincronização de proposições habilitada - manter monitoramento até reativação completa")
 			// Para segurança mantemos o comportamento original inalterado quando habilitado.
 			// (Não reimplementamos aqui; caso precise, remova este guard e restaure o bloco original.)
 		} else {
-			s.logger.Info("📜 Sincronização de proposições temporariamente desativada (BACKFILL_INCLUDE_PROPOSICOES!=true)")
+			s.logger.Info("📜 Sincronização de proposições temporariamente desativada via flag")
 		}
 	}
 

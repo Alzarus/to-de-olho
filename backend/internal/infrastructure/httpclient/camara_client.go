@@ -65,45 +65,81 @@ const (
 	UserAgent            = "ToDeOlho/1.0 (+https://github.com/alzarus/to-de-olho)"
 )
 
-// Int64String é um wrapper que aceita valores JSON que podem ser número ou string
-// e fornece um Int64 seguro via Int64(). Isso evita erros quando a API varia o
-// tipo de representação para ids.
-type Int64String int64
+// CamaraID representa um identificador retornado pela API da Câmara.
+// Alguns endpoints retornam números, outros strings alfanuméricas. Quando
+// possível, preservamos o valor numérico como referência auxiliar; caso
+// contrário, apenas o valor textual é mantido.
+type CamaraID struct {
+	raw     string
+	numeric *int64
+}
 
-func (i *Int64String) UnmarshalJSON(b []byte) error {
+func (id *CamaraID) UnmarshalJSON(b []byte) error {
 	s := strings.TrimSpace(string(b))
-	if s == "null" || s == "\"\"" || s == "" {
-		*i = 0
+	if s == "" || s == "null" {
+		*id = CamaraID{}
 		return nil
 	}
 
-	// Se vier com aspas, desempacotar
 	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
-		if unq, err := strconv.Unquote(s); err == nil {
-			s = unq
+		unq, err := strconv.Unquote(s)
+		if err != nil {
+			return fmt.Errorf("CamaraID: erro ao remover aspas: %w", err)
+		}
+		s = strings.TrimSpace(unq)
+	}
+
+	raw := s
+
+	candidate := raw
+	if idx := strings.Index(candidate, "-"); idx > 0 {
+		candidate = candidate[:idx]
+	}
+	if idx := strings.Index(candidate, "_"); idx > 0 {
+		candidate = candidate[:idx]
+	}
+
+	var numericPtr *int64
+	if isDigits(candidate) {
+		if val, err := strconv.ParseInt(candidate, 10, 64); err == nil {
+			numericPtr = &val
 		}
 	}
 
-	// Alguns ids vêm no formato "12345-67" — aceitar a parte antes do '-'
-	if idx := strings.Index(s, "-"); idx != -1 {
-		s = s[:idx]
+	*id = CamaraID{
+		raw:     raw,
+		numeric: numericPtr,
 	}
 
-	s = strings.TrimSpace(s)
-	if s == "" {
-		*i = 0
-		return nil
-	}
-
-	if n, err := strconv.ParseInt(s, 10, 64); err == nil {
-		*i = Int64String(n)
-		return nil
-	}
-
-	return fmt.Errorf("Int64String: formato não suportado: %s", s)
+	return nil
 }
 
-func (i Int64String) Int64() int64 { return int64(i) }
+func (id CamaraID) String() string {
+	return id.raw
+}
+
+func (id CamaraID) HasInt64() bool {
+	return id.numeric != nil
+}
+
+func (id CamaraID) Int64() int64 {
+	if id.numeric == nil {
+		return 0
+	}
+	return *id.numeric
+}
+
+func isDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
 
 var (
 	jitterRand = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -606,23 +642,23 @@ func (c *CamaraClient) GetVotacoes(ctx context.Context, dataInicio, dataFim time
 
 			var response struct {
 				Dados []struct {
-					ID                 Int64String `json:"id"`
-					URI                string      `json:"uri"`
-					Titulo             string      `json:"titulo"`
-					TipoVotacao        string      `json:"tipoVotacao"`
-					Aprovacao          int         `json:"aprovacao"`
-					DataHoraInicio     string      `json:"dataHoraInicio"`
-					DataHoraRegistro   string      `json:"dataHoraRegistro"`
-					DataHoraFim        string      `json:"dataHoraFim"`
-					Descricao          string      `json:"descricao"`
-					ProposicaoObjeto   string      `json:"proposicaoObjeto"`
+					ID                 CamaraID `json:"id"`
+					URI                string   `json:"uri"`
+					Titulo             string   `json:"titulo"`
+					TipoVotacao        string   `json:"tipoVotacao"`
+					Aprovacao          int      `json:"aprovacao"`
+					DataHoraInicio     string   `json:"dataHoraInicio"`
+					DataHoraRegistro   string   `json:"dataHoraRegistro"`
+					DataHoraFim        string   `json:"dataHoraFim"`
+					Descricao          string   `json:"descricao"`
+					ProposicaoObjeto   string   `json:"proposicaoObjeto"`
 					UltimaApresentacao struct {
-						ID         Int64String `json:"id"`
+						ID         CamaraID `json:"id"`
 						Proposicao struct {
-							ID     Int64String `json:"id"`
-							Numero string      `json:"numero"`
-							Ano    int         `json:"ano"`
-							Tipo   string      `json:"tipo"`
+							ID     CamaraID `json:"id"`
+							Numero string   `json:"numero"`
+							Ano    int      `json:"ano"`
+							Tipo   string   `json:"tipo"`
 						} `json:"proposicao"`
 					} `json:"ultimaApresentacaoProposicao"`
 				} `json:"dados"`
@@ -662,7 +698,7 @@ func (c *CamaraClient) GetVotacoes(ctx context.Context, dataInicio, dataFim time
 				}
 
 				var proposicaoID *int64
-				if item.UltimaApresentacao.Proposicao.ID.Int64() != 0 {
+				if item.UltimaApresentacao.Proposicao.ID.HasInt64() {
 					id := item.UltimaApresentacao.Proposicao.ID.Int64()
 					proposicaoID = &id
 				}
@@ -672,8 +708,15 @@ func (c *CamaraClient) GetVotacoes(ctx context.Context, dataInicio, dataFim time
 					anoProposicao = &item.UltimaApresentacao.Proposicao.Ano
 				}
 
+				var numericID *int64
+				if item.ID.HasInt64() {
+					v := item.ID.Int64()
+					numericID = &v
+				}
+
 				votacao := &domain.Votacao{
-					IDVotacaoCamara:       item.ID.Int64(),
+					IDCamara:              item.ID.String(),
+					IDVotacaoCamara:       numericID,
 					Titulo:                item.Titulo,
 					Ementa:                item.Descricao,
 					DataVotacao:           dataVotacao,
@@ -866,34 +909,34 @@ func (c *CamaraClient) GetVotacoes(ctx context.Context, dataInicio, dataFim time
 	return all, nil
 }
 
-// GetVotacao busca uma votação específica por ID
-func (c *CamaraClient) GetVotacao(ctx context.Context, id int64) (*domain.Votacao, error) {
-	urlStr := fmt.Sprintf("%s/votacoes/%d", c.baseURL, id)
+// GetVotacao busca uma votação específica por ID externo
+func (c *CamaraClient) GetVotacao(ctx context.Context, id string) (*domain.Votacao, error) {
+	urlStr := fmt.Sprintf("%s/votacoes/%s", c.baseURL, id)
 
 	body, err := c.doRequest(ctx, http.MethodGet, urlStr)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar votação ID %d: %w", id, err)
+		return nil, fmt.Errorf("erro ao buscar votação ID %s: %w", id, err)
 	}
 
 	var response struct {
 		Dados struct {
-			ID                 Int64String `json:"id"`
-			URI                string      `json:"uri"`
-			Titulo             string      `json:"titulo"`
-			TipoVotacao        string      `json:"tipoVotacao"`
-			Aprovacao          int         `json:"aprovacao"`
-			DataHoraInicio     string      `json:"dataHoraInicio"`
-			DataHoraRegistro   string      `json:"dataHoraRegistro"`
-			DataHoraFim        string      `json:"dataHoraFim"`
-			Descricao          string      `json:"descricao"`
-			ProposicaoObjeto   string      `json:"proposicaoObjeto"`
+			ID                 CamaraID `json:"id"`
+			URI                string   `json:"uri"`
+			Titulo             string   `json:"titulo"`
+			TipoVotacao        string   `json:"tipoVotacao"`
+			Aprovacao          int      `json:"aprovacao"`
+			DataHoraInicio     string   `json:"dataHoraInicio"`
+			DataHoraRegistro   string   `json:"dataHoraRegistro"`
+			DataHoraFim        string   `json:"dataHoraFim"`
+			Descricao          string   `json:"descricao"`
+			ProposicaoObjeto   string   `json:"proposicaoObjeto"`
 			UltimaApresentacao struct {
-				ID         Int64String `json:"id"`
+				ID         CamaraID `json:"id"`
 				Proposicao struct {
-					ID     Int64String `json:"id"`
-					Numero string      `json:"numero"`
-					Ano    int         `json:"ano"`
-					Tipo   string      `json:"tipo"`
+					ID     CamaraID `json:"id"`
+					Numero string   `json:"numero"`
+					Ano    int      `json:"ano"`
+					Tipo   string   `json:"tipo"`
 				} `json:"proposicao"`
 			} `json:"ultimaApresentacaoProposicao"`
 		} `json:"dados"`
@@ -919,7 +962,7 @@ func (c *CamaraClient) GetVotacao(ctx context.Context, id int64) (*domain.Votaca
 	}
 
 	var proposicaoID *int64
-	if item.UltimaApresentacao.Proposicao.ID.Int64() != 0 {
+	if item.UltimaApresentacao.Proposicao.ID.HasInt64() {
 		id := item.UltimaApresentacao.Proposicao.ID.Int64()
 		proposicaoID = &id
 	}
@@ -929,8 +972,15 @@ func (c *CamaraClient) GetVotacao(ctx context.Context, id int64) (*domain.Votaca
 		anoProposicao = &item.UltimaApresentacao.Proposicao.Ano
 	}
 
+	var numericID *int64
+	if item.ID.HasInt64() {
+		v := item.ID.Int64()
+		numericID = &v
+	}
+
 	votacao := &domain.Votacao{
-		IDVotacaoCamara:       item.ID.Int64(),
+		IDCamara:              item.ID.String(),
+		IDVotacaoCamara:       numericID,
 		Titulo:                item.Titulo,
 		Ementa:                item.Descricao,
 		DataVotacao:           dataVotacao,
@@ -954,12 +1004,12 @@ func (c *CamaraClient) GetVotacao(ctx context.Context, id int64) (*domain.Votaca
 }
 
 // GetVotosPorVotacao busca votos dos deputados para uma votação
-func (c *CamaraClient) GetVotosPorVotacao(ctx context.Context, idVotacao int64) ([]*domain.VotoDeputado, error) {
-	urlStr := fmt.Sprintf("%s/votacoes/%d/votos", c.baseURL, idVotacao)
+func (c *CamaraClient) GetVotosPorVotacao(ctx context.Context, idVotacao string) ([]*domain.VotoDeputado, error) {
+	urlStr := fmt.Sprintf("%s/votacoes/%s/votos", c.baseURL, idVotacao)
 
 	body, err := c.doRequest(ctx, http.MethodGet, urlStr)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar votos da votação %d: %w", idVotacao, err)
+		return nil, fmt.Errorf("erro ao buscar votos da votação %s: %w", idVotacao, err)
 	}
 
 	var response struct {
@@ -982,7 +1032,7 @@ func (c *CamaraClient) GetVotosPorVotacao(ctx context.Context, idVotacao int64) 
 
 	for _, item := range response.Dados {
 		voto := &domain.VotoDeputado{
-			IDVotacao:     idVotacao,
+			IDVotacao:     0,
 			IDDeputado:    item.Deputado.ID,
 			Voto:          item.Voto,
 			Justificativa: nil, // API da Câmara não retorna justificativa nos votos
@@ -1001,12 +1051,12 @@ func (c *CamaraClient) GetVotosPorVotacao(ctx context.Context, idVotacao int64) 
 }
 
 // GetOrientacoesPorVotacao busca orientações partidárias para uma votação
-func (c *CamaraClient) GetOrientacoesPorVotacao(ctx context.Context, idVotacao int64) ([]*domain.OrientacaoPartido, error) {
-	urlStr := fmt.Sprintf("%s/votacoes/%d/orientacoes", c.baseURL, idVotacao)
+func (c *CamaraClient) GetOrientacoesPorVotacao(ctx context.Context, idVotacao string) ([]*domain.OrientacaoPartido, error) {
+	urlStr := fmt.Sprintf("%s/votacoes/%s/orientacoes", c.baseURL, idVotacao)
 
 	body, err := c.doRequest(ctx, http.MethodGet, urlStr)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar orientações da votação %d: %w", idVotacao, err)
+		return nil, fmt.Errorf("erro ao buscar orientações da votação %s: %w", idVotacao, err)
 	}
 
 	var response struct {
@@ -1024,7 +1074,7 @@ func (c *CamaraClient) GetOrientacoesPorVotacao(ctx context.Context, idVotacao i
 
 	for _, item := range response.Dados {
 		orientacao := &domain.OrientacaoPartido{
-			IDVotacao:  idVotacao,
+			IDVotacao:  0,
 			Partido:    item.Partido,
 			Orientacao: item.Orientacao,
 			CreatedAt:  time.Now(),

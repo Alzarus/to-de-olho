@@ -23,6 +23,7 @@ import (
 	"to-de-olho-backend/internal/infrastructure/ingestor"
 	"to-de-olho-backend/internal/infrastructure/migrations"
 	"to-de-olho-backend/internal/infrastructure/repository"
+	"to-de-olho-backend/internal/pkg/envutils"
 )
 
 func main() {
@@ -316,18 +317,10 @@ func parseBackfillConfigFromEnv(cfg *config.Config) *domain.BackfillConfig {
 		backfillConfig.TriggeredBy = triggeredBy
 	}
 
-	// Allow disabling heavy entities via env (useful during deployments)
-	if inc := os.Getenv("BACKFILL_INCLUDE_PROPOSICOES"); inc != "" {
-		backfillConfig.IncluirProposicoes = inc == "true"
-	}
-
-	if inc := os.Getenv("BACKFILL_INCLUDE_DESPESAS"); inc != "" {
-		backfillConfig.IncluirDespesas = inc == "true"
-	}
-
-	if inc := os.Getenv("BACKFILL_INCLUDE_VOTACOES"); inc != "" {
-		backfillConfig.IncluirVotacoes = inc == "true"
-	}
+	// Allow disabling heavy entities via env (default: enabled)
+	backfillConfig.IncluirProposicoes = envutils.IsEnabled(os.Getenv("BACKFILL_INCLUDE_PROPOSICOES"), backfillConfig.IncluirProposicoes)
+	backfillConfig.IncluirDespesas = envutils.IsEnabled(os.Getenv("BACKFILL_INCLUDE_DESPESAS"), backfillConfig.IncluirDespesas)
+	backfillConfig.IncluirVotacoes = envutils.IsEnabled(os.Getenv("BACKFILL_INCLUDE_VOTACOES"), backfillConfig.IncluirVotacoes)
 
 	return backfillConfig
 }

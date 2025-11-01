@@ -3,13 +3,15 @@ package domain
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 )
 
 // Votacao representa uma votação na Câmara dos Deputados
 type Votacao struct {
 	ID                    int64                  `json:"id"`
-	IDVotacaoCamara       int64                  `json:"idVotacaoCamara"`
+	IDCamara              string                 `json:"idCamara"`
+	IDVotacaoCamara       *int64                 `json:"idVotacaoCamara,omitempty"`
 	Titulo                string                 `json:"titulo"`
 	Ementa                string                 `json:"ementa"`
 	DataVotacao           time.Time              `json:"dataVotacao"`
@@ -58,6 +60,10 @@ type VotacaoDetalhada struct {
 // RankingDeputadoVotacao representa ranking de deputados por votações
 type RankingDeputadoVotacao struct {
 	IDDeputado      int     `json:"idDeputado"`
+	Nome            string  `json:"nome"`
+	SiglaPartido    string  `json:"siglaPartido"`
+	SiglaUF         string  `json:"siglaUf"`
+	URLFoto         string  `json:"urlFoto,omitempty"`
 	TotalVotacoes   int     `json:"totalVotacoes"`
 	VotosFavoraveis int     `json:"votosFavoraveis"`
 	VotosContrarios int     `json:"votosContrarios"`
@@ -93,8 +99,12 @@ type FiltrosRanking struct {
 
 // Validações e regras de negócio
 func (v *Votacao) Validate() error {
-	if v.IDVotacaoCamara <= 0 {
+	if strings.TrimSpace(v.IDCamara) == "" {
 		return errors.New("ID da votação na Câmara é obrigatório")
+	}
+
+	if v.IDVotacaoCamara != nil && *v.IDVotacaoCamara <= 0 {
+		return errors.New("ID numérico da votação na Câmara deve ser positivo quando presente")
 	}
 
 	if v.Titulo == "" {

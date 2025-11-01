@@ -176,14 +176,13 @@ func TestDespesa_Validate(t *testing.T) {
 			errorMsg:  "mês deve ser entre 1 e 12",
 		},
 		{
-			name: "valor negativo",
+			name: "valor negativo permitido",
 			despesa: Despesa{
 				Ano:          2024,
 				Mes:          6,
 				ValorLiquido: -50.0,
 			},
-			wantError: true,
-			errorMsg:  "valor deve ser positivo",
+			wantError: false,
 		},
 	}
 

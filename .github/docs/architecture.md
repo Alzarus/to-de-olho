@@ -351,7 +351,26 @@ func (h *DeputadoHandler) BuscarDeputado(c *gin.Context) {
 }
 ```
 
-## 🧪 Testabilidade
+## � Melhores Práticas Go + Microsserviços (2025)
+
+### Go (Implementação)
+- **Contexto em toda a jornada**: propague `context.Context` desde os handlers até repositórios para deadlines, cancelamentos e trace IDs consistentes.
+- **Interfaces pequenas e explícitas**: siga o princípio “aceite interfaces, retorne structs” evitando acoplamento acidental entre casos de uso e infraestrutura.
+- **Erros enriquecidos**: envolva (`fmt.Errorf("...: %w", err)`) e classifique erros com códigos semânticos para permitir `errors.Is/As` e respostas HTTP previsíveis.
+- **Logs estruturados por pares chave/valor**: utilizando `slog` ou adaptadores Go Kit para manter rastreabilidade uniforme em todos os serviços.
+- **Telemetry-first**: exponha métricas customizadas e tracing distribuído diretamente nas camadas de aplicação; mantenha exporters (Prometheus, OTEL) plugáveis via ports/adapters.
+- **Qualidade contínua**: aplique `gofmt`, `golangci-lint` e testes table-driven como etapa obrigatória do pipeline (">make test"), garantindo rigor antes do deploy.
+
+### Arquitetura de Microsserviços
+- **Contratos versionados**: estabeleça versionamento explícito (ex.: `/v1/deputados`) e testes de contrato para REST/gRPC antes de promover mudanças entre serviços.
+- **Resiliência aplicada**: padronize políticas de retry exponencial, timeout e circuit breaker (ex.: `go-resiliency`, `hystrix-go`) encapsuladas em middlewares compartilhados.
+- **Backpressure & rate limiting**: mantenha limites por consumidor usando o `pkg/ratelimiter` e combine com filas RabbitMQ para suavizar picos.
+- **Comunicação orientada a eventos**: sempre que possível preferir eventos idempotentes com schemas versionados (Avro/JSON Schema) para evitar acoplamento temporal.
+- **Configuração 12-factor**: centralize secrets e feature flags via config server/SSM e injete por variáveis de ambiente + configuração tipada (`internal/config`).
+- **Observabilidade completa**: correlacione logs, métricas e traces utilizando IDs compartilhados e dashboards Grafana com alertas pró-ativos.
+- **Entrega contínua segura**: pipelines com gates (lint, testes, security scan) e deploy canário/blue-green, reduzindo blast radius em releases frequentes.
+
+## �🧪 Testabilidade
 
 ### Mocks e Stubs
 ```go

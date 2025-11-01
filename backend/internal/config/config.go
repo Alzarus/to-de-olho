@@ -132,7 +132,7 @@ func LoadConfig() (*Config, error) {
 			BatchSize:  getIntPrefer("BACKFILL_BATCH_SIZE", "INGESTOR_BATCH_SIZE", 100),
 			MaxRetries: getIntPrefer("BACKFILL_MAX_RETRIES", "INGESTOR_MAX_RETRIES", 3),
 			// Default aumentado para 2h para respeitar .env local quando godotenv não for carregado
-			MonitorTimeout: getDuration("BACKFILL_MONITOR_TIMEOUT", 2*time.Hour),
+			MonitorTimeout: getDuration("BACKFILL_MONITOR_TIMEOUT", 24*time.Hour),
 		},
 	}
 

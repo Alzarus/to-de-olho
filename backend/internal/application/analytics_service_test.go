@@ -195,3 +195,110 @@ func TestAnalyticsService_GetRankingPresenca(t *testing.T) {
 		t.Fatalf("unexpected source: %s", source)
 	}
 }
+
+func TestAnalyticsService_GetRankingDeputadosVotacao(t *testing.T) {
+	cache := NewMockCacheAnalytics()
+	deputadoRepo := NewMockDeputadoRepository()
+	proposicaoRepo := NewMockProposicaoRepository()
+
+	service := NewAnalyticsService(deputadoRepo, proposicaoRepo, &MockVotacaoRepository{}, &MockDespesaRepoAnalytics{}, cache, testLogger)
+
+	ctx := context.Background()
+	ano := time.Now().Year()
+
+	resp, source, err := service.GetRankingDeputadosVotacao(ctx, ano, 10)
+	if err != nil {
+		t.Fatalf("GetRankingDeputadosVotacao error: %v", err)
+	}
+	if len(resp) == 0 {
+		t.Fatal("expected ranking entries")
+	}
+	if resp[0].Nome == "" {
+		t.Fatal("expected ranking entry to include deputy name")
+	}
+	if source != "computed" && source != "cache" {
+		t.Fatalf("unexpected source: %s", source)
+	}
+
+	// segunda chamada deve vir do cache
+	respCached, cacheSource, err := service.GetRankingDeputadosVotacao(ctx, ano, 10)
+	if err != nil {
+		t.Fatalf("cached GetRankingDeputadosVotacao error: %v", err)
+	}
+	if cacheSource != "cache" {
+		t.Fatalf("expected cache source, got %s", cacheSource)
+	}
+	if len(respCached) != len(resp) {
+		t.Fatalf("cached entries mismatch: got %d want %d", len(respCached), len(resp))
+	}
+}
+
+func TestAnalyticsService_GetRankingPartidosDisciplina(t *testing.T) {
+	cache := NewMockCacheAnalytics()
+	deputadoRepo := NewMockDeputadoRepository()
+	proposicaoRepo := NewMockProposicaoRepository()
+
+	service := NewAnalyticsService(deputadoRepo, proposicaoRepo, &MockVotacaoRepository{}, &MockDespesaRepoAnalytics{}, cache, testLogger)
+
+	ctx := context.Background()
+	ano := time.Now().Year()
+
+	resp, source, err := service.GetRankingPartidosDisciplina(ctx, ano)
+	if err != nil {
+		t.Fatalf("GetRankingPartidosDisciplina error: %v", err)
+	}
+	if len(resp) == 0 {
+		t.Fatal("expected discipline ranking entries")
+	}
+	if source != "computed" && source != "cache" {
+		t.Fatalf("unexpected source: %s", source)
+	}
+
+	// Validate discipline field calculated
+	for _, partido := range resp {
+		if partido.TotalMembros == 0 {
+			t.Fatalf("expected TotalMembros to be populated for partido %s", partido.Partido)
+		}
+	}
+
+	// confirm cache path
+	_, cacheSource, err := service.GetRankingPartidosDisciplina(ctx, ano)
+	if err != nil {
+		t.Fatalf("cached GetRankingPartidosDisciplina error: %v", err)
+	}
+	if cacheSource != "cache" {
+		t.Fatalf("expected cache source, got %s", cacheSource)
+	}
+}
+
+func TestAnalyticsService_GetStatsVotacoes(t *testing.T) {
+	cache := NewMockCacheAnalytics()
+	deputadoRepo := NewMockDeputadoRepository()
+	proposicaoRepo := NewMockProposicaoRepository()
+
+	service := NewAnalyticsService(deputadoRepo, proposicaoRepo, &MockVotacaoRepository{}, &MockDespesaRepoAnalytics{}, cache, testLogger)
+
+	ctx := context.Background()
+	stats, source, err := service.GetStatsVotacoes(ctx, "2024")
+	if err != nil {
+		t.Fatalf("GetStatsVotacoes error: %v", err)
+	}
+	if stats == nil {
+		t.Fatal("expected stats")
+	}
+	if len(stats.VotacoesPorMes) != 12 {
+		t.Fatalf("expected 12 months, got %d", len(stats.VotacoesPorMes))
+	}
+	if source != "computed" && source != "cache" {
+		t.Fatalf("unexpected source: %s", source)
+	}
+
+	// Cached path
+	_, cacheSource, err := service.GetStatsVotacoes(ctx, "2024")
+	if err != nil {
+		t.Fatalf("cached GetStatsVotacoes error: %v", err)
+	}
+	if cacheSource != "cache" {
+		t.Fatalf("expected cache source, got %s", cacheSource)
+	}
+}
