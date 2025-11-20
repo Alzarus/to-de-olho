@@ -1,8 +1,12 @@
-'use client';
+import { Suspense } from 'react';
 
-import VotacoesAnalytics from '@/components/VotacoesAnalytics';
+import VotacoesAnalytics, {
+  VotacoesAnalyticsSkeleton,
+} from '@/components/VotacoesAnalytics';
 import VotacoesPage from '@/components/VotacoesPage';
-import VotacoesRanking from '@/components/VotacoesRanking';
+import VotacoesRanking, {
+  VotacoesRankingSkeleton,
+} from '@/components/VotacoesRanking';
 
 export default function Votacoes() {
   return (
@@ -23,8 +27,12 @@ export default function Votacoes() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        <VotacoesAnalytics />
-        <VotacoesRanking limite={8} />
+        <Suspense fallback={<VotacoesAnalyticsSkeleton />}> 
+          <VotacoesAnalytics />
+        </Suspense>
+        <Suspense fallback={<VotacoesRankingSkeleton limite={8} />}>
+          <VotacoesRanking limite={8} />
+        </Suspense>
         <VotacoesPage />
       </div>
     </div>

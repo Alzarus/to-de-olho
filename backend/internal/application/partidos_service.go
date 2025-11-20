@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"to-de-olho-backend/internal/domain"
-	"to-de-olho-backend/internal/infrastructure/repository"
 )
 
 // CamaraPartidosPort é a abstração do cliente HTTP para obter partidos
@@ -12,12 +11,16 @@ type CamaraPartidosPort interface {
 	FetchPartidos(ctx context.Context) ([]domain.Partido, error)
 }
 
-type PartidosService struct {
-	client CamaraPartidosPort
-	repo   *repository.PartidoRepository
+type PartidoRepositoryPort interface {
+	UpsertPartidos(ctx context.Context, partidos []domain.Partido) error
 }
 
-func NewPartidosService(client CamaraPartidosPort, repo *repository.PartidoRepository) *PartidosService {
+type PartidosService struct {
+	client CamaraPartidosPort
+	repo   PartidoRepositoryPort
+}
+
+func NewPartidosService(client CamaraPartidosPort, repo PartidoRepositoryPort) *PartidosService {
 	return &PartidosService{client: client, repo: repo}
 }
 

@@ -1,6 +1,4 @@
-'use client';
-
-import React, { useEffect, useMemo, useState } from "react";
+import { API_CONFIG } from '@/config/constants';
 
 interface VotacaoStatsResponse {
   totalVotacoes: number;
@@ -17,104 +15,127 @@ interface VotacoesAnalyticsProps {
 }
 
 const RELEVANCIA_LABELS: Record<string, string> = {
-  alta: "Alta",
-  "alta relevancia": "Alta",
-  altaRelevancia: "Alta",
-  media: "Média",
-  média: "Média",
-  baixa: "Baixa",
+  alta: 'Alta',
+  'alta relevancia': 'Alta',
+  altaRelevancia: 'Alta',
+  media: 'Média',
+  média: 'Média',
+  baixa: 'Baixa',
 };
 
-const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "short" });
+const ANALYTICS_REVALIDATE_SECONDS = 300;
+export const VOTACOES_ANALYTICS_TAG = 'analytics:votacoes:stats';
 
-const VotacoesAnalytics: React.FC<VotacoesAnalyticsProps> = ({ periodo, className = "" }) => {
-  const [stats, setStats] = useState<VotacaoStatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'short' });
 
-  useEffect(() => {
-    const controller = new AbortController();
+function buildApiUrl(path: string): URL {
+  const base = API_CONFIG.BASE_URL.endsWith('/')
+    ? API_CONFIG.BASE_URL
+    : `${API_CONFIG.BASE_URL}/`;
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+  return new URL(normalizedPath, base);
+}
 
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+async function fetchVotacoesStats(periodo: string): Promise<VotacaoStatsResponse> {
+  const url = buildApiUrl('analytics/votacoes/stats');
+  url.searchParams.set('periodo', periodo);
 
-        const params = new URLSearchParams();
-        params.set("periodo", periodo || new Date().getFullYear().toString());
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+    },
+    next: {
+      revalidate: ANALYTICS_REVALIDATE_SECONDS,
+      tags: [VOTACOES_ANALYTICS_TAG],
+    },
+  });
 
-        const response = await fetch(`/api/v1/analytics/votacoes/stats?${params.toString()}`, {
-          signal: controller.signal,
-          cache: "no-store",
-        });
+  if (!response.ok) {
+    throw new Error('Não foi possível carregar as estatísticas de votações');
+  }
 
-        if (!response.ok) {
-          throw new Error("Não foi possível carregar as estatísticas de votações");
-        }
+  const payload = await response.json();
+  const data = payload?.data;
 
-        const payload = await response.json();
-        if (!payload?.data) {
-          throw new Error("Resposta da API não contém dados de estatísticas");
-        }
+  if (!data || typeof data !== 'object') {
+    throw new Error('Resposta da API não contém dados de estatísticas');
+  }
 
-        setStats(payload.data as VotacaoStatsResponse);
-      } catch (err) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Erro desconhecido ao carregar estatísticas");
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
+  return data as VotacaoStatsResponse;
+}
 
-    fetchStats();
+function calcularAprovacao(stats: VotacaoStatsResponse | null) {
+  if (!stats || stats.totalVotacoes === 0) {
+    return { aprovadas: 0, rejeitadas: 0 };
+  }
+  const aprovadas = (stats.votacoesAprovadas / stats.totalVotacoes) * 100;
+  const rejeitadas = (stats.votacoesRejeitadas / stats.totalVotacoes) * 100;
+  return {
+    aprovadas: Number(aprovadas.toFixed(1)),
+    rejeitadas: Number(rejeitadas.toFixed(1)),
+  };
+}
 
-    return () => {
-      controller.abort();
-    };
-  }, [periodo]);
+function mapRelevancia(stats: VotacaoStatsResponse | null) {
+  if (!stats) {
+    return [] as Array<{ label: string; valor: number }>;
+  }
 
-  const aprovacaoPercentual = useMemo(() => {
-    if (!stats || stats.totalVotacoes === 0) {
-      return { aprovadas: 0, rejeitadas: 0 };
-    }
-    const aprovadas = (stats.votacoesAprovadas / stats.totalVotacoes) * 100;
-    const rejeitadas = (stats.votacoesRejeitadas / stats.totalVotacoes) * 100;
+  return Object.entries(stats.votacoesPorRelevancia ?? {}).map(([key, valor]) => ({
+    label: RELEVANCIA_LABELS[key.toLowerCase()] || key,
+    valor,
+  }));
+}
+
+function mapMeses(stats: VotacaoStatsResponse | null) {
+  if (!stats) {
+    return [] as Array<{ mes: string; quantidade: number }>;
+  }
+
+  return (stats.votacoesPorMes ?? []).map((quantidade, index) => {
+    const data = new Date(Date.UTC(2020, index, 1));
     return {
-      aprovadas: Number(aprovadas.toFixed(1)),
-      rejeitadas: Number(rejeitadas.toFixed(1)),
+      mes: monthFormatter.format(data),
+      quantidade,
     };
-  }, [stats]);
+  });
+}
 
-  const relevanciaDistribuicao = useMemo(() => {
-    if (!stats) {
-      return [] as Array<{ label: string; valor: number }>;
-    }
+export function VotacoesAnalyticsSkeleton({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}
+      role="status"
+      aria-live="polite"
+    >
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="h-28 bg-gray-100 border border-gray-200 rounded-lg animate-pulse" />
+      ))}
+    </div>
+  );
+}
 
-    const entries = Object.entries(stats.votacoesPorRelevancia || {});
-    return entries.map(([key, valor]) => ({
-      label: RELEVANCIA_LABELS[key.toLowerCase()] || key,
-      valor,
-    }));
-  }, [stats]);
+export default async function VotacoesAnalytics({
+  periodo,
+  className = '',
+}: VotacoesAnalyticsProps) {
+  const periodoSelecionado = periodo ?? new Date().getFullYear().toString();
 
-  const mesesSeries = useMemo(() => {
-    if (!stats) {
-      return [] as Array<{ mes: string; quantidade: number }>;
-    }
+  let stats: VotacaoStatsResponse | null = null;
+  let errorMessage: string | null = null;
 
-    return stats.votacoesPorMes.map((quantidade, index) => {
-      const data = new Date();
-      data.setMonth(index);
-      return {
-        mes: monthFormatter.format(data),
-        quantidade,
-      };
-    });
-  }, [stats]);
+  try {
+    stats = await fetchVotacoesStats(periodoSelecionado);
+  } catch (error) {
+    errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Erro desconhecido ao carregar estatísticas de votações';
+  }
+
+  const aprovacaoPercentual = calcularAprovacao(stats);
+  const relevanciaDistribuicao = mapRelevancia(stats);
+  const mesesSeries = mapMeses(stats);
 
   return (
     <section className={`space-y-6 ${className}`} aria-labelledby="analytics-votacoes">
@@ -128,43 +149,35 @@ const VotacoesAnalytics: React.FC<VotacoesAnalyticsProps> = ({ periodo, classNam
           </p>
         </div>
         <span className="inline-flex items-center gap-2 text-sm text-gray-500 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full">
-          📅 Período analisado: {periodo || new Date().getFullYear()}
+          📅 Período analisado: {periodoSelecionado}
         </span>
       </header>
 
-      {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" role="status" aria-live="polite">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-28 bg-gray-100 border border-gray-200 rounded-lg animate-pulse" />
-          ))}
-        </div>
-      )}
-
-      {error && !loading && (
+      {errorMessage && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
           <p className="font-semibold">Erro ao carregar estatísticas</p>
-          <p className="text-sm mt-1">{error}</p>
+          <p className="text-sm mt-1">{errorMessage}</p>
         </div>
       )}
 
-      {!loading && !error && stats && (
+      {!errorMessage && stats && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <article className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm" aria-label="Total de votações">
               <p className="text-sm text-gray-500">Total de votações</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{stats.totalVotacoes.toLocaleString("pt-BR")}</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{stats.totalVotacoes.toLocaleString('pt-BR')}</p>
               <p className="text-xs text-gray-500 mt-1">Inclui plenário e sessões extraordinárias</p>
             </article>
 
             <article className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm" aria-label="Aprovação das matérias">
               <p className="text-sm text-gray-500">Aprovação</p>
-              <p className="mt-2 text-3xl font-bold text-green-600">{stats.votacoesAprovadas.toLocaleString("pt-BR")}</p>
+              <p className="mt-2 text-3xl font-bold text-green-600">{stats.votacoesAprovadas.toLocaleString('pt-BR')}</p>
               <p className="text-xs text-gray-500 mt-1">{aprovacaoPercentual.aprovadas}% das votações foram aprovadas</p>
             </article>
 
             <article className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm" aria-label="Matérias rejeitadas">
               <p className="text-sm text-gray-500">Rejeições</p>
-              <p className="mt-2 text-3xl font-bold text-red-600">{stats.votacoesRejeitadas.toLocaleString("pt-BR")}</p>
+              <p className="mt-2 text-3xl font-bold text-red-600">{stats.votacoesRejeitadas.toLocaleString('pt-BR')}</p>
               <p className="text-xs text-gray-500 mt-1">{aprovacaoPercentual.rejeitadas}% das matérias foram rejeitadas</p>
             </article>
 
@@ -187,12 +200,18 @@ const VotacoesAnalytics: React.FC<VotacoesAnalyticsProps> = ({ periodo, classNam
                     <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-blue-500"
-                        style={{ width: `${stats.totalVotacoes === 0 ? 0 : Math.round((quantidade / stats.totalVotacoes) * 100)}%` }}
+                        style={{
+                          width: `${stats.totalVotacoes === 0 ? 0 : Math.round((quantidade / stats.totalVotacoes) * 100)}%`,
+                        }}
                       ></div>
                     </div>
                     <span className="w-10 text-sm text-gray-700 text-right">{quantidade}</span>
                   </div>
                 ))}
+
+                {mesesSeries.length === 0 && (
+                  <p className="text-sm text-gray-500">Nenhum dado mensal disponível para o período selecionado.</p>
+                )}
               </div>
             </section>
 
@@ -210,7 +229,9 @@ const VotacoesAnalytics: React.FC<VotacoesAnalyticsProps> = ({ periodo, classNam
                     <div className="mt-2 h-3 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-green-500"
-                        style={{ width: `${stats.totalVotacoes === 0 ? 0 : Math.round((valor / stats.totalVotacoes) * 100)}%` }}
+                        style={{
+                          width: `${stats.totalVotacoes === 0 ? 0 : Math.round((valor / stats.totalVotacoes) * 100)}%`,
+                        }}
                       ></div>
                     </div>
                   </div>
@@ -226,6 +247,4 @@ const VotacoesAnalytics: React.FC<VotacoesAnalyticsProps> = ({ periodo, classNam
       )}
     </section>
   );
-};
-
-export default VotacoesAnalytics;
+}

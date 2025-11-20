@@ -57,6 +57,13 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## ♻️ Cache e Revalidação dos Dashboards
+
+- Os componentes `VotacoesAnalytics` e `VotacoesRanking` foram migrados para **Server Components** e usam `fetch` com `revalidate: 300s`.
+- Os resultados são compartilhados via cache de dados e identificados pelas tags `analytics:votacoes:stats` e `analytics:votacoes:ranking`.
+- Após qualquer ação de escrita que afete votações, execute `revalidateTag('analytics:votacoes:stats')` e/ou `revalidateTag('analytics:votacoes:ranking')` para sincronizar o frontend.
+- Para carregar versões atualizadas durante SSR, as páginas envolvem os dashboards em `Suspense` com skeletons, garantindo UX consistente mesmo durante cache misses.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

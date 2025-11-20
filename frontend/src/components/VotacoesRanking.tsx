@@ -1,6 +1,4 @@
-'use client';
-
-import React, { useEffect, useMemo, useState } from 'react';
+import { API_CONFIG } from '@/config/constants';
 
 interface RankingDeputado {
   idDeputado: number;
@@ -24,73 +22,96 @@ interface VotacoesRankingProps {
 const FOTO_PLACEHOLDER =
   'https://www.camara.leg.br/internet/deputado/img/deputado-sem-foto.jpg';
 
-const VotacoesRanking: React.FC<VotacoesRankingProps> = ({
+const RANKING_REVALIDATE_SECONDS = 300;
+export const VOTACOES_RANKING_TAG = 'analytics:votacoes:ranking';
+
+function buildApiUrl(path: string): URL {
+  const base = API_CONFIG.BASE_URL.endsWith('/')
+    ? API_CONFIG.BASE_URL
+    : `${API_CONFIG.BASE_URL}/`;
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+  return new URL(normalizedPath, base);
+}
+
+async function fetchRanking(ano: number, limite: number): Promise<RankingDeputado[]> {
+  const url = buildApiUrl('analytics/votacoes/ranking');
+  url.searchParams.set('ano', ano.toString());
+  url.searchParams.set('limite', limite.toString());
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+    },
+    next: {
+      revalidate: RANKING_REVALIDATE_SECONDS,
+      tags: [VOTACOES_RANKING_TAG],
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Não foi possível carregar o ranking de deputados');
+  }
+
+  const payload = await response.json();
+  const data = payload?.data;
+
+  if (!Array.isArray(data)) {
+    throw new Error('Resposta da API não contém o ranking de deputados');
+  }
+
+  return data as RankingDeputado[];
+}
+
+function parseAno(ano?: number | string) {
+  if (typeof ano === 'number' && Number.isFinite(ano)) {
+    return ano;
+  }
+  if (typeof ano === 'string' && ano.trim().length > 0) {
+    const parsed = Number.parseInt(ano, 10);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return new Date().getFullYear();
+}
+
+export function VotacoesRankingSkeleton({
+  limite = 5,
+  className = '',
+}: {
+  limite?: number;
+  className?: string;
+}) {
+  return (
+    <div className={`space-y-4 ${className}`} role="status" aria-live="polite">
+      {Array.from({ length: limite }).map((_, index) => (
+        <div
+          key={index}
+          className="h-20 bg-gray-100 border border-gray-200 rounded-lg animate-pulse"
+        />
+      ))}
+    </div>
+  );
+}
+
+export default async function VotacoesRanking({
   ano,
   limite = 5,
   className = '',
-}) => {
-  const [ranking, setRanking] = useState<RankingDeputado[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+}: VotacoesRankingProps) {
+  const anoSelecionado = parseAno(ano);
 
-  const periodo = useMemo(() => {
-    if (typeof ano === 'number') {
-      return ano;
-    }
-    if (typeof ano === 'string' && ano.trim().length > 0) {
-      return Number.parseInt(ano, 10);
-    }
-    return new Date().getFullYear();
-  }, [ano]);
+  let ranking: RankingDeputado[] = [];
+  let errorMessage: string | null = null;
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchRanking = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const params = new URLSearchParams();
-        params.set('ano', periodo.toString());
-        params.set('limite', limite.toString());
-
-        const response = await fetch(
-          `/api/v1/analytics/votacoes/ranking?${params.toString()}`,
-          {
-            signal: controller.signal,
-            cache: 'no-store',
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error('Não foi possível carregar o ranking de deputados');
-        }
-
-        const payload = await response.json();
-        const dados = Array.isArray(payload?.data) ? payload.data : [];
-
-        setRanking(dados as RankingDeputado[]);
-      } catch (err) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Erro desconhecido ao carregar ranking',
-        );
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchRanking();
-
-    return () => controller.abort();
-  }, [limite, periodo]);
+  try {
+    ranking = await fetchRanking(anoSelecionado, limite);
+  } catch (error) {
+    errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Erro desconhecido ao carregar ranking de votações';
+  }
 
   return (
     <section
@@ -107,35 +128,24 @@ const VotacoesRanking: React.FC<VotacoesRankingProps> = ({
           </p>
         </div>
         <span className="inline-flex items-center gap-2 text-sm text-gray-500 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full">
-          🗓️ Ano analisado: {periodo}
+          🗓️ Ano analisado: {anoSelecionado}
         </span>
       </header>
 
-      {loading && (
-        <div className="space-y-4" role="status" aria-live="polite">
-          {Array.from({ length: limite }).map((_, index) => (
-            <div
-              key={index}
-              className="h-20 bg-gray-100 border border-gray-200 rounded-lg animate-pulse"
-            />
-          ))}
-        </div>
-      )}
-
-      {error && !loading && (
+      {errorMessage && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
           <p className="font-semibold">Erro ao carregar ranking</p>
-          <p className="text-sm mt-1">{error}</p>
+          <p className="text-sm mt-1">{errorMessage}</p>
         </div>
       )}
 
-      {!loading && !error && ranking.length === 0 && (
+      {!errorMessage && ranking.length === 0 && (
         <p className="text-sm text-gray-500">
           Ainda não há dados suficientes para montar o ranking deste período.
         </p>
       )}
 
-      {!loading && !error && ranking.length > 0 && (
+      {!errorMessage && ranking.length > 0 && (
         <ol className="space-y-4">
           {ranking.map((deputado, index) => {
             const taxaAprovacao = Number.isFinite(deputado.taxaAprovacao)
@@ -194,6 +204,4 @@ const VotacoesRanking: React.FC<VotacoesRankingProps> = ({
       )}
     </section>
   );
-};
-
-export default VotacoesRanking;
+}
