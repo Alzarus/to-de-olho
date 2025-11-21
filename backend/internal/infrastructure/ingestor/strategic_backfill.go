@@ -575,12 +575,17 @@ func (sbe *StrategicBackfillExecutor) executeDespesasBackfill(ctx context.Contex
 				return ctx.Err()
 			}
 
-			despesas, _, err := sbe.deputadosService.ListarDespesas(ctx,
+			serviceCtx := domain.WithSkipDespesaPersist(domain.WithForceDespesaRemote(ctx))
+
+			despesas, source, err := sbe.deputadosService.ListarDespesas(serviceCtx,
 				fmt.Sprintf("%d", dep.ID),
 				fmt.Sprintf("%d", yearInt))
 			if err != nil {
 				lastErr = err
 			} else {
+				if source == "database_fallback" {
+					log.Printf("⚠️ Dados de despesas devolvidos em modo degradado para deputado %d no ano %d", dep.ID, yearInt)
+				}
 				if len(despesas) == 0 {
 					lastErr = nil
 					break

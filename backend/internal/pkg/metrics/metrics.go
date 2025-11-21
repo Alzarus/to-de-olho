@@ -12,6 +12,27 @@ import (
 // to these counters or replaced by a fuller implementation.
 
 var schedulerSkipCounters = map[string]*int64{}
+var despesasFallbackCounters = map[string]*int64{}
+
+// IncDespesasFallback incrementa contador de execuções que recorreram a dados degradados.
+func IncDespesasFallback(scope string) int64 {
+	key := scope
+	p, ok := despesasFallbackCounters[key]
+	if !ok {
+		var v int64 = 0
+		despesasFallbackCounters[key] = &v
+		p = &v
+	}
+	return atomic.AddInt64(p, 1)
+}
+
+// GetDespesasFallback retorna quantidade de ocorrências degradadas em um escopo.
+func GetDespesasFallback(scope string) int64 {
+	if p, ok := despesasFallbackCounters[scope]; ok {
+		return atomic.LoadInt64(p)
+	}
+	return 0
+}
 
 // IncSchedulerSkip increments the skip counter for a scheduler tipo.
 func IncSchedulerSkip(tipo string) {

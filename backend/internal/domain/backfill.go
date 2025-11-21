@@ -211,4 +211,5 @@ var (
 	ErrBackfillTipoInvalido   = errors.New("tipo de backfill inválido")
 	ErrBackfillConfigInvalida = errors.New("configuração de backfill inválida")
 	ErrBackfillStatusInvalido = errors.New("status de backfill inválido")
+	ErrDespesasFonteDegradada = errors.New("dados de despesas retornados em modo degradado")
 )

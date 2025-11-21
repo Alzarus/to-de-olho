@@ -60,7 +60,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Validar a aplicação da migration `014_alter_despesas_add_columns.sql` em todos os ambientes (dev confirmado até a versão 016; falta staging/prod).
 - [x] Ajustar constraint de `valor_liquido` para aceitar estornos (migration 016 aplicada e validada em dev).
 - [x] Mitigar risco de perda de dados substituindo `DELETE` por merge transacional no `DespesaRepository` (31/out/2025).
-- [ ] Habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`).
+- [x] Habilitar `BACKFILL_INCLUDE_DESPESAS=true` e `SCHEDULER_INCLUDE_DESPESAS=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`). *(flags ativadas em 20/nov/2025; acompanhar primeiras execuções do scheduler)*
 - [x] Monitorar conclusão do backfill histórico atual (`ef924048-2457-4dab-b5c0-40c2a4ef8d9b`) e registrar checkpoints anuais (finalizado em 29/out/2025 às 04:14 BRT).
 
 **Votações (alta prioridade)**
@@ -70,14 +70,14 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [x] Testes de integração no `VotacaoRepository`
  - [x] Ajustar domínio/repos para IDs alfanuméricos (persistir `id` string, manter `IDVotacaoCamara` opcional) *(concluído em 30/out/2025)*
 - [ ] Revisar `CamaraClient` para filtros oficiais (`idProposicao`, `idEvento`, `idOrgao`, datas no mesmo ano) e paginação (≤200 itens)
-- [ ] Testes unitários/mocks do executor e regressões de checkpoint
+- [x] Testes unitários/mocks do executor e regressões de checkpoint *(cobertos por `strategic_backfill_votacoes_test.go` em 20/nov/2025)*
 - [ ] Backfill completo em staging (performance/governança)
 
 **Partidos (prioridade média)**
 - [x] Domínio + migration `012_create_partidos_table.sql`
 - [x] `CamaraClient.FetchPartidos` + `PartidosService.ListarPartidos` com upsert
 - [x] Checkpoint e executor dedicados
-- [ ] Testes unit/integration para service e repository
+- [x] Testes unit/integration para service e repository *(`partidos_service_test.go` e `partido_repository_test.go` em 20/nov/2025)*
 - [ ] Execução validada em staging com monitoramento de consistência
 
 **Proposições (adequação à spec)**
@@ -111,8 +111,8 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 1. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`) após a primeira janela de execução e monitorando o novo merge transacional para garantir contagens consistentes.
 2. Auditar os dashboards de votações no frontend com os dados do novo backfill e ajustar caching conforme necessário (componentes foram integrados em 30/out/2025; falta validação com dados reais).
   - [ ] Confrontar resultados exibidos em `VotacoesAnalytics.tsx` e `VotacoesRanking.tsx` com amostras oficiais após o backfill completo.
-  - [ ] Revisar a estratégia de data fetching (migrar para Server Components quando viável) seguindo o guia do App Router (`fetch` + `revalidate`/`revalidatePath`) referenciado em #upstash/context7.
-  - [ ] Documentar o comportamento esperado de cache e revalidação no README e garantir que `revalidatePath`/`revalidateTag` sejam acionados após Server Actions relevantes.
+  - [x] Revisar a estratégia de data fetching (migrar para Server Components quando viável) seguindo o guia do App Router (`fetch` + `revalidate`/`revalidatePath`) referenciado em #upstash/context7. *(componentes migrados para Server Components com cache e tags em 20/nov/2025)*
+  - [x] Documentar o comportamento esperado de cache e revalidação no README e garantir que `revalidatePath`/`revalidateTag` sejam acionados após Server Actions relevantes. *(documentado em `frontend/README.md` em 20/nov/2025)*
 3. Documentar o fluxo de merge de despesas atualizado e orientar SRE sobre rollback seguro antes de habilitar as flags.
 4. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
 5. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
@@ -249,10 +249,11 @@ GET /api/v1/analytics/presenca           - Ranking presença eventos
 
 ## Bloqueadores Identificados
 
-### 0. Scheduler de despesas e votações (atualizado em 29/out/2025)
-Status: backfill histórico concluído às 29/out/2025 04:14 BRT (513 deputados, 517.086 despesas e 26.475 votações processadas). Flags do scheduler (`SCHEDULER_INCLUDE_*`) ainda desativadas aguardando validação de métricas antes do go-live.
-Impacto: sem o scheduler, atualizações diárias não serão executadas e dashboards podem voltar a desatualizar após novos dias úteis.
-Plano: habilitar flags de scheduler com monitoramento de métricas (`*_processadas`/`*_sincronizadas`), validar alertas e confirmar ausência de regressões de performance na API da Câmara.
+### 0. Scheduler de despesas e votações (atualizado em 21/nov/2025)
+Status: backfill histórico concluído às 29/out/2025 04:14 BRT (513 deputados, 517.086 despesas e 26.475 votações processadas). Flags do scheduler (`SCHEDULER_INCLUDE_*`) habilitadas em 20/nov/2025 com monitoramento de métricas; healthcheck atualizado para validar o processo (`pidof scheduler`) e evitar falso negativo por ausência de endpoint HTTP.
+Impacto: reduz reinícios desnecessários e simplifica o monitoramento do serviço; ainda depende de métricas para confirmar sucesso das execuções.
+Plano: acompanhar métricas (`*_processadas`/`*_sincronizadas`), manter alertas e, em paralelo, avaliar expor um endpoint `/health` no scheduler para observabilidade rica no futuro.
+Status de progresso (21/nov 12:40 BRT): binários reconstruídos sem healthcheck HTTP e compose ajustado para `pidof scheduler`; aguardar recriação do container em produção/staging para validar que o status passa a `healthy`.
 
 ### 1. Validação de analytics de votações (atualizado em 21/out/2025)
 Problema: endpoints e cálculos foram implementados e testados, mas ainda falta confrontar os resultados com dados reais após o novo backfill.

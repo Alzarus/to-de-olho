@@ -110,6 +110,10 @@ func (m *MockDespesaRepository) ListDespesasByDeputadoAno(ctx context.Context, d
 	return m.despesas, nil
 }
 
+func boolPtr(v bool) *bool {
+	return &v
+}
+
 func TestDeputadosService_ListarDeputados(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -331,6 +335,8 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 		expectedSource string
 		expectError    bool
 		expectedCount  int
+		ctx            context.Context
+		expectUpsert   *bool
 	}{
 		{
 			name:       "sucesso busca despesas na API",
@@ -361,7 +367,7 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 			ano:            "2024",
 			mockError:      errors.New("erro de rede"),
 			repoDespesas:   []domain.Despesa{},
-			expectedSource: "database",
+			expectedSource: "database_fallback",
 			expectError:    false,
 			expectedCount:  0,
 		},
@@ -385,6 +391,38 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 			expectedSource: "database",
 			expectError:    false,
 			expectedCount:  1,
+		},
+		{
+			name:       "força remoto ignora cache e banco",
+			deputadoID: "321",
+			ano:        "2022",
+			mockDespesas: []domain.Despesa{
+				{Ano: 2022, Mes: 7, ValorLiquido: 100.0, TipoDespesa: "COMBUSTÍVEL"},
+			},
+			cacheData: map[string]string{
+				"despesas:321:2022": `[{"ano":2022,"mes":1,"valorLiquido":999.0,"tipoDespesa":"CACHE"}]`,
+			},
+			repoDespesas: []domain.Despesa{
+				{Ano: 2022, Mes: 2, ValorLiquido: 200.0, TipoDespesa: "BD"},
+			},
+			expectedSource: "api",
+			expectError:    false,
+			expectedCount:  1,
+			ctx:            domain.WithForceDespesaRemote(context.Background()),
+			expectUpsert:   boolPtr(true),
+		},
+		{
+			name:       "skip persist evita upsert de despesas",
+			deputadoID: "654",
+			ano:        "2021",
+			mockDespesas: []domain.Despesa{
+				{Ano: 2021, Mes: 3, ValorLiquido: 300.0, TipoDespesa: "PASSAGENS"},
+			},
+			expectedSource: "api",
+			expectError:    false,
+			expectedCount:  1,
+			ctx:            domain.WithSkipDespesaPersist(context.Background()),
+			expectUpsert:   boolPtr(false),
 		},
 		{
 			name:        "erro quando banco e API falham",
@@ -422,6 +460,9 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 
 			// Execute
 			ctx := context.Background()
+			if tt.ctx != nil {
+				ctx = tt.ctx
+			}
 			result, source, err := service.ListarDespesas(ctx, tt.deputadoID, tt.ano) // Assert
 			if tt.expectError {
 				if err == nil {
@@ -440,6 +481,16 @@ func TestDeputadosService_ListarDespesas(t *testing.T) {
 
 			if source != tt.expectedSource {
 				t.Errorf("source esperado: %s, recebido: %s", tt.expectedSource, source)
+			}
+
+			if tt.expectUpsert != nil {
+				realUpsert := len(mockDespesaRepo.upsertCalls) > 0
+				if *tt.expectUpsert && !realUpsert {
+					t.Errorf("esperava persistência de despesas, mas não ocorreu")
+				}
+				if !*tt.expectUpsert && realUpsert {
+					t.Errorf("não esperava persistência de despesas, mas ocorreu")
+				}
 			}
 		})
 	}

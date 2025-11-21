@@ -160,6 +160,12 @@ services:
       - todo-network
     command: ["./scheduler"]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pidof", "scheduler"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Adminer (UI para Postgres)
   adminer:

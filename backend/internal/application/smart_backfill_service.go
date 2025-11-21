@@ -820,10 +820,16 @@ func (s *SmartBackfillService) syncDeputadoDespesas(ctx context.Context, deputad
 			return 0, ctx.Err()
 		}
 
-		despesas, _, err := s.deputadosService.ListarDespesas(ctx, deputadoIDStr, anoStr)
+		serviceCtx := domain.WithSkipDespesaPersist(domain.WithForceDespesaRemote(ctx))
+		despesas, source, err := s.deputadosService.ListarDespesas(serviceCtx, deputadoIDStr, anoStr)
 		if err != nil {
 			lastErr = err
 		} else {
+			if source == "database_fallback" {
+				s.logger.Warn("despesas retornadas em modo degradado",
+					slog.Int("deputado_id", deputadoID),
+					slog.Int("ano", ano))
+			}
 			if len(despesas) == 0 {
 				return 0, nil
 			}
