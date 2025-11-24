@@ -16,7 +16,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 | Engine de analytics          | Concluído, testes cobrindo votações | Média      | set/2025     |
 | Frontend WCAG                | Concluído                         | Média      | set/2025     |
 | API REST v1                  | Concluído                         | Média      | set/2025     |
-| Sincronização + API Câmara   | Backfill histórico concluído; repositório de despesas com merge seguro; scheduler aguardando flags finais | Crítica    | out/2025     |
+| Sincronização + API Câmara   | Backfill histórico concluído; repositório de despesas com merge seguro; scheduler ativo e saudável (healthcheck corrigido) | Crítica    | out/2025     |
 | Esquema do banco             | Migrations 014-016 aplicadas no dev | Média      | out/2025     |
 | Deploy em produção           | Não iniciado                      | Alta       | nov/2025     |
 | Integração IA Gemini         | Não iniciado                      | Média      | dez/2025     |
@@ -33,8 +33,8 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 ### Resumo do estado atual
 - Concluído: Deputados (backfill e scheduler), Votações históricas (executor com circuit breaker monitorado), Despesas 2025-2022 com checkpoints anuais e Partidos (upsert + checkpoint dedicado).
-- Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário permanece aguardando habilitação das flags (`SCHEDULER_INCLUDE_*`) e validação de métricas. Pipeline de despesas agora realiza merge transacional sem `DELETE` destrutivo. Proposições continuam desativadas (dependem de `BACKFILL_INCLUDE_PROPOSICOES=true`). Frontend principal já exibe analytics e ranking de votações com dados em tempo real (30/out/2025).
-- Em andamento: habilitação e observabilidade do scheduler pós-backfill, testes unitários do executor de votações, validação de performance em staging e cobertura de repositórios sem integração automatizada.
+- Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário operando com flags habilitadas (`SCHEDULER_INCLUDE_*`). Pipeline de despesas com merge transacional. Proposições desbloqueadas após correção de filtro (`ordenarPor=id`) em 24/nov/2025. Frontend principal exibe analytics em tempo real.
+- Em andamento: validação de performance em staging e cobertura de repositórios sem integração automatizada.
 - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
 - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
 - Backlog (prioridade baixa): Eventos, Blocos, Frentes, Grupos.
@@ -249,11 +249,10 @@ GET /api/v1/analytics/presenca           - Ranking presença eventos
 
 ## Bloqueadores Identificados
 
-### 0. Scheduler de despesas e votações (atualizado em 21/nov/2025)
-Status: backfill histórico concluído às 29/out/2025 04:14 BRT (513 deputados, 517.086 despesas e 26.475 votações processadas). Flags do scheduler (`SCHEDULER_INCLUDE_*`) habilitadas em 20/nov/2025 com monitoramento de métricas; healthcheck atualizado para validar o processo (`pidof scheduler`) e evitar falso negativo por ausência de endpoint HTTP.
-Impacto: reduz reinícios desnecessários e simplifica o monitoramento do serviço; ainda depende de métricas para confirmar sucesso das execuções.
-Plano: acompanhar métricas (`*_processadas`/`*_sincronizadas`), manter alertas e, em paralelo, avaliar expor um endpoint `/health` no scheduler para observabilidade rica no futuro.
-Status de progresso (21/nov 12:40 BRT): binários reconstruídos sem healthcheck HTTP e compose ajustado para `pidof scheduler`; aguardar recriação do container em produção/staging para validar que o status passa a `healthy`.
+### 0. Scheduler de despesas e votações (atualizado em 24/nov/2025)
+Status: ✅ **RESOLVIDO**. Healthcheck ajustado para `pidof scheduler` (removendo dependência HTTP inexistente) e erro 400 na ingestão de proposições corrigido (alterado default de ordenação para `id`).
+Impacto: Serviço opera como `healthy` e sincroniza todas as entidades (deputados, despesas, votações, proposições) sem erros bloqueantes.
+Plano: Monitorar métricas de volume de dados nos próximos dias.
 
 ### 1. Validação de analytics de votações (atualizado em 21/out/2025)
 Problema: endpoints e cálculos foram implementados e testados, mas ainda falta confrontar os resultados com dados reais após o novo backfill.

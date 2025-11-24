@@ -480,7 +480,7 @@ func TestProposicaoFilter_SetDefaults(t *testing.T) {
 				Limite:     20,
 				Pagina:     1,
 				Ordem:      "DESC",
-				OrdenarPor: "dataApresentacao",
+				OrdenarPor: "id",
 			},
 		},
 		{
@@ -541,13 +541,13 @@ func TestProposicaoFilter_BuildAPIQueryParams(t *testing.T) {
 				Pagina:     1,
 				Limite:     20,
 				Ordem:      "DESC",
-				OrdenarPor: "dataApresentacao",
+				OrdenarPor: "id",
 			},
 			expected: map[string]string{
 				"pagina":     "1",
 				"itens":      "20",
 				"ordem":      "DESC",
-				"ordenarPor": "dataApresentacao",
+				"ordenarPor": "id",
 			},
 		},
 		{

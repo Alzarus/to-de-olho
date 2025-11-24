@@ -226,7 +226,7 @@ func (f *ProposicaoFilter) SetDefaults() {
 	}
 
 	if f.OrdenarPor == "" {
-		f.OrdenarPor = "dataApresentacao" // Valor padrão para ordenação nas views
+		f.OrdenarPor = "id" // Campo seguro aceito pela API para ordenação padrão
 	}
 }
 
