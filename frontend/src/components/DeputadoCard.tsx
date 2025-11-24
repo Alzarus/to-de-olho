@@ -52,7 +52,7 @@ export default function DeputadoCard({ deputado, onClick, onVerDespesas }: Deput
         </div>
       </div>
       
-      <div className="text-base text-gray-800">
+      <div className="text-base text-gray-900">
         <p><strong>Situação:</strong> {deputado.condicaoEleitoral}</p>
         {deputado.email && (
           <p className="mt-1 truncate"><strong>Email:</strong> {deputado.email}</p>

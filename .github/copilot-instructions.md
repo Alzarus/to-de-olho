@@ -19,14 +19,17 @@
 ### 1.2 Ferramentas Suportadas
 - `semantic_search`: localizar funções, testes ou padrões antes de criar algo novo.
 - `file_search`: quando souber o nome do arquivo ou símbolo que deseja localizar.
+- `mcp_docker`: utilize para acesso direto aos contêineres, verificação de logs e estado dos serviços (obrigatório para monitoramento).
+- `microsoft/playwright-mcp`: utilize para testes end-to-end e validação visual do frontend.
 - Ferramenta externa: #upstash/context7 para buscar documentação (ex.: Next.js, Go, Gemini SDK). Fluxo mínimo: `resolve-library-id` → `get-library-docs`, sempre filtrando pelo tópico necessário.
 
 ### 1.3 Workflow Inteligente
-1. Analise a tarefa, classifique o escopo (backend, frontend, dados, docs).
-2. Leia os arquivos já existentes e reutilize o estilo do projeto.
-3. Implemente em passos pequenos, adicionando testes e comentários apenas quando necessários para clareza.
-4. Rode ou descreva testes relevantes; não deixe lacunas sem justificar.
-5. Documente mudanças e deixe próximos passos claros.
+1. **Contexto Primeiro**: Antes de qualquer alteração, analise o contexto do projeto. Leia arquivos relacionados em `.github/` e no diretório de trabalho. Não assuma nada; verifique.
+2. Analise a tarefa, classifique o escopo (backend, frontend, dados, docs).
+3. Leia os arquivos já existentes e reutilize o estilo do projeto.
+4. Implemente em passos pequenos, adicionando testes e comentários apenas quando necessários para clareza.
+5. Rode ou descreva testes relevantes; não deixe lacunas sem justificar.
+6. Documente mudanças e deixe próximos passos claros.
 
 ## 2. Visão do Projeto
 

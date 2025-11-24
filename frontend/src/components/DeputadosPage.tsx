@@ -285,7 +285,7 @@ export default function DeputadosPage() {
               placeholder={`Digite o nome do deputado (aguarda ${TIMING_CONFIG.SEARCH_DEBOUNCE_MS}ms)`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-base border border-gray-300 rounded-md px-4 py-3 
+              className="w-full text-base text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md px-4 py-3 
                          focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500"
             />
             {searchTerm && (
@@ -314,7 +314,7 @@ export default function DeputadosPage() {
                 setSelectedUF(e.target.value);
                 handleFilterChange();
               }}
-              className="w-full text-base border border-gray-300 rounded-md px-4 py-3 
+              className="w-full text-base text-gray-900 border border-gray-300 rounded-md px-4 py-3 
                          focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500"
             >
               <option value="">Todos os estados</option>
@@ -338,7 +338,7 @@ export default function DeputadosPage() {
                 handleFilterChange();
               }}
               placeholder="Digite ou selecione um partido"
-              className="w-full text-base border border-gray-300 rounded-md px-4 py-3 
+              className="w-full text-base text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md px-4 py-3 
                          focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500"
               aria-label="Filtrar por partido político"
             />
@@ -464,7 +464,7 @@ export default function DeputadosPage() {
               </div>
             </div>
             
-            <div className="space-y-3 mb-6 text-base">
+            <div className="space-y-3 mb-6 text-base text-gray-900">
               <p><strong>ID:</strong> {selectedDeputado.id}</p>
               <p><strong>Situação:</strong> {selectedDeputado.condicaoEleitoral}</p>
               {selectedDeputado.email && (
@@ -527,7 +527,7 @@ export default function DeputadosPage() {
                     setSelectedAno(Number(e.target.value));
                     fetchDespesas(selectedDeputado.id, Number(e.target.value));
                   }}
-                  className="border border-gray-300 rounded-md px-3 py-2"
+                  className="border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white"
                 >
                   {ANALYTICS_CONFIG.ANOS_DISPONIVEIS.map(year => (
                     <option key={year} value={year}>{year}</option>
