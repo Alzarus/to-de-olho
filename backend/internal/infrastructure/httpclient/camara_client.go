@@ -199,6 +199,11 @@ type CamaraClient struct {
 	pageDelay      time.Duration
 }
 
+type deputadoResumo struct {
+	ID   int    `json:"id"`
+	Nome string `json:"nome"`
+}
+
 func NewCamaraClient(baseURL string, timeout time.Duration, rps int, burst int) *CamaraClient {
 	if baseURL == "" {
 		baseURL = DefaultBaseURLCamara
@@ -1014,13 +1019,11 @@ func (c *CamaraClient) GetVotosPorVotacao(ctx context.Context, idVotacao string)
 
 	var response struct {
 		Dados []struct {
-			Deputado struct {
-				ID   int    `json:"id"`
-				Nome string `json:"nome"`
-			} `json:"deputado"`
-			TipoVoto     string `json:"tipoVoto"`
-			Voto         string `json:"voto"`
-			DataRegistro string `json:"dataRegistroVoto"`
+			Deputado       deputadoResumo `json:"deputado"`
+			DeputadoLegacy deputadoResumo `json:"deputado_"`
+			TipoVoto       string         `json:"tipoVoto"`
+			Voto           string         `json:"voto"`
+			DataRegistro   string         `json:"dataRegistroVoto"`
 		} `json:"dados"`
 	}
 
@@ -1031,15 +1034,27 @@ func (c *CamaraClient) GetVotosPorVotacao(ctx context.Context, idVotacao string)
 	votos := make([]*domain.VotoDeputado, 0, len(response.Dados))
 
 	for _, item := range response.Dados {
+		deputadoInfo, fonteDeputado := pickDeputadoInfo(item.Deputado, item.DeputadoLegacy)
+
+		votoStr := strings.TrimSpace(item.Voto)
+		if votoStr == "" {
+			votoStr = strings.TrimSpace(item.TipoVoto)
+		}
+
+		if deputadoInfo.ID == 0 || votoStr == "" {
+			continue
+		}
+
 		voto := &domain.VotoDeputado{
 			IDVotacao:     0,
-			IDDeputado:    item.Deputado.ID,
-			Voto:          item.Voto,
+			IDDeputado:    deputadoInfo.ID,
+			Voto:          votoStr,
 			Justificativa: nil, // API da Câmara não retorna justificativa nos votos
 			Payload: map[string]interface{}{
-				"tipoVoto":     item.TipoVoto,
-				"nomeDeputado": item.Deputado.Nome,
-				"dataRegistro": item.DataRegistro,
+				"tipoVoto":      item.TipoVoto,
+				"nomeDeputado":  deputadoInfo.Nome,
+				"dataRegistro":  item.DataRegistro,
+				"fonteDeputado": fonteDeputado,
 			},
 			CreatedAt: time.Now(),
 		}
@@ -1048,6 +1063,16 @@ func (c *CamaraClient) GetVotosPorVotacao(ctx context.Context, idVotacao string)
 	}
 
 	return votos, nil
+}
+
+func pickDeputadoInfo(primary, legacy deputadoResumo) (deputadoResumo, string) {
+	if primary.ID != 0 || primary.Nome != "" {
+		return primary, "deputado"
+	}
+	if legacy.ID != 0 || legacy.Nome != "" {
+		return legacy, "deputado_"
+	}
+	return deputadoResumo{}, ""
 }
 
 // GetOrientacoesPorVotacao busca orientações partidárias para uma votação

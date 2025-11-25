@@ -241,6 +241,66 @@ func TestCamaraClient_ContextCancellation(t *testing.T) {
 	}
 }
 
+func TestCamaraClient_GetVotosPorVotacao_NormalizaDeputadoEVoto(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		payload := map[string]any{
+			"dados": []map[string]any{
+				{
+					"deputado":         map[string]any{"id": 123, "nome": "Dep Primario"},
+					"tipoVoto":         "Não",
+					"voto":             "Nao",
+					"dataRegistroVoto": "2024-01-01T12:00:00",
+				},
+				{
+					"deputado_":        map[string]any{"id": 456, "nome": "Dep Legado"},
+					"tipoVoto":         "Sim",
+					"voto":             "",
+					"dataRegistroVoto": "2024-02-02T15:30:00",
+				},
+				{
+					"tipoVoto":         "Abstenção",
+					"voto":             "",
+					"dataRegistroVoto": "2024-03-03T10:10:00",
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(payload)
+	}))
+	defer server.Close()
+
+	client := newTestCamaraClient(server.URL)
+	votos, err := client.GetVotosPorVotacao(context.Background(), "123456")
+	if err != nil {
+		t.Fatalf("não esperava erro: %v", err)
+	}
+	if len(votos) != 2 {
+		t.Fatalf("esperava 2 votos válidos, obteve %d", len(votos))
+	}
+
+	if votos[0].IDDeputado != 123 {
+		t.Fatalf("esperava ID 123 para primeiro voto, obteve %d", votos[0].IDDeputado)
+	}
+	if votos[0].Voto != "Nao" {
+		t.Fatalf("esperava voto 'Nao', obteve %s", votos[0].Voto)
+	}
+	if nome, _ := votos[0].Payload["nomeDeputado"].(string); nome != "Dep Primario" {
+		t.Fatalf("esperava nome 'Dep Primario', obteve %s", nome)
+	}
+
+	if votos[1].IDDeputado != 456 {
+		t.Fatalf("esperava fallback de deputado legado com id 456, obteve %d", votos[1].IDDeputado)
+	}
+	if votos[1].Voto != "Sim" {
+		t.Fatalf("esperava voto 'Sim' a partir de tipoVoto, obteve %s", votos[1].Voto)
+	}
+	if fonte, _ := votos[1].Payload["fonteDeputado"].(string); fonte != "deputado_" {
+		t.Fatalf("esperava fonte 'deputado_', obteve %s", fonte)
+	}
+	if nome, _ := votos[1].Payload["nomeDeputado"].(string); nome != "Dep Legado" {
+		t.Fatalf("esperava nome 'Dep Legado', obteve %s", nome)
+	}
+}
+
 // ---- Novos testes adicionais para cobertura ----
 
 func TestCamaraClient_FetchDeputadosPaged_NormalizaParametros(t *testing.T) {

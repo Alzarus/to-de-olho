@@ -31,10 +31,11 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 > Objetivo: garantir backfill idempotente, confiável e observável cobrindo todas as entidades do `api-docs.json`, permitindo carga inicial completa e sincronizações incrementais diárias.
 
-- **Resumo do estado atual (24/nov/2025)**
+- **Resumo do estado atual (25/nov/2025)**
   - Concluído: Deputados (backfill e scheduler), Votações históricas (executor com circuit breaker monitorado), Despesas 2025-2022 com checkpoints anuais e Partidos (upsert + checkpoint dedicado).
   - Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário operando com flags habilitadas (`SCHEDULER_INCLUDE_*`). Pipeline de despesas com merge transacional. Proposições desbloqueadas após correção de filtro (`ordenarPor=id`). Frontend principal exibe analytics em tempo real.
   - Observado hoje: `proposicoes_cache` contém apenas 1 registro (2025) sem autores populados; `votos_deputados` possui 335 registros, porém `id_deputado` está vindo como `0`, impossibilitando o ranking de presença. Backfill de despesas segue em execução (batches por deputado) enquanto proposições ainda não foram ingeridas.
+  - Mitigação em curso: `CamaraClient.GetVotosPorVotacao` foi ajustado para reconhecer campos legados da API (`deputado_`), normalizar votos vazios e descartar registros sem ID; adicionamos teste específico e planejamos truncar/reprocessar `votos_deputados` (2022-2025) após rebuild dos serviços.
   - Em andamento: validação de performance em staging e cobertura de repositórios sem integração automatizada.
   - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
   - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
@@ -71,7 +72,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [x] Testes de integração no `VotacaoRepository`
  - [x] Ajustar domínio/repos para IDs alfanuméricos (persistir `id` string, manter `IDVotacaoCamara` opcional) *(concluído em 30/out/2025)*
 - [ ] Revisar `CamaraClient` para filtros oficiais (`idProposicao`, `idEvento`, `idOrgao`, datas no mesmo ano) e paginação (≤200 itens)
-- [ ] Ajustar pipeline de votos para persistir `id_deputado` correto (atualmente gravando `0`, o que zera ranking de presença)
+- [ ] Ajustar pipeline de votos para persistir `id_deputado` correto (atualmente gravando `0`, o que zera ranking de presença) *(parser corrigido em 25/nov/2025; aguarda reprocessar histórico 2022-2025 e atualizar analytics após truncar/reexecutar backfill)*
 - [x] Testes unitários/mocks do executor e regressões de checkpoint *(cobertos por `strategic_backfill_votacoes_test.go` em 20/nov/2025)*
 - [ ] Backfill completo em staging (performance/governança)
 
@@ -112,7 +113,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 **Próximos passos imediatos (24/nov/2025)**
 1. Acelerar o backfill de proposições: destravar ingestão no ingestor (batches anuais + checkpoints) e popular `proposicoes_cache` com autores e metadados completos.
-2. Corrigir pipeline de votos (scheduler/ingestor) para persistir `id_deputado` oficial ao salvar em `votos_deputados`, reprocessando o período 2022-2025 após o ajuste.
+2. Corrigir pipeline de votos (scheduler/ingestor) para persistir `id_deputado` oficial ao salvar em `votos_deputados`, reprocessando o período 2022-2025 após o ajuste. *(Parser já corrigido; próximos passos: rebuild containers, truncar tabela e rerodar backfill para preencher IDs válidos.)*
 3. Reexecutar `POST /api/v1/analytics/rankings/atualizar` após os dados estarem consistentes e validar os rankings na UI (`DashboardAnalytics.tsx`).
 4. Auditar os dashboards de votações no frontend com amostras oficiais, ajustando caching se necessário (componentes já migrados para Server Components).
 5. Documentar para SRE o estado atual do backfill (despesas em progresso, proposições pendentes) e atualizar runbook de monitoramento.
