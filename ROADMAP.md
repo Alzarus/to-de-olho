@@ -31,13 +31,14 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 
 > Objetivo: garantir backfill idempotente, confiável e observável cobrindo todas as entidades do `api-docs.json`, permitindo carga inicial completa e sincronizações incrementais diárias.
 
-### Resumo do estado atual
-- Concluído: Deputados (backfill e scheduler), Votações históricas (executor com circuit breaker monitorado), Despesas 2025-2022 com checkpoints anuais e Partidos (upsert + checkpoint dedicado).
-- Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário operando com flags habilitadas (`SCHEDULER_INCLUDE_*`). Pipeline de despesas com merge transacional. Proposições desbloqueadas após correção de filtro (`ordenarPor=id`) em 24/nov/2025. Frontend principal exibe analytics em tempo real.
-- Em andamento: validação de performance em staging e cobertura de repositórios sem integração automatizada.
-- Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
-- Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
-- Backlog (prioridade baixa): Eventos, Blocos, Frentes, Grupos.
+- **Resumo do estado atual (24/nov/2025)**
+  - Concluído: Deputados (backfill e scheduler), Votações históricas (executor com circuit breaker monitorado), Despesas 2025-2022 com checkpoints anuais e Partidos (upsert + checkpoint dedicado).
+  - Atualizado: Rankings de analytics recalculados após backfill histórico; scheduler diário operando com flags habilitadas (`SCHEDULER_INCLUDE_*`). Pipeline de despesas com merge transacional. Proposições desbloqueadas após correção de filtro (`ordenarPor=id`). Frontend principal exibe analytics em tempo real.
+  - Observado hoje: `proposicoes_cache` contém apenas 1 registro (2025) sem autores populados; `votos_deputados` possui 335 registros, porém `id_deputado` está vindo como `0`, impossibilitando o ranking de presença. Backfill de despesas segue em execução (batches por deputado) enquanto proposições ainda não foram ingeridas.
+  - Em andamento: validação de performance em staging e cobertura de repositórios sem integração automatizada.
+  - Pontos de atenção: sub-recursos de deputados (discursos, eventos, histórico, etc.), filtros avançados de proposições (arrays, `codTema`, `autor`), suporte a IDs alfanuméricos de votações.
+  - Próximos alvos (prioridade média): Órgãos, Legislaturas, Referências.
+  - Backlog (prioridade baixa): Eventos, Blocos, Frentes, Grupos.
 
 ### Estratégia operacional
 - Backfill inicial até **yesterday** (configurável) para evitar dados em trânsito
@@ -70,6 +71,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [x] Testes de integração no `VotacaoRepository`
  - [x] Ajustar domínio/repos para IDs alfanuméricos (persistir `id` string, manter `IDVotacaoCamara` opcional) *(concluído em 30/out/2025)*
 - [ ] Revisar `CamaraClient` para filtros oficiais (`idProposicao`, `idEvento`, `idOrgao`, datas no mesmo ano) e paginação (≤200 itens)
+- [ ] Ajustar pipeline de votos para persistir `id_deputado` correto (atualmente gravando `0`, o que zera ranking de presença)
 - [x] Testes unitários/mocks do executor e regressões de checkpoint *(cobertos por `strategic_backfill_votacoes_test.go` em 20/nov/2025)*
 - [ ] Backfill completo em staging (performance/governança)
 
@@ -84,6 +86,7 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Serializar listas (`siglaTipo`, `numero`, `ano`, `codTema`, `keywords`) segundo `style=form&explode=false`
 - [ ] Corrigir parâmetros de autor (`autor="nome"`, `idDeputadoAutor`, `siglaPartidoAutor`, `siglaUfAutor`) e remover campos inexistentes na API
 - [ ] Ingerir/backfilar sub-recursos (`/tramitacoes`, `/autores`, `/votacoes`, `/temas`) e persistir
+- [ ] Popular `proposicoes_cache` com todos os anos alvo (atualmente apenas 1 registro em 2025) e garantir que campos de autor sejam preenchidos para suportar `GetProposicoesCountByDeputadoAno`
 - [ ] Cobrir mudanças com testes table-driven e atualizar caches/repos
 
 **Órgãos / Legislaturas / Referências (prioridade média)**
@@ -107,16 +110,14 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Validação com dataset real em staging
 - [ ] Planejamento de janelas de execução (backfill inicial custoso)
 
-**Próximos passos imediatos**
-1. Habilitar `SCHEDULER_INCLUDE_DESPESAS=true`, `SCHEDULER_INCLUDE_VOTACOES=true` e `SCHEDULER_INCLUDE_PROPOSICOES=true`, validando métricas (`despesas_processadas`, `despesas_sincronizadas`) após a primeira janela de execução e monitorando o novo merge transacional para garantir contagens consistentes.
-2. Auditar os dashboards de votações no frontend com os dados do novo backfill e ajustar caching conforme necessário (componentes foram integrados em 30/out/2025; falta validação com dados reais).
-  - [ ] Confrontar resultados exibidos em `VotacoesAnalytics.tsx` e `VotacoesRanking.tsx` com amostras oficiais após o backfill completo.
-  - [x] Revisar a estratégia de data fetching (migrar para Server Components quando viável) seguindo o guia do App Router (`fetch` + `revalidate`/`revalidatePath`) referenciado em #upstash/context7. *(componentes migrados para Server Components com cache e tags em 20/nov/2025)*
-  - [x] Documentar o comportamento esperado de cache e revalidação no README e garantir que `revalidatePath`/`revalidateTag` sejam acionados após Server Actions relevantes. *(documentado em `frontend/README.md` em 20/nov/2025)*
-3. Documentar o fluxo de merge de despesas atualizado e orientar SRE sobre rollback seguro antes de habilitar as flags.
-4. Executar testes unitários do executor de votações e validar desempenho em ambiente de staging.
-5. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
-6. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
+**Próximos passos imediatos (24/nov/2025)**
+1. Acelerar o backfill de proposições: destravar ingestão no ingestor (batches anuais + checkpoints) e popular `proposicoes_cache` com autores e metadados completos.
+2. Corrigir pipeline de votos (scheduler/ingestor) para persistir `id_deputado` oficial ao salvar em `votos_deputados`, reprocessando o período 2022-2025 após o ajuste.
+3. Reexecutar `POST /api/v1/analytics/rankings/atualizar` após os dados estarem consistentes e validar os rankings na UI (`DashboardAnalytics.tsx`).
+4. Auditar os dashboards de votações no frontend com amostras oficiais, ajustando caching se necessário (componentes já migrados para Server Components).
+5. Documentar para SRE o estado atual do backfill (despesas em progresso, proposições pendentes) e atualizar runbook de monitoramento.
+6. Desenvolver a ingestão para Órgãos, Legislaturas e Referências (domínio, clients, checkpoints, testes).
+7. Criar testes table-driven adicionais para `PartidosService` e `PartidoRepository`.
 
 ### 1. Deploy GCP (crítico - nov/2025)
 **Objetivo**: Colocar plataforma no ar para uso público
