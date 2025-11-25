@@ -106,6 +106,13 @@ Missão: concluir, validar e preparar para produção todos os componentes de in
 - [ ] Dashboards Grafana + alertas
 - [ ] Monitorar métricas `*_processadas`/`*_sincronizadas` e alertar quando permanecerem zeradas após execuções planejadas.
 
+**Plano de ação – Robustez dos clients da Câmara**
+1. **Auditoria de payloads reais**: instrumentar `CamaraClient` para registrar amostras de respostas por endpoint crítico (deputados, votações, eventos, proposições) e comparar com o schema (`api-docs.json`), levantando campos alternativos (`*_`) e valores opcionalmente vazios.
+2. **Fallbacks sistemáticos**: revisar todos os parsers para aceitar aliases documentados ou observados (ex.: `deputado`/`deputado_`, `nome`/`nomeCivil`, `sigla`/`siglaPartido`) e normalizar listas usando `style=form&explode=false` onde aplicável (proposições, eventos, referências).
+3. **Testes table-driven com fixtures reais**: criar suites em `internal/infrastructure/httpclient` que validem cada endpoint com payloads híbridos (campos vazios, tipos divergentes) e garantir cobertura mínima de 80% nos parsers.
+4. **Alertas de rigidez**: adicionar validações que sinalizem (via logs/metrics) quando descartarmos registros por falta de dados obrigatórios (como `id_deputado = 0`) para antecipar regressões futuras.
+5. **Checklist em reviews**: incluir verificação explícita em PRs de integrações com a API para confirmar fallback de campos, suporte a IDs alfanuméricos e tolerância a timestamps incompletos.
+
 **QA / Release**
 - [ ] Cobertura ≥80% (unit + integration) — faltam cenários para executor e partidos
 - [ ] Validação com dataset real em staging
