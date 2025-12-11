@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "description": "**Versão: 0.4.255 - 07/16/2025 03:24 PM** - _confira o que mudou na [página de Notícias](http://dadosabertos.camara.leg.br/news/noticias.html)_\n\nBem vindo à nova versão do serviço **Dados Abertos** da Câmara dos Deputados!\n\nEsta versão pode entregar dados puros em formatos JSON e XML, e tenta se aderir ao máximo à arquitetura REST.\n\nNesta página você pode conhecer e experimentar as URLs de acesso aos dados, os parâmetros de *query string* que podem ser aplicados para filtrar e selecionar resultados, e as estruturas de dados que são retornadas.\n\nAlém do método HTTP GET, você também pode usar o método HEAD com qualquer dos serviços.\n\nPor padrão, todos os serviços de listagens retornam 15 itens, e o limite por requisição é de 100 itens.\n\n **ATENÇÃO:** Esta versão é ainda incompleta, sujeita a mudanças e não substitui a [versão original do **Dados Abertos**](http://www2.camara.leg.br/transparencia/dados-abertos/dados-abertos-legislativo). Caso você encontre problemas ou queira dar sugestões, por favor entre em [contato](https://dadosabertos.camara.leg.br/contact/contact.html). ",
+    "description": "**Versão: 0.4.332 - 12/09/2025 04:26 PM** - _confira o que mudou na [página de Notícias](http://dadosabertos.camara.leg.br/news/noticias.html)_\n\nBem vindo à nova versão do serviço **Dados Abertos** da Câmara dos Deputados!\n\nEsta versão pode entregar dados puros em formatos JSON e XML, e tenta se aderir ao máximo à arquitetura REST.\n\nNesta página você pode conhecer e experimentar as URLs de acesso aos dados, os parâmetros de *query string* que podem ser aplicados para filtrar e selecionar resultados, e as estruturas de dados que são retornadas.\n\nAlém do método HTTP GET, você também pode usar o método HEAD com qualquer dos serviços.\n\nPor padrão, todos os serviços de listagens retornam 15 itens, e o limite por requisição é de 100 itens.\n\n **ATENÇÃO:** Esta versão é ainda incompleta, sujeita a mudanças e não substitui a [versão original do **Dados Abertos**](http://www2.camara.leg.br/transparencia/dados-abertos/dados-abertos-legislativo). Caso você encontre problemas ou queira dar sugestões, por favor entre em [contato](https://dadosabertos.camara.leg.br/contact/contact.html). ",
     "title": "Novo Dados Abertos",
     "version": "v1.0"
   },
@@ -1003,20 +1003,6 @@
             "name": "id",
             "required": true,
             "schema": { "type": "integer", "format": "int64" }
-          },
-          {
-            "description": "Data de início de um intervalo de tempo, no formato `AAAA-MM-DD`.",
-            "in": "query",
-            "name": "dataInicio",
-            "required": false,
-            "schema": { "type": "string" }
-          },
-          {
-            "description": "Data de término de um intervalo de tempo, no formato `AAAA-MM-DD`.",
-            "in": "query",
-            "name": "dataFim",
-            "required": false,
-            "schema": { "type": "string" }
           },
           {
             "in": "header",
@@ -3576,7 +3562,7 @@
             "schema": { "type": "integer", "format": "int32" }
           },
           {
-            "description": "Número máximo de itens na página que se deseja obter com esta requisição. O valor padrão e máximo para este endpoint é 200, e valores maiores serão ignorados.",
+            "description": "Número máximo de itens na página que se deseja obter com esta requisição. O valor padrão e máximo para este endpoint é 100, e valores maiores serão ignorados.",
             "in": "query",
             "name": "itens",
             "required": false,
@@ -6736,7 +6722,7 @@
             "schema": { "type": "integer", "format": "int32" }
           },
           {
-            "description": "Número máximo de itens na página que se deseja obter com esta requisição. O valor padrão e máximo para este endpoint é 200, e valores maiores serão ignorados.",
+            "description": "Número máximo de itens na página que se deseja obter com esta requisição. O valor padrão e máximo para este endpoint é 100, e valores maiores serão ignorados.",
             "in": "query",
             "name": "itens",
             "required": false,
@@ -7716,6 +7702,7 @@
         "properties": {
           "ano": { "type": "integer", "format": "int64" },
           "codTipo": { "type": "integer", "format": "int64" },
+          "dataApresentacao": { "type": "string" },
           "ementa": { "type": "string" },
           "id": { "type": "integer", "format": "int64" },
           "numero": { "type": "integer", "format": "int64" },
@@ -7756,6 +7743,7 @@
         "properties": {
           "ano": { "type": "string" },
           "codTipo": { "type": "string" },
+          "dataApresentacao": { "type": "string" },
           "ementa": { "type": "string" },
           "id": { "type": "integer", "format": "int64" },
           "numero": { "type": "string" },
