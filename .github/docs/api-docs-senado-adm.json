@@ -1,0 +1,3205 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "adm-dadosabertos",
+    "description": "Microsserviço dadosabertos",
+    "contact": { "name": "Prodasen", "url": "https://www12.senado.leg.br" },
+    "version": "2.0.2"
+  },
+  "servers": [
+    {
+      "url": "https://adm.senado.gov.br/adm-dadosabertos",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Senadores",
+      "description": "API para dados abertos referentes a parlamentares."
+    },
+    {
+      "name": "Servidores",
+      "description": "API para dados abertos referentes a servidores, pensionistas, terceirizados e estagiários."
+    },
+    {
+      "name": "Supridos",
+      "description": "API para dados abertos referentes a suprimento de fundos."
+    },
+    {
+      "name": "Contratações",
+      "description": "API para dados abertos referentes a contratações."
+    }
+  ],
+  "paths": {
+    "/api/v1/supridos/{ano}": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará Pessoas supridas por ato de concessão em determinado ano.",
+        "operationId": "buscarSupridosPorAno",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais pertencem os supridos.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpenhoAToConcessaoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/{ano}/csv": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará Pessoas supridas por ato de concessão em determinado ano.",
+        "operationId": "buscarSupridosPorAnoCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais pertencem os supridos.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/transacoes/{ano}": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará lista de transações vinculadas a atos de concessão de um determinado ano.",
+        "operationId": "buscarTransacoesPorAno",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais as transações pertencem.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TransacaoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/transacoes/{ano}/csv": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará lista de transações vinculados a atos de concessão de um determinado ano.",
+        "operationId": "buscarTransacoesPorAnoCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais as transações pertencem.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/movimentacoes/{ano}": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará lista de movimentações vinculadas a atos de concessão de um determinado ano.",
+        "operationId": "buscarMovimentacoesPorAno",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais as movimentações pertencem.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MovimentacaoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/movimentacoes/{ano}/csv": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará lista de movimentações vinculados a atos de concessão de um determinado ano.",
+        "operationId": "buscarMovimentacoesPorAnoCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais as movimentações pertencem.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/empenhos/{ano}": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará lista de empenhos vinculados a atos de concessão de um determinado ano.",
+        "operationId": "buscarEmpenhosAtoConcessaoPorAno",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais os empenhos pertencem.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpenhoAToConcessaoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/empenhos/{ano}/csv": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará lista de empenhos vinculados a atos de concessão de um determinado ano.",
+        "operationId": "buscarEmpenhosAtoConcessaoPorAnoCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais os empenhos pertencem.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/atosConcessao/{ano}": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará lista dos Atos de concessão de um determinado ano.",
+        "operationId": "buscarAtosConcessaoPorAno",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais os empenhos pertencem.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpenhoAToConcessaoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/supridos/atosConcessao/{ano}/csv": {
+      "get": {
+        "tags": ["Supridos"],
+        "description": "Retornará lista de empenhos vinculados a atos de concessão de um determinado ano.",
+        "operationId": "buscarAtosConcessaoPorAnoCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano dos atos de concessão os quais os empenhos pertencem.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/servidores": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de servidores.",
+        "operationId": "buscarServidores",
+        "parameters": [
+          {
+            "name": "tipoVinculoEquals",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EXERCICIO_PROVISORIO",
+                "COMISSIONADO",
+                "REQUISITADO",
+                "PARLAMENTAR",
+                "EFETIVO"
+              ]
+            }
+          },
+          {
+            "name": "situacaoEquals",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["APOSENTADO", "INATIVO", "ATIVO", "DESLIGADO"]
+            }
+          },
+          {
+            "name": "lotacaoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cargoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ServidorDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/servidores/inativos": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de servidores inativos.",
+        "operationId": "buscarServidoresInativos",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ServidorDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/servidores/efetivos": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de servidores efetivos.",
+        "operationId": "buscarServidoresEfetivos",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ServidorDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/servidores/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de servidores, em formato CSV.",
+        "operationId": "buscarServidoresCsv",
+        "parameters": [
+          {
+            "name": "tipoVinculoEquals",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "EXERCICIO_PROVISORIO",
+                "COMISSIONADO",
+                "REQUISITADO",
+                "PARLAMENTAR",
+                "EFETIVO"
+              ]
+            }
+          },
+          {
+            "name": "situacaoEquals",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["APOSENTADO", "INATIVO", "ATIVO", "DESLIGADO"]
+            }
+          },
+          {
+            "name": "lotacaoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cargoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/servidores/comissionados": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de servidores comissionados.",
+        "operationId": "buscarServidoresComissionados",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ServidorDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/servidores/ativos": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de servidores ativos.",
+        "operationId": "buscarServidoresAtivos",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ServidorDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/remuneracoes/{ano}/{mes}": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará remuneração dos servidores, para o ano e mês especificado.",
+        "operationId": "buscarRemuneracoes",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "mes",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/RemuneracaoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/remuneracoes/{ano}/{mes}/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará remuneração dos servidores, para o ano e mês especificado, no formato CSV.",
+        "operationId": "buscarRemuneracoesCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "mes",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/quantitativos/pessoal": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Lista os quantitativos físicos de servidores efetivos, ativos, aposentados e pensionistas.",
+        "operationId": "buscarQuantitativosPessoal",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuantitativoPessoalDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/quantitativos/pessoal/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Lista os quantitativos físicos de servidores efetivos, ativos, aposentados e pensionistas em formato CSV.",
+        "operationId": "buscarQuantitativosPessoalCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/quantitativos/cargos-funcoes": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Lista os quantitativos de cargos em comissão e funções de confiança do Senado Federal.",
+        "operationId": "buscarQuantitativosCargosFuncoes",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuantitativoCargoFuncaoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/quantitativos/cargos-funcoes/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Lista os quantitativos de cargos em comissão e funções de confiança do Senado Federal em formato CSV.",
+        "operationId": "buscarQuantitativosCargosFuncoesCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/previsao-aposentadoria": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará quantitativo previsto de aposentadorias, por cargo, ano e mês.",
+        "operationId": "buscarPrevisaoAposentadoria",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrevisaoAposentadoriaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/previsao-aposentadoria/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará quantitativo previsto de aposentadorias, por cargo, ano e mês, no formato CSV.",
+        "operationId": "buscarPrevisaoAposentadoriaCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/pensionistas": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de todos os pensionistas.",
+        "operationId": "buscarPensionistas",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PensionistaDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/pensionistas/remuneracoes/{ano}/{mes}": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará remuneração dos pensionistas, para o ano e mês especificado.",
+        "operationId": "buscarRemuneracoesPensionistas",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "mes",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RemuneracaoPensionistaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/pensionistas/remuneracoes/{ano}/{mes}/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará remuneração dos pensionistas, para o ano e mês especificado, no formato CSV.",
+        "operationId": "buscarRemuneracoesPensionistasCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "mes",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/pensionistas/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de todos os pensionistas, no formato CSV.",
+        "operationId": "buscarPensionistasCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/lotacoes": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de lotações.",
+        "operationId": "buscarLotacoes",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/LotacaoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/horas-extras/{ano}/{mes}": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista das horas extras pagas no ano e mês especificados.",
+        "operationId": "buscarHorasExtras",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "mes",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/HoraExtraDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/horas-extras/{ano}/{mes}/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista das horas extras pagas no ano e mês especificados, no formato CSV.",
+        "operationId": "buscarHorasExtrasCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "mes",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/estagiarios": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará relação de estagiários.",
+        "operationId": "buscarEstagiarios",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/EstagiarioDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/estagiarios/csv": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará relação de estagiários, em formato CSV.",
+        "operationId": "buscarEstagiariosCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servidores/cargos": {
+      "get": {
+        "tags": ["Servidores"],
+        "description": "Retornará lista de cargos.",
+        "operationId": "buscarCargos",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CargoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/quantitativos/senadores": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Lista os quantitativos e a distribuição por grupos de Senadores e ex-Senadores que constam da folha de pagamento do Senado Federal.",
+        "operationId": "buscarQuantitativosSenadores",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuantitativoParlamentarDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/quantitativos/senadores/csv": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Lista os quantitativos e a distribuição por grupos de Senadores e ex-Senadores que constam da folha de pagamento do Senado Federal em formato CSV.",
+        "operationId": "buscarQuantitativosSenadoresCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/escritorios": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Retornará lista de escritórios de apoio dos senadores.",
+        "operationId": "buscarEscritoriosApoio",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/EscritorioApoioDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/escritorios/csv": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Retornará lista de escritórios de apoio dos senadores, no formato CSV.",
+        "operationId": "buscarEscritoriosApoioCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/despesas_ceaps/{ano}": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Retorna uma coleção de despesas CEAPS de todos os senadores do ano especificado.",
+        "operationId": "buscarDespesasCeapsPorAno",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano das despesas CEAPS de todos os senadores.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DespesaCeapsDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/despesas_ceaps/{ano}/csv": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Retorna uma coleção de despesas CEAPS de todos os senadores do ano especificado, no formato CSV.",
+        "operationId": "buscarDespesasCeapsPorAnoCsv",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "path",
+            "description": "Ano das despesas CEAPS de todos os senadores.",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/auxilio-moradia": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Retornará lista de parlamentares indicando se optaram por auxílio moradia e imóvel funcional.",
+        "operationId": "buscarParlamentarMoradiaTransporte",
+        "parameters": [
+          {
+            "name": "nomeParlamentarContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "estadoEleitoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "partidoEleitoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MoradiaTransporteDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/auxilio-moradia/csv": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Retornará lista de parlamentares indicando se optaram por auxílio moradia e imóvel funcional.",
+        "operationId": "buscarParlamentarMoradiaTransporteCsv",
+        "parameters": [
+          {
+            "name": "nomeParlamentarContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "estadoEleitoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "partidoEleitoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/aposentados": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Retornará lista de senadores aposentados.",
+        "operationId": "buscarSenadoresAposentados",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SenadorAposentadoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/senadores/aposentados/csv": {
+      "get": {
+        "tags": ["Senadores"],
+        "description": "Retornará lista de senadores aposentados, no formato CSV.",
+        "operationId": "buscarSenadoresAposentadosCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/pagamentos": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os pagamentos da contratação do tipo especificado com id.",
+        "operationId": "buscarPagamentos",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/PagamentoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/pagamentos/{id_pagamento}/empenhos": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os empenhos da contratação do tipo especificado com id.",
+        "operationId": "buscarEmpenhosPagamento",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "id_pagamento",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/EmpenhoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/pagamentos/{id_pagamento}/empenhos/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os empenhos da contratação do tipo especificado com id, em formato CSV.",
+        "operationId": "buscarEmpenhosPagamentoCsv",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "id_pagamento",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/pagamentos/{id_pagamento}/documentos_fiscais": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os documentos fiscais da contratação do tipo especificado com id.",
+        "operationId": "buscarDocumentosFiscais",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "id_pagamento",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DocumentoFiscalDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/pagamentos/{id_pagamento}/documentos_fiscais/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os documentos fiscais da contratação do tipo especificado com id, em formato CSV.",
+        "operationId": "buscarDocumentosFiscaisCsv",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "id_pagamento",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/pagamentos/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os pagamentos da contratação do tipo especificado com id, em formato CSV.",
+        "operationId": "buscarPagamentosCsv",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/itens": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os itens da contratação do tipo especificado com id.",
+        "operationId": "buscarItensPorContratacao",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ItemDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/itens/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os itens da contratação do tipo especificado com id, em formato CSV.",
+        "operationId": "buscarItensPorContratacaoCsv",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/garantias": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará as garantias da contratação do tipo especificado com id.",
+        "operationId": "buscarGarantiasPorContratacao",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/GarantiaDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/{tipoContratacao}/{id}/garantias/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará as garantias da contratação do tipo especificado com id, em formato CSV.",
+        "operationId": "buscarGarantiasPorContratacaoCsv",
+        "parameters": [
+          {
+            "name": "tipoContratacao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["contratos", "atas_registro_preco", "notas_empenho"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/terceirizados": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará todos os terceirizados ativos ou substitutos, no presente momento.",
+        "operationId": "buscarTerceirizados",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TerceirizadoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/terceirizados/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará todos os terceirizados ativos ou substitutos, no presente momento, em formato CSV.",
+        "operationId": "buscarTerceirizadosCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/notas_empenho": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista das NEs.",
+        "operationId": "buscarNotasEmpenho",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["VIGENTE", "ENCERRADO"] }
+          },
+          {
+            "name": "nomeFornecedorContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cnpjCpfEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "numeroEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "anoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "objetoDescricaoContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "obraEngenhariaEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtaRegistroPrecoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/notas_empenho/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista das NEs, em formato CSV.",
+        "operationId": "buscarNotasEmpenhoCsv",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["VIGENTE", "ENCERRADO"] }
+          },
+          {
+            "name": "nomeFornecedorContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cnpjCpfEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "numeroEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "anoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "objetoDescricaoContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "obraEngenhariaEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/menores_aprendizes": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará todos os menores aprendizes ativos ou substitutos, no presente momento.",
+        "operationId": "buscarMenorAprendiz",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TerceirizadoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/menores_aprendizes/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará todos os menores aprendizes ativos ou substitutos, no presente momento, em formato CSV.",
+        "operationId": "buscarMenorAprendizCsv",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/licitacoes": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista das licitações.",
+        "operationId": "buscarLicitacoes",
+        "parameters": [
+          {
+            "name": "numeroEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "objetoContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "aberturaRangeBegin",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "aberturaRangeEnd",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/LicitacaoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/licitacoes/{id}/detalhamentos": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os detalhamentos da licitação do ID.",
+        "operationId": "buscarDetalhamentosPorLicitacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LicitacaoDetalhamentoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/licitacoes/{id}/detalhamentos/{id_detalhamento}": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará o detalhamento da licitação do ID.",
+        "operationId": "buscarDetalhamentoIndividualPorLicitacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "id_detalhamento",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LicitacaoDetalhamentoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/licitacoes/{id}/detalhamentos/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os detalhamentos da licitação do ID, em formato CSV.",
+        "operationId": "buscarDetalhamentosPorLicitacaoCsv",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/licitacoes/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista das licitações, em formato CSV.",
+        "operationId": "buscarLicitacoesCsv",
+        "parameters": [
+          {
+            "name": "numeroEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "objetoContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "aberturaRangeBegin",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "aberturaRangeEnd",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/empresas": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista das empresas contratadas.",
+        "operationId": "buscarEmpresas",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["VIGENTE", "ENCERRADO"] }
+          },
+          {
+            "name": "maoDeObraEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "nomeContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cnpjCpfEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpresaContratadaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/empresas/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista das empresas contratadas, em formato CSV.",
+        "operationId": "buscarEmpresasCsv",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["VIGENTE", "ENCERRADO"] }
+          },
+          {
+            "name": "maoDeObraEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "nomeContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cnpjCpfEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/contratos": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista dos contratos.",
+        "operationId": "buscarContratos",
+        "parameters": [
+          {
+            "name": "statusContratoParam",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["VIGENTE", "EM_RENOVACAO", "ENCERRADO"]
+            }
+          },
+          {
+            "name": "maoDeObraEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "nomeFornecedorContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cnpjCpfEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "numeroContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "anoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "subEspecieSiglaEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "objetoDescricaoContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "obraEngenhariaEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ContratoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/contratos/{id}/aditivos": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os aditivos do contrato com id.",
+        "operationId": "buscarAditivosPorContrato",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AditivoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/contratos/{id}/aditivos/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os aditivos do contrato com id, em formato CSV.",
+        "operationId": "buscarAditivosPorContratoCsv",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/contratos/terceirizados/{id}": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os terceirizados do contrato com id.",
+        "operationId": "buscarTerceirizadosPorContrato",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "situacaoTerceirizadoParam",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["ATIVO", "SUBSTITUTO", "TODOS"]
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TerceirizadoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/contratos/terceirizados/{id}/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os terceirizados do contrato com id, em formato CSV.",
+        "operationId": "buscarTerceirizadosPorContratoCsv",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "situacaoTerceirizadoParam",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["ATIVO", "SUBSTITUTO", "TODOS"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/contratos/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista dos contratos, em formato CSV.",
+        "operationId": "buscarContratosCsv",
+        "parameters": [
+          {
+            "name": "statusContratoParam",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["VIGENTE", "EM_RENOVACAO", "ENCERRADO"]
+            }
+          },
+          {
+            "name": "maoDeObraEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "nomeFornecedorContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cnpjCpfEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "numeroContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "anoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "subEspecieSiglaEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "objetoDescricaoContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "obraEngenhariaEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/atas_registro_preco": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista das ARPs.",
+        "operationId": "buscarAtasRegistroPreco",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["VIGENTE", "ENCERRADO"] }
+          },
+          {
+            "name": "nomeFornecedorContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cnpjCpfEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "numeroEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "anoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "objetoDescricaoContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "obraEngenhariaEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AtaRegistroPrecoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/atas_registro_preco/{id}/acionamentos": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os acionamentos da ARP com id.",
+        "operationId": "buscarAcionamentosPorArp",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AcionamentoDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/atas_registro_preco/{id}/acionamentos/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará os acionamentos da ARP com id, em formato CSV.",
+        "operationId": "buscarAcionamentosPorArpCsv",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contratacoes/atas_registro_preco/csv": {
+      "get": {
+        "tags": ["Contratações"],
+        "description": "Retornará lista das ARPs, em formato CSV.",
+        "operationId": "buscarAtasRegistroPrecoCsv",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["VIGENTE", "ENCERRADO"] }
+          },
+          {
+            "name": "nomeFornecedorContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cnpjCpfEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "numeroEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "anoEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "objetoDescricaoContains",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "obraEngenhariaEquals",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string", "format": "byte" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EmpenhoAToConcessaoDto": {
+        "type": "object",
+        "properties": {
+          "codigoAtoConcessao": { "type": "string" },
+          "numero": { "type": "string" },
+          "rubrica": { "type": "string" },
+          "descricao": { "type": "string" },
+          "valorConcedido": { "type": "number" },
+          "valorExecutado": { "type": "number" },
+          "data": { "type": "string", "format": "date" },
+          "dataProcessamento": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ObjetoTransacaoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "descricaoObjeto": { "type": "string" },
+          "descricaoTipoDespesa": { "type": "string" },
+          "descricaoSubtipoDespesa": { "type": "string" },
+          "quantidade": { "type": "integer", "format": "int32" },
+          "valorUnitario": { "type": "number" },
+          "valorTotal": { "type": "number" },
+          "rubrica": { "type": "string" }
+        }
+      },
+      "TransacaoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "codigoAtoConcessao": { "type": "string" },
+          "tipoInscricaoTemp": { "type": "string" },
+          "tipoInscricao": { "type": "string" },
+          "inscricao": { "type": "string" },
+          "fornecedor": { "type": "string" },
+          "rubricas": { "type": "string" },
+          "tipo": { "type": "string" },
+          "data": { "type": "string", "format": "date" },
+          "valor": { "type": "number" },
+          "numero": { "type": "string" },
+          "objetos": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ObjetoTransacaoDto" }
+          },
+          "dataProcessamento": { "type": "string", "format": "date" }
+        }
+      },
+      "MovimentacaoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "codigoAtoConcessao": { "type": "string" },
+          "tipoInscricao": { "type": "string" },
+          "inscricao": { "type": "string" },
+          "fornecedor": { "type": "string" },
+          "valor": { "type": "number" },
+          "numero": { "type": "string" },
+          "rubricas": { "type": "string" },
+          "tipo": { "type": "string" },
+          "data": { "type": "string", "format": "date" },
+          "dataProcessamento": { "type": "string", "format": "date" },
+          "subTipos": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SubtipoDto" }
+          }
+        }
+      },
+      "SubtipoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "descricaoTipoDespesa": { "type": "string" },
+          "descricaoSubtipoDespesa": { "type": "string" },
+          "valor": { "type": "number" },
+          "rubrica": { "type": "string" }
+        }
+      },
+      "CargoDto": {
+        "type": "object",
+        "properties": { "nome": { "type": "string" } }
+      },
+      "CategoriaDto": {
+        "type": "object",
+        "properties": {
+          "codigo": { "type": "string" },
+          "nome": { "type": "string" }
+        }
+      },
+      "CedidoDto": {
+        "type": "object",
+        "properties": {
+          "tipo_cessao": { "type": "string" },
+          "orgao_origem": { "type": "string" },
+          "orgao_destino": { "type": "string" }
+        }
+      },
+      "FuncaoDto": {
+        "type": "object",
+        "properties": {
+          "codigo": { "type": "integer", "format": "int64" },
+          "nome": { "type": "string" }
+        }
+      },
+      "LotacaoDto": {
+        "type": "object",
+        "properties": {
+          "sigla": { "type": "string" },
+          "nome": { "type": "string" }
+        }
+      },
+      "ServidorDto": {
+        "type": "object",
+        "properties": {
+          "sequencial": { "type": "integer", "format": "int64" },
+          "nome": { "type": "string" },
+          "vinculo": {
+            "type": "string",
+            "enum": [
+              "EXERCICIO_PROVISORIO",
+              "COMISSIONADO",
+              "REQUISITADO",
+              "PARLAMENTAR",
+              "EFETIVO"
+            ]
+          },
+          "situacao": {
+            "type": "string",
+            "enum": ["APOSENTADO", "INATIVO", "ATIVO", "DESLIGADO"]
+          },
+          "cargo": { "$ref": "#/components/schemas/CargoDto" },
+          "padrao": { "type": "string" },
+          "especialidade": { "type": "string" },
+          "funcao": { "$ref": "#/components/schemas/FuncaoDto" },
+          "lotacao": { "$ref": "#/components/schemas/LotacaoDto" },
+          "categoria": { "$ref": "#/components/schemas/CategoriaDto" },
+          "cedido": { "$ref": "#/components/schemas/CedidoDto" },
+          "ano_admissao": { "type": "integer", "format": "int32" }
+        }
+      },
+      "RemuneracaoDto": {
+        "type": "object",
+        "properties": {
+          "sequencial": { "type": "integer", "format": "int64" },
+          "nome": { "type": "string" },
+          "mes": { "type": "integer", "format": "int32" },
+          "ano": { "type": "integer", "format": "int32" },
+          "previdencia": { "type": "string" },
+          "faltas": { "type": "string" },
+          "diarias": { "type": "string" },
+          "auxilios": { "type": "string" },
+          "tipo_folha": { "type": "string" },
+          "remuneracao_basica": { "type": "string" },
+          "vantagens_pessoais": { "type": "string" },
+          "funcao_comissionada": { "type": "string" },
+          "gratificacao_natalina": { "type": "string" },
+          "horas_extras": { "type": "string" },
+          "outras_eventuais": { "type": "string" },
+          "abono_permanencia": { "type": "string" },
+          "reversao_teto_constitucional": { "type": "string" },
+          "imposto_renda": { "type": "string" },
+          "remuneracao_liquida": { "type": "string" },
+          "vantagens_indenizatorias": { "type": "string" }
+        }
+      },
+      "QuantitativoPessoalDto": {
+        "type": "object",
+        "properties": {
+          "classe": { "type": "string" },
+          "estaveis": { "type": "integer", "format": "int32" },
+          "subtotal": { "type": "integer", "format": "int32" },
+          "vagos": { "type": "integer", "format": "int32" },
+          "aposentados": { "type": "integer", "format": "int32" },
+          "grupo": { "type": "string" },
+          "plano_carreira": { "type": "string" },
+          "nivel_escolaridade": { "type": "string" },
+          "padrao_nivel_referencia": { "type": "string" },
+          "nao_estaveis": { "type": "integer", "format": "int32" },
+          "total_ativo": { "type": "integer", "format": "int32" },
+          "instituidores_pensao": { "type": "integer", "format": "int32" },
+          "total_inativo": { "type": "integer", "format": "int32" },
+          "beneficiarios_pensao": { "type": "integer", "format": "int32" }
+        }
+      },
+      "QuantitativoCargoFuncaoDto": {
+        "type": "object",
+        "properties": {
+          "nivel": { "type": "string" },
+          "tabVenc": { "type": "string" },
+          "subtotal": { "type": "integer", "format": "int32" },
+          "vago": { "type": "integer", "format": "int32" },
+          "total": { "type": "integer", "format": "int32" },
+          "com_opcao": { "type": "integer", "format": "int32" },
+          "sem_opcao": { "type": "integer", "format": "int32" },
+          "sem_vinculo": { "type": "integer", "format": "int32" }
+        }
+      },
+      "PrevisaoAposentadoriaDto": {
+        "type": "object",
+        "properties": {
+          "cargo": { "$ref": "#/components/schemas/CargoDto" },
+          "categoria": { "$ref": "#/components/schemas/CategoriaDto" },
+          "quantidade": { "type": "integer", "format": "int32" },
+          "mes_ano": { "type": "string" }
+        }
+      },
+      "PensionistaDto": {
+        "type": "object",
+        "properties": {
+          "sequencial": { "type": "integer", "format": "int64" },
+          "nome": { "type": "string" },
+          "vinculo": { "type": "string" },
+          "fundamento": { "type": "string" },
+          "categoria": { "$ref": "#/components/schemas/CategoriaDto" },
+          "cargo": { "$ref": "#/components/schemas/CargoDto" },
+          "funcao": { "$ref": "#/components/schemas/FuncaoDto" },
+          "nome_instituidor": { "type": "string" },
+          "ano_exercicio": { "type": "integer", "format": "int32" },
+          "data_obito": { "type": "string" },
+          "data_inicio_pensao": { "type": "string" }
+        }
+      },
+      "RemuneracaoPensionistaDto": {
+        "type": "object",
+        "properties": {
+          "sequencial": { "type": "integer", "format": "int64" },
+          "ano": { "type": "integer", "format": "int32" },
+          "mes": { "type": "integer", "format": "int32" },
+          "nome": { "type": "string" },
+          "previdencia": { "type": "string" },
+          "tipo_folha": { "type": "string" },
+          "remuneracao_basica": { "type": "string" },
+          "vantagens_pessoais": { "type": "string" },
+          "funcao_comissionada": { "type": "string" },
+          "gratificacao_natalina": { "type": "string" },
+          "reversao_teto_constitucional": { "type": "string" },
+          "imposto_renda": { "type": "string" },
+          "remuneracao_liquida": { "type": "string" },
+          "vantagens_indenizatorias": { "type": "string" }
+        }
+      },
+      "HoraExtraDto": {
+        "type": "object",
+        "properties": {
+          "sequencial": { "type": "integer", "format": "int64" },
+          "nome": { "type": "string" },
+          "valorTotal": { "type": "string" },
+          "mes_ano_prestacao": { "type": "string" },
+          "mes_ano_pagamento": { "type": "string" },
+          "horas_extras": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HorasExtrasDto" }
+          }
+        }
+      },
+      "HorasExtrasDto": {
+        "type": "object",
+        "properties": {
+          "dia": { "type": "string" },
+          "quantidade": { "type": "string" },
+          "setor_prestacao": {
+            "$ref": "#/components/schemas/SetorPrestacaoDto"
+          }
+        }
+      },
+      "SetorPrestacaoDto": {
+        "type": "object",
+        "properties": {
+          "sigla": { "type": "string" },
+          "nome": { "type": "string" }
+        }
+      },
+      "EstagiarioDto": {
+        "type": "object",
+        "properties": {
+          "nome": { "type": "string" },
+          "curso": { "type": "string" },
+          "lotacao": { "$ref": "#/components/schemas/LotacaoDto" }
+        }
+      },
+      "QuantitativoParlamentarDto": {
+        "type": "object",
+        "properties": {
+          "cargo": { "type": "string" },
+          "data": { "type": "string" },
+          "aposentados": { "type": "integer", "format": "int32" },
+          "ocupados_ativo": { "type": "integer", "format": "int32" },
+          "vagos_ativo": { "type": "integer", "format": "int32" },
+          "total_ativo": { "type": "integer", "format": "int32" },
+          "instituidores_pensao": { "type": "integer", "format": "int32" },
+          "total_inativo": { "type": "integer", "format": "int32" },
+          "beneficiarios_pensao": { "type": "integer", "format": "int32" }
+        }
+      },
+      "EscritorioApoioDto": {
+        "type": "object",
+        "properties": {
+          "nome": { "type": "string" },
+          "estado": { "type": "string" },
+          "partido": { "type": "string" },
+          "setor": { "type": "string" },
+          "endereco": { "type": "string" },
+          "telefone": { "type": "string" },
+          "fax": { "type": "string" }
+        }
+      },
+      "DespesaCeapsDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "tipoDocumento": { "type": "string" },
+          "ano": { "type": "integer", "format": "int32" },
+          "mes": { "type": "integer", "format": "int32" },
+          "codSenador": { "type": "integer", "format": "int64" },
+          "nomeSenador": { "type": "string" },
+          "tipoDespesa": { "type": "string" },
+          "cpfCnpj": { "type": "string" },
+          "fornecedor": { "type": "string" },
+          "documento": { "type": "string" },
+          "data": { "type": "string", "format": "date" },
+          "detalhamento": { "type": "string" },
+          "valorReembolsado": { "type": "number" }
+        }
+      },
+      "MoradiaTransporteDto": {
+        "type": "object",
+        "properties": {
+          "nomeParlamentar": { "type": "string" },
+          "estadoEleito": { "type": "string" },
+          "partidoEleito": { "type": "string" },
+          "auxilioMoradia": { "type": "boolean" },
+          "imovelFuncional": { "type": "boolean" }
+        }
+      },
+      "SenadorAposentadoDto": {
+        "type": "object",
+        "properties": {
+          "sequencial": { "type": "integer", "format": "int64" },
+          "nome": { "type": "string" },
+          "tipo": { "type": "string" },
+          "dataInicial": { "type": "string" },
+          "remuneracao": { "type": "string" }
+        }
+      },
+      "DocumentoFiscalDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "numero": { "type": "string" },
+          "data_emissao": { "type": "string", "format": "date" },
+          "data_vencimento": { "type": "string", "format": "date" }
+        }
+      },
+      "PagamentoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "observacao": { "type": "string" },
+          "multa": { "type": "string" },
+          "glosa": { "type": "string" },
+          "descricao_despesa": { "type": "string" },
+          "valor_cobrado": { "type": "string" },
+          "documentos_fiscais": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DocumentoFiscalDto" }
+          }
+        }
+      },
+      "EmpenhoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "saldo": { "type": "string" },
+          "natureza_despesa": { "type": "string" },
+          "valor_empenhado": { "type": "string" },
+          "valor_liquidado": { "type": "string" }
+        }
+      },
+      "ItemDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "numero": { "type": "integer", "format": "int64" },
+          "descricao": { "type": "string" },
+          "quantidade": { "type": "number" },
+          "data_atualizacao": { "type": "string", "format": "date" }
+        }
+      },
+      "GarantiaDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "tipo": { "type": "string" },
+          "valor": { "type": "string" },
+          "data_vencimento": { "type": "string", "format": "date" }
+        }
+      },
+      "TerceirizadoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "cpf": { "type": "string" },
+          "nome": { "type": "string" },
+          "situacao": { "type": "string" },
+          "empresa": { "type": "string" },
+          "lotacao": { "$ref": "#/components/schemas/LotacaoDto" },
+          "codContrato": { "type": "integer", "format": "int64" },
+          "numeroContrato": { "type": "string" },
+          "codItem": { "type": "integer", "format": "int64" }
+        }
+      },
+      "AtaRegistroPrecoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "numero": { "type": "string" },
+          "empresa": { "$ref": "#/components/schemas/EmpresaDto" },
+          "objeto": { "type": "string" },
+          "licitacao": { "$ref": "#/components/schemas/ContratoLicitacaoDto" },
+          "sub_especie": { "$ref": "#/components/schemas/SubEspecieDto" },
+          "orgaos_gestores": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OrgaoGestorDto" }
+          },
+          "data_assinatura": { "type": "string", "format": "date" },
+          "data_publicacao": { "type": "string", "format": "date" },
+          "data_inicio_vigencia": { "type": "string", "format": "date" },
+          "data_fim_vigencia": { "type": "string", "format": "date" },
+          "fundamentacao_legal": { "type": "string" },
+          "processo_principal": { "type": "string" },
+          "ind_mao_de_obra": { "type": "boolean" },
+          "data_ultima_atualizacao": { "type": "string", "format": "date" }
+        }
+      },
+      "ContratoLicitacaoDto": {
+        "type": "object",
+        "properties": {
+          "numero": { "type": "string" },
+          "modalidade": { "type": "string" }
+        }
+      },
+      "EmpresaDto": {
+        "type": "object",
+        "properties": {
+          "nome": { "type": "string" },
+          "cpf_cnpj": { "type": "string" }
+        }
+      },
+      "OrgaoGestorDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "sigla": { "type": "string" },
+          "nome": { "type": "string" },
+          "tipo_gestao": { "type": "string" }
+        }
+      },
+      "SubEspecieDto": {
+        "type": "object",
+        "properties": {
+          "sigla": { "type": "string" },
+          "nome": { "type": "string" }
+        }
+      },
+      "LicitacaoDetalhamentoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "licitacao": { "$ref": "#/components/schemas/LicitacaoDto" },
+          "tipo": { "type": "string" },
+          "criacao": { "type": "string", "format": "date" },
+          "descricao": { "type": "string" },
+          "link": { "type": "string" }
+        }
+      },
+      "LicitacaoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "numero": { "type": "string" },
+          "objeto": { "type": "string" },
+          "abertura": { "type": "string", "format": "date" },
+          "situacao": { "type": "string" },
+          "edital": { "type": "string" },
+          "detalhamentos": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/LicitacaoDetalhamentoDto" }
+          },
+          "modalidade": { "type": "string" },
+          "registro_preco": { "type": "boolean" },
+          "orgao_origem": { "type": "string" }
+        }
+      },
+      "ContratoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "numero": { "type": "string" },
+          "objeto": { "type": "string" },
+          "licitacao": { "$ref": "#/components/schemas/ContratoLicitacaoDto" },
+          "empresa": { "$ref": "#/components/schemas/EmpresaDto" },
+          "numero_formatado": { "type": "string" },
+          "data_assinatura": { "type": "string", "format": "date" },
+          "data_publicacao": { "type": "string", "format": "date" },
+          "data_inicio_vigencia": { "type": "string", "format": "date" },
+          "data_fim_vigencia": { "type": "string", "format": "date" },
+          "fundamentacao_legal": { "type": "string" },
+          "processo_principal": { "type": "string" },
+          "ind_mao_de_obra": { "type": "boolean" },
+          "data_ultima_atualizacao": { "type": "string", "format": "date" },
+          "sub_especie": { "$ref": "#/components/schemas/SubEspecieDto" },
+          "unidade_gestora": {
+            "$ref": "#/components/schemas/UnidadeGestoraDto"
+          },
+          "orgaos_gestores": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OrgaoGestorDto" }
+          }
+        }
+      },
+      "EmpresaContratadaDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "nome": { "type": "string" },
+          "contratos": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ContratoDto" }
+          },
+          "cpf_cnpj": { "type": "string" },
+          "notas_empenho": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NotaEmpenhoDto" }
+          },
+          "atas_registro_preco": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AtaRegistroPrecoDto" }
+          }
+        }
+      },
+      "NotaEmpenhoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "numero": { "type": "string" },
+          "empresa": { "$ref": "#/components/schemas/EmpresaDto" },
+          "objeto": { "type": "string" },
+          "licitacao": { "$ref": "#/components/schemas/ContratoLicitacaoDto" },
+          "sub_especie": { "$ref": "#/components/schemas/SubEspecieDto" },
+          "orgaos_gestores": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OrgaoGestorDto" }
+          },
+          "data_assinatura": { "type": "string", "format": "date" },
+          "data_publicacao": { "type": "string", "format": "date" },
+          "data_inicio_vigencia": { "type": "string", "format": "date" },
+          "data_fim_vigencia": { "type": "string", "format": "date" },
+          "fundamentacao_legal": { "type": "string" },
+          "processo_principal": { "type": "string" },
+          "ind_mao_de_obra": { "type": "boolean" },
+          "data_ultima_atualizacao": { "type": "string", "format": "date" }
+        }
+      },
+      "UnidadeGestoraDto": {
+        "type": "object",
+        "properties": {
+          "sigla": { "type": "string" },
+          "nome": { "type": "string" }
+        }
+      },
+      "AditivoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "numero": { "type": "integer", "format": "int64" },
+          "valor": { "type": "string" },
+          "data_assinatura": { "type": "string", "format": "date" },
+          "data_publicacao": { "type": "string", "format": "date" },
+          "data_atualizacao": { "type": "string", "format": "date" }
+        }
+      },
+      "AcionamentoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "numero": { "type": "string" },
+          "objeto": { "type": "string" }
+        }
+      }
+    }
+  }
+}
