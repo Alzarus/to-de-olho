@@ -1,0 +1,109 @@
+package votacao
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+// Handler gerencia endpoints REST de votacoes
+type Handler struct {
+	repo *Repository
+}
+
+// NewHandler cria um novo handler
+func NewHandler(repo *Repository) *Handler {
+	return &Handler{repo: repo}
+}
+
+// ListBySenador godoc
+// @Summary Lista votacoes de um senador
+// @Tags votacoes
+// @Produce json
+// @Param id path int true "ID do senador"
+// @Param limit query int false "Limite de resultados (default 50)"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/senadores/{id}/votacoes [get]
+func (h *Handler) ListBySenador(c *gin.Context) {
+	senadorIDStr := c.Param("id")
+	senadorID, err := strconv.Atoi(senadorIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID invalido"})
+		return
+	}
+
+	// Limite opcional (default 50)
+	limit := 50
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	votacoes, err := h.repo.FindBySenadorID(senadorID, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar votacoes"})
+		return
+	}
+
+	total, _ := h.repo.CountBySenadorID(senadorID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"senador_id": senadorID,
+		"total":      total,
+		"limit":      limit,
+		"votacoes":   votacoes,
+	})
+}
+
+// GetStats godoc
+// @Summary Retorna estatisticas de votacao de um senador
+// @Tags votacoes
+// @Produce json
+// @Param id path int true "ID do senador"
+// @Success 200 {object} VotacaoStats
+// @Router /api/v1/senadores/{id}/votacoes/stats [get]
+func (h *Handler) GetStats(c *gin.Context) {
+	senadorIDStr := c.Param("id")
+	senadorID, err := strconv.Atoi(senadorIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID invalido"})
+		return
+	}
+
+	stats, err := h.repo.GetStats(senadorID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao calcular estatisticas"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// GetVotosPorTipo godoc
+// @Summary Retorna contagem de votos por tipo
+// @Tags votacoes
+// @Produce json
+// @Param id path int true "ID do senador"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/senadores/{id}/votacoes/tipos [get]
+func (h *Handler) GetVotosPorTipo(c *gin.Context) {
+	senadorIDStr := c.Param("id")
+	senadorID, err := strconv.Atoi(senadorIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID invalido"})
+		return
+	}
+
+	tipos, err := h.repo.GetVotosPorTipo(senadorID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar tipos"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"senador_id": senadorID,
+		"por_tipo":   tipos,
+	})
+}
