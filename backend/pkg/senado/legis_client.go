@@ -191,3 +191,127 @@ func (c *LegisClient) ListarVotacoesParlamentar(ctx context.Context, codigoParla
 
 	return result, nil
 }
+
+// === COMISSOES ===
+
+// ComissoesResponse representa a resposta de /senador/{codigo}/comissoes
+type ComissoesResponse struct {
+	MembroComissaoParlamentar struct {
+		Parlamentar struct {
+			Codigo          string `json:"Codigo"`
+			Nome            string `json:"Nome"`
+			MembroComissoes struct {
+				Comissao []ComissaoAPI `json:"Comissao"`
+			} `json:"MembroComissoes"`
+		} `json:"Parlamentar"`
+	} `json:"MembroComissaoParlamentar"`
+}
+
+// ComissaoAPI representa uma comissao retornada pela API
+type ComissaoAPI struct {
+	IdentificacaoComissao struct {
+		CodigoComissao    string `json:"CodigoComissao"`
+		SiglaComissao     string `json:"SiglaComissao"`
+		NomeComissao      string `json:"NomeComissao"`
+		SiglaCasaComissao string `json:"SiglaCasaComissao"` // SF, CN
+	} `json:"IdentificacaoComissao"`
+	DescricaoParticipacao string `json:"DescricaoParticipacao"` // Titular, Suplente
+	DataInicio            string `json:"DataInicio"`            // YYYY-MM-DD
+	DataFim               string `json:"DataFim,omitempty"`     // YYYY-MM-DD
+}
+
+// ListarComissoesParlamentar busca comissoes de um parlamentar
+func (c *LegisClient) ListarComissoesParlamentar(ctx context.Context, codigoParlamentar int) ([]ComissaoAPI, error) {
+	url := fmt.Sprintf("%s/senador/%d/comissoes", c.baseURL, codigoParlamentar)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("erro criando request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("erro na requisicao: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status inesperado: %d", resp.StatusCode)
+	}
+
+	var result ComissoesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("erro decodificando JSON: %w", err)
+	}
+
+	return result.MembroComissaoParlamentar.Parlamentar.MembroComissoes.Comissao, nil
+}
+
+// === PROPOSICOES ===
+
+// ProposicaoResponse representa a resposta de /processo
+type ProposicaoResponse struct {
+	ListaMaterias struct {
+		Materias struct {
+			Materia []MateriaAPI `json:"Materia"`
+		} `json:"Materias"`
+	} `json:"ListaMaterias"`
+}
+
+// MateriaAPI representa uma materia/proposicao retornada pela API
+type MateriaAPI struct {
+	IdentificacaoMateria struct {
+		CodigoMateria           string `json:"CodigoMateria"`
+		SiglaSubtipoMateria     string `json:"SiglaSubtipoMateria"` // PEC, PLP, PL, etc.
+		DescricaoSubtipoMateria string `json:"DescricaoSubtipoMateria"`
+		NumeroMateria           string `json:"NumeroMateria"`
+		AnoMateria              string `json:"AnoMateria"`
+		DescricaoIdentificacao  string `json:"DescricaoIdentificacao"` // Ex: "PL 1234/2024"
+	} `json:"IdentificacaoMateria"`
+	DadosBasicosMateria struct {
+		EmentaMateria     string `json:"EmentaMateria"`
+		DataApresentacao  string `json:"DataApresentacao"`  // YYYY-MM-DD
+		NaturezaMateria   string `json:"NaturezaMateria"`
+	} `json:"DadosBasicosMateria"`
+	SituacaoAtual struct {
+		Autuacoes struct {
+			Autuacao struct {
+				Local struct {
+					NomeLocal string `json:"NomeLocal"`
+				} `json:"Local"`
+				Situacao struct {
+					DescricaoSituacao string `json:"DescricaoSituacao"`
+				} `json:"Situacao"`
+			} `json:"Autuacao"`
+		} `json:"Autuacoes"`
+	} `json:"SituacaoAtual"`
+}
+
+// ListarProposicoesParlamentar busca proposicoes de autoria de um parlamentar
+func (c *LegisClient) ListarProposicoesParlamentar(ctx context.Context, codigoParlamentar int) ([]MateriaAPI, error) {
+	url := fmt.Sprintf("%s/processo?codigoParlamentarAutor=%d", c.baseURL, codigoParlamentar)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("erro criando request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("erro na requisicao: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status inesperado: %d", resp.StatusCode)
+	}
+
+	var result ProposicaoResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("erro decodificando JSON: %w", err)
+	}
+
+	return result.ListaMaterias.Materias.Materia, nil
+}

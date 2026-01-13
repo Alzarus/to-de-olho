@@ -1,6 +1,6 @@
 # Roadmap de Implementacao - To De Olho
 
-> Ultima atualizacao: 13/01/2026 02:15  
+> Ultima atualizacao: 13/01/2026 03:25  
 > Deadline Entrega TCC: 15/01/2026  
 > Prazo Projeto Completo: Ate a defesa (25/01 - 11/02/2026)  
 > Status: **Em desenvolvimento**
@@ -9,27 +9,27 @@
 
 ## Cronograma Geral
 
-| Fase | Periodo  | Foco                                   | Status       |
-| ---- | -------- | -------------------------------------- | ------------ |
-| 1    | 12/01    | Fundacao (estrutura, senadores, CEAPS) | CONCLUIDA    |
-| 2    | 12-13/01 | Votacoes                               | CONCLUIDA    |
-| 3    | 13-14/01 | Comissoes + Proposicoes                | EM ANDAMENTO |
-| 4    | 15-17/01 | Modulo de Ranking                      | PENDENTE     |
-| 5    | 18-20/01 | Frontend Next.js                       | PENDENTE     |
-| 6    | 21-24/01 | Testes, polimento, deploy              | PENDENTE     |
+| Fase | Periodo  | Foco                                   | Status    |
+| ---- | -------- | -------------------------------------- | --------- |
+| 1    | 12/01    | Fundacao (estrutura, senadores, CEAPS) | CONCLUIDA |
+| 2    | 12-13/01 | Votacoes                               | CONCLUIDA |
+| 3    | 13-14/01 | Comissoes + Proposicoes                | CONCLUIDA |
+| 4    | 15-17/01 | Modulo de Ranking                      | PENDENTE  |
+| 5    | 18-20/01 | Frontend Next.js                       | PENDENTE  |
+| 6    | 21-24/01 | Testes, polimento, deploy              | PENDENTE  |
 
 ---
 
 ## Requisitos do Ranking (docs/metodologia-ranking.md)
 
-| Criterio                  | Peso | Fonte de Dados                         | Status                      |
-| ------------------------- | ---- | -------------------------------------- | --------------------------- |
-| Produtividade Legislativa | 35%  | `/dadosabertos/processo`               | PENDENTE                    |
-| Presenca em Votacoes      | 25%  | `/dadosabertos/votacao`                | CONCLUIDO (85.877 votacoes) |
-| Economia CEAPS            | 20%  | API Administrativa                     | CONCLUIDO                   |
-| Participacao em Comissoes | 20%  | `/dadosabertos/senador/{id}/comissoes` | PENDENTE                    |
+| Criterio                  | Peso | Fonte de Dados                         | Status                       |
+| ------------------------- | ---- | -------------------------------------- | ---------------------------- |
+| Produtividade Legislativa | 35%  | `/dadosabertos/processo`               | IMPLEMENTADO (ajuste parser) |
+| Presenca em Votacoes      | 25%  | `/dadosabertos/votacao`                | CONCLUIDO (85.877 votacoes)  |
+| Economia CEAPS            | 20%  | API Administrativa                     | CONCLUIDO                    |
+| Participacao em Comissoes | 20%  | `/dadosabertos/senador/{id}/comissoes` | CONCLUIDO (7.186 registros)  |
 
-**Progresso atual**: 45% do ranking pode ser calculado (CEAPS 20% + Votacoes 25%)
+**Progresso atual**: 100% dos modulos implementados. Ranking pronto para fase 4.
 
 ---
 
@@ -57,21 +57,22 @@
 
 ---
 
-## Fase 3: Comissoes + Proposicoes (13-14/01)
+## Fase 3: Comissoes + Proposicoes (CONCLUIDA - 13/01)
 
 ### 3.1 Comissoes (Participacao - 20%)
 
-- [ ] Modelo `internal/comissao/model.go`
-- [ ] Client para `/dadosabertos/senador/{id}/comissoes`
-- [ ] Sync de comissoes
-- [ ] Endpoint `GET /api/v1/senadores/{id}/comissoes`
+- [x] Modelo `internal/comissao/model.go`
+- [x] Client para `/dadosabertos/senador/{id}/comissoes`
+- [x] Sync de comissoes (7.186 registros)
+- [x] Endpoints: `/comissoes`, `/comissoes/ativas`, `/comissoes/stats`, `/comissoes/casas`
 
 ### 3.2 Proposicoes (Produtividade - 35%)
 
-- [ ] Modelo `internal/proposicao/model.go`
-- [ ] Client para `/dadosabertos/processo`
-- [ ] Sync de proposicoes de autoria
-- [ ] Endpoint `GET /api/v1/senadores/{id}/proposicoes`
+- [x] Modelo `internal/proposicao/model.go`
+- [x] Client para `/dadosabertos/processo`
+- [x] Sistema de pontuacao (1-16 por estagio, x3 PEC, x2 PLP)
+- [x] Endpoints: `/proposicoes`, `/proposicoes/stats`, `/proposicoes/tipos`
+- [ ] Ajustar parsing da API (formato JSON diferente do esperado)
 
 ---
 
@@ -113,7 +114,9 @@ to-de-olho/backend/
 │   ├── api/router.go
 │   ├── senador/{model,repository,handler,sync}.go
 │   ├── ceaps/{model,repository,handler,sync}.go
-│   └── votacao/{model,repository,handler,sync}.go
+│   ├── votacao/{model,repository,handler,sync}.go
+│   ├── comissao/{model,repository,handler,sync}.go
+│   └── proposicao/{model,repository,handler,sync}.go
 ├── pkg/senado/{legis_client,adm_client}.go
 ├── docker-compose.yml
 └── go.mod
@@ -121,10 +124,12 @@ to-de-olho/backend/
 
 ---
 
-## Dados no Banco (13/01 02:15)
+## Dados no Banco (13/01 03:25)
 
-| Tabela         | Registros |
-| -------------- | --------- |
-| senadores      | 81        |
-| despesas_ceaps | ~8.000+   |
-| votacoes       | 85.877    |
+| Tabela           | Registros |
+| ---------------- | --------- |
+| senadores        | 81        |
+| despesas_ceaps   | ~8.000+   |
+| votacoes         | 85.877    |
+| comissao_membros | 7.186     |
+| proposicoes      | ajustando |

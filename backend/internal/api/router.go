@@ -7,6 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pedroalmeida/to-de-olho/internal/ceaps"
+	"github.com/pedroalmeida/to-de-olho/internal/comissao"
+	"github.com/pedroalmeida/to-de-olho/internal/proposicao"
 	"github.com/pedroalmeida/to-de-olho/internal/senador"
 	"github.com/pedroalmeida/to-de-olho/internal/votacao"
 	"github.com/pedroalmeida/to-de-olho/pkg/senado"
@@ -45,6 +47,16 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		votacaoHandler := votacao.NewHandler(votacaoRepo)
 		votacaoSync := votacao.NewSyncService(votacaoRepo, senadorRepo, legisClient)
 
+		// Comissoes
+		comissaoRepo := comissao.NewRepository(db)
+		comissaoHandler := comissao.NewHandler(comissaoRepo)
+		comissaoSync := comissao.NewSyncService(comissaoRepo, senadorRepo, legisClient)
+
+		// Proposicoes
+		proposicaoRepo := proposicao.NewRepository(db)
+		proposicaoHandler := proposicao.NewHandler(proposicaoRepo)
+		proposicaoSync := proposicao.NewSyncService(proposicaoRepo, senadorRepo, legisClient)
+
 		senadores := v1.Group("/senadores")
 		{
 			senadores.GET("", senadorHandler.ListAll)
@@ -55,6 +67,15 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			senadores.GET("/:id/votacoes", votacaoHandler.ListBySenador)
 			senadores.GET("/:id/votacoes/stats", votacaoHandler.GetStats)
 			senadores.GET("/:id/votacoes/tipos", votacaoHandler.GetVotosPorTipo)
+			// Comissoes
+			senadores.GET("/:id/comissoes", comissaoHandler.ListBySenador)
+			senadores.GET("/:id/comissoes/ativas", comissaoHandler.GetAtivas)
+			senadores.GET("/:id/comissoes/stats", comissaoHandler.GetStats)
+			senadores.GET("/:id/comissoes/casas", comissaoHandler.GetPorCasa)
+			// Proposicoes
+			senadores.GET("/:id/proposicoes", proposicaoHandler.ListBySenador)
+			senadores.GET("/:id/proposicoes/stats", proposicaoHandler.GetStats)
+			senadores.GET("/:id/proposicoes/tipos", proposicaoHandler.GetPorTipo)
 		}
 
 		// Sync (trigger manual para desenvolvimento)
@@ -94,6 +115,26 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			}
 			c.JSON(http.StatusOK, gin.H{
 				"message": "sync de votacoes concluido",
+			})
+		})
+
+		v1.POST("/sync/comissoes", func(c *gin.Context) {
+			if err := comissaoSync.SyncFromAPI(c.Request.Context()); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"message": "sync de comissoes concluido",
+			})
+		})
+
+		v1.POST("/sync/proposicoes", func(c *gin.Context) {
+			if err := proposicaoSync.SyncFromAPI(c.Request.Context()); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"message": "sync de proposicoes concluido",
 			})
 		})
 

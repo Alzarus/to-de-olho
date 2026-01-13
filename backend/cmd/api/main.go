@@ -11,6 +11,8 @@ import (
 
 	"github.com/pedroalmeida/to-de-olho/internal/api"
 	"github.com/pedroalmeida/to-de-olho/internal/ceaps"
+	"github.com/pedroalmeida/to-de-olho/internal/comissao"
+	"github.com/pedroalmeida/to-de-olho/internal/proposicao"
 	"github.com/pedroalmeida/to-de-olho/internal/senador"
 	"github.com/pedroalmeida/to-de-olho/internal/votacao"
 	"gorm.io/driver/postgres"
@@ -35,6 +37,8 @@ func main() {
 		&senador.Mandato{},
 		&ceaps.DespesaCEAPS{},
 		&votacao.Votacao{},
+		&comissao.ComissaoMembro{},
+		&proposicao.Proposicao{},
 	); err != nil {
 		slog.Error("falha no auto-migrate", "error", err)
 		os.Exit(1)
