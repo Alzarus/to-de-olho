@@ -1,6 +1,6 @@
 # Roadmap de Implementacao - To De Olho
 
-> Ultima atualizacao: 14/01/2026 01:00  
+> Ultima atualizacao: 14/01/2026 02:00  
 > Deadline Entrega TCC: 15/01/2026  
 > Prazo Projeto Completo: Ate a defesa (25/01 - 11/02/2026)  
 > Status: **Em desenvolvimento**
@@ -15,7 +15,7 @@
 | 2    | 12-13/01 | Votacoes                               | CONCLUIDA |
 | 3    | 13-14/01 | Comissoes + Proposicoes                | CONCLUIDA |
 | 4    | 13/01    | Modulo de Ranking                      | CONCLUIDA |
-| 5    | 18-20/01 | Frontend Next.js                       | PENDENTE  |
+| 5    | 14/01    | Frontend Next.js                       | EM PROG   |
 | 6    | 21-24/01 | Testes, polimento, deploy              | PENDENTE  |
 
 ---
@@ -88,10 +88,14 @@
 
 ---
 
-## Fase 5: Frontend Next.js (18-20/01)
+## Fase 5: Frontend Next.js (14/01 - EM ANDAMENTO)
 
-- [ ] Inicializar em `to-de-olho/frontend/`
-- [ ] Tailwind CSS 4 + Shadcn/UI
+- [x] Inicializar em `to-de-olho/frontend/` com Bun
+- [x] Next.js 16.1.1 + React 19.2.3 + TypeScript 5
+- [x] Tailwind CSS 4 + Shadcn/UI (9 componentes)
+- [x] Recharts 3.6.0 + React Query 5.90.16
+- [ ] Configurar cores do projeto (senado blue/gold)
+- [ ] Layout base (header, footer, navegacao)
 - [ ] Paginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
 - [ ] Graficos Recharts (radar, barras, linha)
 - [ ] Acessibilidade WCAG 2.1 AA
@@ -123,6 +127,13 @@ to-de-olho/backend/
 ├── pkg/senado/{legis_client,adm_client}.go
 ├── docker-compose.yml
 └── go.mod
+
+to-de-olho/frontend/
+├── src/app/           # App Router (Next.js 16)
+├── src/components/ui/ # 9 componentes Shadcn
+├── src/lib/utils.ts   # Utilitarios
+├── package.json       # Bun + dependencias
+└── bun.lock
 ```
 
 ---
