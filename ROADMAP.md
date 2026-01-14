@@ -14,7 +14,7 @@
 | 1    | 12/01    | Fundacao (estrutura, senadores, CEAPS) | CONCLUIDA |
 | 2    | 12-13/01 | Votacoes                               | CONCLUIDA |
 | 3    | 13-14/01 | Comissoes + Proposicoes                | CONCLUIDA |
-| 4    | 15-17/01 | Modulo de Ranking                      | PENDENTE  |
+| 4    | 13/01    | Modulo de Ranking                      | CONCLUIDA |
 | 5    | 18-20/01 | Frontend Next.js                       | PENDENTE  |
 | 6    | 21-24/01 | Testes, polimento, deploy              | PENDENTE  |
 
@@ -76,13 +76,14 @@
 
 ---
 
-## Fase 4: Modulo de Ranking (15-17/01)
+## Fase 4: Modulo de Ranking (CONCLUIDA - 13/01)
 
-- [ ] Modelo `internal/ranking/model.go` (SenadorScore)
-- [ ] Service `internal/ranking/service.go`
-- [ ] Formula: `Score = (Prod * 0.35) + (Pres * 0.25) + (Econ * 0.20) + (Com * 0.20)`
-- [ ] Endpoint `GET /api/v1/ranking`
-- [ ] Cache Redis (TTL 1h)
+- [x] Modelo `internal/ranking/model.go` (SenadorScore, ScoreDetalhes)
+- [x] Service `internal/ranking/service.go` com calculo de scores
+- [x] Handler `internal/ranking/handler.go` com endpoints
+- [x] Formula: `Score = (Prod * 0.35) + (Pres * 0.25) + (Econ * 0.20) + (Com * 0.20)`
+- [x] Endpoints: `GET /ranking`, `GET /ranking/metodologia`, `GET /senadores/:id/score`
+- [ ] Cache Redis (TTL 1h) - Evolucao futura
 
 ---
 

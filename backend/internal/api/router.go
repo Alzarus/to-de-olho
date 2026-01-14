@@ -9,6 +9,7 @@ import (
 	"github.com/pedroalmeida/to-de-olho/internal/ceaps"
 	"github.com/pedroalmeida/to-de-olho/internal/comissao"
 	"github.com/pedroalmeida/to-de-olho/internal/proposicao"
+	"github.com/pedroalmeida/to-de-olho/internal/ranking"
 	"github.com/pedroalmeida/to-de-olho/internal/senador"
 	"github.com/pedroalmeida/to-de-olho/internal/votacao"
 	"github.com/pedroalmeida/to-de-olho/pkg/senado"
@@ -57,6 +58,10 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		proposicaoHandler := proposicao.NewHandler(proposicaoRepo)
 		proposicaoSync := proposicao.NewSyncService(proposicaoRepo, senadorRepo, legisClient)
 
+		// Ranking
+		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo)
+		rankingHandler := ranking.NewHandler(rankingService)
+
 		senadores := v1.Group("/senadores")
 		{
 			senadores.GET("", senadorHandler.ListAll)
@@ -76,6 +81,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			senadores.GET("/:id/proposicoes", proposicaoHandler.ListBySenador)
 			senadores.GET("/:id/proposicoes/stats", proposicaoHandler.GetStats)
 			senadores.GET("/:id/proposicoes/tipos", proposicaoHandler.GetPorTipo)
+			// Score individual
+			senadores.GET("/:id/score", rankingHandler.GetScoreSenador)
 		}
 
 		// Sync (trigger manual para desenvolvimento)
@@ -138,8 +145,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			})
 		})
 
-		// Ranking (placeholder)
-		v1.GET("/ranking", rankingPlaceholder)
+		// Ranking
+		v1.GET("/ranking", rankingHandler.GetRanking)
+		v1.GET("/ranking/metodologia", rankingHandler.GetMetodologia)
 	}
 
 	return router
@@ -175,11 +183,4 @@ func healthHandler(db *gorm.DB) gin.HandlerFunc {
 			"database":  dbStatus,
 		})
 	}
-}
-
-func rankingPlaceholder(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "ranking endpoint em desenvolvimento",
-		"info":    "Este endpoint retornara o ranking de senadores por score",
-	})
 }
