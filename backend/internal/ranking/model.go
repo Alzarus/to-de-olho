@@ -65,5 +65,22 @@ const (
 	PesoComissoes     = 0.20
 
 	// Teto CEAPS anual estimado (media nacional * 12 meses)
-	TetoCEAPSAnual = 528000.0 // R$ 44.000/mes * 12
+	TetoCEAPSMedia = 40000.0 * 12
 )
+
+// TetoCEAPSPorUF define o valor mensal do teto por estado (referencia 2024)
+var TetoCEAPSPorUF = map[string]float64{
+	"DF": 33178.69,
+	"GO": 38166.97,
+	"SC": 42091.22,
+	"SP": 40381.18,
+	"RJ": 39599.93,
+	"MG": 39078.68,
+	"PR": 41851.68,
+	"RS": 43533.91,
+	"AC": 44670.36, "AL": 40995.53, "AM": 44092.38, "AP": 43574.61,
+	"BA": 40228.75, "CE": 41348.70, "ES": 37637.52, "MA": 41785.49,
+	"MT": 39434.72, "MS": 40049.91, "PA": 41656.76, "PB": 40702.40,
+	"PE": 41042.81, "PI": 40954.10, "RN": 40875.05, "RO": 43632.74,
+	"RR": 44321.49, "SE": 40166.45, "TO": 39458.74,
+}

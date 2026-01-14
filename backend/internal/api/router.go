@@ -13,11 +13,12 @@ import (
 	"github.com/pedroalmeida/to-de-olho/internal/senador"
 	"github.com/pedroalmeida/to-de-olho/internal/votacao"
 	"github.com/pedroalmeida/to-de-olho/pkg/senado"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 // SetupRouter configura todas as rotas da API
-func SetupRouter(db *gorm.DB) *gin.Engine {
+func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 	router := gin.Default()
 
 	// Middleware CORS
@@ -59,7 +60,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		proposicaoSync := proposicao.NewSyncService(proposicaoRepo, senadorRepo, legisClient)
 
 		// Ranking
-		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo)
+		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo, redisClient)
 		rankingHandler := ranking.NewHandler(rankingService)
 
 		senadores := v1.Group("/senadores")

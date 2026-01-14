@@ -2,6 +2,7 @@ package ranking
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"sort"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/pedroalmeida/to-de-olho/internal/proposicao"
 	"github.com/pedroalmeida/to-de-olho/internal/senador"
 	"github.com/pedroalmeida/to-de-olho/internal/votacao"
+	"github.com/redis/go-redis/v9"
 )
 
 // Service gerencia o calculo de ranking de senadores
@@ -20,6 +22,7 @@ type Service struct {
 	votacaoRepo    *votacao.Repository
 	ceapsRepo      *ceaps.Repository
 	comissaoRepo   *comissao.Repository
+	redisClient    *redis.Client
 }
 
 // NewService cria um novo servico de ranking
@@ -29,6 +32,7 @@ func NewService(
 	votacaoRepo *votacao.Repository,
 	ceapsRepo *ceaps.Repository,
 	comissaoRepo *comissao.Repository,
+	redisClient *redis.Client,
 ) *Service {
 	return &Service{
 		senadorRepo:    senadorRepo,
@@ -36,12 +40,26 @@ func NewService(
 		votacaoRepo:    votacaoRepo,
 		ceapsRepo:      ceapsRepo,
 		comissaoRepo:   comissaoRepo,
+		redisClient:    redisClient,
 	}
 }
 
 // CalcularRanking calcula o ranking de todos os senadores
 func (s *Service) CalcularRanking(ctx context.Context) (*RankingResponse, error) {
-	slog.Info("iniciando calculo de ranking")
+	// 1. Tentar buscar do cache
+	cacheKey := "ranking:geral"
+	if s.redisClient != nil {
+		val, err := s.redisClient.Get(ctx, cacheKey).Result()
+		if err == nil {
+			var response RankingResponse
+			if err := json.Unmarshal([]byte(val), &response); err == nil {
+				slog.Info("ranking retornado do cache")
+				return &response, nil
+			}
+		}
+	}
+
+	slog.Info("iniciando calculo de ranking (cache miss)")
 
 	// Buscar todos os senadores
 	senadores, err := s.senadorRepo.FindAll()
@@ -97,12 +115,21 @@ func (s *Service) CalcularRanking(ctx context.Context) (*RankingResponse, error)
 
 	slog.Info("ranking calculado", "total_senadores", len(scores))
 
-	return &RankingResponse{
+	response := &RankingResponse{
 		Ranking:     scores,
 		Total:       len(scores),
 		CalculadoEm: time.Now(),
 		Metodologia: "Score = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)",
-	}, nil
+	}
+
+	// Salvar no cache (TTL 1 hora)
+	if s.redisClient != nil {
+		if data, err := json.Marshal(response); err == nil {
+			s.redisClient.Set(ctx, cacheKey, data, 1*time.Hour)
+		}
+	}
+
+	return response, nil
 }
 
 // CalcularScoreSenador calcula o score de um senador especifico
@@ -222,7 +249,14 @@ func (s *Service) calcularScoreNormalizado(
 
 	// Economia CEAPS (0-100)
 	// Quanto menos gasta, maior o score
-	economia := (1 - (dados.gastoAnual / TetoCEAPSAnual)) * 100
+	// Buscar teto da UF, se nao houver usa media
+	tetoMensal, ok := TetoCEAPSPorUF[sen.UF]
+	if !ok {
+		tetoMensal = 40000.0 // Fallback seguro
+	}
+	tetoAnual := tetoMensal * 12
+
+	economia := (1 - (dados.gastoAnual / tetoAnual)) * 100
 	if economia < 0 {
 		economia = 0 // Se gastou mais que o teto, score 0
 	}
@@ -260,7 +294,7 @@ func (s *Service) calcularScoreNormalizado(
 			VotacoesParticipadas: dados.votosRegistrados,
 			TaxaPresencaBruta:    arredondar(dados.taxaPresencaBruta),
 			GastoCEAPS:           arredondar(dados.gastoAnual),
-			TetoCEAPS:            TetoCEAPSAnual,
+			TetoCEAPS:            tetoAnual,
 			ComissoesAtivas:      dados.comissoesAtivas,
 			ComissoesTitular:     dados.comissoesTitular,
 			ComissoesSuplente:    dados.comissoesSuplente,

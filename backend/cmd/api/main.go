@@ -15,6 +15,7 @@ import (
 	"github.com/pedroalmeida/to-de-olho/internal/proposicao"
 	"github.com/pedroalmeida/to-de-olho/internal/senador"
 	"github.com/pedroalmeida/to-de-olho/internal/votacao"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -44,8 +45,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Conectar ao Redis
+	redisClient := connectRedis()
+	if redisClient != nil {
+		slog.Info("conectado ao redis")
+	} else {
+		slog.Warn("rodando sem cache redis")
+	}
+
 	// Configurar router
-	router := api.SetupRouter(db)
+	router := api.SetupRouter(db, redisClient)
 
 	// Criar servidor HTTP
 	srv := &http.Server{
@@ -110,4 +119,27 @@ func getPort() string {
 		port = "8080"
 	}
 	return ":" + port
+}
+
+func connectRedis() *redis.Client {
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := client.Ping(ctx).Err(); err != nil {
+		slog.Warn("redis indisponivel", "error", err)
+		return nil
+	}
+
+	return client
 }

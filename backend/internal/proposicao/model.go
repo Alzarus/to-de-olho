@@ -67,6 +67,8 @@ func (p *Proposicao) CalcularPontuacao() int {
 		multiplicador = 3.0
 	case "PLP":
 		multiplicador = 2.0
+	case "RQS", "MOC":
+		multiplicador = 0.5
 	}
 
 	pontos := pontosBase[p.EstagioTramitacao]

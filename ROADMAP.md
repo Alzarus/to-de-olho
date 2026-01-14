@@ -83,7 +83,7 @@
 - [x] Handler `internal/ranking/handler.go` com endpoints
 - [x] Formula: `Score = (Prod * 0.35) + (Pres * 0.25) + (Econ * 0.20) + (Com * 0.20)`
 - [x] Endpoints: `GET /ranking`, `GET /ranking/metodologia`, `GET /senadores/:id/score`
-- [ ] Cache Redis (TTL 1h) - Evolucao futura
+- [x] Cache Redis (TTL 1h) - Implementado com fallback
 
 ---
 
