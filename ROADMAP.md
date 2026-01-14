@@ -72,7 +72,7 @@
 - [x] Client para `/dadosabertos/processo`
 - [x] Sistema de pontuacao (1-16 por estagio, x3 PEC, x2 PLP)
 - [x] Endpoints: `/proposicoes`, `/proposicoes/stats`, `/proposicoes/tipos`
-- [ ] Ajustar parsing da API (formato JSON diferente do esperado)
+- [x] Ajustar parsing da API (formato JSON corrigido - array direto)
 
 ---
 

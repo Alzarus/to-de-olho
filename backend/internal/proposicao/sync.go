@@ -92,32 +92,79 @@ func (s *SyncService) SyncSenador(ctx context.Context, senadorID int) (int, erro
 // convertToModel converte uma proposicao da API para modelo interno
 func (s *SyncService) convertToModel(api senadoapi.MateriaAPI, senadorID int) Proposicao {
 	var dataApresentacao *time.Time
-	if api.DadosBasicosMateria.DataApresentacao != "" {
-		if t, err := time.Parse("2006-01-02", api.DadosBasicosMateria.DataApresentacao); err == nil {
+	if api.DataApresentacao != "" {
+		if t, err := time.Parse("2006-01-02", api.DataApresentacao); err == nil {
 			dataApresentacao = &t
 		}
 	}
 
-	// Determinar estagio de tramitacao baseado na situacao
-	estagio := determinarEstagio(api.SituacaoAtual.Autuacoes.Autuacao.Situacao.DescricaoSituacao)
+	// Extrair sigla e numero/ano do campo Identificacao (ex: "PLS 4/2004")
+	sigla, numero, ano := extrairIdentificacao(api.Identificacao)
 
-	ano := 0
-	if api.IdentificacaoMateria.AnoMateria != "" {
-		ano, _ = strconv.Atoi(api.IdentificacaoMateria.AnoMateria)
-	}
+	// Determinar estagio de tramitacao baseado em NormaGerada e SiglaTipoDeliberacao
+	estagio := determinarEstagioV2(api.NormaGerada, api.SiglaTipoDeliberacao, api.Tramitando)
 
 	return Proposicao{
 		SenadorID:              senadorID,
-		CodigoMateria:          api.IdentificacaoMateria.CodigoMateria,
-		SiglaSubtipoMateria:    api.IdentificacaoMateria.SiglaSubtipoMateria,
-		NumeroMateria:          api.IdentificacaoMateria.NumeroMateria,
+		CodigoMateria:          strconv.Itoa(api.CodigoMateria),
+		SiglaSubtipoMateria:    sigla,
+		NumeroMateria:          numero,
 		AnoMateria:             ano,
-		DescricaoIdentificacao: api.IdentificacaoMateria.DescricaoIdentificacao,
-		Ementa:                 api.DadosBasicosMateria.EmentaMateria,
-		SituacaoAtual:          api.SituacaoAtual.Autuacoes.Autuacao.Situacao.DescricaoSituacao,
+		DescricaoIdentificacao: api.Identificacao,
+		Ementa:                 api.Ementa,
+		SituacaoAtual:          api.SiglaTipoDeliberacao,
 		DataApresentacao:       dataApresentacao,
 		EstagioTramitacao:      estagio,
 	}
+}
+
+// extrairIdentificacao extrai sigla, numero e ano do campo Identificacao
+// Ex: "PLS 4/2004" -> ("PLS", "4", 2004)
+func extrairIdentificacao(identificacao string) (sigla, numero string, ano int) {
+	parts := strings.Fields(identificacao)
+	if len(parts) >= 1 {
+		sigla = parts[0]
+	}
+	if len(parts) >= 2 {
+		// Formato: "4/2004"
+		numAno := strings.Split(parts[1], "/")
+		if len(numAno) >= 1 {
+			numero = numAno[0]
+		}
+		if len(numAno) >= 2 {
+			ano, _ = strconv.Atoi(numAno[1])
+		}
+	}
+	return
+}
+
+// determinarEstagioV2 classifica o estagio baseado nos campos da API
+func determinarEstagioV2(normaGerada, siglaTipoDeliberacao, tramitando string) string {
+	// Se gerou norma (lei), e o estagio maximo
+	if normaGerada != "" {
+		return "TransformadoLei"
+	}
+	
+	// Baseado na sigla de deliberacao
+	switch siglaTipoDeliberacao {
+	case "APROVADA_NO_PLENARIO":
+		return "AprovadoPlenario"
+	case "APROVADA_EM_COMISSAO_TERMINATIVA", "APROVADA_EM_COMISSAO":
+		return "AprovadoComissao"
+	case "EM_PAUTA_NO_PLENARIO", "AGUARDANDO_DELIBERACAO", "PRONTO_PARA_DELIBERACAO":
+		return "EmComissao"
+	case "ARQUIVADO_FIM_LEGISLATURA", "ARQUIVADA", "RETIRADO_PELO_AUTOR", "REJEITADA":
+		// Arquivados ficam no ultimo estagio alcancado, assumimos apresentado
+		return "Apresentado"
+	}
+	
+	// Se ainda esta tramitando
+	if tramitando == "Sim" {
+		return "EmComissao"
+	}
+	
+	// Default
+	return "Apresentado"
 }
 
 // determinarEstagio classifica o estagio de tramitacao baseado na descricao

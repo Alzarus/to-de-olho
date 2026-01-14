@@ -250,45 +250,26 @@ func (c *LegisClient) ListarComissoesParlamentar(ctx context.Context, codigoParl
 
 // === PROPOSICOES ===
 
-// ProposicaoResponse representa a resposta de /processo
-type ProposicaoResponse struct {
-	ListaMaterias struct {
-		Materias struct {
-			Materia []MateriaAPI `json:"Materia"`
-		} `json:"Materias"`
-	} `json:"ListaMaterias"`
-}
-
 // MateriaAPI representa uma materia/proposicao retornada pela API
+// A API retorna um array de objetos diretamente
 type MateriaAPI struct {
-	IdentificacaoMateria struct {
-		CodigoMateria           string `json:"CodigoMateria"`
-		SiglaSubtipoMateria     string `json:"SiglaSubtipoMateria"` // PEC, PLP, PL, etc.
-		DescricaoSubtipoMateria string `json:"DescricaoSubtipoMateria"`
-		NumeroMateria           string `json:"NumeroMateria"`
-		AnoMateria              string `json:"AnoMateria"`
-		DescricaoIdentificacao  string `json:"DescricaoIdentificacao"` // Ex: "PL 1234/2024"
-	} `json:"IdentificacaoMateria"`
-	DadosBasicosMateria struct {
-		EmentaMateria     string `json:"EmentaMateria"`
-		DataApresentacao  string `json:"DataApresentacao"`  // YYYY-MM-DD
-		NaturezaMateria   string `json:"NaturezaMateria"`
-	} `json:"DadosBasicosMateria"`
-	SituacaoAtual struct {
-		Autuacoes struct {
-			Autuacao struct {
-				Local struct {
-					NomeLocal string `json:"NomeLocal"`
-				} `json:"Local"`
-				Situacao struct {
-					DescricaoSituacao string `json:"DescricaoSituacao"`
-				} `json:"Situacao"`
-			} `json:"Autuacao"`
-		} `json:"Autuacoes"`
-	} `json:"SituacaoAtual"`
+	ID                    int    `json:"id"`
+	CodigoMateria         int    `json:"codigoMateria"`
+	Identificacao         string `json:"identificacao"`         // Ex: "PLS 4/2004", "PEC 5/2005"
+	Objetivo              string `json:"objetivo"`              // Ex: "Iniciadora"
+	CasaIdentificadora    string `json:"casaIdentificadora"`    // SF, CD
+	Ementa                string `json:"ementa"`
+	TipoDocumento         string `json:"tipoDocumento"`         // "Projeto de Lei Ordinária", "Proposta de Emenda à Constituição"
+	DataApresentacao      string `json:"dataApresentacao"`      // YYYY-MM-DD
+	Autoria               string `json:"autoria"`               // Nome do autor
+	Tramitando            string `json:"tramitando"`            // "Sim", "Não"
+	DataDeliberacao       string `json:"dataDeliberacao"`       // YYYY-MM-DD
+	SiglaTipoDeliberacao  string `json:"siglaTipoDeliberacao"`  // ARQUIVADO_FIM_LEGISLATURA, APROVADA_NO_PLENARIO, etc.
+	NormaGerada           string `json:"normaGerada,omitempty"` // "Lei nº 11.738 de 16/07/2008"
 }
 
 // ListarProposicoesParlamentar busca proposicoes de autoria de um parlamentar
+// A API retorna um array de materias diretamente
 func (c *LegisClient) ListarProposicoesParlamentar(ctx context.Context, codigoParlamentar int) ([]MateriaAPI, error) {
 	url := fmt.Sprintf("%s/processo?codigoParlamentarAutor=%d", c.baseURL, codigoParlamentar)
 
@@ -308,10 +289,11 @@ func (c *LegisClient) ListarProposicoesParlamentar(ctx context.Context, codigoPa
 		return nil, fmt.Errorf("status inesperado: %d", resp.StatusCode)
 	}
 
-	var result ProposicaoResponse
+	// A API retorna um array de materias diretamente
+	var result []MateriaAPI
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("erro decodificando JSON: %w", err)
 	}
 
-	return result.ListaMaterias.Materias.Materia, nil
+	return result, nil
 }
