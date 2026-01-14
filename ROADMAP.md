@@ -94,9 +94,10 @@
 - [x] Next.js 16.1.1 + React 19.2.3 + TypeScript 5
 - [x] Tailwind CSS 4 + Shadcn/UI (9 componentes)
 - [x] Recharts 3.6.0 + React Query 5.90.16
-- [ ] Configurar cores do projeto (senado blue/gold)
-- [ ] Layout base (header, footer, navegacao)
-- [ ] Paginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
+- [x] Configurar cores do projeto (senado blue/gold)
+- [x] Layout base (header, footer, navegacao)
+- [x] Paginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
+- [ ] Integrar API backend (React Query)
 - [ ] Graficos Recharts (radar, barras, linha)
 - [ ] Acessibilidade WCAG 2.1 AA
 
