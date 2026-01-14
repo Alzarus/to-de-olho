@@ -1,6 +1,6 @@
 # Roadmap de Implementacao - To De Olho
 
-> Ultima atualizacao: 13/01/2026 03:25  
+> Ultima atualizacao: 14/01/2026 01:00  
 > Deadline Entrega TCC: 15/01/2026  
 > Prazo Projeto Completo: Ate a defesa (25/01 - 11/02/2026)  
 > Status: **Em desenvolvimento**
@@ -24,9 +24,9 @@
 
 | Criterio                  | Peso | Fonte de Dados                         | Status                       |
 | ------------------------- | ---- | -------------------------------------- | ---------------------------- |
-| Produtividade Legislativa | 35%  | `/dadosabertos/processo`               | IMPLEMENTADO (ajuste parser) |
+| Produtividade Legislativa | 35%  | `/dadosabertos/processo`               | CONCLUIDO (pesos ajustados)  |
 | Presenca em Votacoes      | 25%  | `/dadosabertos/votacao`                | CONCLUIDO (85.877 votacoes)  |
-| Economia CEAPS            | 20%  | API Administrativa                     | CONCLUIDO                    |
+| Economia CEAPS            | 20%  | API Administrativa                     | CONCLUIDO (teto variavel UF) |
 | Participacao em Comissoes | 20%  | `/dadosabertos/senador/{id}/comissoes` | CONCLUIDO (7.186 registros)  |
 
 **Progresso atual**: 100% dos modulos implementados. Ranking pronto para fase 4.
@@ -83,7 +83,8 @@
 - [x] Handler `internal/ranking/handler.go` com endpoints
 - [x] Formula: `Score = (Prod * 0.35) + (Pres * 0.25) + (Econ * 0.20) + (Com * 0.20)`
 - [x] Endpoints: `GET /ranking`, `GET /ranking/metodologia`, `GET /senadores/:id/score`
-- [x] Cache Redis (TTL 1h) - Implementado com fallback
+- [x] Cache Redis (TTL 1h) com fallback
+- [x] Ajustes finos: Pesos RQS/MOC (x0.5), Teto CEAPS por UF, Relatorias (pendente)
 
 ---
 
@@ -117,7 +118,8 @@ to-de-olho/backend/
 │   ├── ceaps/{model,repository,handler,sync}.go
 │   ├── votacao/{model,repository,handler,sync}.go
 │   ├── comissao/{model,repository,handler,sync}.go
-│   └── proposicao/{model,repository,handler,sync}.go
+│   ├── proposicao/{model,repository,handler,sync}.go
+│   └── ranking/{model,service,handler}.go
 ├── pkg/senado/{legis_client,adm_client}.go
 ├── docker-compose.yml
 └── go.mod
@@ -125,7 +127,7 @@ to-de-olho/backend/
 
 ---
 
-## Dados no Banco (13/01 03:25)
+## Dados no Banco (14/01 01:00)
 
 | Tabela           | Registros |
 | ---------------- | --------- |
@@ -133,4 +135,4 @@ to-de-olho/backend/
 | despesas_ceaps   | ~8.000+   |
 | votacoes         | 85.877    |
 | comissao_membros | 7.186     |
-| proposicoes      | ajustando |
+| proposicoes      | ~20.000+  |
