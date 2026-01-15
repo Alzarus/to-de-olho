@@ -1,58 +1,11 @@
-import { Suspense } from "react";
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-
-interface SenadorScore {
-  senador_id: number;
-  nome: string;
-  partido: string;
-  uf: string;
-  foto_url: string;
-  score_total: number;
-  posicao: number;
-  detalhes: {
-    produtividade: number;
-    presenca: number;
-    economia: number;
-    comissoes: number;
-  };
-}
-
-// Simulated data for now - will be replaced with API call
-const mockRanking: SenadorScore[] = [
-  {
-    senador_id: 1,
-    nome: "Senador Exemplo 1",
-    partido: "PART",
-    uf: "BA",
-    foto_url: "",
-    score_total: 92.5,
-    posicao: 1,
-    detalhes: { produtividade: 95, presenca: 88, economia: 90, comissoes: 95 },
-  },
-  {
-    senador_id: 2,
-    nome: "Senador Exemplo 2",
-    partido: "PART",
-    uf: "SP",
-    foto_url: "",
-    score_total: 88.3,
-    posicao: 2,
-    detalhes: { produtividade: 85, presenca: 92, economia: 85, comissoes: 90 },
-  },
-  {
-    senador_id: 3,
-    nome: "Senador Exemplo 3",
-    partido: "PART",
-    uf: "RJ",
-    foto_url: "",
-    score_total: 85.7,
-    posicao: 3,
-    detalhes: { produtividade: 80, presenca: 90, economia: 88, comissoes: 85 },
-  },
-];
+import { useRanking } from "@/hooks/use-ranking";
+import type { SenadorScore } from "@/types/api";
 
 function RankingTable({ data }: { data: SenadorScore[] }) {
   return (
@@ -129,27 +82,27 @@ function RankingTable({ data }: { data: SenadorScore[] }) {
               </td>
               <td className="hidden px-4 py-4 text-center sm:table-cell">
                 <span className="text-sm font-medium">
-                  {senador.detalhes.produtividade.toFixed(1)}
+                  {senador.produtividade.toFixed(1)}
                 </span>
               </td>
               <td className="hidden px-4 py-4 text-center md:table-cell">
                 <span className="text-sm font-medium">
-                  {senador.detalhes.presenca.toFixed(1)}
+                  {senador.presenca.toFixed(1)}
                 </span>
               </td>
               <td className="hidden px-4 py-4 text-center lg:table-cell">
                 <span className="text-sm font-medium">
-                  {senador.detalhes.economia.toFixed(1)}
+                  {senador.economia_cota.toFixed(1)}
                 </span>
               </td>
               <td className="hidden px-4 py-4 text-center lg:table-cell">
                 <span className="text-sm font-medium">
-                  {senador.detalhes.comissoes.toFixed(1)}
+                  {senador.comissoes.toFixed(1)}
                 </span>
               </td>
               <td className="px-4 py-4 text-right">
                 <span className="text-lg font-bold text-primary">
-                  {senador.score_total.toFixed(1)}
+                  {senador.score_final.toFixed(1)}
                 </span>
               </td>
             </tr>
@@ -163,7 +116,7 @@ function RankingTable({ data }: { data: SenadorScore[] }) {
 function RankingTableSkeleton() {
   return (
     <div className="space-y-4">
-      {[...Array(5)].map((_, i) => (
+      {[...Array(10)].map((_, i) => (
         <div key={i} className="flex items-center gap-4 p-4">
           <Skeleton className="h-8 w-8 rounded-full" />
           <Skeleton className="h-10 w-10 rounded-full" />
@@ -178,7 +131,38 @@ function RankingTableSkeleton() {
   );
 }
 
+function RankingError({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="rounded-full bg-destructive/10 p-4">
+        <svg
+          className="h-8 w-8 text-destructive"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+      </div>
+      <h3 className="mt-4 text-lg font-semibold text-foreground">
+        Erro ao carregar dados
+      </h3>
+      <p className="mt-2 text-sm text-muted-foreground max-w-md">{message}</p>
+      <p className="mt-4 text-xs text-muted-foreground">
+        Verifique se o backend está rodando em localhost:8080
+      </p>
+    </div>
+  );
+}
+
 export default function RankingPage() {
+  const { data, isLoading, error } = useRanking();
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
@@ -252,12 +236,27 @@ export default function RankingPage() {
       {/* Ranking Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Classificação Geral</CardTitle>
+          <CardTitle>
+            Classificação Geral
+            {data && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                ({data.total} senadores)
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Suspense fallback={<RankingTableSkeleton />}>
-            <RankingTable data={mockRanking} />
-          </Suspense>
+          {isLoading && <RankingTableSkeleton />}
+          {error && (
+            <RankingError
+              message={
+                error instanceof Error
+                  ? error.message
+                  : "Erro desconhecido ao carregar ranking"
+              }
+            />
+          )}
+          {data && <RankingTable data={data.ranking} />}
         </CardContent>
       </Card>
 

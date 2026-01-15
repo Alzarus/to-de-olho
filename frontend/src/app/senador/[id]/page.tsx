@@ -1,61 +1,91 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useSenadorScore } from "@/hooks/use-senador";
 
-// Mock data - will be replaced with API call
-const mockSenador = {
-  id: 1,
-  nome: "Senador Exemplo",
-  nome_completo: "Senador Exemplo da Silva",
-  partido: "PART",
-  uf: "BA",
-  foto_url: "",
-  email: "senador@senado.leg.br",
-  telefone: "(61) 3303-0000",
-  score: {
-    total: 92.5,
-    posicao: 1,
-    detalhes: {
-      produtividade: 95,
-      presenca: 88,
-      economia: 90,
-      comissoes: 95,
-    },
-  },
-  proposicoes: {
-    total: 45,
-    aprovadas: 12,
-    em_tramitacao: 28,
-    arquivadas: 5,
-  },
-  votacoes: {
-    total: 450,
-    presentes: 396,
-    ausentes: 54,
-    percentual_presenca: 88,
-  },
-  ceaps: {
-    gasto_total: 125000,
-    teto: 150000,
-    economia: 25000,
-    percentual_economia: 16.7,
-  },
-  comissoes: {
-    total: 8,
-    titularidades: 3,
-    suplencias: 5,
-    presidencias: 1,
-  },
-};
+function SenadorSkeleton() {
+  return (
+    <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <Skeleton className="h-4 w-48 mb-8" />
+      <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-6">
+          <Skeleton className="h-24 w-24 rounded-2xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-6 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-32 w-48" />
+      </div>
+      <div className="mb-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-export default async function SenadorPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const senador = mockSenador; // Will fetch from API using id
+function SenadorError({ message }: { message: string }) {
+  return (
+    <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="rounded-full bg-destructive/10 p-4">
+          <svg
+            className="h-8 w-8 text-destructive"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h3 className="mt-4 text-lg font-semibold text-foreground">
+          Senador não encontrado
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">{message}</p>
+        <Link
+          href="/ranking"
+          className="mt-6 text-primary hover:underline font-medium"
+        >
+          Voltar ao ranking
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function SenadorPage() {
+  const params = useParams();
+  const id = Number(params.id);
+  const { data: senador, isLoading, error } = useSenadorScore(id);
+
+  if (isLoading) {
+    return <SenadorSkeleton />;
+  }
+
+  if (error || !senador) {
+    return (
+      <SenadorError
+        message={
+          error instanceof Error
+            ? error.message
+            : "Erro ao carregar dados do senador"
+        }
+      />
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -88,15 +118,10 @@ export default async function SenadorPage({
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {senador.nome}
             </h1>
-            <p className="mt-1 text-lg text-muted-foreground">
-              {senador.nome_completo}
-            </p>
             <div className="mt-3 flex items-center gap-2">
               <Badge variant="default">{senador.partido}</Badge>
               <Badge variant="outline">{senador.uf}</Badge>
-              <Badge variant="secondary">
-                #{senador.score.posicao} no ranking
-              </Badge>
+              <Badge variant="secondary">#{senador.posicao} no ranking</Badge>
             </div>
           </div>
         </div>
@@ -110,7 +135,7 @@ export default async function SenadorPage({
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-bold text-primary">
-              {senador.score.total.toFixed(1)}
+              {senador.score_final.toFixed(1)}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               de 100 pontos possíveis
@@ -129,12 +154,12 @@ export default async function SenadorPage({
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {senador.score.detalhes.produtividade.toFixed(1)}
+              {senador.produtividade.toFixed(1)}
             </p>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${senador.score.detalhes.produtividade}%` }}
+                style={{ width: `${Math.min(senador.produtividade, 100)}%` }}
               />
             </div>
           </CardContent>
@@ -146,13 +171,11 @@ export default async function SenadorPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
-              {senador.score.detalhes.presenca.toFixed(1)}
-            </p>
+            <p className="text-2xl font-bold">{senador.presenca.toFixed(1)}</p>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${senador.score.detalhes.presenca}%` }}
+                style={{ width: `${Math.min(senador.presenca, 100)}%` }}
               />
             </div>
           </CardContent>
@@ -165,12 +188,12 @@ export default async function SenadorPage({
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {senador.score.detalhes.economia.toFixed(1)}
+              {senador.economia_cota.toFixed(1)}
             </p>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${senador.score.detalhes.economia}%` }}
+                style={{ width: `${Math.min(senador.economia_cota, 100)}%` }}
               />
             </div>
           </CardContent>
@@ -182,13 +205,11 @@ export default async function SenadorPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
-              {senador.score.detalhes.comissoes.toFixed(1)}
-            </p>
+            <p className="text-2xl font-bold">{senador.comissoes.toFixed(1)}</p>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${senador.score.detalhes.comissoes}%` }}
+                style={{ width: `${Math.min(senador.comissoes, 100)}%` }}
               />
             </div>
           </CardContent>
@@ -213,7 +234,7 @@ export default async function SenadorPage({
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <p className="text-3xl font-bold text-foreground">
-                    {senador.proposicoes.total}
+                    {senador.detalhes.total_proposicoes}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Proposições apresentadas
@@ -221,21 +242,25 @@ export default async function SenadorPage({
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-green-600">
-                    {senador.proposicoes.aprovadas}
+                    {senador.detalhes.proposicoes_aprovadas}
                   </p>
                   <p className="text-sm text-muted-foreground">Aprovadas</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-yellow-600">
-                    {senador.proposicoes.em_tramitacao}
+                    {senador.detalhes.transformadas_em_lei}
                   </p>
-                  <p className="text-sm text-muted-foreground">Em tramitação</p>
+                  <p className="text-sm text-muted-foreground">
+                    Transformadas em lei
+                  </p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-muted-foreground">
-                    {senador.proposicoes.arquivadas}
+                  <p className="text-3xl font-bold text-primary">
+                    {senador.detalhes.pontuacao_proposicoes}
                   </p>
-                  <p className="text-sm text-muted-foreground">Arquivadas</p>
+                  <p className="text-sm text-muted-foreground">
+                    Pontuação total
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -248,10 +273,10 @@ export default async function SenadorPage({
               <CardTitle>Presença em Votações</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <p className="text-3xl font-bold text-foreground">
-                    {senador.votacoes.total}
+                    {senador.detalhes.total_votacoes}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Votações no período
@@ -259,19 +284,15 @@ export default async function SenadorPage({
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-green-600">
-                    {senador.votacoes.presentes}
+                    {senador.detalhes.votacoes_participadas}
                   </p>
-                  <p className="text-sm text-muted-foreground">Presenças</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-red-600">
-                    {senador.votacoes.ausentes}
+                  <p className="text-sm text-muted-foreground">
+                    Votações participadas
                   </p>
-                  <p className="text-sm text-muted-foreground">Ausências</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-primary">
-                    {senador.votacoes.percentual_presenca}%
+                    {senador.detalhes.taxa_presenca_bruta.toFixed(1)}%
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Taxa de presença
@@ -288,32 +309,40 @@ export default async function SenadorPage({
               <CardTitle>Cota para Exercício da Atividade Parlamentar</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <p className="text-3xl font-bold text-foreground">
-                    R$ {(senador.ceaps.gasto_total / 1000).toFixed(0)}k
+                    R${" "}
+                    {(senador.detalhes.gasto_ceaps / 1000).toLocaleString(
+                      "pt-BR",
+                      { minimumFractionDigits: 1 }
+                    )}
+                    k
                   </p>
                   <p className="text-sm text-muted-foreground">Gasto total</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-muted-foreground">
-                    R$ {(senador.ceaps.teto / 1000).toFixed(0)}k
+                    R${" "}
+                    {(senador.detalhes.teto_ceaps / 1000).toLocaleString(
+                      "pt-BR",
+                      { minimumFractionDigits: 1 }
+                    )}
+                    k
                   </p>
                   <p className="text-sm text-muted-foreground">Teto anual</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-green-600">
-                    R$ {(senador.ceaps.economia / 1000).toFixed(0)}k
+                    {(
+                      ((senador.detalhes.teto_ceaps -
+                        senador.detalhes.gasto_ceaps) /
+                        senador.detalhes.teto_ceaps) *
+                      100
+                    ).toFixed(1)}
+                    %
                   </p>
                   <p className="text-sm text-muted-foreground">Economia</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-primary">
-                    {senador.ceaps.percentual_economia.toFixed(1)}%
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Abaixo do teto
-                  </p>
                 </div>
               </div>
             </CardContent>
@@ -329,29 +358,29 @@ export default async function SenadorPage({
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <p className="text-3xl font-bold text-foreground">
-                    {senador.comissoes.total}
+                    {senador.detalhes.comissoes_ativas}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Comissões totais
+                    Comissões ativas
                   </p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-primary">
-                    {senador.comissoes.titularidades}
+                    {senador.detalhes.comissoes_titular}
                   </p>
                   <p className="text-sm text-muted-foreground">Titularidades</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-muted-foreground">
-                    {senador.comissoes.suplencias}
+                    {senador.detalhes.comissoes_suplente}
                   </p>
                   <p className="text-sm text-muted-foreground">Suplências</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-yellow-600">
-                    {senador.comissoes.presidencias}
+                    {senador.detalhes.pontos_comissoes.toFixed(0)}
                   </p>
-                  <p className="text-sm text-muted-foreground">Presidências</p>
+                  <p className="text-sm text-muted-foreground">Pontos</p>
                 </div>
               </div>
             </CardContent>

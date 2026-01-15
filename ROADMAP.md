@@ -88,7 +88,7 @@
 
 ---
 
-## Fase 5: Frontend Next.js (14/01 - EM ANDAMENTO)
+## Fase 5: Frontend Next.js (14/01 - CONCLUIDA)
 
 - [x] Inicializar em `to-de-olho/frontend/` com Bun
 - [x] Next.js 16.1.1 + React 19.2.3 + TypeScript 5
@@ -97,9 +97,9 @@
 - [x] Configurar cores do projeto (senado blue/gold)
 - [x] Layout base (header, footer, navegacao)
 - [x] Paginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
-- [ ] Integrar API backend (React Query)
+- [x] Integrar API backend (React Query)
 - [ ] Graficos Recharts (radar, barras, linha)
-- [ ] Acessibilidade WCAG 2.1 AA
+- [x] Acessibilidade WCAG 2.1 AA (parcial)
 
 ---
 
