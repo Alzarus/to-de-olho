@@ -89,7 +89,7 @@
 
 ---
 
-## Fase 5: Frontend Next.js (14/01 - CONCLUIDA)
+## Fase 5: Frontend Next.js (14/01 - EM ANDAMENTO)
 
 - [x] Inicializar em `to-de-olho/frontend/` com Bun
 - [x] Next.js 16.1.1 + React 19.2.3 + TypeScript 5
