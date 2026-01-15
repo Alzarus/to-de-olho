@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pedroalmeida/to-de-olho/internal/senador"
-	senadoapi "github.com/pedroalmeida/to-de-olho/pkg/senado"
+	"github.com/Alzarus/to-de-olho/internal/senador"
+	senadoapi "github.com/Alzarus/to-de-olho/pkg/senado"
 )
 
 // SyncService gerencia sincronizacao de votacoes

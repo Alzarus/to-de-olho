@@ -4,10 +4,11 @@ const footerLinks = {
   projeto: [
     { name: "Sobre", href: "/sobre" },
     { name: "Metodologia", href: "/metodologia" },
-    { name: "Código Fonte", href: "https://github.com/pedroeli07/to-de-olho", external: true },
+    { name: "Código Fonte", href: "https://github.com/Alzarus/to-de-olho", external: true },
   ],
   dados: [
-    { name: "API do Senado", href: "https://legis.senado.leg.br/dadosabertos", external: true },
+    { name: "API Legislativa do Senado", href: "https://legis.senado.leg.br/dadosabertos", external: true },
+    { name: "API Administrativa do Senado", href: "https://adm.senado.gov.br/adm-dadosabertos/swagger-ui", external: true },
     { name: "Portal da Transparência", href: "https://portaldatransparencia.gov.br", external: true },
   ],
 };

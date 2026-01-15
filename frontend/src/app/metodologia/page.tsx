@@ -154,10 +154,10 @@ export default function MetodologiaPage() {
           <CardTitle>Fontes de Dados</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-3">
             <div>
               <h4 className="font-semibold text-foreground">
-                API do Senado Federal
+                API Legislativa do Senado
               </h4>
               <p className="mt-1 text-sm text-muted-foreground">
                 Dados legislativos, votações, comissões e informações dos
@@ -180,12 +180,28 @@ export default function MetodologiaPage() {
                 Dados de despesas CEAPS e informações administrativas
               </p>
               <a
-                href="https://adm.senado.gov.br/adm-dadosabertos"
+                href="https://adm.senado.gov.br/adm-dadosabertos/swagger-ui"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 inline-block text-sm text-primary hover:underline"
               >
-                adm.senado.gov.br/adm-dadosabertos
+                adm.senado.gov.br/adm-dadosabertos/swagger-ui
+              </a>
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground">
+                Portal da Transparência
+              </h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Dados de contratos, convênios e despesas do Governo Federal
+              </p>
+              <a
+                href="https://portaldatransparencia.gov.br"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block text-sm text-primary hover:underline"
+              >
+                portaldatransparencia.gov.br
               </a>
             </div>
           </div>

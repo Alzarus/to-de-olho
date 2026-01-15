@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strconv"
 
-	"github.com/pedroalmeida/to-de-olho/pkg/senado"
+	"github.com/Alzarus/to-de-olho/pkg/senado"
 )
 
 // SyncService gerencia sincronizacao de senadores com a API

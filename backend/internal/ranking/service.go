@@ -7,11 +7,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/pedroalmeida/to-de-olho/internal/ceaps"
-	"github.com/pedroalmeida/to-de-olho/internal/comissao"
-	"github.com/pedroalmeida/to-de-olho/internal/proposicao"
-	"github.com/pedroalmeida/to-de-olho/internal/senador"
-	"github.com/pedroalmeida/to-de-olho/internal/votacao"
+	"github.com/Alzarus/to-de-olho/internal/ceaps"
+	"github.com/Alzarus/to-de-olho/internal/comissao"
+	"github.com/Alzarus/to-de-olho/internal/proposicao"
+	"github.com/Alzarus/to-de-olho/internal/senador"
+	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/redis/go-redis/v9"
 )
 

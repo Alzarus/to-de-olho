@@ -1,4 +1,4 @@
-module github.com/pedroalmeida/to-de-olho
+module github.com/Alzarus/to-de-olho
 
 go 1.23
 
