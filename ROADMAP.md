@@ -95,7 +95,7 @@
 - [x] Tailwind CSS 4 + Shadcn/UI (9 componentes)
 - [x] Recharts 3.6.0 + React Query 5.90.16
 - [x] Configurar cores do projeto (senado blue/gold)
-- [x] Layout base (header, footer, navegacao)
+- [x] Layout base + identidade visual (Logo/Favicon)
 - [x] Paginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
 - [x] Integrar API backend (React Query)
 - [ ] Graficos Recharts (radar, barras, linha)

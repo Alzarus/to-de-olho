@@ -3,6 +3,7 @@ package ranking
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"sort"
 	"time"
@@ -134,44 +135,23 @@ func (s *Service) CalcularRanking(ctx context.Context) (*RankingResponse, error)
 
 // CalcularScoreSenador calcula o score de um senador especifico
 func (s *Service) CalcularScoreSenador(ctx context.Context, senadorID int) (*SenadorScore, error) {
-	sen, err := s.senadorRepo.FindByID(senadorID)
+	// Reutilizar o calculo do ranking completo para garantir consistencia da posicao
+	// Como o ranking tem cache, isso e eficiente
+	ranking, err := s.CalcularRanking(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Precisamos dos maximos para normalizacao
-	// Em producao, isso poderia vir de cache
-	senadores, err := s.senadorRepo.FindAll()
-	if err != nil {
-		return nil, err
-	}
-
-	var maxPontuacaoProd float64
-	var maxPontosComissoes float64
-
-	for _, s2 := range senadores {
-		dados := s.coletarDadosBrutos(s2.ID)
-		if float64(dados.pontuacaoProposicoes) > maxPontuacaoProd {
-			maxPontuacaoProd = float64(dados.pontuacaoProposicoes)
-		}
-		if dados.pontosComissoes > maxPontosComissoes {
-			maxPontosComissoes = dados.pontosComissoes
+	// Buscar o senador no ranking
+	for _, score := range ranking.Ranking {
+		if score.SenadorID == senadorID {
+			return &score, nil
 		}
 	}
 
-	if maxPontuacaoProd == 0 {
-		maxPontuacaoProd = 1
-	}
-	if maxPontosComissoes == 0 {
-		maxPontosComissoes = 1
-	}
-
-	dados := s.coletarDadosBrutos(senadorID)
-	anoAtual := time.Now().Year()
-	score := s.calcularScoreNormalizado(*sen, dados, maxPontuacaoProd, maxPontosComissoes, anoAtual)
-
-	return &score, nil
+	return nil, fmt.Errorf("senador nao encontrado no ranking")
 }
+
 
 // dadosBrutosSenador armazena dados brutos antes da normalizacao
 type dadosBrutosSenador struct {

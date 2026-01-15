@@ -62,11 +62,20 @@ function RankingTable({ data }: { data: SenadorScore[] }) {
                   href={`/senador/${senador.senador_id}`}
                   className="group flex items-center gap-3"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <span className="text-sm font-medium">
-                      {senador.nome.charAt(0)}
-                    </span>
-                  </div>
+                  {senador.foto_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={senador.foto_url}
+                      alt={senador.nome}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <span className="text-sm font-medium">
+                        {senador.nome.charAt(0)}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <p className="font-medium text-foreground group-hover:text-primary transition-colors">
                       {senador.nome}

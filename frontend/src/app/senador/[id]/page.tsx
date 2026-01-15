@@ -111,9 +111,18 @@ export default function SenadorPage() {
       {/* Header */}
       <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-6">
-          <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <span className="text-3xl font-bold">{senador.nome.charAt(0)}</span>
-          </div>
+          {senador.foto_url ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={senador.foto_url}
+              alt={senador.nome}
+              className="h-24 w-24 rounded-2xl object-cover bg-muted"
+            />
+          ) : (
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <span className="text-3xl font-bold">{senador.nome.charAt(0)}</span>
+            </div>
+          )}
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {senador.nome}
@@ -121,7 +130,9 @@ export default function SenadorPage() {
             <div className="mt-3 flex items-center gap-2">
               <Badge variant="default">{senador.partido}</Badge>
               <Badge variant="outline">{senador.uf}</Badge>
-              <Badge variant="secondary">#{senador.posicao} no ranking</Badge>
+              <Badge className="bg-[#d4af37] text-white hover:bg-[#d4af37]/90">
+                #{senador.posicao > 0 ? senador.posicao : "-"} no ranking
+              </Badge>
             </div>
           </div>
         </div>
