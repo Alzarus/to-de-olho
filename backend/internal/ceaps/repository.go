@@ -1,6 +1,7 @@
 package ceaps
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -66,6 +67,17 @@ func (r *Repository) GetTotalByAno(senadorID int, ano int) (float64, error) {
 		Select("COALESCE(SUM(valor), 0)").
 		Where("senador_id = ? AND ano = ?", senadorID, ano).
 		Scan(&total).Error
+	return total, err
+}
+
+// GetTotal retorna total gasto por um senador em todo o mandato (todas os anos)
+func (r *Repository) GetTotal(senadorID int) (float64, error) {
+	var total float64
+	err := r.db.Model(&DespesaCEAPS{}).
+		Select("COALESCE(SUM(valor), 0)").
+		Where("senador_id = ?", senadorID).
+		Scan(&total).Error
+	fmt.Printf("[DEBUG] GetTotal SenadorID=%d Total=%f Err=%v\n", senadorID, total, err)
 	return total, err
 }
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -170,20 +172,39 @@ function RankingError({ message }: { message: string }) {
 }
 
 export default function RankingPage() {
-  const { data, isLoading, error } = useRanking();
+  const [ano, setAno] = useState<number>(2025);
+  const { data, isLoading, error } = useRanking(undefined, ano);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-12">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Ranking de Senadores
-        </h1>
-        <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
-          Avaliação objetiva dos 81 senadores brasileiros baseada em 4
-          critérios: produtividade legislativa (35%), presença em votações
-          (25%), economia de recursos (20%) e participação em comissões (20%).
-        </p>
+      <div className="mb-8 sm:flex sm:items-center sm:justify-between">
+        <div className="mb-4 sm:mb-0">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            Ranking de Senadores
+          </h1>
+          <p className="mt-2 max-w-3xl text-lg text-muted-foreground">
+            Avaliação objetiva baseada em produtividade, presença, economia e participação.
+          </p>
+        </div>
+        
+        {/* Year Selector */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="ano-select" className="text-sm font-medium text-muted-foreground">
+            Ano de referência:
+          </label>
+          <select
+            id="ano-select"
+            value={ano}
+            onChange={(e) => setAno(Number(e.target.value))}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value={2026}>2026 (Atual)</option>
+            <option value={2025}>2025</option>
+            <option value={2024}>2024</option>
+            <option value={2023}>2023</option>
+          </select>
+        </div>
       </div>
 
       {/* Criteria Cards */}
@@ -244,15 +265,13 @@ export default function RankingPage() {
 
       {/* Ranking Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>
-            Classificação Geral
-            {data && (
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                ({data.total} senadores)
-              </span>
-            )}
-          </CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Classificação Geral - {ano}</CardTitle>
+          {data && (
+            <Badge variant="outline" className="ml-2 font-normal">
+              {data.total} senadores
+            </Badge>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {isLoading && <RankingTableSkeleton />}

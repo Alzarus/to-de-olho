@@ -22,9 +22,16 @@ async function fetcher<T>(endpoint: string): Promise<T> {
 }
 
 // Ranking
-export async function getRanking(limite?: number): Promise<RankingResponse> {
-  const params = limite ? `?limite=${limite}` : "";
-  return fetcher<RankingResponse>(`/api/v1/ranking${params}`);
+export async function getRanking(
+  limite?: number,
+  ano?: number
+): Promise<RankingResponse> {
+  const params = new URLSearchParams();
+  if (limite) params.append("limite", limite.toString());
+  if (ano) params.append("ano", ano.toString());
+
+  const queryString = params.toString() ? `?${params.toString()}` : "";
+  return fetcher<RankingResponse>(`/api/v1/ranking${queryString}`);
 }
 
 export async function getMetodologia(): Promise<MetodologiaResponse> {
@@ -40,6 +47,13 @@ export async function getSenador(id: number): Promise<Senador> {
   return fetcher<Senador>(`/api/v1/senadores/${id}`);
 }
 
-export async function getSenadorScore(id: number): Promise<SenadorScore> {
-  return fetcher<SenadorScore>(`/api/v1/senadores/${id}/score`);
+export async function getSenadorScore(
+  id: number,
+  ano?: number
+): Promise<SenadorScore> {
+  const params = new URLSearchParams();
+  if (ano) params.append("ano", ano.toString());
+
+  const queryString = params.toString() ? `?${params.toString()}` : "";
+  return fetcher<SenadorScore>(`/api/v1/senadores/${id}/score${queryString}`);
 }

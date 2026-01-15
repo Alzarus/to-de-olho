@@ -76,7 +76,7 @@
 
 ---
 
-## Fase 4: Modulo de Ranking (CONCLUIDA - 13/01)
+## Fase 4: Modulo de Ranking (CONCLUIDA - 14/01)
 
 - [x] Modelo `internal/ranking/model.go` (SenadorScore, ScoreDetalhes)
 - [x] Service `internal/ranking/service.go` com calculo de scores
@@ -85,6 +85,7 @@
 - [x] Endpoints: `GET /ranking`, `GET /ranking/metodologia`, `GET /senadores/:id/score`
 - [x] Cache Redis (TTL 1h) com fallback
 - [x] Ajustes finos: Pesos RQS/MOC (x0.5), Teto CEAPS por UF, Relatorias (pendente)
+- [x] Filtro por ano (`?ano=2025`) implementado no backend
 
 ---
 
@@ -97,7 +98,7 @@
 - [x] Configurar cores do projeto (senado blue/gold)
 - [x] Layout base + identidade visual (Logo/Favicon)
 - [x] Paginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
-- [x] Integrar API backend (React Query)
+- [x] Integrar API backend (React Query) com filtro de ano
 - [ ] Graficos Recharts (radar, barras, linha)
 - [x] Acessibilidade WCAG 2.1 AA (parcial)
 
@@ -148,3 +149,19 @@ to-de-olho/frontend/
 | votacoes         | 85.877    |
 | comissao_membros | 7.186     |
 | proposicoes      | ~20.000+  |
+
+---
+
+## Melhorias e Correções (Atualizado 15/01)
+
+### Pendentes
+
+- [ ] **Fix Votações**: Corrigir ingestão de datas (`0000-12-31`) que quebra filtros por ano.
+- [ ] **Testes**: Aumentar cobertura e validar correções de ingestão.
+- [ ] **Deploy**: Configurar pipeline CI/CD final.
+
+### Realizadas
+
+- [x] **Backend CEAPS**: Correção do cálculo de total do mandato.
+- [x] **Frontend Layout**: Padronização do ícone do rodapé.
+- [x] **Frontend**: Opção "Mandato Completo" no seletor de ano.

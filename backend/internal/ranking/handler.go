@@ -20,7 +20,14 @@ func NewHandler(service *Service) *Handler {
 // GetRanking retorna o ranking geral de senadores
 // GET /api/v1/ranking
 func (h *Handler) GetRanking(c *gin.Context) {
-	ranking, err := h.service.CalcularRanking(c.Request.Context())
+	var ano *int
+	if anoStr := c.Query("ano"); anoStr != "" {
+		if a, err := strconv.Atoi(anoStr); err == nil {
+			ano = &a
+		}
+	}
+
+	ranking, err := h.service.CalcularRanking(c.Request.Context(), ano)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -46,7 +53,14 @@ func (h *Handler) GetScoreSenador(c *gin.Context) {
 		return
 	}
 
-	score, err := h.service.CalcularScoreSenador(c.Request.Context(), id)
+	var ano *int
+	if anoStr := c.Query("ano"); anoStr != "" {
+		if a, err := strconv.Atoi(anoStr); err == nil {
+			ano = &a
+		}
+	}
+
+	score, err := h.service.CalcularScoreSenador(c.Request.Context(), id, ano)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "senador nao encontrado"})
 		return

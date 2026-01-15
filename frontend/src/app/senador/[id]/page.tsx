@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,7 +71,8 @@ function SenadorError({ message }: { message: string }) {
 export default function SenadorPage() {
   const params = useParams();
   const id = Number(params.id);
-  const { data: senador, isLoading, error } = useSenadorScore(id);
+  const [ano, setAno] = useState<number>(0);
+  const { data: senador, isLoading, error } = useSenadorScore(id, ano);
 
   if (isLoading) {
     return <SenadorSkeleton />;
@@ -89,24 +92,45 @@ export default function SenadorPage() {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Breadcrumb */}
-      <nav className="mb-8" aria-label="Breadcrumb">
-        <ol className="flex items-center gap-2 text-sm text-muted-foreground">
-          <li>
-            <Link href="/" className="hover:text-foreground">
-              Início
-            </Link>
-          </li>
-          <li>/</li>
-          <li>
-            <Link href="/ranking" className="hover:text-foreground">
-              Ranking
-            </Link>
-          </li>
-          <li>/</li>
-          <li className="text-foreground">{senador.nome}</li>
-        </ol>
-      </nav>
+      {/* Breadcrumb e Seletor de Ano */}
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <nav aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 text-sm text-muted-foreground">
+            <li>
+              <Link href="/" className="hover:text-foreground">
+                Início
+              </Link>
+            </li>
+            <li>/</li>
+            <li>
+              <Link href="/ranking" className="hover:text-foreground">
+                Ranking
+              </Link>
+            </li>
+            <li>/</li>
+            <li className="text-foreground">{senador.nome}</li>
+          </ol>
+        </nav>
+
+        {/* Year Selector */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="ano-select" className="text-sm font-medium text-muted-foreground">
+            Ano:
+          </label>
+          <select
+            id="ano-select"
+            value={ano}
+            onChange={(e) => setAno(Number(e.target.value))}
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value={0}>Mandato (Todos os anos)</option>
+            <option value={2026}>2026</option>
+            <option value={2025}>2025</option>
+            <option value={2024}>2024</option>
+            <option value={2023}>2023</option>
+          </select>
+        </div>
+      </div>
 
       {/* Header */}
       <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -141,7 +165,7 @@ export default function SenadorPage() {
         <Card className="w-full sm:w-auto sm:min-w-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Score Total
+              Score Total ({ano === 0 ? "Mandato" : ano})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -239,7 +263,7 @@ export default function SenadorPage() {
         <TabsContent value="proposicoes" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Produção Legislativa</CardTitle>
+              <CardTitle>Produção Legislativa ({ano === 0 ? "Mandato" : ano})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -281,7 +305,7 @@ export default function SenadorPage() {
         <TabsContent value="votacoes" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Presença em Votações</CardTitle>
+              <CardTitle>Presença em Votações ({ano === 0 ? "Mandato" : ano})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -317,7 +341,7 @@ export default function SenadorPage() {
         <TabsContent value="ceaps" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Cota para Exercício da Atividade Parlamentar</CardTitle>
+              <CardTitle>Cota para Exercício da Atividade Parlamentar ({ano === 0 ? "Mandato" : ano})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -341,7 +365,7 @@ export default function SenadorPage() {
                     )}
                     k
                   </p>
-                  <p className="text-sm text-muted-foreground">Teto anual</p>
+                  <p className="text-sm text-muted-foreground">Teto {ano === 0 ? "no período" : "anual"}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-green-600">
@@ -363,7 +387,7 @@ export default function SenadorPage() {
         <TabsContent value="comissoes" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Participação em Comissões</CardTitle>
+              <CardTitle>Participação em Comissões ({ano === 0 ? "Mandato" : ano})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

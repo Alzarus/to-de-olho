@@ -46,21 +46,25 @@ func NewService(
 }
 
 // CalcularRanking calcula o ranking de todos os senadores
-func (s *Service) CalcularRanking(ctx context.Context) (*RankingResponse, error) {
+func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingResponse, error) {
 	// 1. Tentar buscar do cache
-	cacheKey := "ranking:geral"
+	cacheKey := "ranking:v2:geral"
+	if ano != nil {
+		cacheKey = fmt.Sprintf("ranking:v2:%d", *ano)
+	}
+
 	if s.redisClient != nil {
 		val, err := s.redisClient.Get(ctx, cacheKey).Result()
 		if err == nil {
 			var response RankingResponse
 			if err := json.Unmarshal([]byte(val), &response); err == nil {
-				slog.Info("ranking retornado do cache")
+				slog.Info("ranking retornado do cache", "key", cacheKey)
 				return &response, nil
 			}
 		}
 	}
 
-	slog.Info("iniciando calculo de ranking (cache miss)")
+	slog.Info("iniciando calculo de ranking (cache miss)", "ano", ano)
 
 	// Buscar todos os senadores
 	senadores, err := s.senadorRepo.FindAll()
@@ -75,7 +79,7 @@ func (s *Service) CalcularRanking(ctx context.Context) (*RankingResponse, error)
 	dadosBrutos := make(map[int]*dadosBrutosSenador)
 
 	for _, sen := range senadores {
-		dados := s.coletarDadosBrutos(sen.ID)
+		dados := s.coletarDadosBrutos(sen.ID, ano)
 		dadosBrutos[sen.ID] = dados
 
 		if float64(dados.pontuacaoProposicoes) > maxPontuacaoProd {
@@ -96,11 +100,11 @@ func (s *Service) CalcularRanking(ctx context.Context) (*RankingResponse, error)
 
 	// Calcular scores normalizados
 	var scores []SenadorScore
-	anoAtual := time.Now().Year()
+
 
 	for _, sen := range senadores {
 		dados := dadosBrutos[sen.ID]
-		score := s.calcularScoreNormalizado(sen, dados, maxPontuacaoProd, maxPontosComissoes, anoAtual)
+		score := s.calcularScoreNormalizado(sen, dados, maxPontuacaoProd, maxPontosComissoes, ano)
 		scores = append(scores, score)
 	}
 
@@ -116,11 +120,16 @@ func (s *Service) CalcularRanking(ctx context.Context) (*RankingResponse, error)
 
 	slog.Info("ranking calculado", "total_senadores", len(scores))
 
+	metodologia := "Score = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)"
+	if ano != nil {
+		metodologia = fmt.Sprintf("Score (Ano %d) = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)", *ano)
+	}
+
 	response := &RankingResponse{
 		Ranking:     scores,
 		Total:       len(scores),
 		CalculadoEm: time.Now(),
-		Metodologia: "Score = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)",
+		Metodologia: metodologia,
 	}
 
 	// Salvar no cache (TTL 1 hora)
@@ -134,10 +143,10 @@ func (s *Service) CalcularRanking(ctx context.Context) (*RankingResponse, error)
 }
 
 // CalcularScoreSenador calcula o score de um senador especifico
-func (s *Service) CalcularScoreSenador(ctx context.Context, senadorID int) (*SenadorScore, error) {
+func (s *Service) CalcularScoreSenador(ctx context.Context, senadorID int, ano *int) (*SenadorScore, error) {
 	// Reutilizar o calculo do ranking completo para garantir consistencia da posicao
 	// Como o ranking tem cache, isso e eficiente
-	ranking, err := s.CalcularRanking(ctx)
+	ranking, err := s.CalcularRanking(ctx, ano)
 	if err != nil {
 		return nil, err
 	}
@@ -177,11 +186,19 @@ type dadosBrutosSenador struct {
 }
 
 // coletarDadosBrutos busca dados de todos os modulos para um senador
-func (s *Service) coletarDadosBrutos(senadorID int) *dadosBrutosSenador {
+func (s *Service) coletarDadosBrutos(senadorID int, ano *int) *dadosBrutosSenador {
 	dados := &dadosBrutosSenador{}
 
 	// Proposicoes
-	if propStats, err := s.proposicaoRepo.GetStats(senadorID); err == nil {
+	var propStats *proposicao.ProposicaoStats
+	var err error
+	if ano != nil {
+		propStats, err = s.proposicaoRepo.GetStatsByAno(senadorID, *ano)
+	} else {
+		propStats, err = s.proposicaoRepo.GetStats(senadorID)
+	}
+
+	if err == nil {
 		dados.totalProposicoes = propStats.TotalProposicoes
 		dados.proposicoesAprovadas = propStats.AprovadosPlenario
 		dados.transformadasEmLei = propStats.TransformadasEmLei
@@ -189,20 +206,42 @@ func (s *Service) coletarDadosBrutos(senadorID int) *dadosBrutosSenador {
 	}
 
 	// Votacoes
-	if votStats, err := s.votacaoRepo.GetStats(senadorID); err == nil {
+	var votStats *votacao.VotacaoStats
+	if ano != nil {
+		votStats, err = s.votacaoRepo.GetStatsByAno(senadorID, *ano)
+	} else {
+		votStats, err = s.votacaoRepo.GetStats(senadorID)
+	}
+
+	if err == nil {
 		dados.totalVotacoes = votStats.TotalVotacoes
 		dados.votosRegistrados = votStats.VotosRegistrados
 		dados.taxaPresencaBruta = votStats.TaxaPresenca
 	}
 
 	// CEAPS
-	anoAtual := time.Now().Year()
-	if gastoAnual, err := s.ceapsRepo.GetTotalByAno(senadorID, anoAtual); err == nil {
-		dados.gastoAnual = gastoAnual
+	if ano != nil {
+		if gastoAnual, err := s.ceapsRepo.GetTotalByAno(senadorID, *ano); err == nil {
+			dados.gastoAnual = gastoAnual
+		}
+	} else {
+		// Mandato: Soma de todos os anos
+		gastoTotal, err := s.ceapsRepo.GetTotal(senadorID)
+		fmt.Printf("[DEBUG-SERVICE] SenadorID=%d GetTotal=%f Err=%v\n", senadorID, gastoTotal, err)
+		if err == nil {
+			dados.gastoAnual = gastoTotal
+		}
 	}
 
 	// Comissoes
-	if comStats, err := s.comissaoRepo.GetStats(senadorID); err == nil {
+	var comStats *comissao.ComissaoStats
+	if ano != nil {
+		comStats, err = s.comissaoRepo.GetStatsByAno(senadorID, *ano)
+	} else {
+		comStats, err = s.comissaoRepo.GetStats(senadorID)
+	}
+
+	if err == nil {
 		dados.comissoesAtivas = comStats.ComissoesAtivas
 		dados.comissoesTitular = comStats.ComissoesTitular
 		dados.comissoesSuplente = comStats.ComissoesSuplente
@@ -219,7 +258,7 @@ func (s *Service) calcularScoreNormalizado(
 	dados *dadosBrutosSenador,
 	maxPontuacaoProd float64,
 	maxPontosComissoes float64,
-	anoAtual int,
+	ano *int,
 ) SenadorScore {
 	// Normalizar Produtividade (0-100)
 	produtividade := (float64(dados.pontuacaoProposicoes) / maxPontuacaoProd) * 100
@@ -234,9 +273,22 @@ func (s *Service) calcularScoreNormalizado(
 	if !ok {
 		tetoMensal = 40000.0 // Fallback seguro
 	}
-	tetoAnual := tetoMensal * 12
+	var tetoPeriodo float64
+	
+	if ano != nil {
+		// Teto anual para um ano especifico
+		tetoPeriodo = tetoMensal * 12
+	} else {
+		// Teto acumulado do mandato (desde Fev/2023 ate agora)
+		inicioMandato := time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC)
+		mesesCorridos := time.Since(inicioMandato).Hours() / 24 / 30
+		if mesesCorridos < 1 {
+			mesesCorridos = 1
+		}
+		tetoPeriodo = tetoMensal * mesesCorridos
+	}
 
-	economia := (1 - (dados.gastoAnual / tetoAnual)) * 100
+	economia := (1 - (dados.gastoAnual / tetoPeriodo)) * 100
 	if economia < 0 {
 		economia = 0 // Se gastou mais que o teto, score 0
 	}
@@ -274,7 +326,7 @@ func (s *Service) calcularScoreNormalizado(
 			VotacoesParticipadas: dados.votosRegistrados,
 			TaxaPresencaBruta:    arredondar(dados.taxaPresencaBruta),
 			GastoCEAPS:           arredondar(dados.gastoAnual),
-			TetoCEAPS:            tetoAnual,
+			TetoCEAPS:            tetoPeriodo,
 			ComissoesAtivas:      dados.comissoesAtivas,
 			ComissoesTitular:     dados.comissoesTitular,
 			ComissoesSuplente:    dados.comissoesSuplente,

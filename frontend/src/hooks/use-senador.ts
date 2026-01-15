@@ -11,10 +11,10 @@ export function useSenador(id: number) {
   });
 }
 
-export function useSenadorScore(id: number) {
+export function useSenadorScore(id: number, ano?: number) {
   return useQuery({
-    queryKey: ["senador-score", id],
-    queryFn: () => getSenadorScore(id),
+    queryKey: ["senador-score", id, ano],
+    queryFn: () => getSenadorScore(id, ano),
     enabled: id > 0,
   });
 }

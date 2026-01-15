@@ -126,3 +126,66 @@ func (r *Repository) UpsertBatch(proposicoes []Proposicao) error {
 func (r *Repository) DeleteBySenadorID(senadorID int) error {
 	return r.db.Where("senador_id = ?", senadorID).Delete(&Proposicao{}).Error
 }
+
+// GetStatsByAno retorna estatisticas de proposicoes filtradas por ano de apresentacao
+func (r *Repository) GetStatsByAno(senadorID int, ano int) (*ProposicaoStats, error) {
+	var stats ProposicaoStats
+	stats.SenadorID = senadorID
+
+	var total, pecs, plps, pls, leis, plenario, tramitacao int64
+	var pontuacaoTotal int
+
+	// Filtro de data: baseado no ano_materia ou data_apresentacao
+	// O mais confiavel para "ano" costuma ser o ano_materia para proposicoes legislativas
+	yearFilter := "ano_materia = ?"
+
+	// Total de proposicoes
+	r.db.Model(&Proposicao{}).Where("senador_id = ? AND "+yearFilter, senadorID, ano).Count(&total)
+	stats.TotalProposicoes = int(total)
+
+	// PECs
+	r.db.Model(&Proposicao{}).Where("senador_id = ? AND sigla_subtipo_materia = ? AND "+yearFilter, senadorID, "PEC", ano).Count(&pecs)
+	stats.TotalPECs = int(pecs)
+
+	// PLPs
+	r.db.Model(&Proposicao{}).Where("senador_id = ? AND sigla_subtipo_materia = ? AND "+yearFilter, senadorID, "PLP", ano).Count(&plps)
+	stats.TotalPLPs = int(plps)
+
+	// PLs
+	r.db.Model(&Proposicao{}).Where("senador_id = ? AND sigla_subtipo_materia = ? AND "+yearFilter, senadorID, "PL", ano).Count(&pls)
+	stats.TotalPLs = int(pls)
+
+	// Outros
+	stats.TotalOutros = stats.TotalProposicoes - stats.TotalPECs - stats.TotalPLPs - stats.TotalPLs
+
+	// Transformadas em lei (filtro yearFilter se aplica a quando foi apresentada, nao quando virou lei, conforme metodologia de produtividade por safra)
+	r.db.Model(&Proposicao{}).Where(
+		"senador_id = ? AND estagio_tramitacao = ? AND "+yearFilter, senadorID, "TransformadoLei", ano,
+	).Count(&leis)
+	stats.TransformadasEmLei = int(leis)
+
+	// Aprovados plenario
+	r.db.Model(&Proposicao{}).Where(
+		"senador_id = ? AND estagio_tramitacao IN (?, ?) AND "+yearFilter, senadorID, "AprovadoPlenario", "TransformadoLei", ano,
+	).Count(&plenario)
+	stats.AprovadosPlenario = int(plenario)
+
+	// Em tramitacao
+	r.db.Model(&Proposicao{}).Where(
+		"senador_id = ? AND estagio_tramitacao IN (?, ?, ?) AND "+yearFilter, senadorID, "Apresentado", "EmComissao", "AprovadoComissao", ano,
+	).Count(&tramitacao)
+	stats.EmTramitacao = int(tramitacao)
+
+	// Soma de pontuacao
+	var soma struct {
+		Total int
+	}
+	r.db.Model(&Proposicao{}).
+		Select("COALESCE(SUM(pontuacao), 0) as total").
+		Where("senador_id = ? AND "+yearFilter, senadorID, ano).
+		Scan(&soma)
+	pontuacaoTotal = soma.Total
+	stats.PontuacaoTotal = pontuacaoTotal
+
+	return &stats, nil
+}
