@@ -24,22 +24,14 @@ export function Header() {
           className="flex items-center gap-3 transition-opacity hover:opacity-80"
           aria-label="Tô De Olho - Página inicial"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-6 w-6"
-              aria-hidden="true"
-            >
-              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Tô De Olho"
+            width={40}
+            height={40}
+            className="rounded-lg"
+          />
           <div className="flex flex-col">
             <span className="text-lg font-bold tracking-tight text-foreground">
               Tô De Olho
