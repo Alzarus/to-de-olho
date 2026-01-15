@@ -68,19 +68,15 @@ const (
 	TetoCEAPSMedia = 40000.0 * 12
 )
 
-// TetoCEAPSPorUF define o valor mensal do teto por estado (referencia 2024)
+// TetoCEAPSPorUF define o valor mensal do teto por estado (referencia marco 2025, reajuste 12%)
+// Fonte: Senado Federal - Ato da Comissao Diretora (atualizado 10/01/2026)
+// Media nacional: R$ 46.402,62/mes
 var TetoCEAPSPorUF = map[string]float64{
-	"DF": 33178.69,
-	"GO": 38166.97,
-	"SC": 42091.22,
-	"SP": 40381.18,
-	"RJ": 39599.93,
-	"MG": 39078.68,
-	"PR": 41851.68,
-	"RS": 43533.91,
-	"AC": 44670.36, "AL": 40995.53, "AM": 44092.38, "AP": 43574.61,
-	"BA": 40228.75, "CE": 41348.70, "ES": 37637.52, "MA": 41785.49,
-	"MT": 39434.72, "MS": 40049.91, "PA": 41656.76, "PB": 40702.40,
-	"PE": 41042.81, "PI": 40954.10, "RN": 40875.05, "RO": 43632.74,
-	"RR": 44321.49, "SE": 40166.45, "TO": 39458.74,
+	"AC": 50426.26, "AL": 44500.00, "AM": 52798.82, "AP": 51103.82,
+	"BA": 45000.00, "CE": 48245.57, "DF": 36582.46, "ES": 42000.00,
+	"GO": 36582.46, "MA": 47500.00, "MG": 40000.00, "MS": 42000.00,
+	"MT": 44500.00, "PA": 48207.30, "PB": 45000.00, "PE": 46000.00,
+	"PI": 49000.00, "PR": 43000.00, "RJ": 42000.00, "RN": 46000.00,
+	"RO": 44000.00, "RR": 51500.00, "RS": 45500.00, "SC": 42000.00,
+	"SE": 53000.00, "SP": 40000.00, "TO": 36582.46,
 }

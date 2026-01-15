@@ -32,13 +32,13 @@ const criterios = [
     nome: "Economia CEAPS",
     peso: "20%",
     descricao:
-      "Avalia o uso responsável da Cota para Exercício da Atividade Parlamentar, comparando o gasto real com o teto disponível.",
+      "Avalia o uso responsável da Cota para Exercício da Atividade Parlamentar, comparando o gasto real com o teto disponível por UF.",
     formula: "Score = (1 - (GastoReal / TetoCEAPS)) * 100",
     detalhes: [
-      "Teto varia por UF (distância de Brasília)",
-      "AC, AM, AP, PA, RO, RR: R$ 44.400/mês",
-      "GO, MS, MT, TO: R$ 35.000/mês",
-      "Demais estados: valores intermediários",
+      "Teto = Verba Indenizatória (R$ 15.000) + Verba Transporte Aéreo (varia por UF)",
+      "AM: R$ 52.798/mês (maior teto) | DF/GO/TO: R$ 36.582/mês (menor teto)",
+      "Média nacional: R$ 46.402/mês (referência março 2025, reajuste 12%)",
+      "Cada UF tem seu teto específico baseado no custo aéreo até Brasília",
       "Quanto menor o gasto, maior o score",
     ],
   },
