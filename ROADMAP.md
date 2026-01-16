@@ -1,9 +1,9 @@
 # Roadmap de Implementacao - To De Olho
 
-> Ultima atualizacao: 14/01/2026 02:00  
+> Ultima atualizacao: 16/01/2026 02:45  
 > Deadline Entrega TCC: 15/01/2026  
 > Prazo Projeto Completo: Ate a defesa (25/01 - 11/02/2026)  
-> Status: **Em desenvolvimento**
+> Status: **Frontend concluido, aguardando deploy**
 
 ---
 
@@ -15,7 +15,7 @@
 | 2    | 12-13/01 | Votacoes                               | CONCLUIDA |
 | 3    | 13-14/01 | Comissoes + Proposicoes                | CONCLUIDA |
 | 4    | 13/01    | Modulo de Ranking                      | CONCLUIDA |
-| 5    | 14/01    | Frontend Next.js                       | EM PROG   |
+| 5    | 14-16/01 | Frontend Next.js                       | CONCLUIDA |
 | 6    | 21-24/01 | Testes, polimento, deploy              | PENDENTE  |
 
 ---
@@ -89,7 +89,7 @@
 
 ---
 
-## Fase 5: Frontend Next.js (14/01 - EM ANDAMENTO)
+## Fase 5: Frontend Next.js (CONCLUIDA - 16/01)
 
 - [x] Inicializar em `to-de-olho/frontend/` com Bun
 - [x] Next.js 16.1.1 + React 19.2.3 + TypeScript 5
@@ -99,8 +99,10 @@
 - [x] Layout base + identidade visual (Logo/Favicon)
 - [x] Paginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
 - [x] Integrar API backend (React Query) com filtro de ano
+- [x] Seletor "Mandato Completo" no ranking e pagina do senador
+- [x] Tabs com estado controlado (nao reseta ao mudar ano)
+- [ ] Acessibilidade WCAG 2.1 AA (parcial)
 - [ ] Graficos Recharts (radar, barras, linha)
-- [x] Acessibilidade WCAG 2.1 AA (parcial)
 
 ---
 
@@ -152,16 +154,24 @@ to-de-olho/frontend/
 
 ---
 
-## Melhorias e Correções (Atualizado 15/01)
+## Melhorias e Correcoes (Atualizado 16/01)
 
 ### Pendentes
 
-- [ ] **Fix Votações**: Corrigir ingestão de datas (`0000-12-31`) que quebra filtros por ano.
-- [ ] **Testes**: Aumentar cobertura e validar correções de ingestão.
+- [ ] **Testes**: Aumentar cobertura e validar correcoes de ingestao.
 - [ ] **Deploy**: Configurar pipeline CI/CD final.
+- [ ] **Graficos**: Adicionar graficos Recharts (radar, barras, linha).
 
-### Realizadas
+### Realizadas (16/01)
 
-- [x] **Backend CEAPS**: Correção do cálculo de total do mandato.
-- [x] **Frontend Layout**: Padronização do ícone do rodapé.
-- [x] **Frontend**: Opção "Mandato Completo" no seletor de ano.
+- [x] **Fix Votacoes**: Corrigido parsing de datas em `sync.go` com fallback para campo `ano`.
+- [x] **Sync CEAPS**: Sincronizados dados de 2023, 2024 e 2025.
+- [x] **Frontend Ranking**: Adicionada opcao "Mandato Completo" no seletor de ano.
+- [x] **Frontend Senador**: Tabs agora usa estado controlado (nao reseta ao mudar ano).
+- [x] **Cache Redis**: Limpeza de cache para refletir novos dados.
+
+### Realizadas (15/01)
+
+- [x] **Backend CEAPS**: Correcao do calculo de total do mandato.
+- [x] **Frontend Layout**: Padronizacao do icone do rodape.
+- [x] **Frontend**: Opcao "Mandato Completo" no seletor de ano.

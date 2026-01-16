@@ -172,8 +172,12 @@ function RankingError({ message }: { message: string }) {
 }
 
 export default function RankingPage() {
-  const [ano, setAno] = useState<number>(2025);
-  const { data, isLoading, error } = useRanking(undefined, ano);
+  const [ano, setAno] = useState<number>(0);
+  // ano=0 significa "mandato completo", nao passa filtro de ano
+  const { data, isLoading, error } = useRanking(
+    undefined,
+    ano === 0 ? undefined : ano
+  );
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -184,13 +188,17 @@ export default function RankingPage() {
             Ranking de Senadores
           </h1>
           <p className="mt-2 max-w-3xl text-lg text-muted-foreground">
-            Avaliação objetiva baseada em produtividade, presença, economia e participação.
+            Avaliação objetiva baseada em produtividade, presença, economia e
+            participação.
           </p>
         </div>
-        
+
         {/* Year Selector */}
         <div className="flex items-center gap-2">
-          <label htmlFor="ano-select" className="text-sm font-medium text-muted-foreground">
+          <label
+            htmlFor="ano-select"
+            className="text-sm font-medium text-muted-foreground"
+          >
             Ano de referência:
           </label>
           <select
@@ -199,7 +207,8 @@ export default function RankingPage() {
             onChange={(e) => setAno(Number(e.target.value))}
             className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <option value={2026}>2026 (Atual)</option>
+            <option value={0}>Mandato Completo</option>
+            <option value={2026}>2026</option>
             <option value={2025}>2025</option>
             <option value={2024}>2024</option>
             <option value={2023}>2023</option>
@@ -266,7 +275,9 @@ export default function RankingPage() {
       {/* Ranking Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Classificação Geral - {ano}</CardTitle>
+          <CardTitle>
+            Classificacao Geral - {ano === 0 ? "Mandato Completo" : ano}
+          </CardTitle>
           {data && (
             <Badge variant="outline" className="ml-2 font-normal">
               {data.total} senadores

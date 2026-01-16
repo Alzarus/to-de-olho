@@ -72,6 +72,7 @@ export default function SenadorPage() {
   const params = useParams();
   const id = Number(params.id);
   const [ano, setAno] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<string>("proposicoes");
   const { data: senador, isLoading, error } = useSenadorScore(id, ano);
 
   if (isLoading) {
@@ -252,7 +253,7 @@ export default function SenadorPage() {
       </div>
 
       {/* Detailed Tabs */}
-      <Tabs defaultValue="proposicoes" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="proposicoes">Proposições</TabsTrigger>
           <TabsTrigger value="votacoes">Votações</TabsTrigger>

@@ -116,13 +116,24 @@ func (s *SyncService) SyncSenador(ctx context.Context, senadorID int) (int, erro
 // convertSessaoToVotacao converte uma sessao de votacao para modelo interno
 func (s *SyncService) convertSessaoToVotacao(sessao senadoapi.VotacaoSessaoAPI, senadorID int, siglaVoto string) Votacao {
 	var data time.Time
+	var parsed bool
+
 	if sessao.DataSessao != "" {
 		// Formato: YYYY-MM-DD ou DD/MM/YYYY
 		if t, err := time.Parse("2006-01-02", sessao.DataSessao); err == nil {
 			data = t
+			parsed = true
 		} else if t, err := time.Parse("02/01/2006", sessao.DataSessao); err == nil {
 			data = t
+			parsed = true
 		}
+	}
+
+	// Fallback: se nao conseguiu parsear a data, usa o campo Ano da API
+	// para criar uma data valida (1 de janeiro do ano)
+	// Isso garante que filtros por ano funcionem corretamente
+	if !parsed && sessao.Ano > 0 {
+		data = time.Date(sessao.Ano, time.January, 1, 0, 0, 0, 0, time.UTC)
 	}
 
 	return Votacao{
