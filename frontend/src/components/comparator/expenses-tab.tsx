@@ -192,7 +192,7 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
                     color: isDark ? "#f3f4f6" : "#111827"
                 }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ paddingTop: "20px" }} />
               <Bar dataKey="Gasto" fill="#8884d8" name="Gasto Total">
                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                  {(totalVsCapData as any[]).map((entry, index) => (
@@ -228,7 +228,7 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
                     color: isDark ? "#f3f4f6" : "#111827"
                 }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ paddingTop: "20px" }} />
               {selectedIds.map((id, index) => {
                   const scoreQ = scoreQueries[index];
                   const name = scoreQ.data?.nome || `Senador ${id}`;
@@ -264,7 +264,7 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
                     color: isDark ? "#f3f4f6" : "#111827"
                 }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ paddingTop: "20px" }} />
               {selectedIds.map((id, index) => {
                    const scoreQ = scoreQueries[index];
                    const name = scoreQ.data?.nome || `Senador ${id}`;

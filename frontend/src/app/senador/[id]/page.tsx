@@ -16,6 +16,9 @@ import { useVotosPorTipo } from "@/hooks/use-senador";
 import { fetcher } from "@/lib/api";
 import { X } from "lucide-react";
 import { CompareToggleButton } from "@/components/comparator/compare-toggle-button";
+import { SenatorRadarChart } from "@/components/senator/radar-chart";
+import { EmendasTab } from "@/components/senator/emendas-tab";
+
 
 interface VotacaoItem {
   id: number;
@@ -381,7 +384,15 @@ export default function SenadorPage() {
       </div>
 
       {/* Score Details */}
-      <div className="mb-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Score Details & Radar */}
+      <div className="mb-12 grid gap-6 lg:grid-cols-3">
+        {/* Radar Chart */}
+        <div className="lg:col-span-1 h-[400px] lg:h-auto">
+             <SenatorRadarChart score={senador} />
+        </div>
+
+        {/* Metrics Cards */}
+        <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2 content-start">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -450,6 +461,7 @@ export default function SenadorPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Detailed Tabs */}
@@ -459,6 +471,7 @@ export default function SenadorPage() {
           <TabsTrigger value="votacoes">Votações</TabsTrigger>
           <TabsTrigger value="ceaps">CEAPS</TabsTrigger>
           <TabsTrigger value="comissoes">Comissões</TabsTrigger>
+          <TabsTrigger value="emendas">Emendas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="proposicoes" className="mt-6">
@@ -615,6 +628,17 @@ export default function SenadorPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="emendas" className="mt-6">
+          <h2 className="text-2xl font-bold tracking-tight mb-4">
+            Emendas Parlamentares ({ano === 0 ? "Mandato" : ano})
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            Recursos destinados através de emendas individuais, de bancada, comissão, relator e transferências especiais (PIX).
+            Dados do Portal da Transparência.
+          </p>
+          <EmendasTab id={id} ano={ano} />
         </TabsContent>
       </Tabs>
     </div>

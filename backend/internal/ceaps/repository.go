@@ -83,7 +83,7 @@ func (r *Repository) GetTotal(senadorID int) (float64, error) {
 
 // Upsert insere ou atualiza uma despesa usando chave composta
 func (r *Repository) Upsert(despesa *DespesaCEAPS) error {
-	despesa.BeforeCreate()
+	_ = despesa.BeforeCreate(nil)
 	return r.db.Where("senador_id = ? AND cnpj_cpf = ? AND data_emissao = ? AND valor_centavos = ?",
 		despesa.SenadorID, despesa.CNPJCPF, despesa.DataEmissao, despesa.ValorCentavos).
 		Assign(*despesa).FirstOrCreate(despesa).Error

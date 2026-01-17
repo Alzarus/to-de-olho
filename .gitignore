@@ -1,0 +1,14 @@
+# Environment files
+.env
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+
+# Logs
+*.log
+
+# Editor/OS
+.DS_Store
+Thumbs.db

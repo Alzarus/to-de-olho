@@ -23,19 +23,19 @@ export function ComparatorDock() {
         <div className="flex items-center gap-4 rounded-full border border-senado-blue-100 bg-white/95 p-2 px-4 shadow-xl backdrop-blur-sm dark:border-senado-blue-800 dark:bg-senado-blue-950/90">
           <div className="flex -space-x-3">
             {selectedSenators.map((senator) => (
-              <div key={senator.id} className="relative group">
+              <div key={senator.id} className="relative z-0 transition-all hover:z-10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={senator.fotoUrl}
                   alt={senator.nome}
-                  className="h-10 w-10 rounded-full border-2 border-white object-cover dark:border-senado-blue-950"
+                  className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm dark:border-senado-blue-950"
                 />
                 <button
                   onClick={() => removeSenator(senator.id)}
-                  className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white group-hover:flex"
+                  className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-white text-muted-foreground shadow-md ring-1 ring-gray-100 transition-all hover:scale-110 hover:bg-destructive hover:text-destructive-foreground hover:ring-destructive active:scale-95 dark:bg-zinc-800 dark:ring-zinc-700"
                   aria-label={`Remover ${senator.nome}`}
                 >
-                  <X size={10} />
+                  <X size={10} strokeWidth={3} />
                 </button>
               </div>
             ))}

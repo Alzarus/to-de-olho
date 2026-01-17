@@ -4,16 +4,21 @@ import { useComparator } from "@/contexts/comparator-context";
 import { Button } from "@/components/ui/button";
 import { Trash2, Download, X as XIcon, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OverviewTab } from "@/components/comparator/overview-tab";
 import { ExpensesTab } from "@/components/comparator/expenses-tab";
 import { SuppliersTab } from "@/components/comparator/suppliers-tab";
+import { EmendasTab } from "@/components/comparator/emendas-tab";
 import { SenatorSelector } from "@/components/comparator/senator-selector";
 
 export default function ComparatorPage() {
   const { selectedSenators, clearSelection, removeSenator } = useComparator();
+  const searchParams = useSearchParams();
+  const year = Number(searchParams.get("ano")) || 2024;
+
 
   // Empty state - show the selector
   if (selectedSenators.length === 0) {
@@ -24,8 +29,8 @@ export default function ComparatorPage() {
             Comparador de Senadores
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Selecione ate 5 senadores para comparar lado a lado seus indicadores de
-            desempenho, gastos e votacoes.
+            Selecione até 5 senadores para comparar lado a lado seus indicadores de
+            desempenho, gastos e votações.
           </p>
         </div>
         
@@ -45,10 +50,10 @@ export default function ComparatorPage() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Comparacao
+            Comparação
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Analise comparativa detalhada de {selectedSenators.length} senador{selectedSenators.length !== 1 ? 'es' : ''}.
+            Análise comparativa detalhada de {selectedSenators.length} senador{selectedSenators.length !== 1 ? 'es' : ''}.
           </p>
         </div>
 
@@ -137,7 +142,7 @@ export default function ComparatorPage() {
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="overview">Visao Geral</TabsTrigger>
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
           <TabsTrigger value="cabinet">Gabinete</TabsTrigger>
           <TabsTrigger value="amendments">Emendas</TabsTrigger>
@@ -158,21 +163,14 @@ export default function ComparatorPage() {
               <CardContent className="p-6">
                 <h2 className="text-xl font-bold mb-4">Estrutura de Gabinete</h2>
                 <div className="h-64 flex items-center justify-center border-dashed border-2 rounded-lg">
-                  <span className="text-muted-foreground">Lista de Servidores em construcao</span>
+                  <span className="text-muted-foreground">Lista de Servidores em construção</span>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="amendments">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4">Emendas Parlamentares</h2>
-                <div className="h-64 flex items-center justify-center border-dashed border-2 rounded-lg">
-                  <span className="text-muted-foreground">Dados de Emendas em construcao</span>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="amendments" className="mt-6 space-y-6">
+            <EmendasTab senators={selectedSenators} year={year} />
           </TabsContent>
           
           <TabsContent value="suppliers">

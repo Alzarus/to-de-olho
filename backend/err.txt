@@ -1,0 +1,2 @@
+# github.com/Alzarus/to-de-olho/internal/emenda
+internal\emenda\sync.go:73:28: cannot use sen.ID (variable of type int) as uint value in struct literal

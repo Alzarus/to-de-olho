@@ -12,6 +12,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/api"
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
+	"github.com/Alzarus/to-de-olho/internal/emenda"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
@@ -40,6 +41,7 @@ func main() {
 		&votacao.Votacao{},
 		&comissao.ComissaoMembro{},
 		&proposicao.Proposicao{},
+		&emenda.Emenda{},
 	); err != nil {
 		slog.Error("falha no auto-migrate", "error", err)
 		os.Exit(1)

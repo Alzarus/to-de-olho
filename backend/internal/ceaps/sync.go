@@ -87,7 +87,7 @@ func (s *SyncService) convertToDespesa(d senado.DespesaCEAPSAPI, senadorID int) 
 	}
 
 	// Calcular valor em centavos para chave de idempotencia
-	despesa.BeforeCreate()
+	_ = despesa.BeforeCreate(nil)
 
 	return despesa
 }

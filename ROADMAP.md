@@ -1,6 +1,6 @@
 # Roadmap de Implementação - Tô De Olho
 
-> Última atualização: 17/01/2026 06:35  
+> Última atualização: 17/01/2026 08:40  
 > Deadline Entrega TCC: 15/01/2026 (Soft) / Defesa: 25/01 - 11/02  
 > Status: **Fase 6 - Finalização & Polimento**
 
@@ -33,13 +33,15 @@ Foco em cobrir os Requisitos Funcionais (RF) explícitos no texto do TCC que ain
   - [x] Navegação Contextual: Botão "Voltar" preserva filtros e abas.
   - [x] Correção Sync: Ajuste de timeout para volumes grandes (ex: Magno Malta).
 - [ ] **Módulo de Emendas (RF08, RF09, RF10)**
-  - Backfill CSV do Portal da Transparência.
-  - Destaque para Emendas PIX (Transferências Especiais).
-  - Mapa de distribuição geográfica simples.
-- [ ] **Comparador de Senadores (RF19)**
-  - Selecionar 2-3 senadores.
-  - Tabela comparativa: Score global, Despesas totais, % Presença, Fidelidade partidária.
-- [ ] **Visualização do Ranking (RF23)**
+  - [x] Backfill CSV do Portal da Transparência (ingestão streaming + normalização de autor).
+  - [x] Resumo anual por senador e endpoint `/senadores/:id/emendas`.
+  - [x] Destaque para Emendas PIX (Transferências Especiais).
+  - [ ] Mapa de distribuição geográfica simples.
+- [x] **Comparador de Senadores (RF19)**
+  - [x] Seleção de até 5 senadores via dock flutuante ou página dedicada.
+  - [x] Abas: Visão Geral (Radar Chart), Despesas (Gráficos), Fornecedores.
+  - [x] Filtros por UF, Partido e busca textual.
+- [x] **Visualização do Ranking (RF23)**
   - Gráfico Radar (Recharts) na página do Senador (4 eixos: Produtividade, Presença, Economia, Comissões).
 
 ### Prioridade 2: Qualidade & Deploy

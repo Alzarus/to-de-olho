@@ -103,7 +103,7 @@ export function OverviewTab({ selectedIds }: OverviewTabProps) {
                      {comparisonData.map(senator => (
                         <div key={senator.senador_id} className="flex items-center justify-between mb-2">
                              <span className="text-sm font-medium">{senator.nome}</span>
-                             <span className="text-sm font-bold">#{data.ranking.indexOf(senator) + 1}º</span>
+                             <span className="text-sm font-bold">#{data.ranking.findIndex(s => s.senador_id === senator.senador_id) + 1}º</span>
                         </div>
                     ))}
                 </CardContent>

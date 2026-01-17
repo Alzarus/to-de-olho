@@ -78,6 +78,7 @@ export interface MetodologiaCriterio {
   peso: string;
   descricao: string;
   normalizacao: string;
+  formula_detalhada?: string;
 }
 
 export interface MetodologiaResponse {
@@ -125,4 +126,35 @@ export interface DespesasAgregadoResponse {
   senador_id: number;
   total_geral: number;
   por_tipo: DespesaAgregado[];
+}
+
+// Emendas (RF08-RF10)
+export interface LocalidadeValor {
+  localidade: string;
+  valor: number;
+}
+
+export interface ResumoEmendas {
+  total_empenhado: number;
+  total_pago: number;
+  quantidade: number;
+  top_localidades: LocalidadeValor[];
+}
+
+export interface Emenda {
+  id: number;
+  senador_id: number;
+  ano: number;
+  numero: string;
+  tipo: string;
+  funcional_programatica: string;
+  localidade: string;
+  valor_empenhado: number;
+  valor_pago: number;
+  data_ultima_atualizacao: string;
+}
+
+export interface EmendasResponse {
+  emendas: Emenda[];
+  resumo?: ResumoEmendas;
 }

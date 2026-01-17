@@ -73,9 +73,9 @@ export function ComparatorRadarChart({ senators }: ComparatorRadarChartProps) {
       <CardHeader>
         <CardTitle>Comparativo de Desempenho</CardTitle>
       </CardHeader>
-      <CardContent className="h-[400px]">
+      <CardContent className="h-[450px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+          <RadarChart cx="50%" cy="45%" outerRadius="60%" data={chartData}>
             <PolarGrid stroke={isDark ? "#374151" : "#e5e7eb"} />
             <PolarAngleAxis
               dataKey="subject"
@@ -96,7 +96,11 @@ export function ComparatorRadarChart({ senators }: ComparatorRadarChartProps) {
                 fillOpacity={0.3}
               />
             ))}
-            <Legend wrapperStyle={{ paddingTop: "20px" }} />
+            <Legend 
+              wrapperStyle={{ paddingTop: "30px" }} 
+              iconType="square"
+              iconSize={10}
+            />
              <Tooltip 
                 contentStyle={{ 
                     backgroundColor: isDark ? "#1f2937" : "#ffffff",

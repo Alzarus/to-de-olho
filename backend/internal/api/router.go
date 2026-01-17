@@ -5,14 +5,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
+	"github.com/Alzarus/to-de-olho/internal/emenda"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/Alzarus/to-de-olho/pkg/senado"
+	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
@@ -57,7 +58,13 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 		// Proposicoes
 		proposicaoRepo := proposicao.NewRepository(db)
 		proposicaoHandler := proposicao.NewHandler(proposicaoRepo)
+
 		proposicaoSync := proposicao.NewSyncService(proposicaoRepo, senadorRepo, legisClient)
+
+		// Emendas (RF08-RF10)
+		emendaRepo := emenda.NewRepository(db)
+		emendaService := emenda.NewService(emendaRepo, senadorRepo)
+		emendaHandler := emenda.NewHandler(emendaService)
 
 		// Ranking
 		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo, redisClient)
@@ -83,7 +90,10 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 			senadores.GET("/:id/proposicoes/stats", proposicaoHandler.GetStats)
 			senadores.GET("/:id/proposicoes/tipos", proposicaoHandler.GetPorTipo)
 			// Score individual
+
 			senadores.GET("/:id/score", rankingHandler.GetScoreSenador)
+			// Emendas
+			senadores.GET("/:id/emendas", emendaHandler.GetBySenador)
 		}
 
 		// Votacoes (Geral)

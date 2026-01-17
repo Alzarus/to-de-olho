@@ -6,6 +6,7 @@ import type {
   VotosPorTipoResponse,
   DespesasResponse,
   DespesasAgregadoResponse,
+  EmendasResponse,
 } from "@/types/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -90,4 +91,14 @@ export async function getDespesasAgregado(
   return fetcher<DespesasAgregadoResponse>(
     `/api/v1/senadores/${id}/despesas/agregado${query}`,
   );
+}
+
+export async function getEmendas(
+  id: number,
+  ano?: number,
+): Promise<EmendasResponse> {
+  const params = new URLSearchParams();
+  if (ano) params.append("ano", ano.toString());
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return fetcher<EmendasResponse>(`/api/v1/senadores/${id}/emendas${query}`);
 }
