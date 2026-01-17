@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSenadorScore } from "@/hooks/use-senador";
+import { formatCurrency } from "@/lib/utils";
 
 function SenadorSkeleton() {
   return (
@@ -348,25 +349,15 @@ export default function SenadorPage() {
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <p className="text-3xl font-bold text-foreground">
-                    R${" "}
-                    {(senador.detalhes.gasto_ceaps / 1000).toLocaleString(
-                      "pt-BR",
-                      { minimumFractionDigits: 1 }
-                    )}
-                    k
+                    {formatCurrency(senador.detalhes.gasto_ceaps)}
                   </p>
                   <p className="text-sm text-muted-foreground">Gasto total</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-muted-foreground">
-                    R${" "}
-                    {(senador.detalhes.teto_ceaps / 1000).toLocaleString(
-                      "pt-BR",
-                      { minimumFractionDigits: 1 }
-                    )}
-                    k
+                    {formatCurrency(senador.detalhes.teto_ceaps)}
                   </p>
-                  <p className="text-sm text-muted-foreground">Teto {ano === 0 ? "no período" : "anual"}</p>
+                  <p className="text-sm text-muted-foreground">Teto {ano === 0 ? "no periodo" : "anual"}</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-green-600">
