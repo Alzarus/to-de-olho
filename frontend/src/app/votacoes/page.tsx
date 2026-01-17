@@ -125,11 +125,11 @@ function VotacoesContent() {
           </label>
           <select
             id="ano-select"
-            value={ano ?? ""}
-            onChange={(e) => updateUrl({ ano: e.target.value ? Number(e.target.value) : null, page: 1 })}
+            value={ano}
+            onChange={(e) => updateUrl({ ano: Number(e.target.value), page: 1 })}
             className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <option value="">Todos</option>
+            <option value={0}>Todos</option>
             {[2026, 2025, 2024, 2023].map((y) => (
               <option key={y} value={y}>
                 {y}

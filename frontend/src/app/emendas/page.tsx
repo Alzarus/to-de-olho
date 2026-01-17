@@ -86,8 +86,8 @@ export default function EmendasPage() {
   );
 
   const selectedSenadorObj = useMemo(() => {
-    return data?.ranking?.find((s) => s.senador_id === selectedId);
-  }, [data?.ranking, selectedId]);
+    return data?.ranking?.find((s) => s.senador_id === effectiveSelectedId);
+  }, [data?.ranking, effectiveSelectedId]);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 pb-24 sm:px-6 sm:py-12 sm:pb-12 lg:px-8">
