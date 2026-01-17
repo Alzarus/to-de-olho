@@ -23,7 +23,7 @@ func NewLegisClient() *LegisClient {
 	return &LegisClient{
 		baseURL: BaseURLLegis,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 120 * time.Second,
 		},
 	}
 }

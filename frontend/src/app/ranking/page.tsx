@@ -1,45 +1,229 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, Suspense } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, X, ChevronDown, ChevronUp } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useRanking } from "@/hooks/use-ranking";
 import type { SenadorScore } from "@/types/api";
 
-function RankingTable({ data }: { data: SenadorScore[] }) {
+const UFS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
+  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
+  "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+];
+
+const SORT_OPTIONS = [
+  { value: "score_final", label: "Score Total" },
+  { value: "produtividade", label: "Produtividade" },
+  { value: "presenca", label: "Presença" },
+  { value: "economia_cota", label: "Economia" },
+  { value: "comissoes", label: "Comissões" },
+] as const;
+
+// Componente de card expandível para mobile
+function MobileRankingCard({ senador, index }: { senador: SenadorScore; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+  
+  return (
+    <div 
+      className="border-b border-border p-4 transition-colors hover:bg-muted/50"
+      role="article"
+      aria-label={`Senador ${senador.nome}, posição ${index + 1}`}
+    >
+      <div className="flex items-center justify-between">
+        <Link
+          href={`/senador/${senador.senador_id}`}
+          className="flex items-center gap-3 flex-1"
+        >
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+              index === 0
+                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                : index === 1
+                ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                : index === 2
+                ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                : "bg-muted text-muted-foreground"
+            }`}
+            aria-label={`Posição ${index + 1}`}
+          >
+            {index + 1}
+          </div>
+          {senador.foto_url ? (
+            <img
+              src={senador.foto_url}
+              alt=""
+              aria-hidden="true"
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <span className="text-sm font-medium" aria-hidden="true">
+                {senador.nome.charAt(0)}
+              </span>
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="font-medium text-foreground truncate">{senador.nome}</p>
+            <p className="text-sm text-muted-foreground">
+              <Badge variant="secondary" className="mr-1">{senador.partido}</Badge>
+              {senador.uf}
+            </p>
+          </div>
+        </Link>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold text-primary" aria-label={`Score total: ${senador.score_final.toFixed(1)}`}>
+            {senador.score_final.toFixed(1)}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+            aria-label={expanded ? "Recolher detalhes" : "Expandir detalhes"}
+            className="h-8 w-8"
+          >
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
+      
+      {expanded && (
+        <div className="mt-4 grid grid-cols-2 gap-3 pt-3 border-t border-border" role="list" aria-label="Detalhes do score">
+          <div className="text-center p-2 rounded bg-muted/50" role="listitem">
+            <p className="text-xs text-muted-foreground">Produtividade</p>
+            <p className="text-sm font-semibold">{senador.produtividade.toFixed(1)}</p>
+          </div>
+          <div className="text-center p-2 rounded bg-muted/50" role="listitem">
+            <p className="text-xs text-muted-foreground">Presença</p>
+            <p className="text-sm font-semibold">{senador.presenca.toFixed(1)}</p>
+          </div>
+          <div className="text-center p-2 rounded bg-muted/50" role="listitem">
+            <p className="text-xs text-muted-foreground">Economia</p>
+            <p className="text-sm font-semibold">{senador.economia_cota.toFixed(1)}</p>
+          </div>
+          <div className="text-center p-2 rounded bg-muted/50" role="listitem">
+            <p className="text-xs text-muted-foreground">Comissões</p>
+            <p className="text-sm font-semibold">{senador.comissoes.toFixed(1)}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Cabeçalho de tabela clicável para ordenação
+function SortableHeader({ 
+  label, 
+  sortKey, 
+  currentSort, 
+  sortDir, 
+  onSort,
+  className = ""
+}: { 
+  label: string; 
+  sortKey: string; 
+  currentSort: string; 
+  sortDir: string;
+  onSort: (key: string) => void;
+  className?: string;
+}) {
+  const isActive = currentSort === sortKey;
+  
+  return (
+    <th 
+      className={`px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none ${className}`}
+      onClick={() => onSort(sortKey)}
+      role="columnheader"
+      aria-sort={isActive ? (sortDir === "desc" ? "descending" : "ascending") : "none"}
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && onSort(sortKey)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {isActive ? (
+          sortDir === "desc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-40" />
+        )}
+      </span>
+    </th>
+  );
+}
+
+function RankingTable({ 
+  data, 
+  sortBy, 
+  sortDir, 
+  onSort 
+}: { 
+  data: SenadorScore[]; 
+  sortBy: string; 
+  sortDir: string;
+  onSort: (key: string) => void;
+}) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full">
+      <table className="w-full" role="table" aria-label="Ranking de senadores">
         <thead>
           <tr className="border-b border-border">
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground" scope="col">
               Posição
             </th>
-            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+            <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground" scope="col">
               Senador
             </th>
-            <th className="hidden px-4 py-3 text-center text-sm font-medium text-muted-foreground sm:table-cell">
-              Produtividade
-            </th>
-            <th className="hidden px-4 py-3 text-center text-sm font-medium text-muted-foreground md:table-cell">
-              Presença
-            </th>
-            <th className="hidden px-4 py-3 text-center text-sm font-medium text-muted-foreground lg:table-cell">
-              Economia
-            </th>
-            <th className="hidden px-4 py-3 text-center text-sm font-medium text-muted-foreground lg:table-cell">
-              Comissões
-            </th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
-              Score Total
-            </th>
+            <SortableHeader 
+              label="Produtividade" 
+              sortKey="produtividade" 
+              currentSort={sortBy} 
+              sortDir={sortDir} 
+              onSort={onSort}
+              className="hidden text-center sm:table-cell"
+            />
+            <SortableHeader 
+              label="Presença" 
+              sortKey="presenca" 
+              currentSort={sortBy} 
+              sortDir={sortDir} 
+              onSort={onSort}
+              className="hidden text-center md:table-cell"
+            />
+            <SortableHeader 
+              label="Economia" 
+              sortKey="economia_cota" 
+              currentSort={sortBy} 
+              sortDir={sortDir} 
+              onSort={onSort}
+              className="hidden text-center lg:table-cell"
+            />
+            <SortableHeader 
+              label="Comissões" 
+              sortKey="comissoes" 
+              currentSort={sortBy} 
+              sortDir={sortDir} 
+              onSort={onSort}
+              className="hidden text-center lg:table-cell"
+            />
+            <SortableHeader 
+              label="Score Total" 
+              sortKey="score_final" 
+              currentSort={sortBy} 
+              sortDir={sortDir} 
+              onSort={onSort}
+              className="text-right"
+            />
           </tr>
         </thead>
         <tbody>
-          {data.map((senador) => (
+          {data.map((senador, index) => (
             <tr
               key={senador.senador_id}
               className="border-b border-border transition-colors hover:bg-muted/50"
@@ -47,16 +231,16 @@ function RankingTable({ data }: { data: SenadorScore[] }) {
               <td className="px-4 py-4">
                 <div
                   className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                    senador.posicao === 1
+                    index === 0
                       ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                      : senador.posicao === 2
+                      : index === 1
                       ? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                      : senador.posicao === 3
+                      : index === 2
                       ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {senador.posicao}
+                  {index + 1}
                 </div>
               </td>
               <td className="px-4 py-4">
@@ -65,10 +249,9 @@ function RankingTable({ data }: { data: SenadorScore[] }) {
                   className="group flex items-center gap-3"
                 >
                   {senador.foto_url ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={senador.foto_url}
-                      alt={senador.nome}
+                      alt=""
                       className="h-10 w-10 rounded-full object-cover"
                     />
                   ) : (
@@ -126,9 +309,9 @@ function RankingTable({ data }: { data: SenadorScore[] }) {
 
 function RankingTableSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4">
       {[...Array(10)].map((_, i) => (
-        <div key={i} className="flex items-center gap-4 p-4">
+        <div key={i} className="flex items-center gap-4">
           <Skeleton className="h-8 w-8 rounded-full" />
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="flex-1 space-y-2">
@@ -144,13 +327,14 @@ function RankingTableSkeleton() {
 
 function RankingError({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
+    <div className="flex flex-col items-center justify-center py-12 text-center" role="alert">
       <div className="rounded-full bg-destructive/10 p-4">
         <svg
           className="h-8 w-8 text-destructive"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -171,22 +355,39 @@ function RankingError({ message }: { message: string }) {
   );
 }
 
-import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
-// ... existing imports
-
 function RankingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // Ler filtros da URL
   const anoParam = searchParams.get("ano");
   const ano = anoParam ? Number(anoParam) : 0;
+  const partido = searchParams.get("partido") || "";
+  const uf = searchParams.get("uf") || "";
+  const sortBy = searchParams.get("ordenar") || "score_final";
+  const sortDir = searchParams.get("direcao") || "desc";
+  const search = searchParams.get("busca") || "";
+  
+  const [localSearch, setLocalSearch] = useState(search);
 
-  const updateAno = (val: number) => {
-    const p = new URLSearchParams(searchParams.toString());
-    if (val === 0) p.delete("ano");
-    else p.set("ano", String(val));
-    router.push(`/ranking?${p.toString()}`);
+  const updateUrl = (newParams: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === null || value === "" || value === 0) {
+        params.delete(key);
+      } else {
+        params.set(key, String(value));
+      }
+    });
+    router.push(`/ranking?${params.toString()}`);
+  };
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      updateUrl({ direcao: sortDir === "desc" ? "asc" : "desc" });
+    } else {
+      updateUrl({ ordenar: key, direcao: "desc" });
+    }
   };
 
   const { data, isLoading, error } = useRanking(
@@ -194,32 +395,73 @@ function RankingContent() {
     ano === 0 ? undefined : ano
   );
 
+  // Extrair lista de partidos dos dados
+  const partidos = useMemo(() => {
+    if (!data?.ranking) return [];
+    const unique = [...new Set(data.ranking.map((s) => s.partido))];
+    return unique.sort();
+  }, [data]);
+
+  // Aplicar filtros e ordenação client-side
+  const filteredData = useMemo(() => {
+    if (!data?.ranking) return [];
+    
+    let result = [...data.ranking];
+    
+    if (partido) {
+      result = result.filter((s) => s.partido === partido);
+    }
+    
+    if (uf) {
+      result = result.filter((s) => s.uf === uf);
+    }
+    
+    if (search) {
+      const searchLower = search.toLowerCase();
+      result = result.filter((s) => 
+        s.nome.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    const sortKey = sortBy as keyof SenadorScore;
+    result.sort((a, b) => {
+      const aVal = a[sortKey] as number;
+      const bVal = b[sortKey] as number;
+      return sortDir === "desc" ? bVal - aVal : aVal - bVal;
+    });
+    
+    return result;
+  }, [data, partido, uf, search, sortBy, sortDir]);
+
+  const clearFilters = () => {
+    router.push("/ranking");
+    setLocalSearch("");
+  };
+
+  const hasActiveFilters = partido || uf || search;
+
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="container mx-auto max-w-7xl px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-8 sm:flex sm:items-center sm:justify-between">
+      <header className="mb-6 sm:mb-8 sm:flex sm:items-center sm:justify-between">
         <div className="mb-4 sm:mb-0">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
             Ranking de Senadores
           </h1>
-          <p className="mt-2 max-w-3xl text-lg text-muted-foreground">
-            Avaliação objetiva baseada em produtividade, presença, economia e
-            participação.
+          <p className="mt-1 text-base text-muted-foreground sm:mt-2 sm:text-lg">
+            Avaliação objetiva baseada em produtividade, presença, economia e participação.
           </p>
         </div>
 
-        {/* Year Selector */}
+        {/* Seletor de Ano */}
         <div className="flex items-center gap-2">
-          <label
-            htmlFor="ano-select"
-            className="text-sm font-medium text-muted-foreground"
-          >
-            Ano de referência:
+          <label htmlFor="ano-select" className="text-sm font-medium text-muted-foreground">
+            Ano:
           </label>
           <select
             id="ano-select"
             value={ano}
-            onChange={(e) => updateAno(Number(e.target.value))}
+            onChange={(e) => updateUrl({ ano: Number(e.target.value) })}
             className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <option value={0}>Mandato Completo</option>
@@ -229,10 +471,10 @@ function RankingContent() {
             <option value={2023}>2023</option>
           </select>
         </div>
-      </div>
+      </header>
 
-      {/* Criteria Cards - Hidden on mobile, show on sm+ */}
-      <div className="mb-12 hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+      {/* Cards de critérios - apenas desktop */}
+      <div className="mb-6 hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4" role="region" aria-label="Critérios de avaliação">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -242,20 +484,20 @@ function RankingContent() {
           <CardContent>
             <p className="text-2xl font-bold text-primary">35%</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Proposicoes apresentadas e aprovadas
+              Proposições apresentadas e aprovadas
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Presenca
+              Presença
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-primary">25%</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Participacao em votacoes
+              Participação em votações
             </p>
           </CardContent>
         </Card>
@@ -268,47 +510,107 @@ function RankingContent() {
           <CardContent>
             <p className="text-2xl font-bold text-primary">20%</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Uso responsavel do CEAPS
+              Uso responsável do CEAPS
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Comissoes
+              Comissões
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-primary">20%</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Atuacao em comissoes
+              Atuação em comissões
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Mobile-only link to metodologia */}
-      <div className="mb-6 sm:hidden">
+      {/* Link mobile para metodologia */}
+      <div className="mb-4 sm:hidden">
         <Link
           href="/metodologia"
-          className="text-sm text-primary hover:underline"
+          className="text-sm text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
         >
-          Ver criterios de avaliacao (Produtividade 35%, Presenca 25%, Economia 20%, Comissoes 20%)
+          Ver critérios de avaliação (Produtividade 35%, Presença 25%, Economia 20%, Comissões 20%)
         </Link>
       </div>
 
-      {/* Ranking Table */}
+      {/* Tabela/Cards de Ranking */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>
-            Classificacao Geral - {ano === 0 ? "Mandato Completo" : ano}
-          </CardTitle>
-          {data && (
-            <Badge variant="outline" className="ml-2 font-normal">
-              {data.total} senadores
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle>
+              Classificação Geral - {ano === 0 ? "Mandato Completo" : ano}
+            </CardTitle>
+            <Badge variant="outline" className="font-normal">
+              {filteredData.length} senadores
             </Badge>
-          )}
+          </div>
         </CardHeader>
+        
+        {/* Barra de Filtros - dentro do card, perto da tabela */}
+        <div className="border-t border-b border-border bg-muted/30 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Busca */}
+            <div className="relative flex-1 min-w-[150px] sm:min-w-[200px] sm:max-w-xs">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <Input
+                placeholder="Buscar por nome..."
+                className="pl-9 h-9"
+                value={localSearch}
+                onChange={(e) => {
+                  setLocalSearch(e.target.value);
+                  updateUrl({ busca: e.target.value || null });
+                }}
+                aria-label="Buscar senador por nome"
+              />
+            </div>
+
+            {/* Partido */}
+            <select
+              value={partido}
+              onChange={(e) => updateUrl({ partido: e.target.value || null })}
+              className="h-9 rounded-md border border-input bg-background px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Filtrar por partido"
+            >
+              <option value="">Todos os Partidos</option>
+              {partidos.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+
+            {/* UF */}
+            <select
+              value={uf}
+              onChange={(e) => updateUrl({ uf: e.target.value || null })}
+              className="h-9 rounded-md border border-input bg-background px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Filtrar por estado"
+            >
+              <option value="">Todas as UFs</option>
+              {UFS.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+
+            {/* Limpar filtros */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-9 text-muted-foreground"
+              >
+                <X className="mr-1 h-4 w-4" aria-hidden="true" />
+                Limpar
+              </Button>
+            )}
+          </div>
+        </div>
+        
         <CardContent className="p-0">
           {isLoading && <RankingTableSkeleton />}
           {error && (
@@ -320,17 +622,42 @@ function RankingContent() {
               }
             />
           )}
-          {data && <RankingTable data={data.ranking} />}
+          {data && filteredData.length === 0 && !isLoading && (
+            <div className="py-12 text-center text-muted-foreground">
+              Nenhum senador encontrado com os filtros selecionados.
+            </div>
+          )}
+          
+          {/* Desktop: Tabela */}
+          {data && filteredData.length > 0 && (
+            <div className="hidden sm:block">
+              <RankingTable 
+                data={filteredData} 
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={handleSort}
+              />
+            </div>
+          )}
+          
+          {/* Mobile: Cards expansíveis */}
+          {data && filteredData.length > 0 && (
+            <div className="sm:hidden" role="list" aria-label="Lista de senadores">
+              {filteredData.map((senador, index) => (
+                <MobileRankingCard key={senador.senador_id} senador={senador} index={index} />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Methodology Link */}
-      <div className="mt-8 text-center">
+      {/* Link para metodologia */}
+      <div className="mt-6 text-center">
         <p className="text-sm text-muted-foreground">
           Quer entender como calculamos os scores?{" "}
           <Link
             href="/metodologia"
-            className="font-medium text-primary hover:underline"
+            className="font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           >
             Consulte nossa metodologia
           </Link>
@@ -342,7 +669,7 @@ function RankingContent() {
 
 export default function RankingPage() {
   return (
-    <Suspense fallback={<div className="container py-12 text-center">Carregando filtros...</div>}>
+    <Suspense fallback={<div className="container py-12 text-center">Carregando...</div>}>
        <RankingContent />
     </Suspense>
   );

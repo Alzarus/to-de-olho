@@ -115,10 +115,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom */}
-        <div className="mt-12 border-t border-border pt-8 text-center">
-             {/* Empty or minimal if requested */}
-        </div>
       </div>
     </footer>
   );

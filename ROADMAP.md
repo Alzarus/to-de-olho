@@ -1,6 +1,6 @@
 # Roadmap de Implementação - Tô De Olho
 
-> Última atualização: 16/01/2026 23:40  
+> Última atualização: 17/01/2026 04:15  
 > Deadline Entrega TCC: 15/01/2026 (Soft) / Defesa: 25/01 - 11/02  
 > Status: **Fase 6 - Finalização & Polimento**
 
@@ -23,10 +23,10 @@ Foco em cobrir os Requisitos Funcionais (RF) explícitos no texto do TCC que ain
 
 ### Prioridade 1: Funcionalidades Essenciais
 
-- [ ] **Tela de Votações (RF11)**
-  - Tabela paginada com filtros (Ano, Matéria).
-  - Detalhe: votação nominal, quem votou como.
-  - _Obs: Dados já existem (85k+ votações), falta apenas UI._
+- [x] **Tela de Votações (RF11)**
+  - Tabela paginada com filtros (Ano, Busca textual).
+  - Detalhe: votação nominal com filtros (Nome, Voto, Partido, UF).
+  - _Concluída: 44+ votações exibidas com paginação funcional._
 - [ ] **Módulo de Emendas (RF08, RF09, RF10)**
   - Backfill CSV do Portal da Transparência.
   - Destaque para Emendas PIX (Transferências Especiais).

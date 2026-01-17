@@ -1,13 +1,10 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -23,17 +20,16 @@ import {
 
 import { getVotacoes, Votacao } from "@/services/votacaoService";
 
-// Componente interno para envelopar no Suspense
 function VotacoesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // Ler estado da URL (ou defaults)
   const page = Number(searchParams.get("page")) || 1;
-  const currentYear = new Date().getFullYear();
   const anoParam = searchParams.get("ano");
-  const ano = anoParam ? Number(anoParam) : currentYear;
+  const ano = anoParam ? Number(anoParam) : null;
   const search = searchParams.get("search") || "";
+  const sortDir = searchParams.get("ordem") || "desc";
 
   const [data, setData] = useState<Votacao[]>([]);
   const [total, setTotal] = useState(0);
@@ -76,7 +72,7 @@ function VotacoesContent() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await getVotacoes(page, limit, ano, search);
+        const res = await getVotacoes(page, limit, ano ?? undefined, search);
         setData(res.data);
         setTotal(res.total);
       } catch (error) {
@@ -89,78 +85,105 @@ function VotacoesContent() {
     fetchData();
   }, [page, ano, search]);
 
+  // Aplicar ordenação client-side
+  const sortedData = [...data].sort((a, b) => {
+    const dateA = new Date(a.data).getTime();
+    const dateB = new Date(b.data).getTime();
+    return sortDir === "desc" ? dateB - dateA : dateA - dateB;
+  });
+
   const totalPages = Math.ceil(total / limit);
 
+  const toggleSort = () => {
+    updateUrl({ ordem: sortDir === "desc" ? "asc" : "desc" });
+  };
+
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="container mx-auto max-w-7xl px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-8 sm:flex sm:items-center sm:justify-between">
+      <header className="mb-6 sm:mb-8 sm:flex sm:items-center sm:justify-between">
         <div className="mb-4 sm:mb-0">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
             Votações Nominais
           </h1>
-          <p className="mt-2 text-lg text-muted-foreground max-w-3xl">
+          <p className="mt-1 text-base text-muted-foreground sm:mt-2 sm:text-lg">
             Acompanhe como votam os senadores nas principais matérias legislativas.
           </p>
         </div>
 
-        {/* Year Selector */}
+        {/* Seletor de Ano */}
         <div className="flex items-center gap-2">
-            <label
-                htmlFor="ano-select"
-                className="text-sm font-medium text-muted-foreground whitespace-nowrap"
-            >
-                Ano:
-            </label>
-            <select
-                id="ano-select"
-                value={ano}
-                onChange={(e) => updateUrl({ ano: Number(e.target.value), page: 1 })}
-                className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-                {[2026, 2025, 2024, 2023].map((y) => (
-                    <option key={y} value={y}>
-                        {y}
-                    </option>
-                ))}
-            </select>
+          <label
+            htmlFor="ano-select"
+            className="text-sm font-medium text-muted-foreground whitespace-nowrap"
+          >
+            Ano:
+          </label>
+          <select
+            id="ano-select"
+            value={ano ?? ""}
+            onChange={(e) => updateUrl({ ano: e.target.value ? Number(e.target.value) : null, page: 1 })}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="">Todos</option>
+            {[2026, 2025, 2024, 2023].map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
+      </header>
 
-       {/* Stats - Visual Balance */}
-       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-          <Card>
-             <CardContent className="p-6">
-                <div className="flex flex-col gap-1">
-                   <span className="text-sm font-medium text-muted-foreground">Total Votações (Ano)</span>
-                   <span className="text-2xl font-bold">{total}</span>
-                </div>
-             </CardContent>
-          </Card>
-          <Card className="sm:col-span-2">
-             <CardContent className="p-6 flex items-end h-full">
-                 <div className="w-full">
-                    <div className="relative w-full">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar por matéria (PEC, PL...) ou descrição..."
-                            className="pl-9 w-full"
-                            value={localSearch}
-                            onChange={(e) => setLocalSearch(e.target.value)}
-                        />
-                    </div>
-                 </div>
-             </CardContent>
-          </Card>
-       </div>
-
-      {/* Table */}
+      {/* Tabela */}
       <Card>
-        <CardContent className="p-0">
-          <Table>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle>Votações do Período</CardTitle>
+            <Badge variant="outline" className="font-normal">
+              {total.toLocaleString("pt-BR")} votações
+            </Badge>
+          </div>
+        </CardHeader>
+
+        {/* Barra de Filtros - dentro do card, perto da tabela */}
+        <div className="border-t border-b border-border bg-muted/30 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Busca */}
+            <div className="relative flex-1 min-w-[180px] sm:max-w-md">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <Input
+                placeholder="Buscar por matéria (PEC, PL...) ou descrição..."
+                className="pl-9 h-9"
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                aria-label="Buscar votação por matéria ou descrição"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <CardContent className="p-0 overflow-x-auto">
+          <Table role="table" aria-label="Lista de votações nominais" className="min-w-[600px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">Data</TableHead>
+                <TableHead 
+                  className="w-[100px] cursor-pointer hover:text-foreground transition-colors select-none"
+                  onClick={toggleSort}
+                  role="columnheader"
+                  aria-sort={sortDir === "desc" ? "descending" : "ascending"}
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && toggleSort()}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Data
+                    {sortDir === "desc" ? (
+                      <ArrowDown className="h-3 w-3" aria-label="Ordenado por mais recentes" />
+                    ) : (
+                      <ArrowUp className="h-3 w-3" aria-label="Ordenado por mais antigas" />
+                    )}
+                  </span>
+                </TableHead>
                 <TableHead className="w-[120px]">Sessão</TableHead>
                 <TableHead>Matéria / Descrição</TableHead>
               </TableRow>
@@ -177,18 +200,21 @@ function VotacoesContent() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : data.length === 0 ? (
+              ) : sortedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="h-24 text-center">
                     Nenhuma votação encontrada.
                   </TableCell>
                 </TableRow>
               ) : (
-                data.map((votacao) => (
+                sortedData.map((votacao) => (
                   <TableRow 
                     key={votacao.sessao_id} 
                     className="hover:bg-muted/50 cursor-pointer group"
                     onClick={() => router.push(`/votacoes/${votacao.sessao_id}?backUrl=${encodeURIComponent(`/votacoes?${searchParams.toString()}`)}`)}
+                    role="row"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && router.push(`/votacoes/${votacao.sessao_id}`)}
                   >
                     <TableCell className="font-medium whitespace-nowrap">
                        {new Date(votacao.data).getUTCDate().toString().padStart(2, '0')}/
@@ -201,9 +227,9 @@ function VotacoesContent() {
                        </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1 max-w-[200px] sm:max-w-[400px] md:max-w-none">
+                      <div className="flex flex-col gap-1 min-w-[250px]">
                         {votacao.materia && (
-                          <span className="font-semibold text-primary truncate block group-hover:text-primary/80 transition-colors">
+                          <span className="font-semibold text-primary block group-hover:text-primary/80 transition-colors">
                             {votacao.materia}
                           </span>
                         )}
@@ -220,18 +246,19 @@ function VotacoesContent() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {/* Paginação */}
       {!loading && totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
+        <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Navegação de páginas">
           <Button
             variant="outline"
             size="icon"
             onClick={() => updateUrl({ page: Math.max(1, page - 1) })}
             disabled={page === 1}
+            aria-label="Página anterior"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium" aria-current="page">
             Página {page} de {totalPages}
           </span>
           <Button
@@ -239,10 +266,11 @@ function VotacoesContent() {
             size="icon"
             onClick={() => updateUrl({ page: Math.min(totalPages, page + 1) })}
             disabled={page === totalPages}
+            aria-label="Próxima página"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
-        </div>
+        </nav>
       )}
     </div>
   );
@@ -250,7 +278,7 @@ function VotacoesContent() {
 
 export default function VotacoesPage() {
   return (
-    <Suspense fallback={<div className="container py-12 text-center">Carregando filtros...</div>}>
+    <Suspense fallback={<div className="container py-12 text-center">Carregando...</div>}>
       <VotacoesContent />
     </Suspense>
   );

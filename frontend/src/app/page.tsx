@@ -74,7 +74,7 @@ const features = [
 
 const stats = [
   { value: "81", label: "Senadores Monitorados" },
-  { value: "85.877", label: "Votações Registradas" },
+  { value: "85.877", label: "Votos Registrados" },
   { value: "4", label: "Critérios de Avaliação" },
   { value: "100%", label: "Dados Públicos" },
 ];

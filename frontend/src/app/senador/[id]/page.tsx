@@ -1,32 +1,172 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useSenadorScore } from "@/hooks/use-senador";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useSenadorScore, useSenador } from "@/hooks/use-senador";
 import { formatCurrency } from "@/lib/utils";
 import { VotosPieChart } from "@/components/votos-pie-chart";
 import { useVotosPorTipo } from "@/hooks/use-senador";
+import { fetcher } from "@/lib/api";
+import { X } from "lucide-react";
+
+interface VotacaoItem {
+  id: number;
+  sessao_id: string;
+  data: string;
+  voto: string;
+  materia: string;
+  descricao_votacao: string;
+}
+
+interface VotacoesResponse {
+  senador_id: number;
+  total: number;
+  votacoes: VotacaoItem[];
+}
+
+const VOTE_LABELS: Record<string, string> = {
+  Sim: "Sim",
+  Nao: "Não",
+  Abstencao: "Abstenção",
+  Obstrucao: "Obstrução",
+  NCom: "Não Compareceu",
+};
 
 function VotosChartWrapper({ id }: { id: number }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { data, isLoading } = useVotosPorTipo(id);
   
+  const selectedVoteType = searchParams.get("voto");
+  
+  const [votacoes, setVotacoes] = useState<VotacaoItem[]>([]);
+  const [votacoesLoading, setVotacoesLoading] = useState(false);
+
+  const updateVoteType = (type: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (type) {
+      params.set("voto", type);
+    } else {
+      params.delete("voto");
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+  
+  // Buscar votações quando tipo selecionado
+  useEffect(() => {
+    if (!selectedVoteType) {
+      setVotacoes([]);
+      return;
+    }
+    
+    const fetchVotacoes = async () => {
+      setVotacoesLoading(true);
+      try {
+        const res = await fetcher<VotacoesResponse>(`/api/v1/senadores/${id}/votacoes?limit=500`);
+        
+        const filtered = res.votacoes.filter(v => {
+          if (selectedVoteType === "Outros") {
+            const mainTypes = ["Sim", "Nao", "Abstencao", "Obstrucao"];
+            return !mainTypes.includes(v.voto);
+          }
+          return v.voto === selectedVoteType;
+        });
+        
+        setVotacoes(filtered);
+      } catch (error) {
+        console.error("Erro ao buscar votações:", error);
+      } finally {
+        setVotacoesLoading(false);
+      }
+    };
+    
+    fetchVotacoes();
+  }, [id, selectedVoteType]);
+
   if (isLoading) return <Skeleton className="h-[300px] w-full" />;
   
   if (!data || !data.por_tipo) return null;
 
+  const handleSliceClick = (voteType: string) => {
+    updateVoteType(voteType === selectedVoteType ? null : voteType);
+  };
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Distribuição de Votos</CardTitle>
+        {selectedVoteType && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => updateVoteType(null)}
+            className="text-muted-foreground"
+          >
+            <X className="mr-1 h-4 w-4" />
+            Limpar filtro
+          </Button>
+        )}
       </CardHeader>
-      <CardContent>
-         <VotosPieChart data={data.por_tipo} />
+      <CardContent className="space-y-4">
+        <VotosPieChart data={data.por_tipo} onSliceClick={handleSliceClick} />
+        
+        {/* Lista de votações filtradas */}
+        {selectedVoteType && (
+          <div className="mt-4 border-t pt-4">
+            <h4 className="text-sm font-semibold mb-3">
+              Votações com voto "{VOTE_LABELS[selectedVoteType] || selectedVoteType}"
+              {votacoes.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {votacoes.length}
+                </Badge>
+              )}
+            </h4>
+            
+            {votacoesLoading ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : votacoes.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma votação encontrada para este tipo.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {votacoes.map((v) => (
+                  <Link
+                    key={v.id}
+                    href={`/votacoes/${v.sessao_id}?backUrl=${encodeURIComponent(pathname + "?" + searchParams.toString())}`}
+                    className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {v.materia || "Sem matéria"}
+                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {v.descricao_votacao}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="shrink-0 text-xs">
+                        {new Date(v.data).toLocaleDateString("pt-BR")}
+                      </Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -92,15 +232,27 @@ function SenadorError({ message }: { message: string }) {
 
 export default function SenadorPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  
   const id = Number(params.id);
   const [ano, setAno] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<string>("proposicoes");
+  
+  // Tab control via URL
+  const activeTab = searchParams.get("tab") || "proposicoes";
+  const setActiveTab = (tab: string) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("tab", tab);
+    router.replace(`${pathname}?${newParams.toString()}`, { scroll: false });
+  };
+
   const { data: senador, isLoading, error } = useSenadorScore(id, ano);
+  const { data: senadorDetalhes } = useSenador(id);
 
   if (isLoading) {
     return <SenadorSkeleton />;
   }
-
   if (error || !senador) {
     return (
       <SenadorError
@@ -112,6 +264,15 @@ export default function SenadorPage() {
       />
     );
   }
+
+  // Encontrar mandato atual
+  const mandatoAtual = senadorDetalhes?.mandatos?.find(m => !m.fim || new Date(m.fim) > new Date()) 
+    || senadorDetalhes?.mandatos?.[0];
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Atual";
+    return new Date(dateString).toLocaleDateString("pt-BR", { month: 'short', year: 'numeric' });
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -154,7 +315,7 @@ export default function SenadorPage() {
           </select>
         </div>
       </div>
-
+      
       {/* Header */}
       <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-6">
@@ -174,12 +335,17 @@ export default function SenadorPage() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {senador.nome}
             </h1>
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="default">{senador.partido}</Badge>
               <Badge variant="outline">{senador.uf}</Badge>
               <Badge className="bg-[#d4af37] text-white hover:bg-[#d4af37]/90">
                 #{senador.posicao > 0 ? senador.posicao : "-"} no ranking
               </Badge>
+              {mandatoAtual && (
+                <Badge variant="secondary" className="ml-2">
+                  Mandato: {formatDate(mandatoAtual.inicio)} - {formatDate(mandatoAtual.fim)}
+                </Badge>
+              )}
             </div>
           </div>
         </div>

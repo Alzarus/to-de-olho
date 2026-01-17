@@ -52,6 +52,14 @@ export interface RankingResponse {
   metodologia: string;
 }
 
+export interface Mandato {
+  id: number;
+  legislatura: number;
+  inicio: string;
+  fim?: string;
+  tipo: string;
+}
+
 export interface Senador {
   id: number;
   codigo_parlamentar: number;
@@ -62,6 +70,7 @@ export interface Senador {
   foto_url?: string;
   email?: string;
   telefone?: string;
+  mandatos?: Mandato[];
 }
 
 export interface MetodologiaCriterio {
