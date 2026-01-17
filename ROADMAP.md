@@ -158,11 +158,19 @@ to-de-olho/frontend/
 
 ### Pendentes
 
-- [ ] **Testes**: Aumentar cobertura e validar correcoes de ingestao.
+- [ ] **Testes**: Aumentar cobertura e validar correções de ingestão.
 - [ ] **Deploy**: Configurar pipeline CI/CD final.
-- [ ] **Graficos**: Adicionar graficos Recharts (radar, barras, linha).
-- [ ] **Backfill Automatico**: Criar `cmd/backfill/main.go` conforme `docs/estrategia-ingestao-dados.md`.
-- [ ] **Docker Compose**: Adicionar variavel `BACKFILL_START_YEAR` para auto-sync no primeiro deploy.
+- [ ] **Gráficos**: Adicionar gráficos Recharts (radar, barras, linha).
+- [ ] **Backfill Automático**: Criar `cmd/backfill/main.go` conforme `docs/estrategia-ingestao-dados.md`.
+- [ ] **Docker Compose**: Adicionar variável `BACKFILL_START_YEAR` para auto-sync no primeiro deploy.
+- [ ] **Normalização por Mandato**: Diferenciar senadores com mandato 2019-2026 vs 2023-2030, normalizando métricas por meses de exercício efetivo.
+- [ ] **Filtros do Ranking**: Adicionar opções de filtragem e ordenação:
+  - Filtro por partido (ex: PT, PL, MDB)
+  - Filtro por UF/região
+  - Filtro por ciclo eleitoral (mandato 2019 vs 2023)
+  - Ordenação por critério individual (Produtividade, Presença, Economia, Comissões)
+  - Busca por nome do senador
+  - Paginação com opção de itens por página (10, 25, 50)
 
 ### Realizadas (16/01)
 
