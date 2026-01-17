@@ -19,13 +19,9 @@ const UFS = [
   "RS", "RO", "RR", "SC", "SP", "SE", "TO"
 ];
 
-const SORT_OPTIONS = [
-  { value: "score_final", label: "Score Total" },
-  { value: "produtividade", label: "Produtividade" },
-  { value: "presenca", label: "Presença" },
-  { value: "economia_cota", label: "Economia" },
-  { value: "comissoes", label: "Comissões" },
-] as const;
+
+
+
 
 // Componente de card expandível para mobile
 function MobileRankingCard({ senador, index }: { senador: SenadorScore; index: number }) {
@@ -57,6 +53,7 @@ function MobileRankingCard({ senador, index }: { senador: SenadorScore; index: n
             {index + 1}
           </div>
           {senador.foto_url ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={senador.foto_url}
               alt=""
@@ -94,7 +91,8 @@ function MobileRankingCard({ senador, index }: { senador: SenadorScore; index: n
           </Button>
         </div>
       </div>
-      
+
+
       {expanded && (
         <div className="mt-4 grid grid-cols-2 gap-3 pt-3 border-t border-border" role="list" aria-label="Detalhes do score">
           <div className="text-center p-2 rounded bg-muted/50" role="listitem">
@@ -220,6 +218,7 @@ function RankingTable({
               onSort={onSort}
               className="text-right"
             />
+
           </tr>
         </thead>
         <tbody>
@@ -249,6 +248,7 @@ function RankingTable({
                   className="group flex items-center gap-3"
                 >
                   {senador.foto_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={senador.foto_url}
                       alt=""
@@ -299,6 +299,7 @@ function RankingTable({
                   {senador.score_final.toFixed(1)}
                 </span>
               </td>
+
             </tr>
           ))}
         </tbody>

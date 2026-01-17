@@ -34,13 +34,25 @@ interface VotosPieChartProps {
   onSliceClick?: (voteType: string) => void;
 }
 
+const VOTE_DESCRIPTIONS: Record<string, string> = {
+  AP: "Atividade Parlamentar/Partidária",
+  LP: "Licença Particular",
+  LS: "Licença Saúde",
+  LG: "Licença Gestante",
+  LC: "Licença Conjunta",
+  MIS: "Missão Oficial",
+  NCom: "Não Compareceu",
+  "P-NR": "Presidente (Não Votou)",
+  "P-OD": "Presidente (Obstrução)",
+};
+
 export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   const { chartData, outrosDetails } = useMemo(() => {
-    const mainItems: any[] = [];
+    const mainItems: { name: string; value: number; color: string; label: string; isGroup: boolean; breakdown?: string }[] = [];
     let outrosTotal = 0;
-    const outrosBreakdown: string[] = [];
+    const outrosTypes = new Set<string>();
 
     // Ordenar para consistência visual (Sim, Não, ... resto)
     const sortedData = [...data].sort((a, b) => {
@@ -64,8 +76,13 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
         });
       } else {
         outrosTotal += item.total;
-        outrosBreakdown.push(`${item.voto}: ${item.total}`);
+        outrosTypes.add(item.voto);
       }
+    });
+
+    const outrosBreakdown = Array.from(outrosTypes).map(type => {
+        const desc = VOTE_DESCRIPTIONS[type] || "Outros";
+        return `${type}: ${desc}`;
     });
 
     if (outrosTotal > 0) {
@@ -75,11 +92,11 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
         color: COLORS.Outros,
         label: "Outros",
         isGroup: true,
-        breakdown: outrosBreakdown.join(", ")
+        breakdown: outrosBreakdown.join(" | ")
       });
     }
 
-    return { chartData: mainItems, outrosDetails: outrosBreakdown.join(", ") };
+    return { chartData: mainItems, outrosDetails: outrosBreakdown.join("\n") };
   }, [data]);
 
   const totalVotos = useMemo(() => {
@@ -94,7 +111,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
     );
   }
 
-  const handlePieEnter = (_: any, index: number) => {
+  const handlePieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
 
@@ -102,7 +119,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
     setActiveIndex(undefined);
   };
 
-  const handleClick = (entry: any, index: number) => {
+  const handleClick = (entry: { name: string }) => {
     if (onSliceClick) {
       // Se for grupo "Outros", passamos "Outros" para filtrar todos os tipos mapeados como Outros
       // O componente pai precisará saber lidar com "Outros" ou passamos null para limpar
@@ -129,7 +146,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
               dataKey="value"
               onMouseEnter={handlePieEnter}
               onMouseLeave={handlePieLeave}
-              onClick={(_, index) => handleClick(chartData[index], index)}
+              onClick={(_, index) => handleClick(chartData[index])}
               style={{ cursor: onSliceClick ? "pointer" : "default" }}
             >
               {chartData.map((entry, index) => (
@@ -146,6 +163,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
               ))}
             </Pie>
             <RechartsTooltip 
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(value: any, name: any, props: any) => {
                 const item = props.payload;
                 if (item.isGroup) {
@@ -190,7 +208,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-[200px]">
                             <p className="text-xs font-semibold mb-1">Composição:</p>
-                            <p className="text-xs opacity-90">
+                            <p className="text-xs opacity-90 whitespace-pre-line">
                               {outrosDetails}
                             </p>
                           </TooltipContent>

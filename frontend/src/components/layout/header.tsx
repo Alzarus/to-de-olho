@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { name: "Início", href: "/" },
   { name: "Ranking", href: "/ranking" },
+  { name: "Comparador", href: "/comparar" },
   { name: "Votações", href: "/votacoes" },
   { name: "Metodologia", href: "/metodologia" },
 ];

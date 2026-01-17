@@ -4,6 +4,8 @@ import type {
   Senador,
   MetodologiaResponse,
   VotosPorTipoResponse,
+  DespesasResponse,
+  DespesasAgregadoResponse,
 } from "@/types/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -26,7 +28,7 @@ export async function fetcher<T>(endpoint: string): Promise<T> {
 // Ranking
 export async function getRanking(
   limite?: number,
-  ano?: number
+  ano?: number,
 ): Promise<RankingResponse> {
   const params = new URLSearchParams();
   if (limite) params.append("limite", limite.toString());
@@ -51,7 +53,7 @@ export async function getSenador(id: number): Promise<Senador> {
 
 export async function getSenadorScore(
   id: number,
-  ano?: number
+  ano?: number,
 ): Promise<SenadorScore> {
   const params = new URLSearchParams();
   if (ano) params.append("ano", ano.toString());
@@ -61,9 +63,31 @@ export async function getSenadorScore(
 }
 
 export async function getVotosPorTipo(
-  id: number
+  id: number,
 ): Promise<VotosPorTipoResponse> {
   return fetcher<VotosPorTipoResponse>(
-    `/api/v1/senadores/${id}/votacoes/tipos`
+    `/api/v1/senadores/${id}/votacoes/tipos`,
+  );
+}
+
+export async function getDespesas(
+  id: number,
+  ano?: number,
+): Promise<DespesasResponse> {
+  const params = new URLSearchParams();
+  if (ano) params.append("ano", ano.toString());
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return fetcher<DespesasResponse>(`/api/v1/senadores/${id}/despesas${query}`);
+}
+
+export async function getDespesasAgregado(
+  id: number,
+  ano?: number,
+): Promise<DespesasAgregadoResponse> {
+  const params = new URLSearchParams();
+  if (ano) params.append("ano", ano.toString());
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return fetcher<DespesasAgregadoResponse>(
+    `/api/v1/senadores/${id}/despesas/agregado${query}`,
   );
 }

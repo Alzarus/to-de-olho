@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
 
@@ -39,8 +39,8 @@ function VotacoesContent() {
   const [localSearch, setLocalSearch] = useState(search);
   const limit = 20;
 
-  // Atualizar URL helper
-  const updateUrl = (newParams: Record<string, string | number | null>) => {
+  // Atualizar URL helper - wrapped in useCallback
+  const updateUrl = useCallback((newParams: Record<string, string | number | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(newParams).forEach(([key, value]) => {
       if (value === null || value === "" || value === 0) {
@@ -50,7 +50,7 @@ function VotacoesContent() {
       }
     });
     router.push(`/votacoes?${params.toString()}`);
-  };
+  }, [searchParams, router]);
 
   // Sync initial localSearch if URL changes externally
   useEffect(() => {
@@ -65,7 +65,7 @@ function VotacoesContent() {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [localSearch, search]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [localSearch, search, updateUrl]);
 
   // Fetch Data
   useEffect(() => {

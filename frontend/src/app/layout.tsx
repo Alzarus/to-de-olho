@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { Header, Footer } from "@/components/layout";
+import { ComparatorDock } from "@/components/comparator/comparator-dock";
 import { Providers } from "@/lib/providers";
 
 const inter = Inter({
@@ -49,7 +51,9 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
+            <ComparatorDock />
             <Footer />
+            <Toaster richColors position="top-right" />
           </div>
         </Providers>
       </body>

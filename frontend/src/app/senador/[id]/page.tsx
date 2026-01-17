@@ -15,6 +15,7 @@ import { VotosPieChart } from "@/components/votos-pie-chart";
 import { useVotosPorTipo } from "@/hooks/use-senador";
 import { fetcher } from "@/lib/api";
 import { X } from "lucide-react";
+import { CompareToggleButton } from "@/components/comparator/compare-toggle-button";
 
 interface VotacaoItem {
   id: number;
@@ -122,7 +123,7 @@ function VotosChartWrapper({ id }: { id: number }) {
         {selectedVoteType && (
           <div className="mt-4 border-t pt-4">
             <h4 className="text-sm font-semibold mb-3">
-              Votações com voto "{VOTE_LABELS[selectedVoteType] || selectedVoteType}"
+              Votações com voto &quot;{VOTE_LABELS[selectedVoteType] || selectedVoteType}&quot;
               {votacoes.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   {votacoes.length}
@@ -346,6 +347,17 @@ export default function SenadorPage() {
                   Mandato: {formatDate(mandatoAtual.inicio)} - {formatDate(mandatoAtual.fim)}
                 </Badge>
               )}
+            </div>
+            <div className="mt-4">
+              <CompareToggleButton 
+                  senator={{
+                    id: senador.senador_id,
+                    nome: senador.nome,
+                    partido: senador.partido,
+                    uf: senador.uf,
+                    fotoUrl: senador.foto_url
+                  }} 
+              />
             </div>
           </div>
         </div>

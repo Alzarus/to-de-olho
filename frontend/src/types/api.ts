@@ -98,3 +98,31 @@ export interface VotosPorTipoResponse {
   senador_id: number;
   por_tipo: VotosPorTipo[];
 }
+
+export interface Despesa {
+  ano: number;
+  mes: number;
+  senador_id: number;
+  tipo_despesa: string;
+  valor_reembolsado: number;
+  data_documento: string;
+  detalhe: string;
+  fornecedor: string;
+}
+
+export interface DespesaAgregado {
+  tipo: string;
+  total: number;
+}
+
+export interface DespesasResponse {
+  senador_id: number;
+  total: number;
+  despesas: Despesa[];
+}
+
+export interface DespesasAgregadoResponse {
+  senador_id: number;
+  total_geral: number;
+  por_tipo: DespesaAgregado[];
+}

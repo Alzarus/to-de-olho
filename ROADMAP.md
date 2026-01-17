@@ -1,6 +1,6 @@
 # Roadmap de Implementação - Tô De Olho
 
-> Última atualização: 17/01/2026 04:15  
+> Última atualização: 17/01/2026 06:35  
 > Deadline Entrega TCC: 15/01/2026 (Soft) / Defesa: 25/01 - 11/02  
 > Status: **Fase 6 - Finalização & Polimento**
 
@@ -26,7 +26,12 @@ Foco em cobrir os Requisitos Funcionais (RF) explícitos no texto do TCC que ain
 - [x] **Tela de Votações (RF11)**
   - Tabela paginada com filtros (Ano, Busca textual).
   - Detalhe: votação nominal com filtros (Nome, Voto, Partido, UF).
-  - _Concluída: 44+ votações exibidas com paginação funcional._
+  - _Concluída: Lista de votações do senador expandida (500 itens) e consistente com gráfico._
+- [x] **Página do Senador e UX (RF21)**
+  - [x] Exibição de Mandato (Início/Fim) e Badges de status.
+  - [x] Gráfico de Votos Refatorado: Agrupamento "Outros", Tooltip rico e Cores acessíveis.
+  - [x] Navegação Contextual: Botão "Voltar" preserva filtros e abas.
+  - [x] Correção Sync: Ajuste de timeout para volumes grandes (ex: Magno Malta).
 - [ ] **Módulo de Emendas (RF08, RF09, RF10)**
   - Backfill CSV do Portal da Transparência.
   - Destaque para Emendas PIX (Transferências Especiais).
