@@ -89,5 +89,6 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
 
 function isEmendaEspecial(tipo: string): boolean {
     const normalizado = tipo.toLowerCase();
-    return normalizado.includes("especial") || normalizado.includes("pix");
+    // Buscar por "especia" para capturar tanto "especial" quanto "especiais"
+    return normalizado.includes("especia") || normalizado.includes("pix");
 }
