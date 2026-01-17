@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const features = [
   {
@@ -173,53 +173,8 @@ export default function Home() {
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Link
-                    href={feature.href}
-                    className="inline-flex items-center text-sm font-medium text-primary transition-colors hover:text-primary/80"
-                  >
-                    Saiba mais
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="ml-1 h-4 w-4"
-                      aria-hidden="true"
-                    >
-                      <path d="M5 12h14" />
-                      <path d="m12 5 7 7-7 7" />
-                    </svg>
-                  </Link>
-                </CardContent>
               </Card>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-primary py-16 sm:py-20">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-primary-foreground sm:text-4xl">
-              Conheça seus representantes
-            </h2>
-            <p className="mt-4 text-lg text-primary-foreground/80">
-              Acesse o ranking completo e descubra como cada senador atua no
-              Congresso Nacional.
-            </p>
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className="mt-8"
-            >
-              <Link href="/ranking">Acessar Ranking</Link>
-            </Button>
           </div>
         </div>
       </section>

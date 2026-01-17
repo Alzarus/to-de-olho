@@ -158,13 +158,36 @@ to-de-olho/frontend/
 
 ### Pendentes
 
-- [ ] **Testes**: Aumentar cobertura e validar correções de ingestão.
+- [ ] **Testes**: Aumentar cobertura e validar correcoes de ingestao.
 - [ ] **Deploy**: Configurar pipeline CI/CD final.
-- [ ] **Gráficos**: Adicionar gráficos Recharts (radar, barras, linha).
-- [ ] **Backfill Automático**: Criar `cmd/backfill/main.go` conforme `docs/estrategia-ingestao-dados.md`.
-- [ ] **Docker Compose**: Adicionar variável `BACKFILL_START_YEAR` para auto-sync no primeiro deploy.
-- [ ] **Normalização por Mandato**: Diferenciar senadores com mandato 2019-2026 vs 2023-2030, normalizando métricas por meses de exercício efetivo.
-- [ ] **Filtros do Ranking**: Adicionar opções de filtragem e ordenação:
+- [ ] **Graficos**: Adicionar graficos Recharts (radar, barras, linha).
+- [ ] **Backfill Automatico**: Criar `cmd/backfill/main.go` conforme `docs/estrategia-ingestao-dados.md`.
+- [ ] **Docker Compose**: Adicionar variavel `BACKFILL_START_YEAR` para auto-sync no primeiro deploy.
+- [ ] **Normalizacao por Mandato**: Diferenciar senadores com mandato 2019-2026 vs 2023-2030, normalizando metricas por meses de exercicio efetivo.
+- [ ] **SEO Completo**: Otimizacao de SEO em todas as paginas:
+  - Meta tags dinamicas por pagina (`title`, `description`, `og:*`, `twitter:*`)
+  - Structured data (JSON-LD) para senadores e ranking
+  - Sitemap.xml automatico via Next.js
+  - robots.txt configurado
+  - URLs canonicas
+  - Open Graph images dinamicas para compartilhamento
+  - Alt text descritivo em todas imagens
+  - Semantic HTML (`<article>`, `<section>`, `<nav>`)
+- [ ] **Tela de Votacoes** (`/votacoes`) - RF11 do TCC:
+  - **Backend**: Endpoint `GET /api/v1/votacoes` com filtros (ano, mes, tema, senador)
+  - **Listagem**: Tabela paginada com votacoes nominais recentes
+  - **Detalhes por votacao**: Modal ou pagina com descricao, data, resultado, e voto de cada senador
+  - **Filtros**:
+    - Periodo (data inicio/fim ou ano)
+    - Tema/Materia (PEC, PL, PLP, etc.)
+    - Senador especifico (como votou em cada materia)
+    - Resultado (aprovadas, rejeitadas, obstrucao)
+  - **Visualizacao**:
+    - Lista de votos: Sim (verde), Nao (vermelho), Abstencao (amarelo), Ausente (cinza)
+    - Grafico de distribuicao de votos por votacao
+    - Estatisticas de alinhamento partidario
+  - **Mobile-first**: Cards compactos no mobile, tabela no desktop
+- [ ] **Filtros do Ranking**: Adicionar opcoes de filtragem e ordenacao:
   - Filtro por partido (ex: PT, PL, MDB)
   - Filtro por UF/região
   - Filtro por ciclo eleitoral (mandato 2019 vs 2023)

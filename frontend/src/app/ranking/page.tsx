@@ -216,8 +216,8 @@ export default function RankingPage() {
         </div>
       </div>
 
-      {/* Criteria Cards */}
-      <div className="mb-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Criteria Cards - Hidden on mobile, show on sm+ */}
+      <div className="mb-12 hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -227,20 +227,20 @@ export default function RankingPage() {
           <CardContent>
             <p className="text-2xl font-bold text-primary">35%</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Proposições apresentadas e aprovadas
+              Proposicoes apresentadas e aprovadas
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Presença
+              Presenca
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-primary">25%</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Participação em votações
+              Participacao em votacoes
             </p>
           </CardContent>
         </Card>
@@ -253,23 +253,33 @@ export default function RankingPage() {
           <CardContent>
             <p className="text-2xl font-bold text-primary">20%</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Uso responsável do CEAPS
+              Uso responsavel do CEAPS
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Comissões
+              Comissoes
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-primary">20%</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Atuação em comissões
+              Atuacao em comissoes
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Mobile-only link to metodologia */}
+      <div className="mb-6 sm:hidden">
+        <Link
+          href="/metodologia"
+          className="text-sm text-primary hover:underline"
+        >
+          Ver criterios de avaliacao (Produtividade 35%, Presenca 25%, Economia 20%, Comissoes 20%)
+        </Link>
       </div>
 
       {/* Ranking Table */}

@@ -11,8 +11,8 @@ const criterios = [
       "PECs (Propostas de Emenda Constitucional): peso x3",
       "PLPs (Projetos de Lei Complementar): peso x2",
       "PLs (Projetos de Lei): peso x1",
-      "Requerimentos e Moções: peso x0.5",
-      "Bônus por aprovação em cada estágio de tramitação",
+      "Requerimentos e Mocoes: peso x0.5",
+      "Bonus por estagio: Apresentado +1, Em Comissao +2, Aprovado Comissao +4, Aprovado Plenario +8, Transformado em Lei +16",
     ],
   },
   {
@@ -53,7 +53,7 @@ const criterios = [
       "Presidência de comissão: 5 pontos",
       "Titularidade: 3 pontos",
       "Suplência: 1 ponto",
-      "Relatorias são contabilizadas separadamente (futuro)",
+      "Relatorias nao estao contabilizadas nesta versao (planejado para versao futura)",
     ],
   },
 ];
@@ -215,16 +215,12 @@ export default function MetodologiaPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            A metodologia do ranking é inspirada no{" "}
+            A metodologia do ranking e inspirada no{" "}
             <strong>State Legislative Effectiveness Score (SLES)</strong>,
-            desenvolvido por Volden e Wiseman, adaptado para o contexto do
+            desenvolvido por Volden e Wiseman (2014; 2018), adaptado para o contexto do
             Senado brasileiro. A abordagem combina indicadores quantitativos de
-            produtividade legislativa com métricas de engajamento e
+            produtividade legislativa com metricas de engajamento e
             responsabilidade fiscal.
-          </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Este projeto foi desenvolvido como Trabalho de Conclusão de Curso
-            (TCC) do curso de Análise e Desenvolvimento de Sistemas do IFBA.
           </p>
         </CardContent>
       </Card>
