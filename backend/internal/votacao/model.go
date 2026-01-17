@@ -5,8 +5,8 @@ import "time"
 // Votacao representa um voto de um senador em uma sessao
 type Votacao struct {
 	ID              int       `gorm:"primaryKey" json:"id"`
-	SenadorID       int       `gorm:"index:idx_votacao_senador;not null" json:"senador_id"`
-	SessaoID        string    `gorm:"index:idx_votacao_sessao;not null" json:"sessao_id"`
+	SenadorID       int       `gorm:"uniqueIndex:idx_votacao_unica,priority:1;index:idx_votacao_senador;not null" json:"senador_id"`
+	SessaoID        string    `gorm:"uniqueIndex:idx_votacao_unica,priority:2;index:idx_votacao_sessao;not null" json:"sessao_id"`
 	CodigoSessao    string    `json:"codigo_sessao"`
 	Data            time.Time `gorm:"index" json:"data"`
 	Voto            string    `json:"voto"` // Sim, Nao, Abstencao, Obstrucao, NCom

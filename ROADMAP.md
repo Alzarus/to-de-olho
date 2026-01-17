@@ -170,6 +170,10 @@ to-de-olho/frontend/
 - [x] **Fix Votacoes DB**: Corrigidos 85.771 registros com ano invalido usando ano do `sessao_id`.
 - [x] **Re-sync Votacoes**: Re-sincronizadas todas as votacoes (70.432 no mandato).
 - [x] **Sync CEAPS**: Sincronizados dados de 2023, 2024, 2025 e 2026 (11 registros).
+- [x] **Integridade de Dados**: Adicionadas constraints unicas compostas em `Votacao` e `DespesaCEAPS`.
+- [x] **Idempotencia**: Corrigido Upsert para usar `FirstOrCreate` conforme documentado no ADR.
+- [x] **Limpeza Duplicatas**: Removidas 223.047 votacoes duplicadas do banco.
+- [x] **Auditoria TCC x docs x codigo**: Verificado alinhamento completo (formula, pesos, endpoints).
 - [x] **Frontend Ranking**: Adicionada opcao "Mandato Completo" no seletor de ano.
 - [x] **Frontend Senador**: Tabs agora usa estado controlado (nao reseta ao mudar ano).
 - [x] **Cache Redis**: Limpeza de cache para refletir novos dados.

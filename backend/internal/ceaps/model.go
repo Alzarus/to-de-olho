@@ -5,16 +5,16 @@ import "time"
 // DespesaCEAPS representa um lancamento da Cota para o Exercicio da Atividade Parlamentar
 type DespesaCEAPS struct {
 	ID        int       `gorm:"primaryKey" json:"id"`
-	SenadorID int       `gorm:"index:idx_despesa_senador_ano;not null" json:"senador_id"`
+	SenadorID int       `gorm:"uniqueIndex:idx_despesa_unica,priority:1;index:idx_despesa_senador_ano;not null" json:"senador_id"`
 	Ano       int       `gorm:"index:idx_despesa_senador_ano;not null" json:"ano"`
 	Mes       int       `json:"mes"`
 
 	// Dados do lancamento
 	TipoDespesa  string  `json:"tipo_despesa"`
 	Fornecedor   string  `json:"fornecedor"`
-	CNPJCPF      string  `gorm:"column:cnpj_cpf" json:"cnpj_cpf"`
+	CNPJCPF      string  `gorm:"column:cnpj_cpf;uniqueIndex:idx_despesa_unica,priority:2" json:"cnpj_cpf"`
 	Documento    string  `json:"documento,omitempty"`
-	DataEmissao  *time.Time `json:"data_emissao,omitempty"`
+	DataEmissao  *time.Time `gorm:"uniqueIndex:idx_despesa_unica,priority:3" json:"data_emissao,omitempty"`
 	Valor        float64 `json:"valor"`
 
 	// Chave natural para idempotencia (upsert)

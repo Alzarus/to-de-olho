@@ -88,9 +88,10 @@ func (r *Repository) GetVotosPorTipo(senadorID int) ([]VotosPorTipo, error) {
 	return result, err
 }
 
-// Upsert insere ou atualiza uma votacao
+// Upsert insere ou atualiza uma votacao usando chave composta (senador_id, sessao_id)
 func (r *Repository) Upsert(votacao *Votacao) error {
-	return r.db.Save(votacao).Error
+	return r.db.Where("senador_id = ? AND sessao_id = ?", votacao.SenadorID, votacao.SessaoID).
+		Assign(*votacao).FirstOrCreate(votacao).Error
 }
 
 // UpsertBatch insere ou atualiza multiplas votacoes
