@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useComparator } from "@/contexts/comparator-context";
 import { Button } from "@/components/ui/button";
-import { Trash2, Download, X as XIcon, ArrowRight } from "lucide-react";
+import { Trash2, Download, X as XIcon, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +19,7 @@ export default function ComparatorPage() {
   const { selectedSenators, clearSelection, removeSenator } = useComparator();
   const searchParams = useSearchParams();
   const year = Number(searchParams.get("ano")) || 2024;
+  const [isSelectorExpanded, setIsSelectorExpanded] = useState(true);
 
 
   // Empty state - show the selector
@@ -181,9 +183,27 @@ export default function ComparatorPage() {
 
       {/* Add More Section */}
       {selectedSenators.length < 5 && (
-        <div id="add-senators" className="mt-12 pt-8 border-t">
-          <h2 className="text-xl font-bold mb-4">Adicionar mais senadores</h2>
-          <SenatorSelector />
+        <div id="add-senators" className="mt-12 pt-8 border-t scroll-mt-20">
+          <div 
+            className="flex items-center justify-between mb-4 cursor-pointer group"
+            onClick={() => setIsSelectorExpanded(!isSelectorExpanded)}
+          >
+            <h2 className="text-xl font-bold group-hover:opacity-80 transition-opacity">
+              Adicionar mais senadores
+            </h2>
+            <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground hidden sm:inline-block">
+                    {isSelectorExpanded ? "Recolher lista" : "Expandir lista"}
+                </span>
+                <div className={`p-1 rounded-full bg-muted transition-transform duration-200 ${isSelectorExpanded ? "rotate-180" : ""}`}>
+                    <ChevronDown size={20} className="text-muted-foreground" />
+                </div>
+            </div>
+          </div>
+          
+          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isSelectorExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}>
+            <SenatorSelector />
+          </div>
         </div>
       )}
     </div>

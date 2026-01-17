@@ -62,7 +62,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
     return (
     <div className="space-y-6">
       {/* Resumo */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card>
                         <CardHeader className="pb-2">
                                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -135,7 +135,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                         <CardTitle>Mapa de Destinos dos Recursos</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
                             <div
                               className="relative h-[280px] sm:h-[320px] rounded-lg border bg-muted/30"
                               role="img"
@@ -214,7 +214,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                                                     ? "destructive"
                                                                     : "outline"
                                                             }
-                                                            className="text-xs"
+                                                            className="text-xs whitespace-normal h-auto text-left leading-tight"
                                                         >
                                                             {emenda.tipo}
                                                         </Badge>

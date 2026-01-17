@@ -321,32 +321,32 @@ export default function SenadorPage() {
       </div>
       
       {/* Header */}
-      <div className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-6">
+      <div className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col sm:flex-row items-start gap-6">
           {senador.foto_url ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={senador.foto_url}
               alt={senador.nome}
-              className="h-24 w-24 rounded-2xl object-cover bg-muted"
+              className="h-24 w-24 rounded-2xl object-cover bg-muted shrink-0"
             />
           ) : (
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
               <span className="text-3xl font-bold">{senador.nome.charAt(0)}</span>
             </div>
           )}
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground break-words">
               {senador.nome}
             </h1>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="default">{senador.partido}</Badge>
               <Badge variant="outline">{senador.uf}</Badge>
-              <Badge className="bg-[#d4af37] text-white hover:bg-[#d4af37]/90">
+              <Badge className="bg-[#d4af37] text-white hover:bg-[#d4af37]/90 whitespace-nowrap">
                 #{senador.posicao > 0 ? senador.posicao : "-"} no ranking
               </Badge>
               {mandatoAtual && (
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="secondary" className="whitespace-nowrap">
                   Mandato: {formatDate(mandatoAtual.inicio)} - {formatDate(mandatoAtual.fim)}
                 </Badge>
               )}
@@ -366,7 +366,7 @@ export default function SenadorPage() {
         </div>
 
         {/* Score Card */}
-        <Card className="w-full sm:w-auto sm:min-w-[200px]">
+        <Card className="w-full lg:w-auto lg:min-w-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Score Total ({ano === 0 ? "Mandato" : ano})
@@ -466,13 +466,15 @@ export default function SenadorPage() {
 
       {/* Detailed Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="proposicoes">Proposições</TabsTrigger>
-          <TabsTrigger value="votacoes">Votações</TabsTrigger>
-          <TabsTrigger value="ceaps">CEAPS</TabsTrigger>
-          <TabsTrigger value="comissoes">Comissões</TabsTrigger>
-          <TabsTrigger value="emendas">Emendas</TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto pb-2">
+          <TabsList className="w-full justify-start inline-flex min-w-max">
+            <TabsTrigger value="proposicoes">Proposições</TabsTrigger>
+            <TabsTrigger value="votacoes">Votações</TabsTrigger>
+            <TabsTrigger value="ceaps">CEAPS</TabsTrigger>
+            <TabsTrigger value="comissoes">Comissões</TabsTrigger>
+            <TabsTrigger value="emendas">Emendas</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="proposicoes" className="mt-6">
           <Card>

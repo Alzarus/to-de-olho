@@ -19,7 +19,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link
@@ -116,7 +116,7 @@ export function Header() {
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
         <nav
-          className="border-t border-border/40 bg-background md:hidden"
+          className="border-t border-border/40 bg-background md:hidden absolute w-full left-0 shadow-lg"
           aria-label="Menu de navegação mobile"
         >
           <ul className="container mx-auto max-w-7xl px-4 py-4 space-y-2">
