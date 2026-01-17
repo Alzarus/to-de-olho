@@ -466,7 +466,7 @@ export default function SenadorPage() {
 
       {/* Detailed Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full overflow-x-auto pb-2">
+        <div className="w-full overflow-x-auto pb-1 no-scrollbar">
           <TabsList className="w-full justify-start inline-flex min-w-max">
             <TabsTrigger value="proposicoes">Proposições</TabsTrigger>
             <TabsTrigger value="votacoes">Votações</TabsTrigger>
