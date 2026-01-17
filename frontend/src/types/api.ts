@@ -105,14 +105,14 @@ export interface Despesa {
   mes: number;
   senador_id: number;
   tipo_despesa: string;
-  valor_reembolsado: number;
+  valor: number;
   data_documento: string;
   detalhe: string;
   fornecedor: string;
 }
 
 export interface DespesaAgregado {
-  tipo: string;
+  tipo_despesa: string;
   total: number;
 }
 

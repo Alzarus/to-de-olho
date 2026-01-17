@@ -1,6 +1,7 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { getSenadorScore, getDespesasAgregado, getDespesas } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
@@ -35,9 +36,47 @@ const COLORS = [
   "#a855f7", // Purple
 ];
 
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border bg-background p-2 shadow-sm max-w-[300px] z-50">
+        <p className="font-semibold text-sm mb-2 break-words text-foreground leading-tight">
+          {label}
+        </p>
+        <div className="space-y-1">
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-4 text-xs">
+              <span style={{ color: entry.color }} className="font-medium">
+                {entry.name}:
+              </span>
+              <span className="font-bold text-foreground">
+                {formatCurrency(entry.value)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const truncate = (str: string, length: number) => {
+    return str.length > length ? str.substring(0, length) + "..." : str;
+  };
 
   // 1. Fetch Scores (for Totals vs Teto)
   const scoreQueries = useQueries({
@@ -100,17 +139,28 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
       };
   }).filter(Boolean);
 
+  const legendPayload = [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(totalVsCapData as any[]).map(d => ({
+          value: d.name,
+          type: 'square',
+          id: d.name,
+          color: d.color
+      })),
+      { value: 'Teto Disponível', type: 'square', id: 'teto', color: '#82ca9d' }
+  ];
+
   // 2. Categories
   const allCategories = new Set<string>();
   aggregatedQueries.forEach(q => {
       if (q.data?.por_tipo) {
-          q.data.por_tipo.forEach((t: { tipo: string }) => allCategories.add(t.tipo));
+          q.data.por_tipo.forEach((t: { tipo_despesa: string }) => allCategories.add(t.tipo_despesa));
       }
   });
 
   const categoryVolumes = Array.from(allCategories).map(cat => {
       const total = aggregatedQueries.reduce((acc, q) => {
-          const catData = q.data?.por_tipo?.find((t: { tipo: string }) => t.tipo === cat);
+          const catData = q.data?.por_tipo?.find((t: { tipo_despesa: string }) => t.tipo_despesa === cat);
           return acc + (catData?.total || 0);
       }, 0);
       return { category: cat, total };
@@ -128,7 +178,7 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
           const name = scoreQ.data?.nome || `Senador ${id}`;
           
           if (q.data?.por_tipo) {
-              const catData = q.data.por_tipo.find((t: { tipo: string }) => t.tipo === cat);
+              const catData = q.data.por_tipo.find((t: { tipo_despesa: string }) => t.tipo_despesa === cat);
               item[name] = catData?.total || 0;
           } else {
               item[name] = 0;
@@ -152,11 +202,23 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
           if (!evolutionMap.has(key)) {
               evolutionMap.set(key, { 
                   date: `${d.mes.toString().padStart(2, '0')}/${d.ano}`,
+                  shortDate: `${d.mes.toString().padStart(2, '0')}/${d.ano.toString().slice(2)}`,
                   sortKey: key 
               });
           }
           const item = evolutionMap.get(key);
-          item[name] = (item[name] || 0) + d.valor_reembolsado;
+          item[name] = (item[name] || 0) + d.valor;
+      });
+  });
+
+  // Ensure all senators have an entry (0 if missing) for each month
+  evolutionMap.forEach(item => {
+      selectedIds.forEach((id, index) => {
+          const scoreQ = scoreQueries[index];
+          const name = scoreQ.data?.nome || `Senador ${id}`;
+          if (item[name] === undefined) {
+              item[name] = 0;
+          }
       });
   });
 
@@ -167,6 +229,7 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
 
   return (
     <div className="space-y-8">
+
       {/* Total vs Cap */}
       <Card>
         <CardHeader>
@@ -178,11 +241,17 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               data={totalVsCapData as any[]}
               layout="vertical"
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 10, left: 10, bottom: isMobile ? 60 : 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isDark ? "#374151" : "#e5e7eb"} />
-              <XAxis type="number" tickFormatter={(val) => `R$ ${(val/1000).toFixed(0)}k`} tick={{ fill: isDark ? "#9ca3af" : "#4b5563" }} />
-              <YAxis dataKey="name" type="category" width={150} tick={{ fill: isDark ? "#9ca3af" : "#4b5563" }} />
+              <XAxis type="number" tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 12 }} />
+              <YAxis 
+                dataKey="name" 
+                type="category" 
+                width={isMobile ? 100 : 150} 
+                tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: isMobile ? 11 : 12 }} 
+                tickFormatter={(val) => truncate(val, isMobile ? 12 : 20)}
+              />
               <Tooltip 
                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                  formatter={(value: any) => formatCurrency(value)}
@@ -192,7 +261,11 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
                     color: isDark ? "#f3f4f6" : "#111827"
                 }}
               />
-              <Legend wrapperStyle={{ paddingTop: "20px" }} />
+              <Legend 
+                wrapperStyle={{ paddingTop: "10px", fontSize: isMobile ? "11px" : "12px" }} 
+                // @ts-expect-error - payload is valid in Recharts but missing in some type definitions
+                payload={legendPayload}
+              />
               <Bar dataKey="Gasto" fill="#8884d8" name="Gasto Total">
                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                  {(totalVsCapData as any[]).map((entry, index) => (
@@ -214,21 +287,27 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
            <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={categoryData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              layout="vertical"
+              margin={{ top: 20, right: 10, left: 10, bottom: isMobile ? 80 : 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="category" tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 10 }} interval={0} />
-              <YAxis tickFormatter={(val) => `R$ ${(val/1000).toFixed(0)}k`} tick={{ fill: isDark ? "#9ca3af" : "#4b5563" }} />
-              <Tooltip 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(value: any) => formatCurrency(value)}
-                contentStyle={{ 
-                    backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#e5e7eb",
-                    color: isDark ? "#f3f4f6" : "#111827"
-                }}
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isDark ? "#374151" : "#e5e7eb"} />
+              
+              {/* Swapped Axis for better readability */}
+              <XAxis type="number" tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 10 }} />
+              <YAxis 
+                dataKey="category" 
+                type="category" 
+                width={isMobile ? 110 : 200}
+                tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 10 }}
+                tickFormatter={(val) => truncate(val, isMobile ? 15 : 30)}
+                interval={0}
               />
-              <Legend wrapperStyle={{ paddingTop: "20px" }} />
+
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? "#374151" : "#f3f4f6", opacity: 0.5 }} />
+              <Legend 
+                wrapperStyle={{ paddingTop: "10px", fontSize: isMobile ? "11px" : "12px" }} 
+                formatter={(value) => truncate(value, isMobile ? 15 : 30)}
+              />
               {selectedIds.map((id, index) => {
                   const scoreQ = scoreQueries[index];
                   const name = scoreQ.data?.nome || `Senador ${id}`;
@@ -250,11 +329,15 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
             <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={evolutionData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 10, left: 10, bottom: isMobile ? 60 : 30 }}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="date" tick={{ fill: isDark ? "#9ca3af" : "#4b5563" }} />
-              <YAxis tickFormatter={(val) => `R$ ${(val/1000).toFixed(0)}k`} tick={{ fill: isDark ? "#9ca3af" : "#4b5563" }} />
+              <XAxis 
+                dataKey={isMobile ? "shortDate" : "date"} 
+                tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 11 }} 
+                interval={isMobile ? 1 : 0}
+              />
+              <YAxis tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} width={isMobile ? 40 : 60} tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 11 }} />
               <Tooltip 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: any) => formatCurrency(value)}
@@ -264,7 +347,7 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
                     color: isDark ? "#f3f4f6" : "#111827"
                 }}
               />
-              <Legend wrapperStyle={{ paddingTop: "20px" }} />
+              <Legend wrapperStyle={{ paddingTop: "20px", fontSize: isMobile ? "11px" : "12px" }} />
               {selectedIds.map((id, index) => {
                    const scoreQ = scoreQueries[index];
                    const name = scoreQ.data?.nome || `Senador ${id}`;

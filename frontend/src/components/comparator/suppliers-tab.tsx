@@ -74,7 +74,7 @@ export function SuppliersTab({ selectedIds }: SuppliersTabProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     q.data.despesas.forEach((d: any) => {
         const fornecedor = d.fornecedor || "NÃO INFORMADO";
-        suppliers.set(fornecedor, (suppliers.get(fornecedor) || 0) + d.valor_reembolsado);
+        suppliers.set(fornecedor, (suppliers.get(fornecedor) || 0) + d.valor);
     });
 
     return { id, name, color, suppliers };
