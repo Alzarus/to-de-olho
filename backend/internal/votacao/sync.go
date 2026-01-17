@@ -2,8 +2,10 @@ package votacao
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Alzarus/to-de-olho/internal/senador"
@@ -113,6 +115,91 @@ func (s *SyncService) SyncSenador(ctx context.Context, senadorID int) (int, erro
 	return count, nil
 }
 
+// SyncMetadata busca dados ricos (Datas, Ementas) da lista master e atualiza o banco
+func (s *SyncService) SyncMetadata(ctx context.Context, ano int) error {
+	slog.Info("iniciando sync de metadados (batch)", "ano", ano)
+
+	votacoesMaster, err := s.client.ListarVotacoesAno(ctx, ano)
+	if err != nil {
+		return err
+	}
+	slog.Info("sessoes encontradas na API", "total", len(votacoesMaster))
+
+	count := 0
+	for _, vMaster := range votacoesMaster {
+		// Construir ID da Sessao (ex: "12345_2024") to match existing records
+		sessaoID := strconv.Itoa(vMaster.CodigoSessao) + "_" + strconv.Itoa(vMaster.Ano)
+
+	// Parse Date + Time
+		var dataFinal time.Time
+		
+		// Try ISO 8601 first (API return for 2024 List)
+		if t, err := time.Parse("2006-01-02T15:04:05", vMaster.DataSessao); err == nil {
+			dataFinal = t
+		} else if t, err := time.Parse("2006-01-02", vMaster.DataSessao); err == nil {
+			// Fallback to noon UTC
+			dataFinal = time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, time.UTC)
+		}
+
+		// Rich Description: prioritize ementa, fallback to identificacaoMateria
+		materia := ""
+		if vMaster.IdentificacaoMateria != "" {
+			materia = vMaster.IdentificacaoMateria
+		} else if vMaster.Materia.Sigla != "" {
+			materia = fmt.Sprintf("%s %s/%s", vMaster.Materia.Sigla, vMaster.Materia.Numero, vMaster.Materia.Ano)
+		}
+		
+		descricao := vMaster.DescricaoVotacao
+		if vMaster.EmentaLegislativo != "" {
+			descricao = vMaster.EmentaLegislativo
+		}
+
+		// Update all records with this SessaoID
+		updates := map[string]interface{}{}
+		if !dataFinal.IsZero() {
+			updates["data"] = dataFinal
+		}
+		if materia != "" {
+			updates["materia"] = materia
+		}
+		if descricao != "" {
+			 updates["descricao_votacao"] = descricao
+		}
+
+		if len(updates) > 0 {
+			if err := s.repo.UpdateMetadata(sessaoID, updates); err != nil {
+				slog.Warn("falha ao atualizar metadata", "sessao", sessaoID, "err", err)
+			} else {
+				count++
+			}
+		}
+	}
+	
+	s.normalizeVotesBatch()
+
+	slog.Info("sync metadata concluido", "sessoes_atualizadas", count)
+	return nil
+}
+
+func (s *SyncService) normalizeVotesBatch() {
+	mappings := map[string]string{
+		"Não":       "Nao",
+		"Sim":       "Sim", 
+		"Obstrução": "Obstrucao",
+		"P-OD":      "Obstrucao",
+		"MIS":       "Outros",
+		"Lsp":       "Licenca", 
+		"Abstenção": "Abstencao",
+	}
+	
+	for old, new := range mappings {
+		if err := s.repo.UpdateVoteBatch(old, new); err != nil {
+			slog.Warn("falha ao normalizar voto", "old", old, "new", new, "error", err)
+		}
+	}
+}
+
+
 // convertSessaoToVotacao converte uma sessao de votacao para modelo interno
 func (s *SyncService) convertSessaoToVotacao(sessao senadoapi.VotacaoSessaoAPI, senadorID int, siglaVoto string) Votacao {
 	var data time.Time
@@ -121,10 +208,11 @@ func (s *SyncService) convertSessaoToVotacao(sessao senadoapi.VotacaoSessaoAPI, 
 	if sessao.DataSessao != "" {
 		// Formato: YYYY-MM-DD ou DD/MM/YYYY
 		if t, err := time.Parse("2006-01-02", sessao.DataSessao); err == nil {
-			data = t
+			// Definir meio-dia para evitar problemas de fuso horario
+			data = time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, time.UTC)
 			parsed = true
 		} else if t, err := time.Parse("02/01/2006", sessao.DataSessao); err == nil {
-			data = t
+			data = time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, time.UTC)
 			parsed = true
 		}
 	}
@@ -143,7 +231,8 @@ func (s *SyncService) convertSessaoToVotacao(sessao senadoapi.VotacaoSessaoAPI, 
 		}
 	}
 	if !parsed && anoFallback > 0 {
-		data = time.Date(anoFallback, time.January, 1, 0, 0, 0, 0, time.UTC)
+		// Meio-dia para evitar shift de timezone
+		data = time.Date(anoFallback, time.January, 1, 12, 0, 0, 0, time.UTC)
 	}
 
 	return Votacao{
@@ -151,8 +240,23 @@ func (s *SyncService) convertSessaoToVotacao(sessao senadoapi.VotacaoSessaoAPI, 
 		SessaoID:         strconv.Itoa(sessao.CodigoSessao) + "_" + strconv.Itoa(sessao.Ano),
 		CodigoSessao:     strconv.Itoa(sessao.CodigoSessao),
 		Data:             data,
-		Voto:             siglaVoto,
+		Voto:             normalizeVoto(siglaVoto),
 		DescricaoVotacao: sessao.DescricaoVotacao,
 		Materia:          "",
+	}
+}
+
+func normalizeVoto(voto string) string {
+	switch voto {
+	case "Não", "Nao":
+		return "Nao"
+	case "Sim":
+		return "Sim"
+	case "Obstrução", "P-OD":
+		return "Obstrucao"
+	case "Abstenção", "Abstencao":
+		return "Abstencao"
+	default:
+		return voto
 	}
 }

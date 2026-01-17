@@ -15,6 +15,12 @@ type Votacao struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+
+	// Campos populados via Join (read-only)
+	SenadorNome    string `gorm:"->" json:"senador_nome,omitempty"`
+	SenadorPartido string `gorm:"->" json:"senador_partido,omitempty"`
+	SenadorUF      string `gorm:"->" json:"senador_uf,omitempty"`
+	SenadorFoto    string `gorm:"->" json:"senador_foto,omitempty"`
 }
 
 // TableName define o nome da tabela

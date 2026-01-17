@@ -79,3 +79,13 @@ export interface MetodologiaResponse {
   criterios: MetodologiaCriterio[];
   escala: string;
 }
+
+export interface VotosPorTipo {
+  voto: string;
+  total: number;
+}
+
+export interface VotosPorTipoResponse {
+  senador_id: number;
+  por_tipo: VotosPorTipo[];
+}

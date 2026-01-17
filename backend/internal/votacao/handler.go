@@ -107,3 +107,72 @@ func (h *Handler) GetVotosPorTipo(c *gin.Context) {
 		"por_tipo":   tipos,
 	})
 }
+
+// GetAll godoc
+// @Summary Lista todas as votacoes (agrupadas por sessao)
+// @Tags votacoes
+// @Produce json
+// @Param page query int false "Pagina (default 1)"
+// @Param limit query int false "Limite (default 20)"
+// @Param ano query int false "Ano (default atual)"
+// @Param materia query string false "Filtro por materia/descricao"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/votacoes [get]
+func (h *Handler) GetAll(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	ano, _ := strconv.Atoi(c.Query("ano"))
+	materia := c.Query("materia")
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
+
+	votacoes, total, err := h.repo.FindAll(limit, offset, ano, materia)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar votacoes"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  votacoes,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
+}
+
+// GetByID godoc
+// @Summary Retorna detalhes de uma votacao e lista de votos
+// @Tags votacoes
+// @Produce json
+// @Param id path string true "ID da Sessao de Votacao"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/votacoes/{id} [get]
+func (h *Handler) GetByID(c *gin.Context) {
+	id := c.Param("id")
+
+	// Metadata da votacao
+	votacao, err := h.repo.FindByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "votacao nao encontrada"})
+		return
+	}
+
+	// Lista de votos
+	votos, err := h.repo.FindVotosBySessaoID(id)
+	if err != nil {
+		// DEBUG: Exposing error details to frontend/curl
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar votos", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"votacao": votacao,
+		"votos":   votos,
+	})
+}

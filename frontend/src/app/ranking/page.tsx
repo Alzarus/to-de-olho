@@ -171,9 +171,24 @@ function RankingError({ message }: { message: string }) {
   );
 }
 
-export default function RankingPage() {
-  const [ano, setAno] = useState<number>(0);
-  // ano=0 significa "mandato completo", nao passa filtro de ano
+import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
+// ... existing imports
+
+function RankingContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const anoParam = searchParams.get("ano");
+  const ano = anoParam ? Number(anoParam) : 0;
+
+  const updateAno = (val: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (val === 0) p.delete("ano");
+    else p.set("ano", String(val));
+    router.push(`/ranking?${p.toString()}`);
+  };
+
   const { data, isLoading, error } = useRanking(
     undefined,
     ano === 0 ? undefined : ano
@@ -204,7 +219,7 @@ export default function RankingPage() {
           <select
             id="ano-select"
             value={ano}
-            onChange={(e) => setAno(Number(e.target.value))}
+            onChange={(e) => updateAno(Number(e.target.value))}
             className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <option value={0}>Mandato Completo</option>
@@ -322,5 +337,13 @@ export default function RankingPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RankingPage() {
+  return (
+    <Suspense fallback={<div className="container py-12 text-center">Carregando filtros...</div>}>
+       <RankingContent />
+    </Suspense>
   );
 }

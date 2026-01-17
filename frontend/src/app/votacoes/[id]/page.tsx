@@ -1,0 +1,338 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, CheckCircle2, XCircle, MinusCircle, AlertCircle, HelpCircle, Search, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+import { getVotacaoById, VotacaoDetail } from "@/services/votacaoService";
+
+const VoteBadge = ({ voto }: { voto: string }) => {
+  switch (voto) {
+    case "Sim":
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">
+          <CheckCircle2 className="mr-1 h-3 w-3" /> Sim
+        </Badge>
+      );
+    case "Nao":
+      return (
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400">
+          <XCircle className="mr-1 h-3 w-3" /> Não
+        </Badge>
+      );
+    case "Abstencao":
+      return (
+        <Badge variant="secondary">
+          <MinusCircle className="mr-1 h-3 w-3" /> Abstenção
+        </Badge>
+      );
+    case "Obstrucao":
+      return (
+        <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+          <AlertCircle className="mr-1 h-3 w-3" /> Obstrução
+        </Badge>
+      );
+    default: // NCom or other
+      return (
+        <Badge variant="outline" className="text-muted-foreground">
+          <HelpCircle className="mr-1 h-3 w-3" /> {voto}
+        </Badge>
+      );
+  }
+};
+
+export default function VotacaoDetalhePage() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const backUrl = searchParams.get("backUrl") || "/votacoes";
+
+  const id = params?.id as string;
+  const [data, setData] = useState<VotacaoDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Filters
+  const [filterNome, setFilterNome] = useState("");
+  const [filterVoto, setFilterVoto] = useState("");
+  const [filterPartido, setFilterPartido] = useState("");
+  const [filterUF, setFilterUF] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await getVotacaoById(id);
+        setData(res);
+      } catch (err) {
+        console.error("Failed to fetch votacao detail", err);
+        setError("Não foi possível carregar os detalhes da votação.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-12">
+        <Skeleton className="h-8 w-64 mb-4" />
+        <Skeleton className="h-32 w-full mb-8" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+            ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-12 flex flex-col items-center justify-center min-h-[50vh]">
+        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Erro</h2>
+        <p className="text-muted-foreground mb-4">{error || "Votação não encontrada"}</p>
+        <Button asChild>
+          <Link href="/votacoes">Voltar para Votações</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const { votacao, votos } = data;
+
+  // Derived filter options
+  const partidos = Array.from(new Set(votos.map(v => v.senador_partido).filter(Boolean))).sort();
+  const ufs = Array.from(new Set(votos.map(v => v.senador_uf).filter(Boolean))).sort();
+
+  // Filter Logic
+  const filteredVotos = votos.filter(v => {
+      const matchNome = v.senador_nome.toLowerCase().includes(filterNome.toLowerCase());
+      const matchVoto = filterVoto ? (
+          filterVoto === "Outros" 
+            ? !["Sim", "Nao", "Abstencao", "Obstrucao"].includes(v.voto) 
+            : v.voto === filterVoto
+      ) : true;
+      const matchPartido = filterPartido ? v.senador_partido === filterPartido : true;
+      const matchUF = filterUF ? v.senador_uf === filterUF : true;
+
+      return matchNome && matchVoto && matchPartido && matchUF;
+  });
+
+  // Stats
+  const sim = votos.filter(v => v.voto === "Sim").length;
+  const nao = votos.filter(v => v.voto === "Nao").length;
+  const outros = votos.length - sim - nao;
+
+// ... (inside return)
+  return (
+    <div className="container mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      {/* Back Link */}
+      <div className="mb-6">
+        <Link 
+            href={backUrl}
+            className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary"
+        >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar para lista
+        </Link>
+      </div>
+
+      {/* Header Info */}
+      <div className="mb-8">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                 <Badge variant="outline" className="mb-2">{votacao.codigo_sessao}</Badge>
+                 <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl mb-2">
+                    {votacao.materia || "Sem Matéria Vinculada"}
+                 </h1>
+                 <p className="text-lg text-muted-foreground max-w-4xl">
+                    {votacao.descricao_votacao}
+                 </p>
+            </div>
+            <div className="mt-4 sm:mt-0 text-right">
+                <p className="text-sm font-medium text-muted-foreground">Data da Votação</p>
+                <p className="text-lg font-semibold">
+                    {format(new Date(votacao.data), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                    {format(new Date(votacao.data), "HH:mm", { locale: ptBR })}
+                </p>
+            </div>
+        </div>
+      </div>
+
+      {/* Scoreboard */}
+      <Card className="mb-8 bg-muted/30">
+        <CardContent className="p-6">
+            <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="flex flex-col items-center border-r border-border">
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">{sim}</span>
+                    <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Sim</span>
+                </div>
+                <div className="flex flex-col items-center border-r border-border">
+                    <span className="text-3xl font-bold text-red-600 dark:text-red-400">{nao}</span>
+                    <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Não</span>
+                </div>
+                <div className="flex flex-col items-center">
+                    <span className="text-3xl font-bold text-gray-600 dark:text-gray-400">{outros}</span>
+                    <span className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                      Outros
+                      <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground/70 hover:text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-sm">
+                              Inclui: Abstencao, Obstrucao, NCom (Nao Compareceu), 
+                              AP (Ausente por missao), P-NRV (Presente nao votou), 
+                              LS (Licenca Saude), Presidente (art. 51 RISF), entre outros.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </span>
+                </div>
+            </div>
+            {/* Progress Bar */}
+            <div className="mt-6 flex h-4 w-full overflow-hidden rounded-full bg-muted">
+                <div style={{ width: `${(sim / votos.length) * 100}%` }} className="bg-green-500" />
+                <div style={{ width: `${(nao / votos.length) * 100}%` }} className="bg-red-500" />
+                <div style={{ width: `${(outros / votos.length) * 100}%` }} className="bg-gray-400" />
+            </div>
+        </CardContent>
+      </Card>
+
+      {/* Filters */}
+      <Card className="mb-8">
+        <CardContent className="p-4 sm:p-6">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Filtrar Votos</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Search Name */}
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Nome do Senador..." 
+                        className="pl-9" 
+                        value={filterNome}
+                        onChange={(e) => setFilterNome(e.target.value)}
+                    />
+                </div>
+
+                {/* Filter Vote */}
+                <select
+                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={filterVoto}
+                    onChange={(e) => setFilterVoto(e.target.value)}
+                >
+                    <option value="">Todos os Votos</option>
+                    <option value="Sim">Sim</option>
+                    <option value="Nao">Não</option>
+                    <option value="Abstencao">Abstenção</option>
+                    <option value="Obstrucao">Obstrução</option>
+                    <option value="Outros">Outros (NCom/Art. 13)</option>
+                </select>
+
+                {/* Filter Party */}
+                <select
+                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={filterPartido}
+                    onChange={(e) => setFilterPartido(e.target.value)}
+                >
+                    <option value="">Todos os Partidos</option>
+                    {partidos.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                    ))}
+                </select>
+
+                {/* Filter UF */}
+                <select
+                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={filterUF}
+                    onChange={(e) => setFilterUF(e.target.value)}
+                >
+                    <option value="">Todas as UFs</option>
+                    {ufs.map(uf => (
+                         <option key={uf} value={uf}>{uf}</option>
+                    ))}
+                </select>
+            </div>
+            {/* Active Filters count or Clear */}
+            {(filterNome || filterVoto || filterPartido || filterUF) && (
+                <div className="mt-4 flex justify-end">
+                    <Button variant="ghost" size="sm" onClick={() => {
+                        setFilterNome("");
+                        setFilterVoto("");
+                        setFilterPartido("");
+                        setFilterUF("");
+                    }} className="text-muted-foreground hover:text-foreground">
+                        Limpar Filtros
+                    </Button>
+                </div>
+            )}
+        </CardContent>
+      </Card>
+
+      {/* List of Votes */}
+      <h2 className="text-xl font-bold mb-4">Votos dos Senadores ({filteredVotos.length})</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredVotos.map((voto) => (
+            <Card key={voto.senador_id} className="overflow-hidden hover:bg-muted/30 transition-colors">
+                <CardContent className="p-4 flex items-center gap-3">
+                    {/* Photo */}
+                     {voto.senador_foto ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={voto.senador_foto}
+                          alt={voto.senador_nome}
+                          loading="lazy"
+                          className="h-12 w-12 rounded-full object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          {voto.senador_nome.charAt(0)}
+                        </div>
+                      )}
+                    
+                    <div className="flex-1 min-w-0">
+                        <Link href={`/senador/${voto.senador_id}`} className="block truncate font-medium hover:underline">
+                            {voto.senador_nome}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                            {voto.senador_partido} - {voto.senador_uf}
+                        </p>
+                        <div className="mt-2">
+                             <VoteBadge voto={voto.voto} />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        ))}
+      </div>
+      {filteredVotos.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+              Nenhum senador encontrado com os filtros selecionados.
+          </div>
+      )}
+    </div>
+  );
+}

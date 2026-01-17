@@ -33,6 +33,9 @@ export function Footer() {
               Plataforma de transparência e acompanhamento da atuação dos
               senadores brasileiros com dados abertos.
             </p>
+            <p className="max-w-xs text-xs text-muted-foreground mt-2">
+               Dados atualizados em tempo real via APIs oficiais.
+            </p>
           </div>
 
           {/* Links - Projeto */}
@@ -113,13 +116,8 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
-          <p className="text-sm text-muted-foreground">
-            Projeto de código aberto para transparência legislativa
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Dados atualizados em tempo real via APIs oficiais
-          </p>
+        <div className="mt-12 border-t border-border pt-8 text-center">
+             {/* Empty or minimal if requested */}
         </div>
       </div>
     </footer>

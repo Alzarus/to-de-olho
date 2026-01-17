@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getSenador, getSenadorScore } from "@/lib/api";
+import { getSenador, getSenadorScore, getVotosPorTipo } from "@/lib/api";
 
 export function useSenador(id: number) {
   return useQuery({
@@ -15,6 +15,14 @@ export function useSenadorScore(id: number, ano?: number) {
   return useQuery({
     queryKey: ["senador-score", id, ano],
     queryFn: () => getSenadorScore(id, ano),
+    enabled: id > 0,
+  });
+}
+
+export function useVotosPorTipo(id: number) {
+  return useQuery({
+    queryKey: ["senador-votos-tipo", id],
+    queryFn: () => getVotosPorTipo(id),
     enabled: id > 0,
   });
 }

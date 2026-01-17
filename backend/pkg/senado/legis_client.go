@@ -143,14 +143,17 @@ type VotacaoResponse []VotacaoSessaoAPI
 
 // VotacaoSessaoAPI representa uma sessao de votacao
 type VotacaoSessaoAPI struct {
-	Ano              int               `json:"ano"`
-	CodigoSessao     int               `json:"codigoSessao"`
-	DataSessao       string            `json:"dataSessao"`
-	DescricaoVotacao string            `json:"descricaoVotacao"`
-	VotacaoSecreta   string            `json:"votacaoSecreta"`
-	TotalVotosSim    int               `json:"totalVotosSim"`
-	TotalVotosNao    int               `json:"totalVotosNao"`
-	Votos            []VotoParlamentar `json:"votos"`
+	Ano                int               `json:"ano"`
+	CodigoSessao       int               `json:"codigoSessao"`
+	DataSessao         string            `json:"dataSessao"`
+	DescricaoVotacao   string            `json:"descricaoVotacao"`
+	EmentaLegislativo  string            `json:"ementaLegislativo"`
+	IdentificacaoMateria string          `json:"identificacaoMateria"` // Ex: "PEC 10/2024"
+	Materia            MateriaRes        `json:"materia"`
+	VotacaoSecreta     string            `json:"votacaoSecreta"`
+	TotalVotosSim      int               `json:"totalVotosSim"`
+	TotalVotosNao      int               `json:"totalVotosNao"`
+	Votos              []VotoParlamentar `json:"votos"`
 }
 
 // VotoParlamentar representa o voto de um parlamentar
@@ -296,4 +299,94 @@ func (c *LegisClient) ListarProposicoesParlamentar(ctx context.Context, codigoPa
 	}
 
 	return result, nil
+}
+
+// ListaVotacoesResponse representa a resposta de master list
+type ListaVotacoesResponse struct {
+	ListaVotacoes struct {
+		Votacoes struct {
+			Votacao []VotacaoMasterAPI `json:"Votacao"`
+		} `json:"Votacoes"`
+	} `json:"ListaVotacoes"`
+}
+
+// VotacaoMasterAPI representa uma votacao na lista master (dados ricos)
+type VotacaoMasterAPI struct {
+	CodigoSessao     string     `json:"CodigoSessao"`
+	DataSessao       string     `json:"DataSessao"`        // YYYY-MM-DD
+	HoraInicio       string     `json:"HoraInicio"`        // HH:MM:SS
+	DescricaoVotacao string     `json:"DescricaoVotacao"`
+	Materia          MateriaRes `json:"Materia"`
+	Sequencial       string     `json:"Sequencial"` // 1, 2, 3...
+}
+
+type MateriaRes struct {
+	Sigla  string `json:"Sigla"`
+	Numero string `json:"Numero"`
+	Ano    string `json:"Ano"`
+	Ementa string `json:"Ementa"`
+}
+
+// ListarVotacoesAno busca todas as votacoes de um ano (Master List)
+// Endpoint: /votacao?ano={ano}
+func (c *LegisClient) ListarVotacoesAno(ctx context.Context, ano int) ([]VotacaoSessaoAPI, error) {
+	url := fmt.Sprintf("%s/votacao?ano=%d", c.baseURL, ano)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("erro criando request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("erro na requisicao: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status inesperado: %d", resp.StatusCode)
+	}
+
+	// API returns an array []VotacaoSessaoAPI
+	var result []VotacaoSessaoAPI
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("erro decodificando JSON: %w", err)
+	}
+
+	return result, nil
+}
+
+// ObterVotacao busca detalhes de uma sessao especifica
+// Endpoint: /votacao?codigoSessao={codigo}
+func (c *LegisClient) ObterVotacao(ctx context.Context, codigoSessao string) (*VotacaoSessaoAPI, error) {
+	url := fmt.Sprintf("%s/votacao?codigoSessao=%s", c.baseURL, codigoSessao)
+	
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status %d", resp.StatusCode)
+	}
+
+	// API returns an Array even for single session query
+	var result []VotacaoSessaoAPI
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	
+	if len(result) == 0 {
+		return nil, fmt.Errorf("sessao nao encontrada")
+	}
+	
+	return &result[0], nil
 }

@@ -3,12 +3,14 @@ import type {
   SenadorScore,
   Senador,
   MetodologiaResponse,
+  VotosPorTipoResponse,
 } from "@/types/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-async function fetcher<T>(endpoint: string): Promise<T> {
+export async function fetcher<T>(endpoint: string): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
     },
@@ -56,4 +58,12 @@ export async function getSenadorScore(
 
   const queryString = params.toString() ? `?${params.toString()}` : "";
   return fetcher<SenadorScore>(`/api/v1/senadores/${id}/score${queryString}`);
+}
+
+export async function getVotosPorTipo(
+  id: number
+): Promise<VotosPorTipoResponse> {
+  return fetcher<VotosPorTipoResponse>(
+    `/api/v1/senadores/${id}/votacoes/tipos`
+  );
 }

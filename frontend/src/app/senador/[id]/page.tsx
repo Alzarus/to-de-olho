@@ -10,6 +10,27 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSenadorScore } from "@/hooks/use-senador";
 import { formatCurrency } from "@/lib/utils";
+import { VotosPieChart } from "@/components/votos-pie-chart";
+import { useVotosPorTipo } from "@/hooks/use-senador";
+
+function VotosChartWrapper({ id }: { id: number }) {
+  const { data, isLoading } = useVotosPorTipo(id);
+  
+  if (isLoading) return <Skeleton className="h-[300px] w-full" />;
+  
+  if (!data || !data.por_tipo) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Distribuição de Votos</CardTitle>
+      </CardHeader>
+      <CardContent>
+         <VotosPieChart data={data.por_tipo} />
+      </CardContent>
+    </Card>
+  );
+}
 
 function SenadorSkeleton() {
   return (
@@ -305,39 +326,43 @@ export default function SenadorPage() {
         </TabsContent>
 
         <TabsContent value="votacoes" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Presença em Votações ({ano === 0 ? "Mandato" : ano})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <p className="text-3xl font-bold text-foreground">
-                    {senador.detalhes.total_votacoes}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Votações no período
-                  </p>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Presença em Votações ({ano === 0 ? "Mandato" : ano})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <p className="text-3xl font-bold text-foreground">
+                      {senador.detalhes.total_votacoes}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Votações no período
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-green-600">
+                      {senador.detalhes.votacoes_participadas}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Votações participadas
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-primary">
+                      {senador.detalhes.taxa_presenca_bruta.toFixed(1)}%
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Taxa de presença
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-3xl font-bold text-green-600">
-                    {senador.detalhes.votacoes_participadas}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Votações participadas
-                  </p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-primary">
-                    {senador.detalhes.taxa_presenca_bruta.toFixed(1)}%
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Taxa de presença
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <VotosChartWrapper id={id} />
+          </div>
         </TabsContent>
 
         <TabsContent value="ceaps" className="mt-6">

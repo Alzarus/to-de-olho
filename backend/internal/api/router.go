@@ -86,6 +86,13 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 			senadores.GET("/:id/score", rankingHandler.GetScoreSenador)
 		}
 
+		// Votacoes (Geral)
+		votacoes := v1.Group("/votacoes")
+		{
+			votacoes.GET("", votacaoHandler.GetAll)
+			votacoes.GET("/:id", votacaoHandler.GetByID)
+		}
+
 		// Sync (trigger manual para desenvolvimento)
 		v1.POST("/sync/senadores", func(c *gin.Context) {
 			if err := senadorSync.SyncFromAPI(c.Request.Context()); err != nil {
