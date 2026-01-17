@@ -33,6 +33,106 @@
 
 ---
 
+## Auditoria de Requisitos (tcc-escrita/sections/requisitos.tex)
+
+### Requisitos Funcionais (RF)
+
+**Modulo de Senadores:**
+| RF | Descricao | Status |
+|------|----------------------------------------------------|-------------|
+| RF01 | Lista 81 senadores com foto, partido, UF | OK |
+| RF02 | Busca por nome, partido, UF | PENDENTE |
+| RF03 | Perfil com abas (Visao Geral, Gastos, Gabinete, Votacoes, Emendas) | PARCIAL (falta Gabinete, Emendas) |
+
+**Modulo de Transparencia Financeira (CEAPS):**
+| RF | Descricao | Status |
+|------|----------------------------------------------------|-------------|
+| RF04 | Importar lancamentos CEAPS via APIs | OK |
+| RF05 | Visualizar gasto por tipo de despesa | OK |
+| RF06 | Fornecedores que mais receberam recursos | PENDENTE |
+| RF07 | Alertas para despesas atipicas | PENDENTE |
+
+**Modulo de Emendas e Orcamento:**
+| RF | Descricao | Status |
+|------|----------------------------------------------------|-------------|
+| RF08 | Integrar Portal da Transparencia (emendas) | PENDENTE |
+| RF09 | Destacar Transferencias Especiais (emendas PIX) | PENDENTE |
+| RF10 | Mapas interativos de distribuicao de emendas | PENDENTE |
+
+**Modulo de Atividade Legislativa:**
+| RF | Descricao | Status |
+|------|----------------------------------------------------|-------------|
+| RF11 | Listar votacoes nominais com voto de cada senador | OK (dados) / PENDENTE (tela) |
+| RF12 | Participacao em comissoes com cargo | OK |
+| RF13 | Proposicoes com tipo e tramitacao | OK |
+| RF14 | Discursos em plenario | PENDENTE |
+| RF15 | Agenda de reunioes de comissoes | PENDENTE |
+| RF16 | Links para redes sociais | PENDENTE |
+
+**Modulo de Gabinete:**
+| RF | Descricao | Status |
+|------|----------------------------------------------------|-------------|
+| RF17 | Lista de servidores do gabinete | PENDENTE |
+| RF18 | Folha de pagamento do gabinete | PENDENTE |
+
+**Modulo de Comparacao e Analise:**
+| RF | Descricao | Status |
+|------|----------------------------------------------------|-------------|
+| RF19 | Comparar 2-5 senadores lado a lado | PENDENTE |
+| RF20 | Ranking de fornecedores com cruzamento sancoes | PENDENTE |
+| RF21 | Indicadores de confianca (ultima sync, completude) | PARCIAL |
+
+**Modulo de Ranking e Score:**
+| RF | Descricao | Status |
+|------|----------------------------------------------------|-------------|
+| RF22 | Calcular e exibir Score de efetividade | OK |
+| RF23 | Grafico radar com 4 dimensoes | PENDENTE |
+| RF24 | Ordenar/filtrar por criterio individual | PENDENTE |
+
+### Requisitos Nao-Funcionais (RNF)
+
+**Desempenho:**
+| RNF | Descricao | Status |
+|-------|---------------------------------------------------|-------------|
+| RNF01 | Resposta em ate 2 segundos | OK (cache Redis) |
+| RNF02 | Escalabilidade horizontal | OK (Cloud Run) |
+
+**Usabilidade e Acessibilidade:**
+| RNF | Descricao | Status |
+|-------|---------------------------------------------------|-------------|
+| RNF03 | Desktop e mobile | OK |
+| RNF04 | Mobile-first | OK |
+| RNF05 | WCAG 2.1 AA | PARCIAL |
+
+**Confiabilidade:**
+| RNF | Descricao | Status |
+|-------|---------------------------------------------------|-------------|
+| RNF06 | Sync diario com APIs oficiais | PARCIAL (manual) |
+| RNF07 | Disponibilidade 99% | PENDENTE (deploy) |
+
+**Seguranca e Privacidade:**
+| RNF | Descricao | Status |
+|-------|---------------------------------------------------|-------------|
+| RNF08 | HTTPS/TLS | PENDENTE (deploy) |
+| RNF09 | LGPD | OK (dados publicos) |
+
+**Manutenibilidade:**
+| RNF | Descricao | Status |
+|-------|---------------------------------------------------|-------------|
+| RNF10 | Arquitetura modular | OK |
+| RNF11 | Linting e documentacao | PARCIAL |
+| RNF12 | CI/CD | PENDENTE |
+
+### Resumo
+
+| Categoria | Total | OK  | Parcial | Pendente |
+| --------- | ----- | --- | ------- | -------- |
+| **RF**    | 24    | 8   | 3       | 13       |
+| **RNF**   | 12    | 6   | 3       | 3        |
+| **Total** | 36    | 14  | 6       | 16       |
+
+---
+
 ## Fase 1: Fundacao (CONCLUIDA - 12/01)
 
 - [x] Estrutura do projeto Go (`to-de-olho/backend/`)
@@ -187,6 +287,44 @@ to-de-olho/frontend/
     - Grafico de distribuicao de votos por votacao
     - Estatisticas de alinhamento partidario
   - **Mobile-first**: Cards compactos no mobile, tabela no desktop
+- [ ] **Modulo de Relatorias** - Bonus para Produtividade Legislativa:
+  - **Backend**:
+    - Endpoint: `GET /api/v1/relatorias?senador={id}&ano={ano}`
+    - Client para `/dadosabertos/processo/relatoria?codigoParlamentar={codigo}`
+    - Model `Relatoria` com campos: senador_id, materia, tipo, data_inicio, data_fim, comissao
+    - Sync service para ingestao de relatorias
+  - **Integracao Ranking**:
+    - Bonus conforme `docs/metodologia-ranking.md`: PEC +4pts, PLP/PL +2pts, Comissao +1pt
+    - Somar pontos de relatorias ao score de Produtividade Legislativa
+  - **Frontend**:
+    - Exibir relatorias na pagina do senador (tab ou secao)
+    - Badge com total de relatorias no card do ranking
+- [ ] **Modulo de Gabinete** (RF17, RF18) - Transparencia de Custos:
+  - **Backend**:
+    - Endpoint: `GET /api/v1/senadores/{id}/gabinete`
+    - Client para API Administrativa: `/api/v1/servidores/servidores?lotacaoEquals={sigla}`
+    - Client para `/api/v1/servidores/remuneracoes/{ano}/{mes}`
+    - Model `ServidorGabinete`: nome, cargo, vinculo, remuneracao_bruta, remuneracao_liquida
+    - Mapeamento: Senador -> Lotacao -> Servidores
+  - **Frontend**:
+    - Tab "Gabinete" na pagina do senador
+    - Lista de servidores com cargo e salario
+    - Total mensal da folha do gabinete
+    - Comparativo com media do Senado
+  - **Valor**: Quem trabalha para o senador e quanto custa
+- [ ] **Modulo de Emendas PIX** (RF08, RF09, RF10) - Transparencia Orcamentaria:
+  - **Backend**:
+    - Endpoint: `GET /api/v1/senadores/{id}/emendas`
+    - Client Portal da Transparencia: `/api-de-dados/emendas`
+    - Backfill CSV: `download-de-dados/emendas-parlamentares/UNICO`
+    - Model `Emenda`: codigo, ano, tipo, valor_empenhado, valor_pago, municipio, uf
+    - Filtro especifico para Transferencias Especiais (Emendas PIX)
+  - **Frontend**:
+    - Tab "Emendas" na pagina do senador
+    - Mapa interativo (Leaflet) com destinos geograficos
+    - Cards: Total empenhado, Total pago, % Emendas PIX
+    - Filtros: ano, tipo, municipio, status
+  - **Valor**: Para onde vai o dinheiro das emendas do senador
 - [ ] **Filtros do Ranking**: Adicionar opcoes de filtragem e ordenacao:
   - Filtro por partido (ex: PT, PL, MDB)
   - Filtro por UF/região
