@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/utils";
 
 interface SuppliersTabProps {
   selectedIds: number[];
+  year: number;
 }
 
 const COLORS = [
@@ -21,20 +22,22 @@ const COLORS = [
   "#a855f7", // Purple
 ];
 
-export function SuppliersTab({ selectedIds }: SuppliersTabProps) {
+export function SuppliersTab({ selectedIds, year }: SuppliersTabProps) {
+  const apiYear = year === 0 ? undefined : year;
+
   // Fetch Scores (for names)
   const scoreQueries = useQueries({
     queries: selectedIds.map((id) => ({
-      queryKey: ["senador-score", id],
-      queryFn: () => getSenadorScore(id),
+      queryKey: ["senador-score", id, apiYear],
+      queryFn: () => getSenadorScore(id, apiYear),
     })),
   });
 
   // Fetch Detailed Expenses (contains supplier info)
   const detailedQueries = useQueries({
     queries: selectedIds.map((id) => ({
-      queryKey: ["senador-despesas", id],
-      queryFn: () => getDespesas(id),
+      queryKey: ["senador-despesas", id, apiYear],
+      queryFn: () => getDespesas(id, apiYear),
     })),
   });
 
@@ -105,6 +108,8 @@ export function SuppliersTab({ selectedIds }: SuppliersTabProps) {
       return { ...s, top };
   });
 
+  const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
+
   return (
     <div className="space-y-8">
         {/* Common Suppliers */}
@@ -113,7 +118,7 @@ export function SuppliersTab({ selectedIds }: SuppliersTabProps) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Building2 className="h-5 w-5" />
-                        Fornecedores em Comum
+                        Fornecedores em Comum ({yearLabel})
                     </CardTitle>
                 </CardHeader>
                 <CardContent>

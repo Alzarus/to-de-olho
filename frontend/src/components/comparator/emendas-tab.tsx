@@ -65,11 +65,13 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
       return str.length > length ? str.substring(0, length) + "..." : str;
     };
 
+    const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
+
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
           <Card>
               <CardHeader>
-                  <CardTitle>Execução de Emendas ({year})</CardTitle>
+                  <CardTitle>Execução de Emendas ({yearLabel})</CardTitle>
                   <CardDescription>
                     Comparativo de valores pagos e emendas especiais (PIX).
                   </CardDescription>

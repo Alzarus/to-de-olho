@@ -10,6 +10,7 @@ import type { SenadorScore } from "@/types/api";
 
 interface OverviewTabProps {
   selectedIds: number[];
+  year: number;
 }
 
 const COLORS = [
@@ -20,8 +21,8 @@ const COLORS = [
   "#a855f7", // Purple
 ];
 
-export function OverviewTab({ selectedIds }: OverviewTabProps) {
-  const { data, isLoading, error } = useRanking();
+export function OverviewTab({ selectedIds, year }: OverviewTabProps) {
+  const { data, isLoading, error } = useRanking(undefined, year === 0 ? undefined : year);
 
   if (isLoading) {
     return <Skeleton className="h-[400px] w-full rounded-lg" />;
@@ -63,18 +64,20 @@ export function OverviewTab({ selectedIds }: OverviewTabProps) {
      )
   }
 
+  const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
+
   return (
     <div className="grid gap-6 lg:grid-cols-3">
         {/* Radar Chart Section */}
         <div className="lg:col-span-2">
-            <ComparatorRadarChart senators={comparisonData} />
+            <ComparatorRadarChart senators={comparisonData} year={year} />
         </div>
 
         {/* Metrics Summary Section */}
         <div className="space-y-4">
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-lg">Destaques</CardTitle>
+                    <CardTitle className="text-lg">Destaques - {yearLabel}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {comparisonData.map(senator => (
@@ -94,11 +97,11 @@ export function OverviewTab({ selectedIds }: OverviewTabProps) {
 
             <Card>
                  <CardHeader>
-                    <CardTitle className="text-lg">Ranking Geral</CardTitle>
+                    <CardTitle className="text-lg">Ranking Geral - {yearLabel}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Posição relativa entre todos os senadores.
+                        Posição relativa entre todos os senadores ({yearLabel}).
                     </p>
                      {comparisonData.map(senator => (
                         <div key={senator.senador_id} className="flex items-center justify-between mb-2">

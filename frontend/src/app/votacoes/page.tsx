@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 
 import { getVotacoes, Votacao } from "@/services/votacaoService";
+import { usePersistentYear } from "@/hooks/use-persistent-year";
 
 function VotacoesContent() {
   const router = useRouter();
@@ -27,7 +28,7 @@ function VotacoesContent() {
   // Ler estado da URL (ou defaults)
   const page = Number(searchParams.get("page")) || 1;
   const anoParam = searchParams.get("ano");
-  const ano = anoParam ? Number(anoParam) : null;
+  const ano = anoParam ? Number(anoParam) : 0;
   const search = searchParams.get("search") || "";
   const sortDir = searchParams.get("ordem") || "desc";
 
@@ -39,11 +40,14 @@ function VotacoesContent() {
   const [localSearch, setLocalSearch] = useState(search);
   const limit = 20;
 
+  // Persist year
+  usePersistentYear("votacoes");
+
   // Atualizar URL helper - wrapped in useCallback
   const updateUrl = useCallback((newParams: Record<string, string | number | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(newParams).forEach(([key, value]) => {
-      if (value === null || value === "" || value === 0) {
+      if (value === null || value === "") {
         params.delete(key);
       } else {
         params.set(key, String(value));
@@ -72,7 +76,7 @@ function VotacoesContent() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await getVotacoes(page, limit, ano ?? undefined, search);
+        const res = await getVotacoes(page, limit, ano === 0 ? undefined : ano, search);
         setData(res.data);
         setTotal(res.total);
       } catch (error) {

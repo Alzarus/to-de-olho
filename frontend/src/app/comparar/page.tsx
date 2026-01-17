@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useComparator } from "@/contexts/comparator-context";
+import { usePersistentYear } from "@/hooks/use-persistent-year";
 import { Button } from "@/components/ui/button";
 import { Trash2, Download, X as XIcon, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +19,26 @@ import { SenatorSelector } from "@/components/comparator/senator-selector";
 export default function ComparatorPage() {
   const { selectedSenators, clearSelection, removeSenator } = useComparator();
   const searchParams = useSearchParams();
-  const year = Number(searchParams.get("ano")) || 2024;
+  const yearParam = searchParams.get("ano");
+  // Se o parametro existe, usa o valor (mesmo que seja 0). Se não, default para 2024 (ou ano atual)
+  const year = yearParam !== null ? Number(yearParam) : 2024;
   const [isSelectorExpanded, setIsSelectorExpanded] = useState(true);
+  const router = useRouter();
+
+  // Persist year
+  usePersistentYear("comparator");
+
+  const updateUrl = (newParams: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === null || value === "") {
+        params.delete(key);
+      } else {
+        params.set(key, String(value));
+      }
+    });
+    router.push(`/comparar?${params.toString()}`);
+  };
 
 
   // Empty state - show the selector
@@ -60,6 +79,22 @@ export default function ComparatorPage() {
         </div>
 
         <div className="flex items-center gap-2">
+           {/* Seletor de Ano */}
+           <div className="flex items-center gap-2 mr-2">
+            <select
+              id="ano-select"
+              value={year === 0 ? 0 : year} // Handle 0 as "Mandato Completo" if logic allows, or defaulting to 2024
+              onChange={(e) => updateUrl({ ano: Number(e.target.value) })}
+              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value={0}>Mandato Completo</option>
+              <option value={2026}>2026</option>
+              <option value={2025}>2025</option>
+              <option value={2024}>2024</option>
+              <option value={2023}>2023</option>
+            </select>
+          </div>
+
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Exportar
@@ -153,11 +188,11 @@ export default function ComparatorPage() {
 
         <div className="mt-6">
           <TabsContent value="overview">
-            <OverviewTab selectedIds={selectedSenators.map(s => s.id)} />
+            <OverviewTab selectedIds={selectedSenators.map(s => s.id)} year={year} />
           </TabsContent>
           
           <TabsContent value="expenses">
-            <ExpensesTab selectedIds={selectedSenators.map(s => s.id)} />
+            <ExpensesTab selectedIds={selectedSenators.map(s => s.id)} year={year} />
           </TabsContent>
 
           <TabsContent value="cabinet">
@@ -176,7 +211,7 @@ export default function ComparatorPage() {
           </TabsContent>
           
           <TabsContent value="suppliers">
-            <SuppliersTab selectedIds={selectedSenators.map(s => s.id)} />
+            <SuppliersTab selectedIds={selectedSenators.map(s => s.id)} year={year} />
           </TabsContent>
         </div>
       </Tabs>

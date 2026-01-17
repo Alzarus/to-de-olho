@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
+import { usePersistentYear } from "@/hooks/use-persistent-year";
 import { getRanking } from "@/lib/api";
 import { EmendasTab } from "@/components/senator/emendas-tab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,12 +16,36 @@ import type { SenadorScore } from "@/types/api";
 const ANOS_DISPONIVEIS = [0, 2026, 2025, 2024, 2023];
 
 export default function EmendasPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedUf, setSelectedUf] = useState("TODOS");
   const [selectedPartido, setSelectedPartido] = useState("TODOS");
-  const [ano, setAno] = useState<number>(2024);
   const [isGridExpanded, setIsGridExpanded] = useState(true);
+
+  // Parse ano from URL
+  const anoParam = searchParams.get("ano");
+  const ano = anoParam ? Number(anoParam) : 0;
+
+  // Persist year
+  usePersistentYear("emendas");
+
+  const updateUrl = useCallback((newParams: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === null || value === "") {
+        params.delete(key);
+      } else {
+        params.set(key, String(value));
+      }
+    });
+    // Use replace instead of push to avoid cluttering history for simple filter changes? 
+    // Or push? Request said "navegação", implying history. Push is better.
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, router, pathname]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["ranking-for-emendas"],
@@ -196,7 +222,7 @@ export default function EmendasPage() {
                 <select
                     id="ano-select"
                     value={ano}
-                    onChange={(e) => setAno(Number(e.target.value))}
+                    onChange={(e) => updateUrl({ ano: Number(e.target.value) })}
                     className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                     {ANOS_DISPONIVEIS.map((anoOption) => (

@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRanking } from "@/hooks/use-ranking";
+import { usePersistentYear } from "@/hooks/use-persistent-year";
 import type { SenadorScore } from "@/types/api";
 
 const UFS = [
@@ -368,13 +369,15 @@ function RankingContent() {
   const sortBy = searchParams.get("ordenar") || "score_final";
   const sortDir = searchParams.get("direcao") || "desc";
   const search = searchParams.get("busca") || "";
-  
   const [localSearch, setLocalSearch] = useState(search);
+  
+  // Persist year selection
+  usePersistentYear("ranking");
 
   const updateUrl = (newParams: Record<string, string | number | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(newParams).forEach(([key, value]) => {
-      if (value === null || value === "" || value === 0) {
+      if (value === null || value === "") {
         params.delete(key);
       } else {
         params.set(key, String(value));

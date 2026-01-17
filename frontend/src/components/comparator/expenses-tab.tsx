@@ -26,6 +26,7 @@ import { formatCurrency } from "@/lib/utils";
 
 interface ExpensesTabProps {
   selectedIds: number[];
+  year: number;
 }
 
 const COLORS = [
@@ -62,10 +63,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
+export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [isMobile, setIsMobile] = useState(false);
+  const apiYear = year === 0 ? undefined : year;
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -81,24 +83,24 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
   // 1. Fetch Scores (for Totals vs Teto)
   const scoreQueries = useQueries({
     queries: selectedIds.map((id) => ({
-      queryKey: ["senador-score", id],
-      queryFn: () => getSenadorScore(id),
+      queryKey: ["senador-score", id, apiYear],
+      queryFn: () => getSenadorScore(id, apiYear),
     })),
   });
 
   // 2. Fetch Aggregated (for Categories)
   const aggregatedQueries = useQueries({
     queries: selectedIds.map((id) => ({
-      queryKey: ["senador-despesas-agregado", id],
-      queryFn: () => getDespesasAgregado(id),
+      queryKey: ["senador-despesas-agregado", id, apiYear],
+      queryFn: () => getDespesasAgregado(id, apiYear),
     })),
   });
 
   // 3. Fetch Detailed (for Evolution)
   const detailedQueries = useQueries({
     queries: selectedIds.map((id) => ({
-      queryKey: ["senador-despesas", id],
-      queryFn: () => getDespesas(id),
+      queryKey: ["senador-despesas", id, apiYear],
+      queryFn: () => getDespesas(id, apiYear),
     })),
   });
 
@@ -227,13 +229,15 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
     .sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey))
     .slice(-12);
 
+  const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
+
   return (
     <div className="space-y-8">
 
       {/* Total vs Cap */}
       <Card>
         <CardHeader>
-          <CardTitle>Uso da Cota (Gasto vs Teto - 2024)</CardTitle>
+          <CardTitle>Uso da Cota (Gasto vs Teto - {yearLabel})</CardTitle>
         </CardHeader>
         <CardContent className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -281,7 +285,7 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
       {/* Top Categories */}
       <Card>
         <CardHeader>
-          <CardTitle>Top 5 Categorias de Despesa</CardTitle>
+          <CardTitle>Top 5 Categorias de Despesa ({yearLabel})</CardTitle>
         </CardHeader>
         <CardContent className="h-[400px]">
            <ResponsiveContainer width="100%" height="100%">
@@ -323,7 +327,7 @@ export function ExpensesTab({ selectedIds }: ExpensesTabProps) {
       {/* Evolution Line Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Evolução de Gastos (Últimos 12 meses)</CardTitle>
+          <CardTitle>Evolução de Gastos ({yearLabel})</CardTitle>
         </CardHeader>
         <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">

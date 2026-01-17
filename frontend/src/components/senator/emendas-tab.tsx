@@ -165,7 +165,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                 </button>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-[280px] text-xs">
-                                Transferencias Especiais (PIX) sao emendas de execucao obrigatoria que permitem o repasse direto de recursos para estados e municipios sem convenio ou contrato de repasse.
+                                Transferências Especiais (PIX) são emendas de execução obrigatória que permitem o repasse direto de recursos para estados e municípios sem convênio ou contrato de repasse.
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
@@ -188,7 +188,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                             <TooltipTrigger asChild>
                                                 <button
                                                     type="button"
-                                                    aria-label="Entenda transferencias com finalidade definida"
+                                                    aria-label="Entenda transferências com finalidade definida"
                                                     className="text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
@@ -196,7 +196,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                                 </button>
                                             </TooltipTrigger>
                                             <TooltipContent side="top" className="max-w-[280px] text-xs">
-                                                Emendas com finalidade definida exigem convenio ou contrato de repasse e tem destinacao especifica determinada pelo parlamentar.
+                                                Emendas com finalidade definida exigem convênio ou contrato de repasse e têm destinação específica determinada pelo parlamentar.
                                             </TooltipContent>
                                         </Tooltip>
                                     </TooltipProvider>
@@ -271,7 +271,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                   <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input 
-                          placeholder="Buscar por localidade, funcao ou numero..."
+                          placeholder="Buscar por localidade, função ou número..."
                           value={busca}
                           onChange={(e) => setBusca(e.target.value)}
                           className="pl-10"
@@ -336,7 +336,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                           <span className="font-medium text-foreground">Localidade:</span> {emenda.localidade}
                                       </div>
                                       <div>
-                                          <span className="font-medium text-foreground">Funcao:</span> {emenda.funcional_programatica}
+                                          <span className="font-medium text-foreground">Função:</span> {emenda.funcional_programatica}
                                       </div>
                                       <div>
                                           <span className="font-medium text-foreground">Empenhado:</span> {formatCurrency(emenda.valor_empenhado)}

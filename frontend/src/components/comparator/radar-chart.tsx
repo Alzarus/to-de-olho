@@ -16,11 +16,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ComparatorRadarChartProps {
   senators: (SenadorScore & { color: string })[];
+  year: number;
 }
 
-export function ComparatorRadarChart({ senators }: ComparatorRadarChartProps) {
+export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
   // Transform data for Recharts
   // We need an array of objects like { subject: 'Produtividade', A: 120, B: 110, fullMark: 150 }
@@ -71,7 +73,7 @@ export function ComparatorRadarChart({ senators }: ComparatorRadarChartProps) {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Comparativo de Desempenho</CardTitle>
+        <CardTitle>Comparativo de Desempenho - {yearLabel}</CardTitle>
       </CardHeader>
       <CardContent className="h-[450px]">
         <ResponsiveContainer width="100%" height="100%">
