@@ -115,7 +115,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            Projeto de codigo aberto para transparencia legislativa
+            Projeto de código aberto para transparência legislativa
           </p>
           <p className="text-sm text-muted-foreground">
             Dados atualizados em tempo real via APIs oficiais

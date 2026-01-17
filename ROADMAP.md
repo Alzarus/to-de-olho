@@ -1,35 +1,35 @@
-# Roadmap de Implementacao - To De Olho
+# Roadmap de Implementação - Tô De Olho
 
-> Ultima atualizacao: 16/01/2026 02:45  
+> Última atualização: 16/01/2026 02:45  
 > Deadline Entrega TCC: 15/01/2026  
-> Prazo Projeto Completo: Ate a defesa (25/01 - 11/02/2026)  
-> Status: **Frontend concluido, aguardando deploy**
+> Prazo Projeto Completo: Até a defesa (25/01 - 11/02/2026)  
+> Status: **Frontend concluído, aguardando deploy**
 
 ---
 
 ## Cronograma Geral
 
-| Fase | Periodo  | Foco                                   | Status    |
+| Fase | Período  | Foco                                   | Status    |
 | ---- | -------- | -------------------------------------- | --------- |
-| 1    | 12/01    | Fundacao (estrutura, senadores, CEAPS) | CONCLUIDA |
-| 2    | 12-13/01 | Votacoes                               | CONCLUIDA |
-| 3    | 13-14/01 | Comissoes + Proposicoes                | CONCLUIDA |
-| 4    | 13/01    | Modulo de Ranking                      | CONCLUIDA |
-| 5    | 14-16/01 | Frontend Next.js                       | CONCLUIDA |
+| 1    | 12/01    | Fundação (estrutura, senadores, CEAPS) | CONCLUÍDA |
+| 2    | 12-13/01 | Votações                               | CONCLUÍDA |
+| 3    | 13-14/01 | Comissões + Proposições                | CONCLUÍDA |
+| 4    | 13/01    | Módulo de Ranking                      | CONCLUÍDA |
+| 5    | 14-16/01 | Frontend Next.js                       | CONCLUÍDA |
 | 6    | 21-24/01 | Testes, polimento, deploy              | PENDENTE  |
 
 ---
 
 ## Requisitos do Ranking (docs/metodologia-ranking.md)
 
-| Criterio                  | Peso | Fonte de Dados                         | Status                       |
+| Critério                  | Peso | Fonte de Dados                         | Status                       |
 | ------------------------- | ---- | -------------------------------------- | ---------------------------- |
-| Produtividade Legislativa | 35%  | `/dadosabertos/processo`               | CONCLUIDO (pesos ajustados)  |
-| Presenca em Votacoes      | 25%  | `/dadosabertos/votacao`                | CONCLUIDO (85.877 votacoes)  |
-| Economia CEAPS            | 20%  | API Administrativa                     | CONCLUIDO (teto variavel UF) |
-| Participacao em Comissoes | 20%  | `/dadosabertos/senador/{id}/comissoes` | CONCLUIDO (7.186 registros)  |
+| Produtividade Legislativa | 35%  | `/dadosabertos/processo`               | CONCLUÍDO (pesos ajustados)  |
+| Presença em Votações      | 25%  | `/dadosabertos/votacao`                | CONCLUÍDO (85.877 votações)  |
+| Economia CEAPS            | 20%  | API Administrativa                     | CONCLUÍDO (teto variável UF) |
+| Participação em Comissões | 20%  | `/dadosabertos/senador/{id}/comissoes` | CONCLUÍDO (7.186 registros)  |
 
-**Progresso atual**: 100% dos modulos implementados. Ranking pronto para fase 4.
+**Progresso atual**: 100% dos módulos implementados. Ranking pronto para fase 4.
 
 ---
 
@@ -37,90 +37,90 @@
 
 ### Requisitos Funcionais (RF)
 
-**Modulo de Senadores:**
-| RF | Descricao | Status |
+**Módulo de Senadores:**
+| RF | Descrição | Status |
 |------|----------------------------------------------------|-------------|
 | RF01 | Lista 81 senadores com foto, partido, UF | OK |
 | RF02 | Busca por nome, partido, UF | PENDENTE |
-| RF03 | Perfil com abas (Visao Geral, Gastos, Gabinete, Votacoes, Emendas) | PARCIAL (falta Gabinete, Emendas) |
+| RF03 | Perfil com abas (Visão Geral, Gastos, Gabinete, Votações, Emendas) | PARCIAL (falta Gabinete, Emendas) |
 
-**Modulo de Transparencia Financeira (CEAPS):**
-| RF | Descricao | Status |
+**Módulo de Transparência Financeira (CEAPS):**
+| RF | Descrição | Status |
 |------|----------------------------------------------------|-------------|
-| RF04 | Importar lancamentos CEAPS via APIs | OK |
+| RF04 | Importar lançamentos CEAPS via APIs | OK |
 | RF05 | Visualizar gasto por tipo de despesa | OK |
 | RF06 | Fornecedores que mais receberam recursos | PENDENTE |
-| RF07 | Alertas para despesas atipicas | PENDENTE |
+| RF07 | Alertas para despesas atípicas | PENDENTE |
 
-**Modulo de Emendas e Orcamento:**
-| RF | Descricao | Status |
+**Módulo de Emendas e Orçamento:**
+| RF | Descrição | Status |
 |------|----------------------------------------------------|-------------|
-| RF08 | Integrar Portal da Transparencia (emendas) | PENDENTE |
-| RF09 | Destacar Transferencias Especiais (emendas PIX) | PENDENTE |
-| RF10 | Mapas interativos de distribuicao de emendas | PENDENTE |
+| RF08 | Integrar Portal da Transparência (emendas) | PENDENTE |
+| RF09 | Destacar Transferências Especiais (emendas PIX) | PENDENTE |
+| RF10 | Mapas interativos de distribuição de emendas | PENDENTE |
 
-**Modulo de Atividade Legislativa:**
-| RF | Descricao | Status |
+**Módulo de Atividade Legislativa:**
+| RF | Descrição | Status |
 |------|----------------------------------------------------|-------------|
-| RF11 | Listar votacoes nominais com voto de cada senador | OK (dados) / PENDENTE (tela) |
-| RF12 | Participacao em comissoes com cargo | OK |
-| RF13 | Proposicoes com tipo e tramitacao | OK |
-| RF14 | Discursos em plenario | PENDENTE |
-| RF15 | Agenda de reunioes de comissoes | PENDENTE |
+| RF11 | Listar votações nominais com voto de cada senador | OK (dados) / PENDENTE (tela) |
+| RF12 | Participação em comissões com cargo | OK |
+| RF13 | Proposições com tipo e tramitação | OK |
+| RF14 | Discursos em plenário | PENDENTE |
+| RF15 | Agenda de reuniões de comissões | PENDENTE |
 | RF16 | Links para redes sociais | PENDENTE |
 
-**Modulo de Gabinete:**
-| RF | Descricao | Status |
+**Módulo de Gabinete:**
+| RF | Descrição | Status |
 |------|----------------------------------------------------|-------------|
 | RF17 | Lista de servidores do gabinete | PENDENTE |
 | RF18 | Folha de pagamento do gabinete | PENDENTE |
 
-**Modulo de Comparacao e Analise:**
-| RF | Descricao | Status |
+**Módulo de Comparação e Análise:**
+| RF | Descrição | Status |
 |------|----------------------------------------------------|-------------|
 | RF19 | Comparar 2-5 senadores lado a lado | PENDENTE |
-| RF20 | Ranking de fornecedores com cruzamento sancoes | PENDENTE |
-| RF21 | Indicadores de confianca (ultima sync, completude) | PARCIAL |
+| RF20 | Ranking de fornecedores com cruzamento sanções | PENDENTE |
+| RF21 | Indicadores de confiança (última sync, completude) | PARCIAL |
 
-**Modulo de Ranking e Score:**
-| RF | Descricao | Status |
+**Módulo de Ranking e Score:**
+| RF | Descrição | Status |
 |------|----------------------------------------------------|-------------|
 | RF22 | Calcular e exibir Score de efetividade | OK |
-| RF23 | Grafico radar com 4 dimensoes | PENDENTE |
-| RF24 | Ordenar/filtrar por criterio individual | PENDENTE |
+| RF23 | Gráfico radar com 4 dimensões | PENDENTE |
+| RF24 | Ordenar/filtrar por critério individual | PENDENTE |
 
-### Requisitos Nao-Funcionais (RNF)
+### Requisitos Não-Funcionais (RNF)
 
 **Desempenho:**
-| RNF | Descricao | Status |
+| RNF | Descrição | Status |
 |-------|---------------------------------------------------|-------------|
-| RNF01 | Resposta em ate 2 segundos | OK (cache Redis) |
+| RNF01 | Resposta em até 2 segundos | OK (cache Redis) |
 | RNF02 | Escalabilidade horizontal | OK (Cloud Run) |
 
 **Usabilidade e Acessibilidade:**
-| RNF | Descricao | Status |
+| RNF | Descrição | Status |
 |-------|---------------------------------------------------|-------------|
 | RNF03 | Desktop e mobile | OK |
 | RNF04 | Mobile-first | OK |
 | RNF05 | WCAG 2.1 AA | PARCIAL |
 
 **Confiabilidade:**
-| RNF | Descricao | Status |
+| RNF | Descrição | Status |
 |-------|---------------------------------------------------|-------------|
-| RNF06 | Sync diario com APIs oficiais | PARCIAL (manual) |
+| RNF06 | Sync diário com APIs oficiais | PARCIAL (manual) |
 | RNF07 | Disponibilidade 99% | PENDENTE (deploy) |
 
-**Seguranca e Privacidade:**
-| RNF | Descricao | Status |
+**Segurança e Privacidade:**
+| RNF | Descrição | Status |
 |-------|---------------------------------------------------|-------------|
 | RNF08 | HTTPS/TLS | PENDENTE (deploy) |
-| RNF09 | LGPD | OK (dados publicos) |
+| RNF09 | LGPD | OK (dados públicos) |
 
 **Manutenibilidade:**
-| RNF | Descricao | Status |
+| RNF | Descrição | Status |
 |-------|---------------------------------------------------|-------------|
 | RNF10 | Arquitetura modular | OK |
-| RNF11 | Linting e documentacao | PARCIAL |
+| RNF11 | Linting e documentação | PARCIAL |
 | RNF12 | CI/CD | PENDENTE |
 
 ### Resumo
@@ -133,7 +133,7 @@
 
 ---
 
-## Fase 1: Fundacao (CONCLUIDA - 12/01)
+## Fase 1: Fundação (CONCLUÍDA - 12/01)
 
 - [x] Estrutura do projeto Go (`to-de-olho/backend/`)
 - [x] Docker Compose (PostgreSQL 15 + Redis 7)
@@ -146,42 +146,42 @@
 
 ---
 
-## Fase 2: Votacoes (CONCLUIDA - 12-13/01)
+## Fase 2: Votações (CONCLUÍDA - 12-13/01)
 
 - [x] Modelo `internal/votacao/model.go`
-- [x] Repository com calculo de stats
+- [x] Repository com cálculo de stats
 - [x] Handler com 3 endpoints
 - [x] Client para `/dadosabertos/votacao`
-- [x] Sync de votacoes (85.877 registros)
+- [x] Sync de votações (85.877 registros)
 - [x] Endpoints: `/votacoes`, `/votacoes/stats`, `/votacoes/tipos`
 
 ---
 
-## Fase 3: Comissoes + Proposicoes (CONCLUIDA - 13/01)
+## Fase 3: Comissões + Proposições (CONCLUÍDA - 13/01)
 
-### 3.1 Comissoes (Participacao - 20%)
+### 3.1 Comissões (Participação - 20%)
 
 - [x] Modelo `internal/comissao/model.go`
 - [x] Client para `/dadosabertos/senador/{id}/comissoes`
-- [x] Sync de comissoes (7.186 registros)
+- [x] Sync de comissões (7.186 registros)
 - [x] Endpoints: `/comissoes`, `/comissoes/ativas`, `/comissoes/stats`, `/comissoes/casas`
 
-### 3.2 Proposicoes (Produtividade - 35%)
+### 3.2 Proposições (Produtividade - 35%)
 
 - [x] Modelo `internal/proposicao/model.go`
 - [x] Client para `/dadosabertos/processo`
-- [x] Sistema de pontuacao (1-16 por estagio, x3 PEC, x2 PLP)
+- [x] Sistema de pontuação (1-16 por estágio, x3 PEC, x2 PLP)
 - [x] Endpoints: `/proposicoes`, `/proposicoes/stats`, `/proposicoes/tipos`
 - [x] Ajustar parsing da API (formato JSON corrigido - array direto)
 
 ---
 
-## Fase 4: Modulo de Ranking (CONCLUIDA - 14/01)
+## Fase 4: Módulo de Ranking (CONCLUÍDA - 14/01)
 
 - [x] Modelo `internal/ranking/model.go` (SenadorScore, ScoreDetalhes)
-- [x] Service `internal/ranking/service.go` com calculo de scores
+- [x] Service `internal/ranking/service.go` com cálculo de scores
 - [x] Handler `internal/ranking/handler.go` com endpoints
-- [x] Formula: `Score = (Prod * 0.35) + (Pres * 0.25) + (Econ * 0.20) + (Com * 0.20)`
+- [x] Fórmula: `Score = (Prod * 0.35) + (Pres * 0.25) + (Econ * 0.20) + (Com * 0.20)`
 - [x] Endpoints: `GET /ranking`, `GET /ranking/metodologia`, `GET /senadores/:id/score`
 - [x] Cache Redis (TTL 1h) com fallback
 - [x] Ajustes finos: Pesos RQS/MOC (x0.5), Teto CEAPS por UF, Relatorias (pendente)
@@ -189,7 +189,7 @@
 
 ---
 
-## Fase 5: Frontend Next.js (CONCLUIDA - 16/01)
+## Fase 5: Frontend Next.js (CONCLUÍDA - 16/01)
 
 - [x] Inicializar em `to-de-olho/frontend/` com Bun
 - [x] Next.js 16.1.1 + React 19.2.3 + TypeScript 5
@@ -197,19 +197,19 @@
 - [x] Recharts 3.6.0 + React Query 5.90.16
 - [x] Configurar cores do projeto (senado blue/gold)
 - [x] Layout base + identidade visual (Logo/Favicon)
-- [x] Paginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
+- [x] Páginas: `/`, `/ranking`, `/senador/[id]`, `/metodologia`
 - [x] Integrar API backend (React Query) com filtro de ano
-- [x] Seletor "Mandato Completo" no ranking e pagina do senador
-- [x] Tabs com estado controlado (nao reseta ao mudar ano)
+- [x] Seletor "Mandato Completo" no ranking e página do senador
+- [x] Tabs com estado controlado (não reseta ao mudar ano)
 - [ ] Acessibilidade WCAG 2.1 AA (parcial)
-- [ ] Graficos Recharts (radar, barras, linha)
+- [ ] Gráficos Recharts (radar, barras, linha)
 
 ---
 
-## Fase 6: Finalizacao (21-24/01)
+## Fase 6: Finalização (21-24/01)
 
 - [ ] Testes (cobertura 60%+)
-- [ ] Dockerfile producao
+- [ ] Dockerfile produção
 - [ ] CI/CD GitHub Actions
 - [ ] Deploy Cloud Run
 
@@ -235,8 +235,8 @@ to-de-olho/backend/
 to-de-olho/frontend/
 ├── src/app/           # App Router (Next.js 16)
 ├── src/components/ui/ # 9 componentes Shadcn
-├── src/lib/utils.ts   # Utilitarios
-├── package.json       # Bun + dependencias
+├── src/lib/utils.ts   # Utilitários
+├── package.json       # Bun + dependências
 └── bun.lock
 ```
 
@@ -254,78 +254,78 @@ to-de-olho/frontend/
 
 ---
 
-## Melhorias e Correcoes (Atualizado 16/01)
+## Melhorias e Correções (Atualizado 16/01)
 
 ### Pendentes
 
-- [ ] **Testes**: Aumentar cobertura e validar correcoes de ingestao.
+- [ ] **Testes**: Aumentar cobertura e validar correções de ingestão.
 - [ ] **Deploy**: Configurar pipeline CI/CD final.
-- [ ] **Graficos**: Adicionar graficos Recharts (radar, barras, linha).
-- [ ] **Backfill Automatico**: Criar `cmd/backfill/main.go` conforme `docs/estrategia-ingestao-dados.md`.
-- [ ] **Docker Compose**: Adicionar variavel `BACKFILL_START_YEAR` para auto-sync no primeiro deploy.
-- [ ] **Normalizacao por Mandato**: Diferenciar senadores com mandato 2019-2026 vs 2023-2030, normalizando metricas por meses de exercicio efetivo.
-- [ ] **SEO Completo**: Otimizacao de SEO em todas as paginas:
-  - Meta tags dinamicas por pagina (`title`, `description`, `og:*`, `twitter:*`)
+- [ ] **Gráficos**: Adicionar gráficos Recharts (radar, barras, linha).
+- [ ] **Backfill Automático**: Criar `cmd/backfill/main.go` conforme `docs/estrategia-ingestao-dados.md`.
+- [ ] **Docker Compose**: Adicionar variável `BACKFILL_START_YEAR` para auto-sync no primeiro deploy.
+- [ ] **Normalização por Mandato**: Diferenciar senadores com mandato 2019-2026 vs 2023-2030, normalizando métricas por meses de exercício efetivo.
+- [ ] **SEO Completo**: Otimização de SEO em todas as páginas:
+  - Meta tags dinâmicas por página (`title`, `description`, `og:*`, `twitter:*`)
   - Structured data (JSON-LD) para senadores e ranking
-  - Sitemap.xml automatico via Next.js
+  - Sitemap.xml automático via Next.js
   - robots.txt configurado
-  - URLs canonicas
-  - Open Graph images dinamicas para compartilhamento
+  - URLs canônicas
+  - Open Graph images dinâmicas para compartilhamento
   - Alt text descritivo em todas imagens
   - Semantic HTML (`<article>`, `<section>`, `<nav>`)
-- [ ] **Tela de Votacoes** (`/votacoes`) - RF11 do TCC:
-  - **Backend**: Endpoint `GET /api/v1/votacoes` com filtros (ano, mes, tema, senador)
-  - **Listagem**: Tabela paginada com votacoes nominais recentes
-  - **Detalhes por votacao**: Modal ou pagina com descricao, data, resultado, e voto de cada senador
+- [ ] **Tela de Votações** (`/votacoes`) - RF11 do TCC:
+  - **Backend**: Endpoint `GET /api/v1/votacoes` com filtros (ano, mês, tema, senador)
+  - **Listagem**: Tabela paginada com votações nominais recentes
+  - **Detalhes por votação**: Modal ou página com descrição, data, resultado, e voto de cada senador
   - **Filtros**:
-    - Periodo (data inicio/fim ou ano)
-    - Tema/Materia (PEC, PL, PLP, etc.)
-    - Senador especifico (como votou em cada materia)
-    - Resultado (aprovadas, rejeitadas, obstrucao)
-  - **Visualizacao**:
-    - Lista de votos: Sim (verde), Nao (vermelho), Abstencao (amarelo), Ausente (cinza)
-    - Grafico de distribuicao de votos por votacao
-    - Estatisticas de alinhamento partidario
+    - Período (data início/fim ou ano)
+    - Tema/Matéria (PEC, PL, PLP, etc.)
+    - Senador específico (como votou em cada matéria)
+    - Resultado (aprovadas, rejeitadas, obstrução)
+  - **Visualização**:
+    - Lista de votos: Sim (verde), Não (vermelho), Abstenção (amarelo), Ausente (cinza)
+    - Gráfico de distribuição de votos por votação
+    - Estatísticas de alinhamento partidário
   - **Mobile-first**: Cards compactos no mobile, tabela no desktop
-- [ ] **Modulo de Relatorias** - Bonus para Produtividade Legislativa:
+- [ ] **Módulo de Relatorias** - Bônus para Produtividade Legislativa:
   - **Backend**:
     - Endpoint: `GET /api/v1/relatorias?senador={id}&ano={ano}`
     - Client para `/dadosabertos/processo/relatoria?codigoParlamentar={codigo}`
-    - Model `Relatoria` com campos: senador_id, materia, tipo, data_inicio, data_fim, comissao
-    - Sync service para ingestao de relatorias
-  - **Integracao Ranking**:
-    - Bonus conforme `docs/metodologia-ranking.md`: PEC +4pts, PLP/PL +2pts, Comissao +1pt
+    - Model `Relatoria` com campos: senador_id, matéria, tipo, data_inicio, data_fim, comissão
+    - Sync service para ingestão de relatorias
+  - **Integração Ranking**:
+    - Bônus conforme `docs/metodologia-ranking.md`: PEC +4pts, PLP/PL +2pts, Comissão +1pt
     - Somar pontos de relatorias ao score de Produtividade Legislativa
   - **Frontend**:
-    - Exibir relatorias na pagina do senador (tab ou secao)
+    - Exibir relatorias na página do senador (tab ou seção)
     - Badge com total de relatorias no card do ranking
-- [ ] **Modulo de Gabinete** (RF17, RF18) - Transparencia de Custos:
+- [ ] **Módulo de Gabinete** (RF17, RF18) - Transparência de Custos:
   - **Backend**:
     - Endpoint: `GET /api/v1/senadores/{id}/gabinete`
     - Client para API Administrativa: `/api/v1/servidores/servidores?lotacaoEquals={sigla}`
     - Client para `/api/v1/servidores/remuneracoes/{ano}/{mes}`
-    - Model `ServidorGabinete`: nome, cargo, vinculo, remuneracao_bruta, remuneracao_liquida
-    - Mapeamento: Senador -> Lotacao -> Servidores
+    - Model `ServidorGabinete`: nome, cargo, vínculo, remuneracao_bruta, remuneracao_liquida
+    - Mapeamento: Senador -> Lotação -> Servidores
   - **Frontend**:
-    - Tab "Gabinete" na pagina do senador
-    - Lista de servidores com cargo e salario
+    - Tab "Gabinete" na página do senador
+    - Lista de servidores com cargo e salário
     - Total mensal da folha do gabinete
-    - Comparativo com media do Senado
+    - Comparativo com média do Senado
   - **Valor**: Quem trabalha para o senador e quanto custa
-- [ ] **Modulo de Emendas PIX** (RF08, RF09, RF10) - Transparencia Orcamentaria:
+- [ ] **Módulo de Emendas PIX** (RF08, RF09, RF10) - Transparência Orçamentária:
   - **Backend**:
     - Endpoint: `GET /api/v1/senadores/{id}/emendas`
-    - Client Portal da Transparencia: `/api-de-dados/emendas`
+    - Client Portal da Transparência: `/api-de-dados/emendas`
     - Backfill CSV: `download-de-dados/emendas-parlamentares/UNICO`
-    - Model `Emenda`: codigo, ano, tipo, valor_empenhado, valor_pago, municipio, uf
-    - Filtro especifico para Transferencias Especiais (Emendas PIX)
+    - Model `Emenda`: código, ano, tipo, valor_empenhado, valor_pago, município, uf
+    - Filtro específico para Transferências Especiais (Emendas PIX)
   - **Frontend**:
-    - Tab "Emendas" na pagina do senador
-    - Mapa interativo (Leaflet) com destinos geograficos
+    - Tab "Emendas" na página do senador
+    - Mapa interativo (Leaflet) com destinos geográficos
     - Cards: Total empenhado, Total pago, % Emendas PIX
-    - Filtros: ano, tipo, municipio, status
+    - Filtros: ano, tipo, município, status
   - **Valor**: Para onde vai o dinheiro das emendas do senador
-- [ ] **Filtros do Ranking**: Adicionar opcoes de filtragem e ordenacao:
+- [ ] **Filtros do Ranking**: Adicionar opções de filtragem e ordenação:
   - Filtro por partido (ex: PT, PL, MDB)
   - Filtro por UF/região
   - Filtro por ciclo eleitoral (mandato 2019 vs 2023)
@@ -335,20 +335,20 @@ to-de-olho/frontend/
 
 ### Realizadas (16/01)
 
-- [x] **Fix Votacoes**: Corrigido parsing de datas em `sync.go` com fallback para campo `ano`.
-- [x] **Fix Votacoes DB**: Corrigidos 85.771 registros com ano invalido usando ano do `sessao_id`.
-- [x] **Re-sync Votacoes**: Re-sincronizadas todas as votacoes (70.432 no mandato).
+- [x] **Fix Votações**: Corrigido parsing de datas em `sync.go` com fallback para campo `ano`.
+- [x] **Fix Votações DB**: Corrigidos 85.771 registros com ano inválido usando ano do `sessao_id`.
+- [x] **Re-sync Votações**: Re-sincronizadas todas as votações (70.432 no mandato).
 - [x] **Sync CEAPS**: Sincronizados dados de 2023, 2024, 2025 e 2026 (11 registros).
-- [x] **Integridade de Dados**: Adicionadas constraints unicas compostas em `Votacao` e `DespesaCEAPS`.
-- [x] **Idempotencia**: Corrigido Upsert para usar `FirstOrCreate` conforme documentado no ADR.
-- [x] **Limpeza Duplicatas**: Removidas 223.047 votacoes duplicadas do banco.
-- [x] **Auditoria TCC x docs x codigo**: Verificado alinhamento completo (formula, pesos, endpoints).
-- [x] **Frontend Ranking**: Adicionada opcao "Mandato Completo" no seletor de ano.
-- [x] **Frontend Senador**: Tabs agora usa estado controlado (nao reseta ao mudar ano).
+- [x] **Integridade de Dados**: Adicionadas constraints únicas compostas em `Votacao` e `DespesaCEAPS`.
+- [x] **Idempotência**: Corrigido Upsert para usar `FirstOrCreate` conforme documentado no ADR.
+- [x] **Limpeza Duplicatas**: Removidas 223.047 votações duplicadas do banco.
+- [x] **Auditoria TCC x docs x código**: Verificado alinhamento completo (fórmula, pesos, endpoints).
+- [x] **Frontend Ranking**: Adicionada opção "Mandato Completo" no seletor de ano.
+- [x] **Frontend Senador**: Tabs agora usa estado controlado (não reseta ao mudar ano).
 - [x] **Cache Redis**: Limpeza de cache para refletir novos dados.
 
 ### Realizadas (15/01)
 
-- [x] **Backend CEAPS**: Correcao do calculo de total do mandato.
-- [x] **Frontend Layout**: Padronizacao do icone do rodape.
-- [x] **Frontend**: Opcao "Mandato Completo" no seletor de ano.
+- [x] **Backend CEAPS**: Correção do cálculo de total do mandato.
+- [x] **Frontend Layout**: Padronização do ícone do rodapé.
+- [x] **Frontend**: Opção "Mandato Completo" no seletor de ano.
