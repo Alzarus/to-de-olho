@@ -132,8 +132,18 @@ func (s *SyncService) convertSessaoToVotacao(sessao senadoapi.VotacaoSessaoAPI, 
 	// Fallback: se nao conseguiu parsear a data, usa o campo Ano da API
 	// para criar uma data valida (1 de janeiro do ano)
 	// Isso garante que filtros por ano funcionem corretamente
-	if !parsed && sessao.Ano > 0 {
-		data = time.Date(sessao.Ano, time.January, 1, 0, 0, 0, 0, time.UTC)
+	anoFallback := sessao.Ano
+	if anoFallback == 0 {
+		// Extrair ano do sessao_id (formato: "123456_2023")
+		parts := strings.Split(strconv.Itoa(sessao.CodigoSessao)+"_"+strconv.Itoa(sessao.Ano), "_")
+		if len(parts) >= 2 {
+			if parsed, err := strconv.Atoi(parts[len(parts)-1]); err == nil && parsed >= 1988 && parsed <= 2100 {
+				anoFallback = parsed
+			}
+		}
+	}
+	if !parsed && anoFallback > 0 {
+		data = time.Date(anoFallback, time.January, 1, 0, 0, 0, 0, time.UTC)
 	}
 
 	return Votacao{

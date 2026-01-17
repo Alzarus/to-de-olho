@@ -142,15 +142,15 @@ to-de-olho/frontend/
 
 ---
 
-## Dados no Banco (14/01 01:00)
+## Dados no Banco (16/01 21:45)
 
-| Tabela           | Registros |
-| ---------------- | --------- |
-| senadores        | 81        |
-| despesas_ceaps   | ~8.000+   |
-| votacoes         | 85.877    |
-| comissao_membros | 7.186     |
-| proposicoes      | ~20.000+  |
+| Tabela           | Registros | Mandato 2023-2026 |
+| ---------------- | --------- | ----------------- |
+| senadores        | 81        | 81                |
+| despesas_ceaps   | 26.542    | 26.542            |
+| votacoes         | ~170.000  | 70.432            |
+| comissao_membros | 7.287     | 3.686             |
+| proposicoes      | ~9.000    | 5.008             |
 
 ---
 
@@ -161,11 +161,15 @@ to-de-olho/frontend/
 - [ ] **Testes**: Aumentar cobertura e validar correcoes de ingestao.
 - [ ] **Deploy**: Configurar pipeline CI/CD final.
 - [ ] **Graficos**: Adicionar graficos Recharts (radar, barras, linha).
+- [ ] **Backfill Automatico**: Criar `cmd/backfill/main.go` conforme `docs/estrategia-ingestao-dados.md`.
+- [ ] **Docker Compose**: Adicionar variavel `BACKFILL_START_YEAR` para auto-sync no primeiro deploy.
 
 ### Realizadas (16/01)
 
 - [x] **Fix Votacoes**: Corrigido parsing de datas em `sync.go` com fallback para campo `ano`.
-- [x] **Sync CEAPS**: Sincronizados dados de 2023, 2024 e 2025.
+- [x] **Fix Votacoes DB**: Corrigidos 85.771 registros com ano invalido usando ano do `sessao_id`.
+- [x] **Re-sync Votacoes**: Re-sincronizadas todas as votacoes (70.432 no mandato).
+- [x] **Sync CEAPS**: Sincronizados dados de 2023, 2024, 2025 e 2026 (11 registros).
 - [x] **Frontend Ranking**: Adicionada opcao "Mandato Completo" no seletor de ano.
 - [x] **Frontend Senador**: Tabs agora usa estado controlado (nao reseta ao mudar ano).
 - [x] **Cache Redis**: Limpeza de cache para refletir novos dados.
