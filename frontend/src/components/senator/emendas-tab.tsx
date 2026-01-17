@@ -12,6 +12,7 @@ import {
 import { useEmendas } from "@/hooks/use-senador";
 import { formatCurrency } from "@/lib/utils";
 import { AlertCircle, Info } from "lucide-react";
+import { BrazilMap } from "@/components/ui/brazil-map";
 
 export function EmendasTab({ id, ano }: { id: number; ano: number }) {
   const { data, isLoading } = useEmendas(id, ano);
@@ -136,37 +137,12 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-                            <div
-                              className="relative h-[280px] sm:h-[320px] rounded-lg border bg-muted/30"
-                              role="img"
-                              aria-label="Mapa simplificado com distribuição por estados"
-                            >
-                                <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-                                    Brasil
-                                </div>
-                                {destinos.map((destino) => {
-                                    const pos = UF_POSICOES[destino.uf];
-                                    if (!pos) return null;
-                                    const tamanho = 10 + (destino.valor / maxValor) * 18;
-                                    return (
-                                        <div
-                                            key={destino.uf}
-                                            className="absolute flex items-center justify-center rounded-full bg-primary/80 text-[10px] font-semibold text-primary-foreground shadow"
-                                            style={{
-                                                left: `${pos.x}%`,
-                                                top: `${pos.y}%`,
-                                                width: `${tamanho}px`,
-                                                height: `${tamanho}px`,
-                                                transform: "translate(-50%, -50%)",
-                                            }}
-                                            title={`${destino.uf} • ${formatCurrency(destino.valor)}`}
-                                            aria-label={`${destino.uf}, ${formatCurrency(destino.valor)}`}
-                                        >
-                                            {destino.uf}
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                        <div className="relative w-full h-full min-h-[300px] flex items-center justify-center bg-muted/20 rounded-lg border p-4">
+                            <BrazilMap 
+                                data={destinos.map(d => ({ uf: d.uf, value: d.valor }))}
+                                className="w-full h-full"
+                            />
+                        </div>
                             <div className="space-y-4">
                                 <div className="text-xs font-semibold uppercase text-muted-foreground">
                                   Cidades/UF com maior volume
