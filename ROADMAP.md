@@ -32,15 +32,16 @@ Foco em cobrir os Requisitos Funcionais (RF) explícitos no texto do TCC que ain
   - [x] Gráfico de Votos Refatorado: Agrupamento "Outros", Tooltip rico e Cores acessíveis.
   - [x] Navegação Contextual: Botão "Voltar" preserva filtros e abas.
   - [x] Correção Sync: Ajuste de timeout para volumes grandes (ex: Magno Malta).
-- [ ] **Módulo de Emendas (RF08, RF09, RF10)**
+- [x] **Módulo de Emendas (RF08, RF09, RF10)**
   - [x] Backfill CSV do Portal da Transparência (ingestão streaming + normalização de autor).
   - [x] Resumo anual por senador e endpoint `/senadores/:id/emendas`.
   - [x] Destaque para Emendas PIX (Transferências Especiais).
-  - [ ] Mapa de distribuição geográfica simples.
+  - [x] Mapa de distribuição geográfica simples.
 - [x] **Comparador de Senadores (RF19)**
   - [x] Seleção de até 5 senadores via dock flutuante ou página dedicada.
   - [x] Abas: Visão Geral (Radar Chart), Despesas (Gráficos), Fornecedores.
   - [x] Filtros por UF, Partido e busca textual.
+  - [x] Interatividade: Redirecionamento dos gráficos para detalhes do senador.
 - [x] **Visualização do Ranking (RF23)**
   - Gráfico Radar (Recharts) na página do Senador (4 eixos: Produtividade, Presença, Economia, Comissões).
 

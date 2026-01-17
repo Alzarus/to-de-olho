@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { useQueries } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { getEmendas } from "@/lib/api";
@@ -33,6 +35,8 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
         return () => window.removeEventListener("resize", check);
     }, []);
 
+    const router = useRouter();
+
     const queries = useQueries({
         queries: senators.map(s => ({
             queryKey: ["senador-emendas", s.id, year],
@@ -50,6 +54,7 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
         
         return {
             name: s.nome,
+            id: s.id,
             color: COLORS[index % COLORS.length], // s.color se existisse
             Pago: resumo?.total_pago || 0,
             Empenhado: resumo?.total_empenhado || 0,
@@ -66,6 +71,19 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
     };
 
     const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
+
+    const handleBarClick = (data: any) => {
+         if (data && data.payload && data.payload.id) {
+           const senatorId = data.payload.id;
+           router.push(`/senador/${senatorId}?tab=emendas${year > 0 ? `&ano=${year}` : ''}`);
+         } else if (data && data.activePayload && data.activePayload.length > 0) {
+            const payload = data.activePayload[0].payload;
+            if (payload.id) {
+                 router.push(`/senador/${payload.id}?tab=emendas${year > 0 ? `&ano=${year}` : ''}`);
+            }
+         }
+    };
+
 
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
@@ -103,9 +121,9 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
                                       cursor={{ fill: "transparent" }}
                                   />
                                   <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "11px" }} />
-                                  <Bar dataKey="Empenhado" fill="#94a3b8" name="Empenhado" radius={[0, 4, 4, 0]} />
-                                  <Bar dataKey="Pago" fill="#2563eb" name="Pago" radius={[0, 4, 4, 0]} />
-                                  <Bar dataKey="Pix" fill="#ea580c" name="Emendas PIX" radius={[0, 4, 4, 0]} />
+                                  <Bar dataKey="Empenhado" fill="#94a3b8" name="Empenhado" radius={[0, 4, 4, 0]} onClick={handleBarClick} className="cursor-pointer" />
+                                  <Bar dataKey="Pago" fill="#2563eb" name="Pago" radius={[0, 4, 4, 0]} onClick={handleBarClick} className="cursor-pointer" />
+                                  <Bar dataKey="Pix" fill="#ea580c" name="Emendas PIX" radius={[0, 4, 4, 0]} onClick={handleBarClick} className="cursor-pointer" />
                               </BarChart>
                           ) : (
                               <BarChart
@@ -130,9 +148,9 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
                                       cursor={{ fill: "transparent" }}
                                   />
                                   <Legend wrapperStyle={{ paddingTop: "20px" }} />
-                                  <Bar dataKey="Empenhado" fill="#94a3b8" name="Total Empenhado" radius={[4, 4, 0, 0]} />
-                                  <Bar dataKey="Pago" fill="#2563eb" name="Total Pago" radius={[4, 4, 0, 0]} />
-                                  <Bar dataKey="Pix" fill="#ea580c" name="Emendas PIX (Pago)" radius={[4, 4, 0, 0]} />
+                                  <Bar dataKey="Empenhado" fill="#94a3b8" name="Total Empenhado" radius={[4, 4, 0, 0]} onClick={handleBarClick} className="cursor-pointer" />
+                                  <Bar dataKey="Pago" fill="#2563eb" name="Total Pago" radius={[4, 4, 0, 0]} onClick={handleBarClick} className="cursor-pointer" />
+                                  <Bar dataKey="Pix" fill="#ea580c" name="Emendas PIX (Pago)" radius={[4, 4, 0, 0]} onClick={handleBarClick} className="cursor-pointer" />
                               </BarChart>
                           )}
                       </ResponsiveContainer>

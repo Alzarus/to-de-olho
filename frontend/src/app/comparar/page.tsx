@@ -6,7 +6,7 @@ import { usePersistentYear } from "@/hooks/use-persistent-year";
 import { Button } from "@/components/ui/button";
 import { Trash2, Download, X as XIcon, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,17 @@ export default function ComparatorPage() {
   const year = yearParam !== null ? Number(yearParam) : 2024;
   const [isSelectorExpanded, setIsSelectorExpanded] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Tab control via URL
+  const activeTab = searchParams.get("tab") || "overview";
+  
+  const setActiveTab = (tab: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", tab);
+      // Using replace to keep history clean when switching tabs rapidly.
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   // Persist year
   usePersistentYear("comparator");
@@ -178,7 +189,7 @@ export default function ComparatorPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start overflow-x-auto no-scrollbar">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>

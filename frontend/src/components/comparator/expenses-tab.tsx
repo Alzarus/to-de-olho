@@ -22,6 +22,8 @@ import {
 } from "recharts";
 import { useTheme } from "next-themes";
 import { formatCurrency } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 
 interface ExpensesTabProps {
@@ -67,6 +69,7 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
   const apiYear = year === 0 ? undefined : year;
 
   useEffect(() => {
@@ -135,6 +138,7 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
       if (!q.data) return null;
       return {
           name: q.data.nome,
+          id: id,
           Gasto: q.data.detalhes?.gasto_ceaps || 0,
           Teto: q.data.detalhes?.teto_ceaps || 0,
           color: COLORS[index % COLORS.length]
@@ -231,6 +235,23 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
 
   const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
+  const handleBarClick = (data: any) => {
+    if (data && data.payload && data.payload.id) {
+        // If it's a senator-specific bar (has ID in payload)
+        const senatorId = data.payload.id;
+        if (typeof senatorId === 'number') {
+             router.push(`/senador/${senatorId}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`);
+        }
+    } else if (data && data.activePayload && data.activePayload.length > 0) {
+       // For chart click where specific payload comes from clicking the bar
+       const payload = data.activePayload[0].payload;
+       if (payload.id && typeof payload.id === 'number') {
+          router.push(`/senador/${payload.id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`);
+       }
+    }
+  };
+
+
   return (
     <div className="space-y-8">
 
@@ -270,7 +291,7 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
                 // @ts-expect-error - payload is valid in Recharts but missing in some type definitions
                 payload={legendPayload}
               />
-              <Bar dataKey="Gasto" fill="#8884d8" name="Gasto Total">
+              <Bar dataKey="Gasto" fill="#8884d8" name="Gasto Total" onClick={handleBarClick} className="cursor-pointer">
                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                  {(totalVsCapData as any[]).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -316,7 +337,13 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
                   const scoreQ = scoreQueries[index];
                   const name = scoreQ.data?.nome || `Senador ${id}`;
                   return (
-                    <Bar key={id} dataKey={name} fill={COLORS[index % COLORS.length]} />
+                    <Bar 
+                        key={id} 
+                        dataKey={name} 
+                        fill={COLORS[index % COLORS.length]} 
+                        onClick={() => router.push(`/senador/${id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`)}
+                        className="cursor-pointer" 
+                    />
                   );
               })}
             </BarChart>
@@ -363,6 +390,11 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
                         stroke={COLORS[index % COLORS.length]} 
                         strokeWidth={2}
                         dot={{ r: 4 }}
+                        activeDot={{ 
+                            r: 6, 
+                            onClick: () => router.push(`/senador/${id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`),
+                            className: "cursor-pointer"
+                        }}
                       />
                    );
               })}

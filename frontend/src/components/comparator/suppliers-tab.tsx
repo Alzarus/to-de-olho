@@ -7,6 +7,7 @@ import { AlertCircle, Building2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import Link from "next/link";
 
 
 interface SuppliersTabProps {
@@ -129,9 +130,9 @@ export function SuppliersTab({ selectedIds, year }: SuppliersTabProps) {
                                 <div className="flex items-center gap-4 mt-2 sm:mt-0">
                                     <div className="flex -space-x-2">
                                         {senatorSuppliers.filter(s => s.suppliers.has(supplier.name)).map(s => (
-                                            <div key={s.id} className="h-6 w-6 rounded-full border-2 border-background flex items-center justify-center text-[10px] text-white font-bold" style={{ backgroundColor: s.color }} title={s.name}>
+                                            <Link href={`/senador/${s.id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`} key={s.id} className="h-6 w-6 rounded-full border-2 border-background flex items-center justify-center text-[10px] text-white font-bold hover:scale-110 transition-transform cursor-pointer" style={{ backgroundColor: s.color }} title={s.name}>
                                                 {s.name.charAt(0)}
-                                            </div>
+                                            </Link>
                                         ))}
                                     </div>
                                     <span className="font-bold text-sm">{formatCurrency(supplier.total)}</span>
@@ -149,7 +150,11 @@ export function SuppliersTab({ selectedIds, year }: SuppliersTabProps) {
                 <Card key={senator.id} className="overflow-hidden">
                     <div className="h-2 w-full" style={{ backgroundColor: senator.color }} />
                     <CardHeader>
-                        <CardTitle className="text-base truncate" title={senator.name}>{senator.name}</CardTitle>
+                        <CardTitle className="text-base truncate hover:underline cursor-pointer" title={senator.name}>
+                            <Link href={`/senador/${senator.id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`}>
+                                {senator.name}
+                            </Link>
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">

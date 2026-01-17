@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 import type { SenadorScore } from "@/types/api";
 
 interface OverviewTabProps {
@@ -82,10 +83,10 @@ export function OverviewTab({ selectedIds, year }: OverviewTabProps) {
                 <CardContent className="space-y-4">
                     {comparisonData.map(senator => (
                         <div key={senator.senador_id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
-                             <div className="flex items-center gap-2">
-                                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: senator.color }} />
+                             <Link href={`/senador/${senator.senador_id}`} className="flex items-center gap-2 hover:underline cursor-pointer group">
+                                <span className="h-3 w-3 rounded-full group-hover:scale-110 transition-transform" style={{ backgroundColor: senator.color }} />
                                 <span className="font-medium text-sm">{senator.nome}</span>
-                             </div>
+                             </Link>
                              <div className="text-right">
                                 <div className="font-bold text-lg">{senator.score_final.toFixed(1)}</div>
                                 <div className="text-xs text-muted-foreground">Score Final</div>
@@ -105,7 +106,9 @@ export function OverviewTab({ selectedIds, year }: OverviewTabProps) {
                     </p>
                      {comparisonData.map(senator => (
                         <div key={senator.senador_id} className="flex items-center justify-between mb-2">
-                             <span className="text-sm font-medium">{senator.nome}</span>
+                             <Link href={`/senador/${senator.senador_id}`} className="text-sm font-medium hover:underline cursor-pointer">
+                                {senator.nome}
+                             </Link>
                              <span className="text-sm font-bold">#{data.ranking.findIndex(s => s.senador_id === senator.senador_id) + 1}º</span>
                         </div>
                     ))}
