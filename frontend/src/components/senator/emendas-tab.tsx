@@ -1,8 +1,17 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {
     Tooltip,
     TooltipContent,
@@ -11,11 +20,17 @@ import {
 } from "@/components/ui/tooltip";
 import { useEmendas } from "@/hooks/use-senador";
 import { formatCurrency } from "@/lib/utils";
-import { AlertCircle, Info } from "lucide-react";
+import { AlertCircle, Info, Search, ArrowUpDown } from "lucide-react";
 import { BrazilMap } from "@/components/ui/brazil-map";
+
+type TipoFiltro = "todos" | "pix" | "definida";
+type Ordenacao = "pago_desc" | "pago_asc" | "empenhado_desc" | "empenhado_asc" | "localidade";
 
 export function EmendasTab({ id, ano }: { id: number; ano: number }) {
   const { data, isLoading } = useEmendas(id, ano);
+  const [tipoFiltro, setTipoFiltro] = useState<TipoFiltro>("todos");
+  const [busca, setBusca] = useState("");
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>("pago_desc");
 
   if (isLoading) {
     return (
@@ -58,13 +73,51 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
         {},
     );
     const destinos = Object.entries(destinosPorUF).map(([uf, valor]) => ({ uf, valor }));
-    const maxValor = destinos.reduce((max, item) => Math.max(max, item.valor), 0) || 1;
+
+    // Filtragem e ordenacao
+    const emendasFiltradas = useMemo(() => {
+      let resultado = [...emendas];
+      
+      // Filtro por tipo
+      if (tipoFiltro === "pix") {
+        resultado = resultado.filter(e => isEmendaEspecial(e.tipo));
+      } else if (tipoFiltro === "definida") {
+        resultado = resultado.filter(e => !isEmendaEspecial(e.tipo));
+      }
+      
+      // Filtro por busca
+      if (busca) {
+        const termo = busca.toLowerCase();
+        resultado = resultado.filter(e => 
+          e.localidade.toLowerCase().includes(termo) ||
+          e.funcional_programatica.toLowerCase().includes(termo) ||
+          e.numero.toLowerCase().includes(termo)
+        );
+      }
+      
+      // Ordenacao
+      resultado.sort((a, b) => {
+        switch (ordenacao) {
+          case "pago_desc": return b.valor_pago - a.valor_pago;
+          case "pago_asc": return a.valor_pago - b.valor_pago;
+          case "empenhado_desc": return b.valor_empenhado - a.valor_empenhado;
+          case "empenhado_asc": return a.valor_empenhado - b.valor_empenhado;
+          case "localidade": return a.localidade.localeCompare(b.localidade);
+          default: return 0;
+        }
+      });
+      
+      return resultado;
+    }, [emendas, tipoFiltro, busca, ordenacao]);
 
     return (
     <div className="space-y-6">
-      {/* Resumo */}
+      {/* Resumo - Cards clicaveis */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Card>
+                <Card 
+                    className={`cursor-pointer transition-all hover:shadow-md ${tipoFiltro === "todos" ? "ring-2 ring-primary" : ""}`}
+                    onClick={() => setTipoFiltro("todos")}
+                >
                         <CardHeader className="pb-2">
                                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                     Total Pago
@@ -75,6 +128,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                                     type="button"
                                                     aria-label="Entenda o total pago"
                                                     className="text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
                                                     <Info className="h-4 w-4" />
                                                 </button>
@@ -91,40 +145,66 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                 <p className="text-xs text-muted-foreground">de um total empenhado de {formatCurrency(resumo?.total_empenhado || 0)}</p>
                         </CardContent>
                 </Card>
-        <Card>
+        <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${tipoFiltro === "pix" ? "ring-2 ring-orange-500" : ""}`}
+            onClick={() => setTipoFiltro("pix")}
+        >
             <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Emendas PIX (Pago)</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    Emendas PIX (Pago)
+                    <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    aria-label="Entenda as emendas PIX"
+                                    className="text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <Info className="h-4 w-4" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[280px] text-xs">
+                                Transferencias Especiais (PIX) sao emendas de execucao obrigatoria que permitem o repasse direto de recursos para estados e municipios sem convenio ou contrato de repasse.
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalPix)}</div>
                 <p className="text-xs text-muted-foreground">{emendasPix.length} emendas especiais</p>
             </CardContent>
         </Card>
-        <Card>
+        <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${tipoFiltro === "definida" ? "ring-2 ring-primary" : ""}`}
+            onClick={() => setTipoFiltro("definida")}
+        >
             <CardHeader className="pb-2">
                                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                                    Total Empenhado
+                                    Finalidade Definida
                                     <TooltipProvider delayDuration={0}>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <button
                                                     type="button"
-                                                    aria-label="Entenda o total empenhado"
+                                                    aria-label="Entenda transferencias com finalidade definida"
                                                     className="text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
                                                     <Info className="h-4 w-4" />
                                                 </button>
                                             </TooltipTrigger>
-                                            <TooltipContent side="top" className="max-w-[220px] text-xs">
-                                                Soma dos valores reservados no orçamento (empenhos), mesmo que ainda não pagos.
+                                            <TooltipContent side="top" className="max-w-[280px] text-xs">
+                                                Emendas com finalidade definida exigem convenio ou contrato de repasse e tem destinacao especifica determinada pelo parlamentar.
                                             </TooltipContent>
                                         </Tooltip>
                                     </TooltipProvider>
                                 </CardTitle>
             </CardHeader>
             <CardContent>
-                                <div className="text-2xl font-bold">{formatCurrency(resumo?.total_empenhado || 0)}</div>
-                                <p className="text-xs text-muted-foreground">{resumo?.quantidade || 0} emendas executadas</p>
+                                <div className="text-2xl font-bold">{formatCurrency((resumo?.total_pago || 0) - totalPix)}</div>
+                                <p className="text-xs text-muted-foreground">{emendas.length - emendasPix.length} emendas com finalidade</p>
             </CardContent>
         </Card>
       </div>
@@ -174,63 +254,110 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
             {/* Lista de Emendas */}
       <Card>
           <CardHeader>
-              <CardTitle>Detalhamento das Emendas</CardTitle>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <CardTitle>Detalhamento das Emendas</CardTitle>
+                  {tipoFiltro !== "todos" && (
+                      <Badge 
+                          variant="secondary" 
+                          className="cursor-pointer hover:bg-destructive/20"
+                          onClick={() => setTipoFiltro("todos")}
+                      >
+                          Filtro: {tipoFiltro === "pix" ? "Especiais (PIX)" : "Finalidade Definida"} x
+                      </Badge>
+                  )}
+              </div>
+              {/* Barra de filtros */}
+              <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center">
+                  <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input 
+                          placeholder="Buscar por localidade, funcao ou numero..."
+                          value={busca}
+                          onChange={(e) => setBusca(e.target.value)}
+                          className="pl-10"
+                      />
+                  </div>
+                  <Select value={ordenacao} onValueChange={(v) => setOrdenacao(v as Ordenacao)}>
+                      <SelectTrigger className="w-full sm:w-[200px]">
+                          <ArrowUpDown className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Ordenar por" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="pago_desc">Maior valor pago</SelectItem>
+                          <SelectItem value="pago_asc">Menor valor pago</SelectItem>
+                          <SelectItem value="empenhado_desc">Maior empenhado</SelectItem>
+                          <SelectItem value="empenhado_asc">Menor empenhado</SelectItem>
+                          <SelectItem value="localidade">Localidade (A-Z)</SelectItem>
+                      </SelectContent>
+                  </Select>
+              </div>
           </CardHeader>
           <CardContent>
               <div className="space-y-4">
-                                    {emendas.slice(0, 50).map((emenda) => (
-                                        <details key={emenda.id} className="group rounded-lg border p-3 sm:p-4">
-                                            <summary className="flex cursor-pointer flex-col gap-3 sm:flex-row sm:items-start sm:justify-between list-none">
-                                                <div className="min-w-0 space-y-1">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="font-mono text-xs text-muted-foreground">{emenda.numero}</span>
-                                                        <Badge
-                                                            variant={
-                                                                isEmendaEspecial(emenda.tipo)
-                                                                    ? "destructive"
-                                                                    : "outline"
-                                                            }
-                                                            className="text-xs whitespace-normal h-auto text-left leading-tight"
-                                                        >
-                                                            {emenda.tipo}
-                                                        </Badge>
-                                                    </div>
-                                                    <p className="font-medium text-sm break-words">{emenda.localidade}</p>
-                                                    <p className="text-xs text-muted-foreground break-words">{emenda.funcional_programatica}</p>
-                                                </div>
-                                                <div className="text-left sm:text-right">
-                                                    <p className="font-bold text-sm">{formatCurrency(emenda.valor_pago)}</p>
-                                                    <p className="text-xs text-muted-foreground">Empenhado: {formatCurrency(emenda.valor_empenhado)}</p>
-                                                </div>
-                                            </summary>
-                                            <div className="mt-4 grid gap-3 text-xs text-muted-foreground sm:grid-cols-2 sm:text-sm">
-                                                <div>
-                                                    <span className="font-medium text-foreground">Tipo:</span> {emenda.tipo}
-                                                </div>
-                                                <div>
-                                                    <span className="font-medium text-foreground">Ano:</span> {emenda.ano}
-                                                </div>
-                                                <div>
-                                                    <span className="font-medium text-foreground">Localidade:</span> {emenda.localidade}
-                                                </div>
-                                                <div>
-                                                    <span className="font-medium text-foreground">Função:</span> {emenda.funcional_programatica}
-                                                </div>
-                                                <div>
-                                                    <span className="font-medium text-foreground">Empenhado:</span> {formatCurrency(emenda.valor_empenhado)}
-                                                </div>
-                                                <div>
-                                                    <span className="font-medium text-foreground">Pago:</span> {formatCurrency(emenda.valor_pago)}
-                                                </div>
-                                            </div>
-                                        </details>
-                                    ))}
-                  {emendas.length > 50 && (
-                      <p className="text-center text-sm text-muted-foreground pt-4">Exibindo as 50 maiores emendas de um total de {emendas.length}</p>
+                  {emendasFiltradas.length === 0 ? (
+                      <p className="text-center text-sm text-muted-foreground py-8">
+                          Nenhuma emenda encontrada com os filtros aplicados.
+                      </p>
+                  ) : (
+                      <>
+                          {emendasFiltradas.slice(0, 50).map((emenda) => (
+                              <details key={emenda.id} className="group rounded-lg border p-3 sm:p-4">
+                                  <summary className="flex cursor-pointer flex-col gap-3 sm:flex-row sm:items-start sm:justify-between list-none">
+                                      <div className="min-w-0 space-y-1">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                              <span className="font-mono text-xs text-muted-foreground">{emenda.numero}</span>
+                                              <Badge
+                                                  variant={
+                                                      isEmendaEspecial(emenda.tipo)
+                                                          ? "destructive"
+                                                          : "outline"
+                                                  }
+                                                  className="text-xs whitespace-normal h-auto text-left leading-tight"
+                                              >
+                                                  {emenda.tipo}
+                                              </Badge>
+                                          </div>
+                                          <p className="font-medium text-sm break-words">{emenda.localidade}</p>
+                                          <p className="text-xs text-muted-foreground break-words">{emenda.funcional_programatica}</p>
+                                      </div>
+                                      <div className="text-left sm:text-right">
+                                          <p className="font-bold text-sm">{formatCurrency(emenda.valor_pago)}</p>
+                                          <p className="text-xs text-muted-foreground">Empenhado: {formatCurrency(emenda.valor_empenhado)}</p>
+                                      </div>
+                                  </summary>
+                                  <div className="mt-4 grid gap-3 text-xs text-muted-foreground sm:grid-cols-2 sm:text-sm">
+                                      <div>
+                                          <span className="font-medium text-foreground">Tipo:</span> {emenda.tipo}
+                                      </div>
+                                      <div>
+                                          <span className="font-medium text-foreground">Ano:</span> {emenda.ano}
+                                      </div>
+                                      <div>
+                                          <span className="font-medium text-foreground">Localidade:</span> {emenda.localidade}
+                                      </div>
+                                      <div>
+                                          <span className="font-medium text-foreground">Funcao:</span> {emenda.funcional_programatica}
+                                      </div>
+                                      <div>
+                                          <span className="font-medium text-foreground">Empenhado:</span> {formatCurrency(emenda.valor_empenhado)}
+                                      </div>
+                                      <div>
+                                          <span className="font-medium text-foreground">Pago:</span> {formatCurrency(emenda.valor_pago)}
+                                      </div>
+                                  </div>
+                              </details>
+                          ))}
+                          {emendasFiltradas.length > 50 && (
+                              <p className="text-center text-sm text-muted-foreground pt-4">
+                                  Exibindo as 50 primeiras emendas de um total de {emendasFiltradas.length}
+                              </p>
+                          )}
+                      </>
                   )}
               </div>
           </CardContent>
       </Card>
+
     </div>
   );
 }
