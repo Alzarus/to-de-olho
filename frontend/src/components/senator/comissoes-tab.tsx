@@ -1,5 +1,7 @@
 "use client";
 
+import { PaginationWithInput } from "@/components/ui/pagination-with-input";
+
 import { useComissoes } from "@/hooks/use-senador";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -177,33 +179,12 @@ export function ComissoesTab({ id }: { id: number }) {
       </div>
 
        {/* Pagination Controls */}
-       {data.total > limit && (
-           <div className="flex items-center justify-between border-t pt-4">
-               <div className="text-sm text-muted-foreground">
-                   Página {data.page} de {data.total_pages}
-               </div>
-               <div className="flex items-center gap-2">
-                   <Button 
-                       variant="outline" 
-                       size="sm" 
-                       onClick={prevPage} 
-                       disabled={page === 1}
-                   >
-                       <ChevronLeft className="h-4 w-4 mr-1" />
-                       Anterior
-                   </Button>
-                   <Button 
-                       variant="outline" 
-                       size="sm" 
-                       onClick={nextPage} 
-                       disabled={page >= data.total_pages}
-                   >
-                       Próximo
-                       <ChevronRight className="h-4 w-4 ml-1" />
-                   </Button>
-               </div>
-           </div>
-       )}
+       <PaginationWithInput 
+            currentPage={data.page} 
+            totalPages={data.total_pages} 
+            onPageChange={setPage} 
+            className="border-t pt-4"
+       />
     </div>
   );
 }

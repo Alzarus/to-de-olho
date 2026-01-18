@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useComparator } from "@/contexts/comparator-context";
 import { usePersistentYear } from "@/hooks/use-persistent-year";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { SuppliersTab } from "@/components/comparator/suppliers-tab";
 import { EmendasTab } from "@/components/comparator/emendas-tab";
 import { SenatorSelector } from "@/components/comparator/senator-selector";
 
-export default function ComparatorPage() {
+function ComparatorContent() {
   const { selectedSenators, clearSelection, removeSenator } = useComparator();
   const searchParams = useSearchParams();
   const yearParam = searchParams.get("ano");
@@ -254,5 +254,13 @@ export default function ComparatorPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ComparatorPage() {
+  return (
+    <Suspense fallback={<div className="container py-8 text-center">Carregando comparador...</div>}>
+      <ComparatorContent />
+    </Suspense>
   );
 }

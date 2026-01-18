@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
@@ -15,7 +15,7 @@ import type { SenadorScore } from "@/types/api";
 
 const ANOS_DISPONIVEIS = [0, 2026, 2025, 2024, 2023];
 
-export default function EmendasPage() {
+function EmendasContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -304,5 +304,13 @@ export default function EmendasPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function EmendasPage() {
+  return (
+    <Suspense fallback={<div className="container py-8 text-center">Carregando emendas...</div>}>
+      <EmendasContent />
+    </Suspense>
   );
 }

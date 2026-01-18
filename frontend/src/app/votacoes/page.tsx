@@ -2,13 +2,14 @@
 
 import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, ArrowUp, ArrowDown } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PaginationWithInput } from "@/components/ui/pagination-with-input";
 import {
   Table,
   TableBody,
@@ -252,29 +253,12 @@ function VotacoesContent() {
 
       {/* Paginação */}
       {!loading && totalPages > 1 && (
-        <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Navegação de páginas">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => updateUrl({ page: Math.max(1, page - 1) })}
-            disabled={page === 1}
-            aria-label="Página anterior"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-sm font-medium" aria-current="page">
-            Página {page} de {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => updateUrl({ page: Math.min(totalPages, page + 1) })}
-            disabled={page === totalPages}
-            aria-label="Próxima página"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </nav>
+        <PaginationWithInput 
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={(p) => updateUrl({ page: p })}
+            className="mt-6"
+        />
       )}
     </div>
   );

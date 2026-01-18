@@ -5,6 +5,7 @@ import {
   getSenador,
   getSenadorScore,
   getVotosPorTipo,
+  getVotacoes,
   getEmendas,
   getProposicoes,
   getComissoes,
@@ -24,6 +25,20 @@ export function useSenadorScore(id: number, ano?: number) {
     queryKey: ["senador-score", id, ano],
     queryFn: () => getSenadorScore(id, ano),
     enabled: id > 0,
+  });
+}
+
+export function useVotacoes(
+  id: number,
+  page: number = 1,
+  limit: number = 20,
+  voto: string = "",
+) {
+  return useQuery({
+    queryKey: ["senador-votacoes", id, page, limit, voto],
+    queryFn: () => getVotacoes(id, page, limit, voto),
+    enabled: id > 0,
+    placeholderData: (previousData) => previousData,
   });
 }
 

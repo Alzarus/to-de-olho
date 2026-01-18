@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -55,7 +55,7 @@ const VoteBadge = ({ voto }: { voto: string }) => {
   }
 };
 
-export default function VotacaoDetalhePage() {
+function VotacaoDetalheContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const backUrl = searchParams.get("backUrl") || "/votacoes";
@@ -334,5 +334,13 @@ export default function VotacaoDetalhePage() {
           </div>
       )}
     </div>
+  );
+}
+
+export default function VotacaoDetalhePage() {
+  return (
+    <Suspense fallback={<div className="container py-12 text-center">Carregando detalhes...</div>}>
+      <VotacaoDetalheContent />
+    </Suspense>
   );
 }

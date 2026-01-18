@@ -33,27 +33,34 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		return
 	}
 
-	// Limite opcional (default 50)
-	limit := 50
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = l
-		}
-	}
+	// Parametros de paginacao
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	votoType := c.Query("voto")
 
-	votacoes, err := h.repo.FindBySenadorID(senadorID, limit)
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
+
+	votacoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, votoType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar votacoes"})
 		return
 	}
 
-	total, _ := h.repo.CountBySenadorID(senadorID)
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
 
 	c.JSON(http.StatusOK, gin.H{
-		"senador_id": senadorID,
-		"total":      total,
-		"limit":      limit,
-		"votacoes":   votacoes,
+		"senador_id":  senadorID,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": totalPages,
+		"votacoes":    votacoes,
 	})
 }
 

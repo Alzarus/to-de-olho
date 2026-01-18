@@ -106,7 +106,7 @@ export interface Despesa {
   senador_id: number;
   tipo_despesa: string;
   valor: number;
-  data_documento: string;
+  data_emissao: string;
   detalhe: string;
   fornecedor: string;
 }
@@ -207,4 +207,22 @@ export interface ComissoesResponse {
   page: number;
   total_pages: number;
   comissoes: ComissaoMembro[];
+}
+// Votacoes
+export interface VotacaoItem {
+  id: number;
+  sessao_id: string;
+  data: string;
+  voto: string;
+  materia: string;
+  descricao_votacao: string;
+}
+
+export interface VotacoesResponse {
+  senador_id: number;
+  total: number;
+  limit: number;
+  page: number;
+  total_pages: number;
+  votacoes: VotacaoItem[];
 }

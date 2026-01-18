@@ -35,7 +35,7 @@ export function SenatorRadarChart({ score }: SenatorRadarChartProps) {
       </CardHeader>
       <CardContent className="flex-1 min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+          <RadarChart cx="50%" cy="50%" outerRadius="55%" data={data}>
             <PolarGrid stroke={isDark ? "#374151" : "#e5e7eb"} />
             <PolarAngleAxis
               dataKey="subject"

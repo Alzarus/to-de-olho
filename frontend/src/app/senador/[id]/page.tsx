@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,20 +23,7 @@ import { ComissoesTab } from "@/components/senator/comissoes-tab";
 import { CeapsTab } from "@/components/senator/ceaps-tab";
 
 
-interface VotacaoItem {
-  id: number;
-  sessao_id: string;
-  data: string;
-  voto: string;
-  materia: string;
-  descricao_votacao: string;
-}
 
-interface VotacoesResponse {
-  senador_id: number;
-  total: number;
-  votacoes: VotacaoItem[];
-}
 
 const VOTE_LABELS: Record<string, string> = {
   Sim: "Sim",
@@ -45,6 +32,8 @@ const VOTE_LABELS: Record<string, string> = {
   Obstrucao: "Obstrução",
   NCom: "Não Compareceu",
 };
+
+import { VotacoesResponse, VotacaoItem } from "@/types/api";
 
 function VotosChartWrapper({ id }: { id: number }) {
   const router = useRouter();
@@ -77,7 +66,7 @@ function VotosChartWrapper({ id }: { id: number }) {
     const fetchVotacoes = async () => {
       setVotacoesLoading(true);
       try {
-        const res = await fetcher<VotacoesResponse>(`/api/v1/senadores/${id}/votacoes?limit=500`);
+        const res = await fetcher<VotacoesResponse>(`/api/v1/senadores/${id}/votacoes?limit=1000`);
         
         const filtered = res.votacoes.filter(v => {
           if (selectedVoteType === "Outros") {
@@ -237,7 +226,7 @@ function SenadorError({ message }: { message: string }) {
   );
 }
 
-export default function SenadorPage() {
+function SenadorContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -656,5 +645,13 @@ export default function SenadorPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function SenadorPage() {
+  return (
+    <Suspense fallback={<SenadorSkeleton />}>
+      <SenadorContent />
+    </Suspense>
   );
 }

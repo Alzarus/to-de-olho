@@ -35,6 +35,12 @@ func (s *SyncService) SyncFromAPI(ctx context.Context, ano int) error {
 		return err
 	}
 
+	// Limpar dados existentes do ano para evitar duplicatas (especialmente se chaves mudaram)
+	if err := s.repo.DeleteByAno(ano); err != nil {
+		slog.Error("falha ao limpar despesas antigas", "ano", ano, "error", err)
+		return err
+	}
+
 	slog.Info("despesas recebidas da API", "total", len(despesasAPI))
 
 	// Buscar mapeamento codigo parlamentar -> ID interno

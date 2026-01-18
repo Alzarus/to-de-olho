@@ -49,6 +49,10 @@ func (r *Repository) FindBySenadorID(senadorID int, ano *int, limit int, offset 
 		order = "valor DESC"
 	case "valor_asc":
 		order = "valor ASC"
+	case "fornecedor_asc":
+		order = "fornecedor ASC"
+	case "fornecedor_desc":
+		order = "fornecedor DESC"
 	}
 
 	result := dbQuery.Order(order).
@@ -118,4 +122,9 @@ func (r *Repository) Upsert(despesa *DespesaCEAPS) error {
 	return r.db.Where("senador_id = ? AND cnpj_cpf = ? AND data_emissao = ? AND valor_centavos = ?",
 		despesa.SenadorID, despesa.CNPJCPF, despesa.DataEmissao, despesa.ValorCentavos).
 		Assign(*despesa).FirstOrCreate(despesa).Error
+}
+
+// DeleteByAno remove todas as despesas de um determinado ano
+func (r *Repository) DeleteByAno(ano int) error {
+	return r.db.Where("ano = ?", ano).Delete(&DespesaCEAPS{}).Error
 }

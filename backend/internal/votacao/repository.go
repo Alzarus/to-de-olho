@@ -15,17 +15,35 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
-// FindBySenadorID retorna votacoes de um senador
-func (r *Repository) FindBySenadorID(senadorID int, limit int) ([]Votacao, error) {
+// FindBySenadorID retorna votacoes de um senador com paginacao e filtros
+func (r *Repository) FindBySenadorID(senadorID int, limit, offset int, votoType string) ([]Votacao, int64, error) {
 	var votacoes []Votacao
-	query := r.db.Where("senador_id = ?", senadorID).Order("data DESC")
+	var total int64
 
-	if limit > 0 {
-		query = query.Limit(limit)
+	query := r.db.Model(&Votacao{}).Where("senador_id = ?", senadorID)
+
+	// Filtro por tipo de voto
+	if votoType != "" {
+		if votoType == "Outros" {
+			// Outros = tudo que NAO for Sim, Nao, Abstencao, Obstrucao
+			query = query.Where("voto NOT IN (?, ?, ?, ?)", "Sim", "Nao", "Abstencao", "Obstrucao")
+		} else {
+			query = query.Where("voto = ?", votoType)
+		}
 	}
 
-	result := query.Find(&votacoes)
-	return votacoes, result.Error
+	// Contar total (considerando filtros)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Aplicar ordenacao e paginacao
+	result := query.Order("data DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&votacoes)
+	
+	return votacoes, total, result.Error
 }
 
 // CountBySenadorID retorna total de votacoes de um senador
