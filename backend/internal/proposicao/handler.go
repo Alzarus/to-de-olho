@@ -1,6 +1,7 @@
 package proposicao
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -22,7 +23,12 @@ func NewHandler(repo *Repository) *Handler {
 // @Tags proposicoes
 // @Produce json
 // @Param id path int true "ID do senador"
-// @Param limit query int false "Limite de resultados (default 50)"
+// @Param limit query int false "Limite de resultados (default 20)"
+// @Param page query int false "Pagina (default 1)"
+// @Param q query string false "Termo de busca"
+// @Param ano query int false "Ano da materia"
+// @Param sigla query string false "Sigla do subtipo (PEC, PL, etc)"
+// @Param sort query string false "Ordenacao (data_desc, data_asc, ano_desc)"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/senadores/{id}/proposicoes [get]
 func (h *Handler) ListBySenador(c *gin.Context) {
@@ -33,26 +39,49 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		return
 	}
 
-	// Limite opcional (default 50)
-	limit := 50
+	// Paginacao
+	limit := 20
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
 			limit = l
 		}
 	}
 
-	proposicoes, err := h.repo.FindBySenadorID(senadorID, limit)
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	
+	queryStr := c.Query("q")
+	sigla := c.Query("sigla")
+	status := c.Query("status")
+	sort := c.Query("sort")
+	
+	fmt.Printf("DEBUG Proposicoes: id=%d q=%s sigla=%s status=%s sort=%s\n", senadorID, queryStr, sigla, status, sort)
+	
+	var ano int
+	if anoStr := c.Query("ano"); anoStr != "" {
+		if a, err := strconv.Atoi(anoStr); err == nil {
+			ano = a
+		}
+	}
+
+	offset := (page - 1) * limit
+
+	proposicoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, queryStr, ano, sigla, status, sort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar proposicoes"})
 		return
 	}
 
-	total, _ := h.repo.CountBySenadorID(senadorID)
-
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id":   senadorID,
 		"total":        total,
 		"limit":        limit,
+		"page":         page,
+		"total_pages":  (int(total) + limit - 1) / limit,
 		"proposicoes":  proposicoes,
 	})
 }

@@ -119,6 +119,9 @@ export interface DespesaAgregado {
 export interface DespesasResponse {
   senador_id: number;
   total: number;
+  limit: number;
+  page: number;
+  total_pages: number;
   despesas: Despesa[];
 }
 
@@ -157,4 +160,51 @@ export interface Emenda {
 export interface EmendasResponse {
   emendas: Emenda[];
   resumo?: ResumoEmendas;
+}
+
+// Proposicoes
+export interface Proposicao {
+  id: number;
+  senador_id: number;
+  codigo_materia: string;
+  sigla_subtipo_materia: string;
+  numero_materia: string;
+  ano_materia: number;
+  descricao_identificacao: string;
+  ementa: string;
+  situacao_atual: string;
+  data_apresentacao?: string;
+  estagio_tramitacao: string;
+  pontuacao: number;
+}
+
+export interface ProposicaoResponse {
+  senador_id: number;
+  total: number;
+  limit: number;
+  page: number;
+  total_pages: number;
+  proposicoes: Proposicao[];
+}
+
+// Comissoes
+export interface ComissaoMembro {
+  id: number;
+  senador_id: number;
+  codigo_comissao: string;
+  sigla_comissao: string;
+  nome_comissao: string;
+  sigla_casa_comissao: string;
+  descricao_participacao: string;
+  data_inicio?: string;
+  data_fim?: string;
+}
+
+export interface ComissoesResponse {
+  senador_id: number;
+  total: number;
+  limit: number;
+  page: number;
+  total_pages: number;
+  comissoes: ComissaoMembro[];
 }

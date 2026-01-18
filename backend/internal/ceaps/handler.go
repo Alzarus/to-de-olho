@@ -23,6 +23,11 @@ func NewHandler(repo *Repository) *Handler {
 // @Produce json
 // @Param senador_id path int true "ID do senador"
 // @Param ano query int false "Ano de referencia"
+// @Param limit query int false "Limite (default 20)"
+// @Param page query int false "Pagina (default 1)"
+// @Param q query string false "Termo de busca"
+// @Param tipo query string false "Tipo de despesa"
+// @Param sort query string false "Ordenacao (data_desc, data_asc, valor_desc, valor_asc)"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/senadores/{senador_id}/despesas [get]
 func (h *Handler) ListBySenador(c *gin.Context) {
@@ -36,12 +41,32 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 	// Parametro opcional: ano
 	var ano *int
 	if anoStr := c.Query("ano"); anoStr != "" {
-		if anoVal, err := strconv.Atoi(anoStr); err == nil {
+		if anoVal, err := strconv.Atoi(anoStr); err == nil && anoVal > 0 {
 			ano = &anoVal
 		}
 	}
+	
+	// Paginacao
+	limit := 20
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
 
-	despesas, err := h.repo.FindBySenadorID(senadorID, ano)
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	
+	queryStr := c.Query("q")
+	tipo := c.Query("tipo")
+	sort := c.Query("sort")
+	offset := (page - 1) * limit
+
+	despesas, total, err := h.repo.FindBySenadorID(senadorID, ano, limit, offset, queryStr, tipo, sort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar despesas"})
 		return
@@ -49,7 +74,10 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id": senadorID,
-		"total":      len(despesas),
+		"total":      total,
+		"limit":      limit,
+		"page":       page,
+		"total_pages": (int(total) + limit - 1) / limit,
 		"despesas":   despesas,
 	})
 }

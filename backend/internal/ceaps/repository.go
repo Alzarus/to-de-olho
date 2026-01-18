@@ -15,17 +15,48 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
-// FindBySenadorID retorna despesas de um senador
-func (r *Repository) FindBySenadorID(senadorID int, ano *int) ([]DespesaCEAPS, error) {
+// FindBySenadorID retorna despesas de um senador com paginacao, busca e filtros
+func (r *Repository) FindBySenadorID(senadorID int, ano *int, limit int, offset int, queryStr string, tipo string, sort string) ([]DespesaCEAPS, int64, error) {
 	var despesas []DespesaCEAPS
-	query := r.db.Where("senador_id = ?", senadorID)
+	var total int64
+
+	dbQuery := r.db.Model(&DespesaCEAPS{}).Where("senador_id = ?", senadorID)
 
 	if ano != nil {
-		query = query.Where("ano = ?", *ano)
+		dbQuery = dbQuery.Where("ano = ?", *ano)
 	}
 
-	result := query.Order("ano DESC, mes DESC").Find(&despesas)
-	return despesas, result.Error
+	if tipo != "" && tipo != "todos" {
+		dbQuery = dbQuery.Where("tipo_despesa = ?", tipo)
+	}
+
+	if queryStr != "" {
+		search := "%" + queryStr + "%"
+		dbQuery = dbQuery.Where("(fornecedor ILIKE ? OR tipo_despesa ILIKE ?)", search, search)
+	}
+
+	if err := dbQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Sorting
+	// Default: Date DESC
+	order := "ano DESC, mes DESC, data_emissao DESC"
+	switch sort {
+	case "data_asc":
+		order = "ano ASC, mes ASC, data_emissao ASC"
+	case "valor_desc":
+		order = "valor DESC"
+	case "valor_asc":
+		order = "valor ASC"
+	}
+
+	result := dbQuery.Order(order).
+		Limit(limit).
+		Offset(offset).
+		Find(&despesas)
+		
+	return despesas, total, result.Error
 }
 
 // AggregateByTipo retorna gastos agregados por tipo de despesa

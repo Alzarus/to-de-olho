@@ -47,7 +47,7 @@ Foco em cobrir os Requisitos Funcionais (RF) explícitos no texto do TCC que ain
 
 ### Prioridade 2: Qualidade & Deploy
 
-- [ ] **Deploy Produção**: Dockerfile otimizado + Cloud Run.
+- [ ] **Deploy Produção**: Dockerfile otimizado com backfill e sync diário + cache Redis + Cloud Run.
 - [ ] **SEO Completo**: Meta tags, Open Graph, Sitemap (Next.js).
 - [ ] **Performance**: Cache headers, otimização de imagens (Bun).
 - [ ] **Testes**: Garantir cobertura mínima nos serviços críticos (Ranking/Sync).

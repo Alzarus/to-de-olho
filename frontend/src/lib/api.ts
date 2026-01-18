@@ -7,6 +7,8 @@ import type {
   DespesasResponse,
   DespesasAgregadoResponse,
   EmendasResponse,
+  ProposicaoResponse,
+  ComissoesResponse,
 } from "@/types/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -74,9 +76,20 @@ export async function getVotosPorTipo(
 export async function getDespesas(
   id: number,
   ano?: number,
+  page: number = 1,
+  limit: number = 20,
+  search: string = "",
+  tipo: string = "",
+  sort: string = "",
 ): Promise<DespesasResponse> {
   const params = new URLSearchParams();
   if (ano) params.append("ano", ano.toString());
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+  if (search) params.append("q", search);
+  if (tipo && tipo !== "todos") params.append("tipo", tipo);
+  if (sort) params.append("sort", sort);
+
   const query = params.toString() ? `?${params.toString()}` : "";
   return fetcher<DespesasResponse>(`/api/v1/senadores/${id}/despesas${query}`);
 }
@@ -101,4 +114,51 @@ export async function getEmendas(
   if (ano) params.append("ano", ano.toString());
   const query = params.toString() ? `?${params.toString()}` : "";
   return fetcher<EmendasResponse>(`/api/v1/senadores/${id}/emendas${query}`);
+}
+
+export async function getProposicoes(
+  id: number,
+  page: number = 1,
+  limit: number = 20,
+  search: string = "",
+  ano?: number,
+  sigla: string = "",
+  status: string = "",
+  sort: string = "",
+): Promise<ProposicaoResponse> {
+  const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+  if (search) params.append("q", search);
+  if (ano) params.append("ano", ano.toString());
+  if (sigla) params.append("sigla", sigla);
+  if (status) params.append("status", status);
+  if (sort) params.append("sort", sort);
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return fetcher<ProposicaoResponse>(
+    `/api/v1/senadores/${id}/proposicoes${query}`,
+  );
+}
+
+// Comissoes
+export async function getComissoes(
+  id: number,
+  page: number = 1,
+  limit: number = 20,
+  search: string = "",
+  status: string = "",
+  participacao: string = "",
+): Promise<ComissoesResponse> {
+  const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+  if (search) params.append("q", search);
+  if (status) params.append("status", status);
+  if (participacao) params.append("participacao", participacao);
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return fetcher<ComissoesResponse>(
+    `/api/v1/senadores/${id}/comissoes${query}`,
+  );
 }

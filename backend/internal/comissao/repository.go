@@ -15,17 +15,45 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
-// FindBySenadorID retorna comissoes de um senador
-func (r *Repository) FindBySenadorID(senadorID int, limit int) ([]ComissaoMembro, error) {
+// FindBySenadorID retorna comissoes de um senador com paginacao, busca e filtros
+func (r *Repository) FindBySenadorID(senadorID int, limit int, offset int, queryStr string, status string, participacao string) ([]ComissaoMembro, int64, error) {
 	var comissoes []ComissaoMembro
-	query := r.db.Where("senador_id = ?", senadorID).Order("data_inicio DESC")
+	var total int64
+	
+	dbQuery := r.db.Model(&ComissaoMembro{}).Where("senador_id = ?", senadorID)
 
-	if limit > 0 {
-		query = query.Limit(limit)
+	if queryStr != "" {
+		search := "%" + queryStr + "%"
+		dbQuery = dbQuery.Where("(nome_comissao ILIKE ? OR descricao_participacao ILIKE ? OR sigla_comissao ILIKE ?)", search, search, search)
 	}
 
-	result := query.Find(&comissoes)
-	return comissoes, result.Error
+	// Status: ativa | inativa
+	if status == "ativa" {
+		dbQuery = dbQuery.Where("data_fim IS NULL")
+	} else if status == "inativa" {
+		dbQuery = dbQuery.Where("data_fim IS NOT NULL")
+	}
+
+	// Participacao: Titular | Suplente
+	if participacao != "" && participacao != "todos" {
+		dbQuery = dbQuery.Where("descricao_participacao = ?", participacao)
+	}
+
+	if err := dbQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	dbQuery = dbQuery.Order("data_inicio DESC")
+
+	if limit > 0 {
+		dbQuery = dbQuery.Limit(limit)
+	}
+	if offset > 0 {
+		dbQuery = dbQuery.Offset(offset)
+	}
+
+	result := dbQuery.Find(&comissoes)
+	return comissoes, total, result.Error
 }
 
 // FindAtivasBySenadorID retorna comissoes ativas de um senador (sem data_fim)

@@ -18,6 +18,9 @@ import { X } from "lucide-react";
 import { CompareToggleButton } from "@/components/comparator/compare-toggle-button";
 import { SenatorRadarChart } from "@/components/senator/radar-chart";
 import { EmendasTab } from "@/components/senator/emendas-tab";
+import { ProposicoesTab } from "@/components/senator/proposicoes-tab";
+import { ComissoesTab } from "@/components/senator/comissoes-tab";
+import { CeapsTab } from "@/components/senator/ceaps-tab";
 
 
 interface VotacaoItem {
@@ -477,45 +480,48 @@ export default function SenadorPage() {
         </div>
 
         <TabsContent value="proposicoes" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Produção Legislativa ({ano === 0 ? "Mandato" : ano})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <p className="text-3xl font-bold text-foreground">
-                    {senador.detalhes.total_proposicoes}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Proposições apresentadas
-                  </p>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Produção Legislativa ({ano === 0 ? "Mandato" : ano})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <p className="text-3xl font-bold text-foreground">
+                      {senador.detalhes.total_proposicoes}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Proposições apresentadas
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-green-600">
+                      {senador.detalhes.proposicoes_aprovadas}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Aprovadas</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-yellow-600">
+                      {senador.detalhes.transformadas_em_lei}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Transformadas em lei
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-primary">
+                      {senador.detalhes.pontuacao_proposicoes}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Pontuação total
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-3xl font-bold text-green-600">
-                    {senador.detalhes.proposicoes_aprovadas}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Aprovadas</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-yellow-600">
-                    {senador.detalhes.transformadas_em_lei}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Transformadas em lei
-                  </p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-primary">
-                    {senador.detalhes.pontuacao_proposicoes}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Pontuação total
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            <ProposicoesTab id={id} />
+          </div>
         </TabsContent>
 
         <TabsContent value="votacoes" className="mt-6">
@@ -559,77 +565,83 @@ export default function SenadorPage() {
         </TabsContent>
 
         <TabsContent value="ceaps" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Cota para Exercício da Atividade Parlamentar ({ano === 0 ? "Mandato" : ano})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <p className="text-3xl font-bold text-foreground">
-                    {formatCurrency(senador.detalhes.gasto_ceaps)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Gasto total</p>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Cota para Exercício da Atividade Parlamentar ({ano === 0 ? "Mandato" : ano})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <p className="text-3xl font-bold text-foreground">
+                      {formatCurrency(senador.detalhes.gasto_ceaps)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Gasto total</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-muted-foreground">
+                      {formatCurrency(senador.detalhes.teto_ceaps)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Teto {ano === 0 ? "no periodo" : "anual"}</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-green-600">
+                      {(
+                        ((senador.detalhes.teto_ceaps -
+                          senador.detalhes.gasto_ceaps) /
+                          senador.detalhes.teto_ceaps) *
+                        100
+                      ).toFixed(1)}
+                      %
+                    </p>
+                    <p className="text-sm text-muted-foreground">Economia</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-3xl font-bold text-muted-foreground">
-                    {formatCurrency(senador.detalhes.teto_ceaps)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Teto {ano === 0 ? "no periodo" : "anual"}</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-green-600">
-                    {(
-                      ((senador.detalhes.teto_ceaps -
-                        senador.detalhes.gasto_ceaps) /
-                        senador.detalhes.teto_ceaps) *
-                      100
-                    ).toFixed(1)}
-                    %
-                  </p>
-                  <p className="text-sm text-muted-foreground">Economia</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            <CeapsTab id={id} ano={ano} />
+          </div>
         </TabsContent>
 
         <TabsContent value="comissoes" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Participação em Comissões ({ano === 0 ? "Mandato" : ano})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <p className="text-3xl font-bold text-foreground">
-                    {senador.detalhes.comissoes_ativas}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Comissões ativas
-                  </p>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Participação em Comissões ({ano === 0 ? "Mandato" : ano})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <p className="text-3xl font-bold text-foreground">
+                      {senador.detalhes.comissoes_ativas}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Comissões ativas
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-primary">
+                      {senador.detalhes.comissoes_titular}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Titularidades</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-muted-foreground">
+                      {senador.detalhes.comissoes_suplente}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Suplências</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-yellow-600">
+                      {senador.detalhes.pontos_comissoes.toFixed(0)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Pontos</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-3xl font-bold text-primary">
-                    {senador.detalhes.comissoes_titular}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Titularidades</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-muted-foreground">
-                    {senador.detalhes.comissoes_suplente}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Suplências</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-yellow-600">
-                    {senador.detalhes.pontos_comissoes.toFixed(0)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Pontos</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            <ComissoesTab id={id} />
+          </div>
         </TabsContent>
 
         <TabsContent value="emendas" className="mt-6">

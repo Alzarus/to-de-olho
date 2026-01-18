@@ -14,17 +14,56 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
-// FindBySenadorID retorna proposicoes de um senador
-func (r *Repository) FindBySenadorID(senadorID int, limit int) ([]Proposicao, error) {
+// FindBySenadorID retorna proposicoes de um senador com paginacao, busca e filtros
+func (r *Repository) FindBySenadorID(senadorID int, limit int, offset int, queryStr string, ano int, sigla string, tramitacao string, sort string) ([]Proposicao, int64, error) {
 	var proposicoes []Proposicao
-	query := r.db.Where("senador_id = ?", senadorID).Order("data_apresentacao DESC")
+	var total int64
+	
+	dbQuery := r.db.Model(&Proposicao{}).Where("senador_id = ?", senadorID)
 
-	if limit > 0 {
-		query = query.Limit(limit)
+	if queryStr != "" {
+		search := "%" + queryStr + "%"
+		dbQuery = dbQuery.Where("(ementa ILIKE ? OR descricao_identificacao ILIKE ? OR codigo_materia ILIKE ?)", search, search, search)
 	}
 
-	result := query.Find(&proposicoes)
-	return proposicoes, result.Error
+	if ano > 0 {
+		dbQuery = dbQuery.Where("ano_materia = ?", ano)
+	}
+
+	if sigla != "" {
+		// Use TRIM to handle potential whitespace in DB or input
+		dbQuery = dbQuery.Where("TRIM(sigla_subtipo_materia) ILIKE TRIM(?)", sigla)
+	}
+
+	if tramitacao != "" {
+		dbQuery = dbQuery.Where("(estagio_tramitacao = ? OR situacao_atual ILIKE ?)", tramitacao, tramitacao)
+	}
+
+	if err := dbQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Sorting
+	// Default: Data DESC (NULLS LAST to keep invalid dates at bottom), fallback to Ano/Codigo
+	order := "data_apresentacao DESC NULLS LAST, ano_materia DESC, codigo_materia DESC"
+	
+	if sort == "data_asc" {
+		order = "data_apresentacao ASC NULLS LAST, ano_materia ASC, codigo_materia ASC"
+	} else if sort == "ano_desc" {
+		order = "ano_materia DESC, data_apresentacao DESC NULLS LAST"
+	}
+	
+	dbQuery = dbQuery.Order(order)
+
+	if limit > 0 {
+		dbQuery = dbQuery.Limit(limit)
+	}
+	if offset > 0 {
+		dbQuery = dbQuery.Offset(offset)
+	}
+
+	result := dbQuery.Find(&proposicoes)
+	return proposicoes, total, result.Error
 }
 
 // CountBySenadorID retorna total de proposicoes de um senador

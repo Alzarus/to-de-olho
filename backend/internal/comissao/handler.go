@@ -22,7 +22,11 @@ func NewHandler(repo *Repository) *Handler {
 // @Tags comissoes
 // @Produce json
 // @Param id path int true "ID do senador"
-// @Param limit query int false "Limite de resultados (default 50)"
+// @Param limit query int false "Limite de resultados (default 20)"
+// @Param page query int false "Pagina (default 1)"
+// @Param q query string false "Termo de busca"
+// @Param status query string false "Status (ativa/inativa)"
+// @Param participacao query string false "Tipo (Titular/Suplente)"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/senadores/{id}/comissoes [get]
 func (h *Handler) ListBySenador(c *gin.Context) {
@@ -33,27 +37,39 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		return
 	}
 
-	// Limite opcional (default 50)
-	limit := 50
+	// Paginacao
+	limit := 20
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
 			limit = l
 		}
 	}
 
-	comissoes, err := h.repo.FindBySenadorID(senadorID, limit)
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	
+	queryStr := c.Query("q")
+	status := c.Query("status")
+	participacao := c.Query("participacao")
+	offset := (page - 1) * limit
+
+	comissoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, queryStr, status, participacao)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar comissoes"})
 		return
 	}
 
-	total, _ := h.repo.CountBySenadorID(senadorID)
-
 	c.JSON(http.StatusOK, gin.H{
-		"senador_id": senadorID,
-		"total":      total,
-		"limit":      limit,
-		"comissoes":  comissoes,
+		"senador_id":   senadorID,
+		"total":        total,
+		"limit":        limit,
+		"page":         page,
+		"total_pages":  (int(total) + limit - 1) / limit,
+		"comissoes":    comissoes,
 	})
 }
 
