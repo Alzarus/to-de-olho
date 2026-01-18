@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useComparator } from "@/contexts/comparator-context";
+import { useRanking } from "@/hooks/use-ranking";
 import { usePersistentYear } from "@/hooks/use-persistent-year";
 import { Button } from "@/components/ui/button";
 import { Trash2, Download, X as XIcon, ArrowRight, ChevronDown } from "lucide-react";
@@ -71,9 +72,64 @@ function ComparatorContent() {
     );
   }
 
-  // Placeholder for export function
+  // Fetch ranking data for export
+  const { data: rankingData } = useRanking(undefined, year === 0 ? undefined : year);
+
   const handleExport = () => {
-    console.log("Exporting comparison...");
+    if (!rankingData?.ranking || selectedSenators.length === 0) {
+      return;
+    }
+
+    // Filter data for selected senators
+    const relevantData = rankingData.ranking.filter(r => 
+      selectedSenators.some(s => s.id === r.senador_id)
+    );
+
+    if (relevantData.length === 0) {
+        console.warn("No data found for selected senators");
+        return;
+    }
+
+    // Define CSV Headers
+    const headers = [
+      "Senador", "Partido", "UF", 
+      "Score Final", "Posição Rank",
+      "Produtividade (Score)", "Presença (Score)", "Economia (Score)", "Comissões (Score)",
+      "Proposições (Total)", "Votações (Participação)", "Gasto CEAPS (R$)"
+    ];
+
+    // Map data to rows
+    const rows = relevantData.map(d => [
+      `"${d.nome}"`,
+      d.partido,
+      d.uf,
+      d.score_final.toFixed(2),
+      d.posicao,
+      d.produtividade.toFixed(2),
+      d.presenca.toFixed(2),
+      d.economia_cota.toFixed(2),
+      d.comissoes.toFixed(2),
+      d.detalhes.total_proposicoes,
+      `${d.detalhes.votacoes_participadas}/${d.detalhes.total_votacoes}`,
+      d.detalhes.gasto_ceaps.toFixed(2).replace('.', ',') // Format currency roughly
+    ]);
+
+    // Construct CSV String
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    // Trigger Download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `comparacao_senadores_${year === 0 ? 'mandato' : year}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (

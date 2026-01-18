@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { VotosPorTipo } from "@/types/api";
 
 // Cores atualizadas para melhor distinção e contraste
@@ -148,6 +149,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
               onMouseLeave={handlePieLeave}
               onClick={(_, index) => handleClick(chartData[index])}
               style={{ cursor: onSliceClick ? "pointer" : "default" }}
+              isAnimationActive={!useIsMobile()}
             >
               {chartData.map((entry, index) => (
                 <Cell 

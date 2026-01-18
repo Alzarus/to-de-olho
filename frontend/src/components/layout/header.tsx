@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const navigation = [
   { name: "Início", href: "/" },
@@ -78,7 +79,10 @@ export function Header() {
           </ul>
         </nav>
 
-        {/* Mobile menu button */}
+        <div className="flex items-center gap-2">
+          <ModeToggle />
+          
+          {/* Mobile menu button */}
         <button
           type="button"
           className="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
@@ -111,6 +115,7 @@ export function Header() {
             )}
           </svg>
         </button>
+        </div>
       </div>
 
       {/* Mobile Navigation Menu */}

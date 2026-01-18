@@ -1,6 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
 import { useState, type ReactNode } from "react";
 import { ComparatorProvider } from "@/contexts/comparator-context";
 
@@ -19,7 +20,9 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ComparatorProvider>{children}</ComparatorProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ComparatorProvider>{children}</ComparatorProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

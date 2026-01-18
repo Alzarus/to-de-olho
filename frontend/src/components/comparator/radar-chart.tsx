@@ -10,6 +10,7 @@ import {
   Legend,
   Tooltip
 } from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "next-themes";
 import type { SenadorScore } from "@/types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,6 +97,7 @@ export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartPro
                 stroke={senator.color}
                 fill={senator.color}
                 fillOpacity={0.3}
+                isAnimationActive={!useIsMobile()}
               />
             ))}
             <Legend 

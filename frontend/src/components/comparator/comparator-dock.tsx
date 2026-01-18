@@ -25,16 +25,16 @@ export function ComparatorDock() {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
+        className="fixed bottom-4 left-1/2 z-50 w-[95%] max-w-fit -translate-x-1/2"
       >
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-senado-blue-100 bg-white/95 p-2 shadow-xl backdrop-blur-sm dark:border-senado-blue-800 dark:bg-senado-blue-950/90">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-border/50 bg-background/80 p-2 shadow-2xl backdrop-blur-md dark:bg-popover/80">
              
           {/* Header / Collapsed View Controls */}
           <div className="flex items-center gap-3 px-2">
             
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-2 text-sm font-medium text-senado-blue-900 dark:text-white hover:opacity-80"
+                className="flex items-center gap-2 text-sm font-medium text-foreground hover:opacity-80"
             >
                 <div className="flex items-center justify-center rounded-full bg-primary/10 p-1">
                     {isExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
@@ -42,12 +42,12 @@ export function ComparatorDock() {
                 <span>{selectedSenators.length} selecionado(s)</span>
             </button>
 
-            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+            <div className="h-4 w-px bg-border" />
 
             {selectedSenators.length >= 2 ? (
               <Link
                 href="/comparar"
-                className="flex items-center gap-2 rounded-full bg-senado-gold-500 px-3 py-1.5 text-xs font-bold text-senado-blue-950 transition-colors hover:bg-senado-gold-400"
+                className="flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Users size={14} />
                 Comparar

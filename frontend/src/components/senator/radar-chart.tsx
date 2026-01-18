@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Tooltip
 } from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "next-themes";
 import type { SenadorScore } from "@/types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,7 @@ export function SenatorRadarChart({ score }: SenatorRadarChartProps) {
               stroke="#d4af37"
               fill="#d4af37"
               fillOpacity={0.5}
+              isAnimationActive={!useIsMobile()}
             />
             <Tooltip 
                 cursor={false}
