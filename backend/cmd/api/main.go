@@ -14,6 +14,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
+	"github.com/Alzarus/to-de-olho/internal/scheduler"
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/redis/go-redis/v9"
@@ -63,6 +64,34 @@ func main() {
 		Addr:    getPort(),
 		Handler: router,
 	}
+
+	// --- Inicializar Services para Scheduler (Duplicado do Router por enquanto) ---
+	// Repositorios
+	senadorRepo := senador.NewRepository(db)
+	votacaoRepo := votacao.NewRepository(db)
+	ceapsRepo := ceaps.NewRepository(db)
+	emendaRepo := emenda.NewRepository(db)
+
+	// Clients
+	legisClient := senado.NewLegisClient()
+	admClient := senado.NewAdmClient()
+	transparenciaKey := os.Getenv("TRANSPARENCIA_API_KEY")
+
+	// Sync Services
+	senadorSync := senador.NewSyncService(senadorRepo, legisClient)
+	votacaoSync := votacao.NewSyncService(votacaoRepo, senadorRepo, legisClient)
+	ceapsSync := ceaps.NewSyncService(ceapsRepo, senadorRepo, admClient)
+	emendaSync := emenda.NewSyncService(emendaRepo, senadorRepo, transparenciaKey)
+
+	// Iniciar Scheduler
+	sched := scheduler.NewScheduler(senadorSync, votacaoSync, ceapsSync, emendaSync)
+	
+	// Contexto para o scheduler (cancelado no shutdown)
+	ctxSched, cancelSched := context.WithCancel(context.Background())
+	defer cancelSched()
+
+	sched.Start(ctxSched)
+	// -----------------------------------------------------------------------------
 
 	// Iniciar servidor em goroutine
 	go func() {

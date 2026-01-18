@@ -4,7 +4,28 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, BarChart3, Coins, Users, Activity, ExternalLink } from "lucide-react";
+import { ArrowRight, BarChart3, Coins, Users, Activity, ExternalLink, BookOpen } from "lucide-react";
+
+// ... existing code ...
+
+            <div className="flex flex-col w-full sm:flex-row items-center justify-center gap-4 mt-8">
+              <Button asChild size="lg" className="w-full sm:w-auto px-8 h-12 text-base shadow-lg shadow-primary/20">
+                <Link href="/ranking">
+                  Explorar Ranking
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 h-12 text-base hover:bg-muted/50">
+                <Link href="/comparar">
+                  Comparar Senadores
+                </Link>
+              </Button>
+               <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 h-12 text-base hover:bg-muted/50">
+                <Link href="/metodologia">
+                  Entenda o Cálculo
+                </Link>
+              </Button>
+            </div>
 import { useRanking } from "@/hooks/use-ranking";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -73,6 +94,11 @@ export default function Home() {
               <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 h-12 text-base hover:bg-muted/50">
                 <Link href="/comparar">
                   Comparar Senadores
+                </Link>
+              </Button>
+               <Button asChild variant="ghost" size="lg" className="w-full sm:w-auto px-8 h-12 text-base">
+                <Link href="/metodologia">
+                  Entenda o Cálculo
                 </Link>
               </Button>
             </div>
