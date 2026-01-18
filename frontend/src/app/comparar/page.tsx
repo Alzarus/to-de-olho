@@ -53,6 +53,8 @@ function ComparatorContent() {
   };
 
 
+  const { data: rankingData } = useRanking(undefined, year === 0 ? undefined : year);
+
   // Empty state - show the selector
   if (selectedSenators.length === 0) {
     return (
@@ -73,7 +75,6 @@ function ComparatorContent() {
   }
 
   // Fetch ranking data for export
-  const { data: rankingData } = useRanking(undefined, year === 0 ? undefined : year);
 
   const handleExport = () => {
     if (!rankingData?.ranking || selectedSenators.length === 0) {

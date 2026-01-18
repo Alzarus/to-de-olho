@@ -23,6 +23,7 @@ interface ComparatorRadarChartProps {
 export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const isMobile = useIsMobile();
   const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
   // Transform data for Recharts
@@ -97,7 +98,7 @@ export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartPro
                 stroke={senator.color}
                 fill={senator.color}
                 fillOpacity={0.3}
-                isAnimationActive={!useIsMobile()}
+                isAnimationActive={!isMobile}
               />
             ))}
             <Legend 
