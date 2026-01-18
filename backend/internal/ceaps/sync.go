@@ -75,8 +75,13 @@ func (s *SyncService) SyncFromAPI(ctx context.Context, ano int) error {
 func (s *SyncService) convertToDespesa(d senado.DespesaCEAPSAPI, senadorID int) DespesaCEAPS {
 	var dataEmissao *time.Time
 	if d.Data != "" {
-		if t, err := time.Parse("02/01/2006", d.Data); err == nil {
+		// Tentar formato ISO (YYYY-MM-DD) primeiro, depois o brasileiro (DD/MM/YYYY)
+		if t, err := time.Parse("2006-01-02", d.Data); err == nil {
 			dataEmissao = &t
+		} else if t, err := time.Parse("02/01/2006", d.Data); err == nil {
+			dataEmissao = &t
+		} else {
+			slog.Warn("falha ao formatar data CEAPS", "data_raw", d.Data, "senador_id", senadorID)
 		}
 	}
 

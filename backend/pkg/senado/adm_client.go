@@ -40,7 +40,7 @@ type DespesaCEAPSAPI struct {
 	Fornecedor     string  `json:"fornecedor"`
 	CNPJCPF        string  `json:"cpfCnpj"`
 	Documento      string  `json:"documento"`
-	Data           string  `json:"data"` // formato: "DD/MM/YYYY"
+	Data           string  `json:"data"` // formato: "YYYY-MM-DD" ou "DD/MM/YYYY"
 	ValorReembolso float64 `json:"valorReembolsado"`
 }
 

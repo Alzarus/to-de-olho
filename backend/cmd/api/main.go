@@ -17,6 +17,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/scheduler"
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
+	"github.com/Alzarus/to-de-olho/pkg/senado"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
