@@ -144,6 +144,9 @@
 }
 
 @layer base {
+  html {
+    overflow-y: scroll;
+  }
   * {
     @apply border-border outline-ring/50;
   }
