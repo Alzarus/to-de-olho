@@ -133,7 +133,7 @@ export function ProposicoesTab({ id }: { id: number }) {
           
           <div className="flex flex-wrap items-center gap-2">
               <Select value={sigla} onValueChange={setSigla}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Filtrar por Tipo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -147,7 +147,7 @@ export function ProposicoesTab({ id }: { id: number }) {
               </Select>
 
               <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -163,7 +163,7 @@ export function ProposicoesTab({ id }: { id: number }) {
               </Select>
 
               <Select value={sort} onValueChange={setSort}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Ordenação" />
                   </SelectTrigger>
                   <SelectContent>

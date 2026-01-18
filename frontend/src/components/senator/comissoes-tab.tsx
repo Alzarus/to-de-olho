@@ -113,7 +113,7 @@ export function ComissoesTab({ id }: { id: number }) {
             
             <div className="flex flex-wrap items-center gap-2">
                 <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-full sm:w-[140px]">
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -124,7 +124,7 @@ export function ComissoesTab({ id }: { id: number }) {
                 </Select>
 
                 <Select value={participacao} onValueChange={setParticipacao}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-full sm:w-[140px]">
                         <SelectValue placeholder="Participação" />
                     </SelectTrigger>
                     <SelectContent>

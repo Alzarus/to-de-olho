@@ -30,37 +30,37 @@ export function ComparatorDock() {
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-border/50 bg-background/80 p-2 shadow-2xl backdrop-blur-md dark:bg-popover/80">
              
           {/* Header / Collapsed View Controls */}
-          <div className="flex items-center gap-3 px-2">
+          <div className="flex items-center gap-2 px-1 sm:gap-3 sm:px-2">
             
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-2 text-sm font-medium text-foreground hover:opacity-80"
+                className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-foreground hover:opacity-80 sm:gap-2"
             >
-                <div className="flex items-center justify-center rounded-full bg-primary/10 p-1">
+                <div className="flex shrink-0 items-center justify-center rounded-full bg-primary/10 p-1">
                     {isExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                 </div>
-                <span>{selectedSenators.length} selecionado(s)</span>
+                <span className="truncate">{selectedSenators.length} <span className="hidden xs:inline">selecionado(s)</span></span>
             </button>
 
-            <div className="h-4 w-px bg-border" />
+            <div className="h-4 w-px shrink-0 bg-border" />
 
             {selectedSenators.length >= 2 ? (
               <Link
                 href="/comparar"
-                className="flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-2.5 py-1.5 text-xs font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-95 sm:gap-2 sm:px-3"
               >
                 <Users size={14} />
-                Comparar
+                <span>Comparar</span>
               </Link>
             ) : (
-              <span className="text-xs text-muted-foreground">
+              <span className="shrink-0 text-[10px] text-muted-foreground sm:text-xs">
                 Selecione +1
               </span>
             )}
 
             <button 
                 onClick={clearSelection}
-                className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-senado-blue-800"
+                className="ml-0.5 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:ml-1"
                 title="Limpar seleção"
             >
                 <X size={14} />

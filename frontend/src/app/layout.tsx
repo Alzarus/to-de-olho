@@ -48,7 +48,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <Providers>
-          <div className="flex min-h-screen flex-col overflow-x-hidden">
+          <div className="flex min-h-screen flex-col overflow-x-hidden pt-16">
             <Header />
             <main className="flex-1">{children}</main>
             <ComparatorDock />

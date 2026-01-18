@@ -5,29 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, BarChart3, Coins, Users, Activity, ExternalLink, BookOpen } from "lucide-react";
-
-// ... existing code ...
-
-            <div className="flex flex-col w-full sm:flex-row items-center justify-center gap-4 mt-8">
-              <Button asChild size="lg" className="w-full sm:w-auto px-8 h-12 text-base shadow-lg shadow-primary/20">
-                <Link href="/ranking">
-                  Explorar Ranking
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 h-12 text-base hover:bg-muted/50">
-                <Link href="/comparar">
-                  Comparar Senadores
-                </Link>
-              </Button>
-               <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 h-12 text-base hover:bg-muted/50">
-                <Link href="/metodologia">
-                  Entenda o Cálculo
-                </Link>
-              </Button>
-            </div>
 import { useRanking } from "@/hooks/use-ranking";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { SenadorScore } from "@/types/api";
 
 export default function Home() {
   // Fetch Top 3 Senators for the podium
@@ -63,17 +43,12 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section with Mesh Gradient */}
-      <section className="relative overflow-hidden py-20 sm:py-32 lg:pb-32 xl:pb-36">
-        {/* Mesh Gradient Background */}
-        <div className="absolute inset-0 -z-10 h-full w-full bg-background">
-          <div className="absolute top-0 z-[-2] h-screen w-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.3),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(30,58,138,0.5),rgba(0,0,0,0))]"></div>
-          <div className="absolute bottom-0 right-0 z-[-2] h-[500px] w-[500px] rounded-full bg-yellow-500/10 blur-[100px] dark:bg-yellow-500/5"></div>
-        </div>
+      {/* Solid Background Section */}
+      <section className="relative overflow-hidden py-20 sm:py-32 lg:pb-32 xl:pb-36 bg-background">
+        {/* Clean background - No mesh/gradients for maximum visual comfort */}
 
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center">
-
             
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl/none">
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">Transparência no</span> <span className="text-primary">Senado Federal</span>
@@ -85,19 +60,21 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col w-full sm:flex-row items-center justify-center gap-4 mt-8">
-              <Button asChild size="lg" className="w-full sm:w-auto px-8 h-12 text-base shadow-lg shadow-primary/20">
+              <Button asChild size="lg" className="w-full sm:w-auto px-8 h-12 text-base shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
                 <Link href="/ranking">
+                  <BarChart3 className="mr-2 h-4 w-4" />
                   Explorar Ranking
-                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 h-12 text-base hover:bg-muted/50">
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 h-12 text-base hover:bg-muted/50 transition-all hover:scale-105 active:scale-95">
                 <Link href="/comparar">
+                  <Users className="mr-2 h-4 w-4" />
                   Comparar Senadores
                 </Link>
               </Button>
-               <Button asChild variant="ghost" size="lg" className="w-full sm:w-auto px-8 h-12 text-base">
+               <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 h-12 text-base hover:bg-muted/50 border-muted-foreground/20 transition-all hover:scale-105 active:scale-95">
                 <Link href="/metodologia">
+                  <BookOpen className="mr-2 h-4 w-4" />
                   Entenda o Cálculo
                 </Link>
               </Button>
@@ -152,7 +129,7 @@ export default function Home() {
                     </Card>
                 ))
             ) : (
-                rankingData?.ranking.slice(0, 3).map((senator, index) => (
+                rankingData?.ranking.slice(0, 3).map((senator: SenadorScore, index: number) => (
                     <Card key={senator.senador_id} className={`overflow-hidden border-t-4 transition-all hover:shadow-lg ${
                         index === 0 ? "border-t-yellow-500" :
                         index === 1 ? "border-t-gray-400" :
@@ -234,9 +211,9 @@ export default function Home() {
         </div>
         
         <div className="mt-8 text-center md:hidden">
-            <Button variant="ghost" asChild>
+            <Button variant="outline" size="lg" className="w-full" asChild>
                 <Link href="/ranking">
-                    Ver todos os senadores
+                    Ver todos os senadores <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
             </Button>
         </div>

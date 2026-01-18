@@ -79,7 +79,13 @@ export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartPro
       </CardHeader>
       <CardContent className="h-[450px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="45%" outerRadius="60%" data={chartData}>
+          <RadarChart 
+            cx="50%" 
+            cy="45%" 
+            outerRadius={isMobile ? "50%" : "60%"} 
+            data={chartData}
+            margin={{ top: 10, right: 30, bottom: 10, left: 30 }}
+          >
             <PolarGrid stroke={isDark ? "#374151" : "#e5e7eb"} />
             <PolarAngleAxis
               dataKey="subject"
