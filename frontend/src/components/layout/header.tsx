@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { UpdateBadge } from "@/components/update-badge";
 import { ModeToggle } from "@/components/mode-toggle";
 
 const navigation = [
@@ -80,6 +81,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <UpdateBadge />
           <ModeToggle />
           
           {/* Mobile menu button */}

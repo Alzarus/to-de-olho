@@ -52,13 +52,10 @@ export default function Home() {
 
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center">
-            <Badge variant="outline" className="mb-4 flex border-primary/20 bg-primary/5 text-primary">
-              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-primary animate-pulse"></span>
-              Dados atualizados {rankingData?.calculado_em ? `em ${new Date(rankingData.calculado_em).toLocaleDateString('pt-BR')}` : 'diariamente'}
-            </Badge>
+
             
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-                Transparência no <span className="text-primary">Senado Federal</span>
+            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl/none">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">Transparência no</span> <span className="text-primary">Senado Federal</span>
             </h1>
             
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl leading-relaxed">

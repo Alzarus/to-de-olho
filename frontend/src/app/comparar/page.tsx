@@ -163,7 +163,7 @@ function ComparatorContent() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 sm:flex-none">
+            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 sm:flex-none" disabled={!rankingData?.ranking || selectedSenators.length === 0}>
               <Download className="mr-2 h-4 w-4" />
               Exportar
             </Button>
