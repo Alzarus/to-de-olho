@@ -20,7 +20,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build com a URL da API de producao
-ARG NEXT_PUBLIC_API_URL=https://api.todeolho.org
+ARG NEXT_PUBLIC_API_URL=https://todeolho.org
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN bun run build

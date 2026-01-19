@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, BarChart3, Coins, Users, Activity, ExternalLink, BookOpen } from "lucide-react";
+import { ArrowRight, Trophy, Coins, Users, Activity, ExternalLink, BookOpen, BarChart3 } from "lucide-react";
 import { useRanking } from "@/hooks/use-ranking";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SenadorScore } from "@/types/api";
@@ -62,7 +62,7 @@ export default function Home() {
             <div className="flex flex-col w-full sm:flex-row items-center justify-center gap-4 mt-8">
               <Button asChild size="lg" className="w-full sm:w-auto px-8 h-12 text-base shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
                 <Link href="/ranking">
-                  <BarChart3 className="mr-2 h-4 w-4" />
+                  <Trophy className="mr-2 h-4 w-4" />
                   Explorar Ranking
                 </Link>
               </Button>

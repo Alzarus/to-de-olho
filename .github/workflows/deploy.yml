@@ -95,7 +95,7 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL="" \
+            --build-arg NEXT_PUBLIC_API_URL=https://todeolho.org \
             -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:${{ github.sha }} \
             -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:latest \
             .
