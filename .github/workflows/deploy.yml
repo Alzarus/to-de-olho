@@ -1,0 +1,119 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: to-de-olho-473121
+  REGION: southamerica-east1
+  BACKEND_SERVICE: todeolho-backend
+  FRONTEND_SERVICE: todeolho-frontend
+  REGISTRY: southamerica-east1-docker.pkg.dev
+
+jobs:
+  # ============================================================================
+  # Backend Deploy
+  # ============================================================================
+  deploy-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./to-de-olho/backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:${{ github.sha }} \
+            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:latest \
+            .
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.BACKEND_SERVICE }} \
+            --image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:${{ github.sha }} \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --add-cloudsql-instances=${{ env.PROJECT_ID }}:${{ env.REGION }}:todeolho-db \
+            --set-env-vars="INICIO_BACKFILL=2023" \
+            --set-env-vars="DATABASE_URL=host=/cloudsql/${{ env.PROJECT_ID }}:${{ env.REGION }}:todeolho-db user=postgres password=${{ secrets.DB_PASSWORD }} dbname=todeolho sslmode=disable" \
+            --set-secrets="TRANSPARENCIA_API_KEY=transparencia-api-key:latest" \
+            --memory=512Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=2 \
+            --timeout=300 \
+            --concurrency=80
+
+  # ============================================================================
+  # Frontend Deploy
+  # ============================================================================
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    defaults:
+      run:
+        working-directory: ./to-de-olho/frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://api.todeolho.org \
+            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:${{ github.sha }} \
+            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:latest \
+            .
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.FRONTEND_SERVICE }} \
+            --image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:${{ github.sha }} \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=256Mi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=2 \
+            --concurrency=80

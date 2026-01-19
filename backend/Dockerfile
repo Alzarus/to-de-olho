@@ -13,9 +13,10 @@ RUN go mod download
 # Copiar codigo fonte
 COPY . .
 
-# Compilar binario estatico
+# Compilar binario estatico otimizado
 # CGO_ENABLED=0 garante que nao dependa de libc dinamica
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server cmd/api/main.go
+# -ldflags="-s -w" remove simbolos de debug para reduzir tamanho
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server cmd/api/main.go
 
 # Runtime Stage
 FROM gcr.io/distroless/static-debian12

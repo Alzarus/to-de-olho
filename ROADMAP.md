@@ -1,58 +1,42 @@
 # Roadmap de Implementação - Tô De Olho
 
-> Última atualização: 17/01/2026 08:40  
+> Ultima atualizacao: 18/01/2026 22:30  
 > Deadline Entrega TCC: 15/01/2026 (Soft) / Defesa: 25/01 - 11/02  
-> Status: **Fase 6 - Finalização & Polimento**
+> Status: **Fase 7 - Deploy & Producao**
 
 ---
 
 ## Cronograma Atualizado
 
-| Fase | Foco principal                         | Situação                           |
-| ---- | -------------------------------------- | ---------------------------------- |
-| 1-5  | Ingestão, API, Ranking, Frontend Base  | **CONCLUÍDAS**                     |
-| 6    | **Essenciais TCC** (Emendas, Votações) | **EM ANDAMENTO** (Prioridade Alta) |
-| 7    | Polimento, Testes e Deploy             | PENDENTE                           |
-| 8    | Backlog (Gabinete, Fornecedores)       | FUTURO                             |
+| Fase | Foco principal                         | Situacao         |
+| ---- | -------------------------------------- | ---------------- |
+| 1-5  | Ingestao, API, Ranking, Frontend Base  | **CONCLUIDAS**   |
+| 6    | **Essenciais TCC** (Emendas, Votacoes) | **CONCLUIDA**    |
+| 7    | Polimento, Testes e Deploy             | **EM ANDAMENTO** |
+| 8    | Backlog (Gabinete, Fornecedores)       | FUTURO           |
 
 ---
 
-## Fase 6: Finalização & Essenciais (Prioridade TCC)
+## Fase 7: Deploy & Producao
 
-Foco em cobrir os Requisitos Funcionais (RF) explícitos no texto do TCC que ainda faltam.
+### Infraestrutura Cloud
 
-### Prioridade 1: Funcionalidades Essenciais
+- [x] **Dockerfiles**: Backend (distroless) e Frontend (Next.js standalone)
+- [x] **GitHub Actions**: CI/CD automatizado para Cloud Run
+- [ ] **Cloud SQL**: PostgreSQL 15 (db-f1-micro)
+- [ ] **Artifact Registry**: Repositorio de imagens Docker
+- [ ] **Dominio**: todeolho.org + api.todeolho.org
 
-- [x] **Tela de Votações (RF11)**
-  - Tabela paginada com filtros (Ano, Busca textual).
-  - Detalhe: votação nominal com filtros (Nome, Voto, Partido, UF).
-  - _Concluída: Lista de votações do senador expandida (500 itens) e consistente com gráfico._
-- [x] **Página do Senador e UX (RF21)**
-  - [x] Exibição de Mandato (Início/Fim) e Badges de status.
-  - [ ] Normalizacao por Mandato
-  - [ ] Indicador de data de atualização (Mobile/Web)
-  - [x] Gráfico de Votos Refatorado: Agrupamento "Outros", Tooltip rico e Cores acessíveis.
-  - [x] Navegação Contextual: Botão "Voltar" preserva filtros e abas.
-  - [x] Correção Sync: Ajuste de timeout para volumes grandes (ex: Magno Malta).
-- [x] **Módulo de Emendas (RF08, RF09, RF10)**
-  - [x] Backfill CSV do Portal da Transparência (ingestão streaming + normalização de autor).
-  - [x] Resumo anual por senador e endpoint `/senadores/:id/emendas`.
-  - [x] Destaque para Emendas PIX (Transferências Especiais).
-  - [x] Mapa de distribuição geográfica simples.
-- [x] **Comparador de Senadores (RF19)**
-  - [x] Seleção de até 5 senadores via dock flutuante ou página dedicada.
-  - [x] Abas: Visão Geral (Radar Chart), Despesas (Gráficos), Fornecedores.
-  - [x] Filtros por UF, Partido e busca textual.
-  - [x] Interatividade: Redirecionamento dos gráficos para detalhes do senador.
-- [x] **Visualização do Ranking (RF23)**
-  - Gráfico Radar (Recharts) na página do Senador (4 eixos: Produtividade, Presença, Economia, Comissões).
+### Prioridade 2: Qualidade
 
-### Prioridade 2: Qualidade & Deploy
-
-- [ ] **Deploy Produção**: Dockerfile otimizado com backfill e sync diário + cache Redis + Cloud Run.
+- [x] **Deploy Producao**: Dockerfile otimizado com backfill e sync diario + Cloud Run.
 - [ ] **SEO Completo**: Meta tags, Open Graph, Sitemap (Next.js).
-- [ ] **Performance**: Cache headers, otimização de imagens (Bun).
-- [ ] **Testes**: Garantir cobertura mínima nos serviços críticos (Ranking/Sync).
+- [ ] **Performance**: Cache headers, otimizacao de imagens (Bun).
+- [ ] **Testes**: Garantir cobertura minima nos servicos criticos (Ranking/Sync).
+
+---
+
+## Fase 6: Finalizacao & Essenciais (CONCLUIDA)
 
 ---
 

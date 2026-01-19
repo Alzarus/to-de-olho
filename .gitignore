@@ -12,3 +12,5 @@ frontend/.env.*
 # Editor/OS
 .DS_Store
 Thumbs.db
+
+scripts/sa-key.json
