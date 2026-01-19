@@ -14,6 +14,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
+	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/scheduler"
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
@@ -72,20 +73,43 @@ func main() {
 	votacaoRepo := votacao.NewRepository(db)
 	ceapsRepo := ceaps.NewRepository(db)
 	emendaRepo := emenda.NewRepository(db)
+	comissaoRepo := comissao.NewRepository(db)
+	proposicaoRepo := proposicao.NewRepository(db)
 
 	// Clients
 	legisClient := senado.NewLegisClient()
 	admClient := senado.NewAdmClient()
 	transparenciaKey := os.Getenv("TRANSPARENCIA_API_KEY")
 
-	// Sync Services
+	// Sync Services (Modules)
 	senadorSync := senador.NewSyncService(senadorRepo, legisClient)
 	votacaoSync := votacao.NewSyncService(votacaoRepo, senadorRepo, legisClient)
 	ceapsSync := ceaps.NewSyncService(ceapsRepo, senadorRepo, admClient)
 	emendaSync := emenda.NewSyncService(emendaRepo, senadorRepo, transparenciaKey)
+	comissaoSync := comissao.NewSyncService(comissaoRepo, senadorRepo, legisClient)
+	proposicaoSync := proposicao.NewSyncService(proposicaoRepo, senadorRepo, legisClient)
+
+	// Ranking Service (necessario para recalcular aps sync)
+	rankingService := ranking.NewService(
+		senadorRepo,
+		proposicaoRepo,
+		votacaoRepo,
+		ceapsRepo,
+		comissaoRepo,
+		redisClient,
+	)
 
 	// Iniciar Scheduler
-	sched := scheduler.NewScheduler(senadorSync, votacaoSync, ceapsSync, emendaSync)
+	sched := scheduler.NewScheduler(
+		senadorSync, 
+		votacaoSync, 
+		ceapsSync, 
+		emendaSync,
+		comissaoSync,
+		proposicaoSync,
+		rankingService,
+		senadorRepo, // para check de db vazio
+	)
 	
 	// Contexto para o scheduler (cancelado no shutdown)
 	ctxSched, cancelSched := context.WithCancel(context.Background())
