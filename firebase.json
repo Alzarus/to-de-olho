@@ -1,0 +1,22 @@
+{
+  "hosting": {
+    "public": "public-firebase",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "todeolho-backend",
+          "region": "southamerica-east1"
+        }
+      },
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "todeolho-frontend",
+          "region": "southamerica-east1"
+        }
+      }
+    ]
+  }
+}
