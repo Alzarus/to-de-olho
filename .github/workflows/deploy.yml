@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./to-de-olho/backend
+        working-directory: ./backend
 
     steps:
       - name: Checkout
@@ -75,7 +75,7 @@ jobs:
     needs: deploy-backend
     defaults:
       run:
-        working-directory: ./to-de-olho/frontend
+        working-directory: ./frontend
 
     steps:
       - name: Checkout
