@@ -1,27 +1,41 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
+import { Header, Footer } from "@/components/layout";
+import { ComparatorDock } from "@/components/comparator/comparator-dock";
+import { Providers } from "@/lib/providers";
 
-const geistSans = Geist({
+const inter = Inter({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Tô De Olho - Transparência Política",
-  description: "Plataforma de transparência política que democratiza o acesso aos dados da Câmara dos Deputados",
-  keywords: ["transparência", "política", "câmara", "deputados", "brasil"],
-  authors: [{ name: "Pedro Batista de Almeida Filho" }],
+  title: {
+    default: "Tô De Olho - Transparência no Senado",
+    template: "%s | Tô De Olho",
+  },
+  description:
+    "Plataforma de transparência e acompanhamento da atuação dos senadores brasileiros. Ranking baseado em produtividade, presença e economia.",
+  keywords: [
+    "senado",
+    "transparência",
+    "senadores",
+    "ranking",
+    "política",
+    "brasil",
+    "dados abertos",
+  ],
+  authors: [{ name: "Pedro Eli" }],
   openGraph: {
-    title: "Tô De Olho - Transparência Política", 
-    description: "Democratizando o acesso aos dados da Câmara dos Deputados",
     type: "website",
     locale: "pt_BR",
+    siteName: "Tô De Olho",
+    title: "Tô De Olho - Transparência no Senado",
+    description:
+      "Plataforma de transparência e acompanhamento da atuação dos senadores brasileiros.",
   },
 };
 
@@ -31,24 +45,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}
-      >
-        <main className="min-h-screen">
-          {children}
-        </main>
-        
-        <footer className="bg-gray-800 text-white py-8 mt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p className="text-sm">
-              © 2025 Tô De Olho - TCC IFBA | Desenvolvido por Pedro Batista
-            </p>
-            <p className="text-xs text-gray-400 mt-2">
-              Dados fornecidos pela API oficial da Câmara dos Deputados
-            </p>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
+        <Providers>
+          <div className="flex min-h-screen flex-col overflow-x-hidden pt-16">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <ComparatorDock />
+            <Footer />
+            <Toaster richColors position="top-right" />
           </div>
-        </footer>
+        </Providers>
       </body>
     </html>
   );
