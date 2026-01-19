@@ -28,7 +28,7 @@ export function ComparatorDock() {
         className="fixed bottom-4 left-0 right-0 z-50 flex justify-center pointer-events-none"
         style={{ paddingRight: "var(--removed-body-scroll-bar-size)" }}
       >
-        <div className="pointer-events-auto w-[95%] max-w-fit flex flex-col items-center gap-2 rounded-2xl border border-border/50 bg-background/80 p-2 shadow-2xl backdrop-blur-md dark:bg-popover/80">
+        <div className="pointer-events-auto w-[95%] max-w-fit flex flex-col items-center gap-2 rounded-2xl border border-border bg-background p-2 shadow-sm dark:bg-popover">
              
           {/* Header / Collapsed View Controls */}
           <div className="flex items-center gap-2 px-1 sm:gap-3 sm:px-2">

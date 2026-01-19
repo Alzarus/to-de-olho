@@ -60,7 +60,7 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col w-full sm:flex-row items-center justify-center gap-4 mt-8">
-              <Button asChild size="lg" className="w-full sm:w-auto px-8 h-12 text-base shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+              <Button asChild size="lg" className="w-full sm:w-auto px-8 h-12 text-base transition-all hover:scale-105 active:scale-95">
                 <Link href="/ranking">
                   <Trophy className="mr-2 h-4 w-4" />
                   Explorar Ranking

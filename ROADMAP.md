@@ -12,20 +12,22 @@
 | ---- | -------------------------------------- | ---------------- |
 | 1-5  | Ingestao, API, Ranking, Frontend Base  | **CONCLUIDAS**   |
 | 6    | **Essenciais TCC** (Emendas, Votacoes) | **CONCLUIDA**    |
-| 7    | Polimento, Testes e Deploy             | **EM ANDAMENTO** |
+| 7    | Polimento, Testes e Deploy             | **EM PROGRESSO** |
 | 8    | Backlog (Gabinete, Fornecedores)       | FUTURO           |
 
 ---
 
-## Fase 7: Deploy & Producao
+### Phase 7: Polishing, Testing & Deploy (⏳ Em Progresso)
 
-### Infraestrutura Cloud
-
-- [x] **Dockerfiles**: Backend (distroless) e Frontend (Next.js standalone)
+- [x] **Deploy**: Setup Cloud Run + Firebase Hosting
+- [ ] **Tests**: Playwright E2E tests
+- [ ] **Domain**: Mapeamento final de DNS
 - [x] **GitHub Actions**: CI/CD automatizado para Cloud Run
-- [ ] **Cloud SQL**: PostgreSQL 15 (db-f1-micro)
-- [ ] **Artifact Registry**: Repositorio de imagens Docker
-- [ ] **Dominio**: todeolho.org + api.todeolho.org
+- [x] **Cloud Computing**:
+  - Backend: Cloud Run (Go 1.23)
+  - Frontend: Cloud Run (Next.js 15)
+  - Proxy/Edge: Firebase Hosting (p/ Custom Domain + SSL)
+- [ ] **Dominio**: todeolho.org + api.todeolho.org (no mesmo dominio via rewrite)
 
 ### Prioridade 2: Qualidade
 
