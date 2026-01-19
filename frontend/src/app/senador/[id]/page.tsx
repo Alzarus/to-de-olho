@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSenadorScore, useSenador } from "@/hooks/use-senador";
@@ -297,18 +304,21 @@ function SenadorContent() {
           <label htmlFor="ano-select" className="text-sm font-medium text-muted-foreground">
             Ano:
           </label>
-          <select
-            id="ano-select"
-            value={ano}
-            onChange={(e) => setAno(Number(e.target.value))}
-            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          <Select
+            value={ano.toString()}
+            onValueChange={(value) => setAno(Number(value))}
           >
-            <option value={0}>Mandato (Todos os anos)</option>
-            <option value={2026}>2026</option>
-            <option value={2025}>2025</option>
-            <option value={2024}>2024</option>
-            <option value={2023}>2023</option>
-          </select>
+            <SelectTrigger id="ano-select" className="w-[180px]">
+              <SelectValue placeholder="Selecione o ano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Mandato (Todos os anos)</SelectItem>
+              <SelectItem value="2026">2026</SelectItem>
+              <SelectItem value="2025">2025</SelectItem>
+              <SelectItem value="2024">2024</SelectItem>
+              <SelectItem value="2023">2023</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       

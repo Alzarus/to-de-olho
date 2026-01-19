@@ -4,6 +4,13 @@ import * as React from "react";
 import { Search, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getRanking } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useComparator } from "@/contexts/comparator-context";
@@ -107,27 +114,35 @@ export function SenatorSelector({ className }: SenatorSelectorProps) {
           )}
         </div>
 
-        <select 
+        <Select 
           value={selectedUf}
-          onChange={(e) => setSelectedUf(e.target.value)}
-          className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          onValueChange={(value) => setSelectedUf(value)}
         >
-          <option value="TODOS">Todos os Estados</option>
-          {uniqueUfs.map(uf => (
-            <option key={uf} value={uf}>{uf}</option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Selecione o estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="TODOS">Todos os Estados</SelectItem>
+            {uniqueUfs.map(uf => (
+              <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <select 
+        <Select 
           value={selectedPartido}
-          onChange={(e) => setSelectedPartido(e.target.value)}
-          className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          onValueChange={(value) => setSelectedPartido(value)}
         >
-          <option value="TODOS">Todos os Partidos</option>
-          {uniquePartidos.map(p => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full sm:w-[180px]">
+             <SelectValue placeholder="Selecione o partido" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="TODOS">Todos os Partidos</SelectItem>
+            {uniquePartidos.map(p => (
+              <SelectItem key={p} value={p}>{p}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Selection Info */}

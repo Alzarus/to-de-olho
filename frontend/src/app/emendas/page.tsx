@@ -11,6 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Search, X, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { SenadorScore } from "@/types/api";
 
 const ANOS_DISPONIVEIS = [0, 2026, 2025, 2024, 2023];
@@ -181,56 +188,65 @@ function EmendasContent() {
                 <label htmlFor="uf-select" className="text-sm font-medium text-muted-foreground">
                     Estado
                 </label>
-                <select
-                    id="uf-select"
+                <Select
                     value={selectedUf}
-                    onChange={(e) => setSelectedUf(e.target.value)}
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onValueChange={(value) => setSelectedUf(value)}
                 >
-                    <option value="TODOS">Todos os estados</option>
-                    {uniqueUfs.map((uf) => (
-                    <option key={uf} value={uf}>
-                        {uf}
-                    </option>
-                    ))}
-                </select>
+                    <SelectTrigger id="uf-select" className="w-full">
+                        <SelectValue placeholder="Selecione o estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="TODOS">Todos os estados</SelectItem>
+                        {uniqueUfs.map((uf) => (
+                            <SelectItem key={uf} value={uf}>
+                                {uf}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 </div>
 
                 <div className="space-y-2">
                 <label htmlFor="partido-select" className="text-sm font-medium text-muted-foreground">
                     Partido
                 </label>
-                <select
-                    id="partido-select"
+                <Select
                     value={selectedPartido}
-                    onChange={(e) => setSelectedPartido(e.target.value)}
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onValueChange={(value) => setSelectedPartido(value)}
                 >
-                    <option value="TODOS">Todos os partidos</option>
-                    {uniquePartidos.map((partido) => (
-                    <option key={partido} value={partido}>
-                        {partido}
-                    </option>
-                    ))}
-                </select>
+                    <SelectTrigger id="partido-select" className="w-full">
+                         <SelectValue placeholder="Selecione o partido" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="TODOS">Todos os partidos</SelectItem>
+                        {uniquePartidos.map((partido) => (
+                            <SelectItem key={partido} value={partido}>
+                                {partido}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 </div>
 
                 <div className="space-y-2">
                 <label htmlFor="ano-select" className="text-sm font-medium text-muted-foreground">
                     Ano
                 </label>
-                <select
-                    id="ano-select"
-                    value={ano}
-                    onChange={(e) => updateUrl({ ano: Number(e.target.value) })}
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Select
+                    value={ano.toString()}
+                    onValueChange={(value) => updateUrl({ ano: Number(value) })}
                 >
-                    {ANOS_DISPONIVEIS.map((anoOption) => (
-                    <option key={anoOption} value={anoOption}>
-                        {anoOption === 0 ? "Mandato (todos os anos)" : anoOption}
-                    </option>
-                    ))}
-                </select>
+                    <SelectTrigger id="ano-select" className="w-full">
+                        <SelectValue placeholder="Selecione o ano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {ANOS_DISPONIVEIS.map((anoOption) => (
+                            <SelectItem key={anoOption} value={anoOption.toString()}>
+                                {anoOption === 0 ? "Mandato (todos os anos)" : anoOption}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 </div>
             </div>
 

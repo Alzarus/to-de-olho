@@ -16,6 +16,13 @@ import { ExpensesTab } from "@/components/comparator/expenses-tab";
 import { SuppliersTab } from "@/components/comparator/suppliers-tab";
 import { EmendasTab } from "@/components/comparator/emendas-tab";
 import { SenatorSelector } from "@/components/comparator/senator-selector";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function ComparatorContent() {
   const { selectedSenators, clearSelection, removeSenator } = useComparator();
@@ -147,20 +154,22 @@ function ComparatorContent() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-           {/* Seletor de Ano */}
            <div className="flex items-center gap-2 mr-2 w-full sm:w-auto">
-            <select
-              id="ano-select"
-              value={year === 0 ? 0 : year} // Handle 0 as "Mandato Completo" if logic allows, or defaulting to 2024
-              onChange={(e) => updateUrl({ ano: Number(e.target.value) })}
-              className="h-9 w-full sm:w-auto rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            <Select
+              value={year.toString()}
+              onValueChange={(value) => updateUrl({ ano: Number(value) })}
             >
-              <option value={0}>Mandato Completo</option>
-              <option value={2026}>2026</option>
-              <option value={2025}>2025</option>
-              <option value={2024}>2024</option>
-              <option value={2023}>2023</option>
-            </select>
+              <SelectTrigger id="ano-select" className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Selecione o ano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Mandato Completo</SelectItem>
+                <SelectItem value="2026">2026</SelectItem>
+                <SelectItem value="2025">2025</SelectItem>
+                <SelectItem value="2024">2024</SelectItem>
+                <SelectItem value="2023">2023</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">

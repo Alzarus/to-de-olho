@@ -21,6 +21,24 @@ import { Button } from "@/components/ui/button";
 import { useRanking } from "@/hooks/use-ranking";
 import { usePersistentYear } from "@/hooks/use-persistent-year";
 import type { SenadorScore } from "@/types/api";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { BRAZIL_STATES } from "@/components/ui/brazil-map-data";
+
+const UF_MAP = Object.fromEntries(
+  BRAZIL_STATES.map((state) => [state.id, state.name])
+);
 
 const UFS = [
   "AC",
@@ -113,9 +131,20 @@ function MobileRankingCard({
               >
                 {senador.partido}
               </Badge>
-              <span className="text-xs text-muted-foreground">
-                {senador.uf}
-              </span>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-xs text-muted-foreground border-b border-dotted cursor-help">
+                    {senador.uf}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs font-medium">
+                    {UF_MAP[senador.uf] || senador.uf}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             </div>
           </div>
         </Link>
@@ -338,11 +367,24 @@ function RankingTable({
                     <p className="font-medium text-foreground group-hover:text-primary transition-colors">
                       {senador.nome}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <Badge variant="secondary" className="mr-1">
                         {senador.partido}
                       </Badge>
-                      {senador.uf}
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="border-b border-dotted cursor-help">
+                              {senador.uf}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs font-medium">
+                              {UF_MAP[senador.uf] || senador.uf}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </p>
                   </div>
                 </Link>
@@ -538,18 +580,21 @@ function RankingContent() {
           >
             Ano:
           </label>
-          <select
-            id="ano-select"
-            value={ano}
-            onChange={(e) => updateUrl({ ano: Number(e.target.value) })}
-            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          <Select
+            value={ano.toString()}
+            onValueChange={(value) => updateUrl({ ano: Number(value) })}
           >
-            <option value={0}>Mandato Completo</option>
-            <option value={2026}>2026</option>
-            <option value={2025}>2025</option>
-            <option value={2024}>2024</option>
-            <option value={2023}>2023</option>
-          </select>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Selecione o ano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Mandato Completo</SelectItem>
+              <SelectItem value="2026">2026</SelectItem>
+              <SelectItem value="2025">2025</SelectItem>
+              <SelectItem value="2024">2024</SelectItem>
+              <SelectItem value="2023">2023</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </header>
 
@@ -659,34 +704,40 @@ function RankingContent() {
             </div>
 
             {/* Partido */}
-            <select
+            <Select
               value={partido}
-              onChange={(e) => updateUrl({ partido: e.target.value || null })}
-              className="h-9 rounded-md border border-input bg-background px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Filtrar por partido"
+              onValueChange={(value) => updateUrl({ partido: value === "all" ? null : value })}
             >
-              <option value="">Todos os Partidos</option>
-              {partidos.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-9 w-full sm:w-[180px]">
+                <SelectValue placeholder="Todos os Partidos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Partidos</SelectItem>
+                {partidos.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* UF */}
-            <select
+            <Select
               value={uf}
-              onChange={(e) => updateUrl({ uf: e.target.value || null })}
-              className="h-9 rounded-md border border-input bg-background px-2 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Filtrar por estado"
+              onValueChange={(value) => updateUrl({ uf: value === "all" ? null : value })}
             >
-              <option value="">Todas as UFs</option>
-              {UFS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-9 w-full sm:w-[140px]">
+                <SelectValue placeholder="Todas as UFs" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as UFs</SelectItem>
+                {UFS.map((u) => (
+                  <SelectItem key={u} value={u}>
+                    {u}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Limpar filtros */}
             {hasActiveFilters && (

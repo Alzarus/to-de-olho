@@ -18,6 +18,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { getVotacoes, Votacao } from "@/services/votacaoService";
 import { usePersistentYear } from "@/hooks/use-persistent-year";
@@ -124,19 +131,22 @@ function VotacoesContent() {
           >
             Ano:
           </label>
-          <select
-            id="ano-select"
-            value={ano}
-            onChange={(e) => updateUrl({ ano: Number(e.target.value), page: 1 })}
-            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          <Select
+            value={ano.toString()}
+            onValueChange={(value) => updateUrl({ ano: Number(value), page: 1 })}
           >
-            <option value={0}>Todos</option>
-            {[2026, 2025, 2024, 2023].map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="ano-select" className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Selecione o ano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Todos</SelectItem>
+              {[2026, 2025, 2024, 2023].map((y) => (
+                <SelectItem key={y} value={y.toString()}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </header>
 
