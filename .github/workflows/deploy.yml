@@ -58,6 +58,7 @@ jobs:
             --allow-unauthenticated \
             --add-cloudsql-instances=${{ env.PROJECT_ID }}:${{ env.REGION }}:todeolho-db \
             --set-env-vars="INICIO_BACKFILL=2023" \
+            --set-env-vars="FORCE_BACKFILL=true" \
             --set-env-vars="DATABASE_URL=host=/cloudsql/${{ env.PROJECT_ID }}:${{ env.REGION }}:todeolho-db user=postgres password=${{ secrets.DB_PASSWORD }} dbname=todeolho sslmode=disable" \
             --set-secrets="TRANSPARENCIA_API_KEY=transparencia-api-key:latest" \
             --memory=512Mi \

@@ -1,0 +1,4029 @@
+﻿[
+  {
+    "insertId": "696f23d1000e6f564d476e80",
+    "jsonPayload": {
+      "level": "INFO",
+      "msg": "ranking calculado",
+      "total_senadores": 81
+    },
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:26.277621391Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "timestamp": "2026-01-20T06:42:25.947372608Z"
+  },
+  {
+    "insertId": "696f23d1000e711c1a4ffb14",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:26.277621391Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[GIN] 2026/01/20 - 06:42:25 | 200 |  1.871701184s | 177.134.185.119 | GET      \"/api/v1/ranking?ano=2025\"",
+    "timestamp": "2026-01-20T06:42:25.946460Z"
+  },
+  {
+    "insertId": "696f23d1000e4b9ea8fa7fde",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.321ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 81 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.936862Z"
+  },
+  {
+    "insertId": "696f23d1000e4b93a53edc42",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.936851Z"
+  },
+  {
+    "insertId": "696f23d1000df42f58d633ec",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.275ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 80 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.914479Z"
+  },
+  {
+    "insertId": "696f23d1000df425b9b50962",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.914469Z"
+  },
+  {
+    "insertId": "696f23d1000da1960d8114a3",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.188ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 79 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.893334Z"
+  },
+  {
+    "insertId": "696f23d1000da18b5c5559ed",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.893323Z"
+  },
+  {
+    "insertId": "696f23d1000cf49caea02a2f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.346ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 78 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.849052Z"
+  },
+  {
+    "insertId": "696f23d1000cf492d9f1c8e2",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.849042Z"
+  },
+  {
+    "insertId": "696f23d1000ca9a482c3a925",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.230ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 77 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.829860Z"
+  },
+  {
+    "insertId": "696f23d1000ca999cfa273fd",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.829849Z"
+  },
+  {
+    "insertId": "696f23d1000c5ca76bacc640",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.403ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 76 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.810151Z"
+  },
+  {
+    "insertId": "696f23d1000c5c9de31b7fae",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.810141Z"
+  },
+  {
+    "insertId": "696f23d1000c0e23343a1cc9",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.515ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 75 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.790051Z"
+  },
+  {
+    "insertId": "696f23d1000c0e18fc597f11",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.790040Z"
+  },
+  {
+    "insertId": "696f23d1000bbf136cd60138",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.317ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 74 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.769811Z"
+  },
+  {
+    "insertId": "696f23d1000bbf08e7adfe97",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.769800Z"
+  },
+  {
+    "insertId": "696f23d1000b6a47dba04619",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.385ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 73 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.748103Z"
+  },
+  {
+    "insertId": "696f23d1000b6a3c532696f3",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.748092Z"
+  },
+  {
+    "insertId": "696f23d1000b1194aa7d3db3",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.258ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 71 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.725396Z"
+  },
+  {
+    "insertId": "696f23d1000b118856d35808",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.725384Z"
+  },
+  {
+    "insertId": "696f23d1000abd8144ff9eae",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.572ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 70 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.703873Z"
+  },
+  {
+    "insertId": "696f23d1000abd750c282a1d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.703861Z"
+  },
+  {
+    "insertId": "696f23d1000a6bffee1e8f1d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.330ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 72 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.683007Z"
+  },
+  {
+    "insertId": "696f23d1000a6bf49655a481",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.682996Z"
+  },
+  {
+    "insertId": "696f23d1000a1e21657a1746",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.328ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 69 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.663073Z"
+  },
+  {
+    "insertId": "696f23d1000a1e174672060d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.663063Z"
+  },
+  {
+    "insertId": "696f23d10009ccea2910321b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.448ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 67 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.642282Z"
+  },
+  {
+    "insertId": "696f23d10009ccdfd8d13f18",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.642271Z"
+  },
+  {
+    "insertId": "696f23d1000979e1161ed03e",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.343ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 68 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.621025Z"
+  },
+  {
+    "insertId": "696f23d1000979d6e8a5a58a",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.942471414Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.621014Z"
+  },
+  {
+    "insertId": "696f23d1000922cc764dc977",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.372ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 66 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.598732Z"
+  },
+  {
+    "insertId": "696f23d1000922c30915828f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.598723Z"
+  },
+  {
+    "insertId": "696f23d10008d4e9ede1929f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.223ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 65 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.578793Z"
+  },
+  {
+    "insertId": "696f23d10008d4dd0cd3d890",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.578781Z"
+  },
+  {
+    "insertId": "696f23d10008874e3e00dae3",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.326ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 64 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.558926Z"
+  },
+  {
+    "insertId": "696f23d100088743c27634b2",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.558915Z"
+  },
+  {
+    "insertId": "696f23d1000834daf17e6b77",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.280ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 63 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.537818Z"
+  },
+  {
+    "insertId": "696f23d1000834d096c5ba27",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.537808Z"
+  },
+  {
+    "insertId": "696f23d10007e3f0c5eaa1de",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.338ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 62 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.517104Z"
+  },
+  {
+    "insertId": "696f23d10007e3e68f11aea9",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.517094Z"
+  },
+  {
+    "insertId": "696f23d100078bf0496d911a",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.479ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 61 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.494576Z"
+  },
+  {
+    "insertId": "696f23d100078be479e6c193",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.494564Z"
+  },
+  {
+    "insertId": "696f23d1000739761e5ad16a",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.288ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 60 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.473462Z"
+  },
+  {
+    "insertId": "696f23d10007396b7e8d4e62",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.473451Z"
+  },
+  {
+    "insertId": "696f23d10006e0b4cbba9e15",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.315ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 59 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.450740Z"
+  },
+  {
+    "insertId": "696f23d10006e0a74298a2cf",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.450727Z"
+  },
+  {
+    "insertId": "696f23d1000688baa1caf1a6",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.460ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 58 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.428218Z"
+  },
+  {
+    "insertId": "696f23d1000688afc4e1759d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.428207Z"
+  },
+  {
+    "insertId": "696f23d100063021daa7ad29",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.328ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 57 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.405537Z"
+  },
+  {
+    "insertId": "696f23d10006301730aedea9",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.405527Z"
+  },
+  {
+    "insertId": "696f23d10005dbcc61879ffd",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.243ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 56 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.383948Z"
+  },
+  {
+    "insertId": "696f23d10005dbc1a7583c10",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.383937Z"
+  },
+  {
+    "insertId": "696f23d100058cf6cc4d0682",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.367ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 54 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.363766Z"
+  },
+  {
+    "insertId": "696f23d100058ceb912d167f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.363755Z"
+  },
+  {
+    "insertId": "696f23d1000538ca6298b95b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.302ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 55 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.342218Z"
+  },
+  {
+    "insertId": "696f23d1000538be5fd23956",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.342206Z"
+  },
+  {
+    "insertId": "696f23d10004e73fbc3468d2",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.310ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 53 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.321343Z"
+  },
+  {
+    "insertId": "696f23d10004e7356ce70396",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.321333Z"
+  },
+  {
+    "insertId": "696f23d100048918b7e741f1",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.405ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 52 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.297240Z"
+  },
+  {
+    "insertId": "696f23d10004890ea06b5f39",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.297230Z"
+  },
+  {
+    "insertId": "696f23d1000437257115123c",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.249ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 51 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.276261Z"
+  },
+  {
+    "insertId": "696f23d10004371c60cc1425",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.609802395Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.276252Z"
+  },
+  {
+    "insertId": "696f23d10003e4d8871f9bd7",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.477ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 50 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.255192Z"
+  },
+  {
+    "insertId": "696f23d10003e4cd4134bbce",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.255181Z"
+  },
+  {
+    "insertId": "696f23d10003934ed03e4ae5",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.488ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 49 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.234318Z"
+  },
+  {
+    "insertId": "696f23d1000393430e65d9d2",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.234307Z"
+  },
+  {
+    "insertId": "696f23d10003457b51eb5cc8",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.291ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 48 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.214395Z"
+  },
+  {
+    "insertId": "696f23d10003456e19c4059d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.214382Z"
+  },
+  {
+    "insertId": "696f23d10002f452526c1506",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.270ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 47 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.193618Z"
+  },
+  {
+    "insertId": "696f23d10002f4479ca56cad",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.193607Z"
+  },
+  {
+    "insertId": "696f23d10002a4d3d963e2c7",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.302ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 46 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.173267Z"
+  },
+  {
+    "insertId": "696f23d10002a4c9128cd6df",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.173257Z"
+  },
+  {
+    "insertId": "696f23d10002546d8973c6aa",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.343ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 45 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.152685Z"
+  },
+  {
+    "insertId": "696f23d1000254608e165b58",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.152672Z"
+  },
+  {
+    "insertId": "696f23d10001f9b0950ba095",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.615ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 44 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.129456Z"
+  },
+  {
+    "insertId": "696f23d10001f9a4eaf75522",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.129444Z"
+  },
+  {
+    "insertId": "696f23d1000191299cbd9126",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.556ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 43 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.102697Z"
+  },
+  {
+    "insertId": "696f23d10001911d61f1053b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.102685Z"
+  },
+  {
+    "insertId": "696f23d100013d63e5da6d03",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.447ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 42 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.081251Z"
+  },
+  {
+    "insertId": "696f23d100013d59bb756ece",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.081241Z"
+  },
+  {
+    "insertId": "696f23d10000ed68297e537f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.570ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 41 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.060776Z"
+  },
+  {
+    "insertId": "696f23d10000ed5dbde7b404",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.060765Z"
+  },
+  {
+    "insertId": "696f23d100009ce2e9d52bba",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.402ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 40 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.040162Z"
+  },
+  {
+    "insertId": "696f23d100009cd61268feda",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.040150Z"
+  },
+  {
+    "insertId": "696f23d1000048d520c16e3c",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.435ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 39 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:25.018645Z"
+  },
+  {
+    "insertId": "696f23d1000048c6f86697e9",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:25 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:25.018630Z"
+  },
+  {
+    "insertId": "696f23d0000f38ebdf2e0132",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.294ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 38 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.997611Z"
+  },
+  {
+    "insertId": "696f23d0000f38e050d67a56",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.997600Z"
+  },
+  {
+    "insertId": "696f23d0000ee60c5a8e869e",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.336ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 37 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.976396Z"
+  },
+  {
+    "insertId": "696f23d0000ee601abdcd2b9",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.976385Z"
+  },
+  {
+    "insertId": "696f23d0000e89664b8129cc",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.422ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 36 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.952678Z"
+  },
+  {
+    "insertId": "696f23d0000e895cd6372704",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:25.278486352Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.952668Z"
+  },
+  {
+    "insertId": "696f23d0000e22a119a076d1",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.411ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 35 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.926369Z"
+  },
+  {
+    "insertId": "696f23d0000e2296d0b5bcd0",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.926358Z"
+  },
+  {
+    "insertId": "696f23d0000dcfa2e80662b0",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.413ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 34 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.905122Z"
+  },
+  {
+    "insertId": "696f23d0000dcf964ac9baed",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.905110Z"
+  },
+  {
+    "insertId": "696f23d0000d7707817310ed",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.324ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 33 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.882439Z"
+  },
+  {
+    "insertId": "696f23d0000d76fde51b6019",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.882429Z"
+  },
+  {
+    "insertId": "696f23d0000d16f8f1736d2f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.212ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 32 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.857848Z"
+  },
+  {
+    "insertId": "696f23d0000d16ee2a6194ee",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.857838Z"
+  },
+  {
+    "insertId": "696f23d0000cb559757ba445",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[2.298ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 31 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.832857Z"
+  },
+  {
+    "insertId": "696f23d0000cb54d52c86193",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.832845Z"
+  },
+  {
+    "insertId": "696f23d0000c5515dbd7da88",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.366ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 30 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.808213Z"
+  },
+  {
+    "insertId": "696f23d0000c5503ef6cae1b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.808195Z"
+  },
+  {
+    "insertId": "696f23d0000c00ade6a46cff",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.504ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 29 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.786605Z"
+  },
+  {
+    "insertId": "696f23d0000c00a3a663c8d4",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.786595Z"
+  },
+  {
+    "insertId": "696f23d0000ba93811c1da3b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.517ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 28 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.764216Z"
+  },
+  {
+    "insertId": "696f23d0000ba92d3e737359",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.764205Z"
+  },
+  {
+    "insertId": "696f23d0000b3c86d7361997",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.666ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 27 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.736390Z"
+  },
+  {
+    "insertId": "696f23d0000b3c7cc6ae019c",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.736380Z"
+  },
+  {
+    "insertId": "696f23d0000ad6b1c58a764b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.708ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 26 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.710321Z"
+  },
+  {
+    "insertId": "696f23d0000ad6a51bb87784",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.710309Z"
+  },
+  {
+    "insertId": "696f23d0000a7671ea6b87c6",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.366ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 25 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.685681Z"
+  },
+  {
+    "insertId": "696f23d0000a76675377f669",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.685671Z"
+  },
+  {
+    "insertId": "696f23d0000a21cd234d1cd3",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.435ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 24 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.664013Z"
+  },
+  {
+    "insertId": "696f23d0000a21c2a0ed9967",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.664002Z"
+  },
+  {
+    "insertId": "696f23d00009c9d43c5edf67",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.322ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 23 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.641492Z"
+  },
+  {
+    "insertId": "696f23d00009c9c719749702",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.943565978Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.641479Z"
+  },
+  {
+    "insertId": "696f23d000093a42930fc37e",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.323ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 22 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.604738Z"
+  },
+  {
+    "insertId": "696f23d000093a378cb14d12",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.604727Z"
+  },
+  {
+    "insertId": "696f23d00008e590b77457a1",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.282ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 21 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.583056Z"
+  },
+  {
+    "insertId": "696f23d00008e585228aa869",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.583045Z"
+  },
+  {
+    "insertId": "696f23d000088add86a5c00d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.238ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 19 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.559837Z"
+  },
+  {
+    "insertId": "696f23d000088ad2baafe77c",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.559826Z"
+  },
+  {
+    "insertId": "696f23d00008249f9001789b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.290ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 20 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.533663Z"
+  },
+  {
+    "insertId": "696f23d000082494bd69b96c",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.533652Z"
+  },
+  {
+    "insertId": "696f23d00007cc4d6788666b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.488ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 18 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.511053Z"
+  },
+  {
+    "insertId": "696f23d00007cc4203d6ddcb",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.511042Z"
+  },
+  {
+    "insertId": "696f23d000077430746d7408",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.184ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 17 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.488496Z"
+  },
+  {
+    "insertId": "696f23d000077425ea1f138d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.488485Z"
+  },
+  {
+    "insertId": "696f23d000071cd5906d498d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.365ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 16 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.466133Z"
+  },
+  {
+    "insertId": "696f23d000071ccaaee9c248",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.466122Z"
+  },
+  {
+    "insertId": "696f23d00006c4215d6b28cb",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.299ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 15 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.443425Z"
+  },
+  {
+    "insertId": "696f23d00006c4174c0ecdf6",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.443415Z"
+  },
+  {
+    "insertId": "696f23d00006359b5cf93fe8",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.474ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 14 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.406939Z"
+  },
+  {
+    "insertId": "696f23d000063591b66b8ab9",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.406929Z"
+  },
+  {
+    "insertId": "696f23d00005daaa34d0d3d4",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[2.822ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 13 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.383658Z"
+  },
+  {
+    "insertId": "696f23d00005daa0f7debc60",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.383648Z"
+  },
+  {
+    "insertId": "696f23d0000578fdc5a9dbd5",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.308ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 12 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.358653Z"
+  },
+  {
+    "insertId": "696f23d0000578f3f96ad60f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.358643Z"
+  },
+  {
+    "insertId": "696f23d0000505460a2dfa97",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.706ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 11 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.329030Z"
+  },
+  {
+    "insertId": "696f23d00005053bc00c4a5b",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.329019Z"
+  },
+  {
+    "insertId": "696f23d00004a312d1062d0f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.417ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 10 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.303890Z"
+  },
+  {
+    "insertId": "696f23d00004a308193f2fe7",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.303880Z"
+  },
+  {
+    "insertId": "696f23d000044ac25352efbb",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.509ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 9 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.281282Z"
+  },
+  {
+    "insertId": "696f23d000044ab8d57825e0",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.610644533Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.281272Z"
+  },
+  {
+    "insertId": "696f23d00003ee12b92f398e",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.259ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 8 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.257554Z"
+  },
+  {
+    "insertId": "696f23d00003ee0780945c7a",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.257543Z"
+  },
+  {
+    "insertId": "696f23d000039c36b3fa997d",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.285ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 7 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.236598Z"
+  },
+  {
+    "insertId": "696f23d000039c2827b5d50f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.236584Z"
+  },
+  {
+    "insertId": "696f23d0000340da251f6011",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.588ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 6 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.213210Z"
+  },
+  {
+    "insertId": "696f23d0000340d0176b9936",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.213200Z"
+  },
+  {
+    "insertId": "696f23d00002ddbe04aa7239",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.409ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 5 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.187838Z"
+  },
+  {
+    "insertId": "696f23d00002ddb3efdfeb7e",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.187827Z"
+  },
+  {
+    "insertId": "696f23d00002866c41b26159",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.312ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 4 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.165484Z"
+  },
+  {
+    "insertId": "696f23d0000286612705f45f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.165473Z"
+  },
+  {
+    "insertId": "696f23d0000232e49218d990",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.385ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 3 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.144100Z"
+  },
+  {
+    "insertId": "696f23d0000232d8c22cefd4",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.144088Z"
+  },
+  {
+    "insertId": "696f23d00001cdcc6ef4b8d3",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.616ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 2 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.118220Z"
+  },
+  {
+    "insertId": "696f23d00001cdc0b4b28f5f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.118208Z"
+  },
+  {
+    "insertId": "696f23d000017111faecf09c",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.919ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 1 AND data >= '2025-01-01' AND data < '2026-01-01'",
+    "timestamp": "2026-01-20T06:42:24.094481Z"
+  },
+  {
+    "insertId": "696f23d0000171073f75b335",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:24 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:24.094471Z"
+  },
+  {
+    "insertId": "696f23d000012630f8159adf",
+    "jsonPayload": {
+      "ano": 2025,
+      "level": "INFO",
+      "msg": "iniciando calculo de ranking (cache miss)"
+    },
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:24.278322902Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "timestamp": "2026-01-20T06:42:24.076179954Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "1.873063829s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "74.125.210.197",
+      "requestMethod": "GET",
+      "requestSize": "1637",
+      "requestUrl": "https://todeolho-backend-7ynjppp3aq-rj.a.run.app/api/v1/ranking?ano=2025",
+      "responseSize": "49055",
+      "serverIp": "34.143.72.2",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+    },
+    "insertId": "696f23d1000e754b345f9ee2",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-01-20T06:42:26.011388857Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "1047aa0339cb1e32",
+    "timestamp": "2026-01-20T06:42:24.072860Z",
+    "trace": "projects/to-de-olho-473121/traces/fa77a259e5d58d586e3c389022ddfb5b",
+    "traceSampled": true
+  },
+  {
+    "insertId": "696f23c0000b485b7d51d2ba",
+    "jsonPayload": {
+      "level": "INFO",
+      "msg": "ranking calculado",
+      "total_senadores": 81
+    },
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "timestamp": "2026-01-20T06:42:08.740954430Z"
+  },
+  {
+    "insertId": "696f23c0000b4db2e13a2a94",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[GIN] 2026/01/20 - 06:42:08 | 200 |  1.795669046s | 177.134.185.119 | GET      \"/api/v1/ranking?ano=2023\"",
+    "timestamp": "2026-01-20T06:42:08.740786Z"
+  },
+  {
+    "insertId": "696f23c0000b1e9d9ddc08ea",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.298ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 81 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.728733Z"
+  },
+  {
+    "insertId": "696f23c0000b1e92ed510ac6",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.728722Z"
+  },
+  {
+    "insertId": "696f23c0000acdc63180c341",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.304ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 80 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.708038Z"
+  },
+  {
+    "insertId": "696f23c0000acdbad30cd2e3",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.708026Z"
+  },
+  {
+    "insertId": "696f23c0000a7e8b9c393862",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.336ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 79 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.687755Z"
+  },
+  {
+    "insertId": "696f23c0000a7e81cc88c042",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.687745Z"
+  },
+  {
+    "insertId": "696f23c0000a2ec7020207cd",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.287ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 78 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.667335Z"
+  },
+  {
+    "insertId": "696f23c0000a2ebd657028b5",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.667325Z"
+  },
+  {
+    "insertId": "696f23c00009dfa768b143f9",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[2.176ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 77 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.647079Z"
+  },
+  {
+    "insertId": "696f23c00009df9c04e88227",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.647068Z"
+  },
+  {
+    "insertId": "696f23c00009895f8f10c0c3",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.344ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 76 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.624991Z"
+  },
+  {
+    "insertId": "696f23c000098954325adbb9",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.959004045Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.624980Z"
+  },
+  {
+    "insertId": "696f23c000093bb484eab1e4",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.364ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 75 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.605108Z"
+  },
+  {
+    "insertId": "696f23c000093ba92b05483f",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.605097Z"
+  },
+  {
+    "insertId": "696f23c00008e0e1a3279efa",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.330ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 74 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.581857Z"
+  },
+  {
+    "insertId": "696f23c00008e0d8341fde66",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.581848Z"
+  },
+  {
+    "insertId": "696f23c000084d34f9123248",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.404ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 73 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.544052Z"
+  },
+  {
+    "insertId": "696f23c000084d28044e14bf",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.544040Z"
+  },
+  {
+    "insertId": "696f23c00007fa3b89f579cb",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.291ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 71 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.522811Z"
+  },
+  {
+    "insertId": "696f23c00007fa2f193027ed",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.522799Z"
+  },
+  {
+    "insertId": "696f23c00007a4cdeeaba6b1",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.364ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 70 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.500941Z"
+  },
+  {
+    "insertId": "696f23c00007a4c2fd3d99fb",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.500930Z"
+  },
+  {
+    "insertId": "696f23c00007519d124d011a",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.366ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 72 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.479645Z"
+  },
+  {
+    "insertId": "696f23c000075191c4154a68",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.479633Z"
+  },
+  {
+    "insertId": "696f23c00006fddbd2ad812e",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.418ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 69 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.458203Z"
+  },
+  {
+    "insertId": "696f23c00006fdd07c8db69c",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.458192Z"
+  },
+  {
+    "insertId": "696f23c00006b17e068da7bf",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.250ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 67 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.438654Z"
+  },
+  {
+    "insertId": "696f23c00006b169b549ad40",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.438633Z"
+  },
+  {
+    "insertId": "696f23c00006626f32fae227",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.312ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 68 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.418415Z"
+  },
+  {
+    "insertId": "696f23c000066261668e9984",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.418401Z"
+  },
+  {
+    "insertId": "696f23c00006122ca79dd8ee",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "\u001b[0m\u001b[33m[1.297ms] \u001b[34;1m[rows:1]\u001b[0m SELECT count(*) FROM \"votacoes\" WHERE senador_id = 66 AND data >= '2023-01-01' AND data < '2024-01-01'",
+    "timestamp": "2026-01-20T06:42:08.397868Z"
+  },
+  {
+    "insertId": "696f23c00006121fb177dced",
+    "labels": {
+      "instanceId": "005eb6974cd141727f6ebe3ea1d857447d75ad58cd704b73f669b1e48820d951337ec892f2e149a5f30548148f388ea37f85e432f3b70a3aa9455865e4aec40a68791474ee8bee7d60cae32e0f"
+    },
+    "logName": "projects/to-de-olho-473121/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-01-20T06:42:08.628347222Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "todeolho-backend",
+        "location": "southamerica-east1",
+        "project_id": "to-de-olho-473121",
+        "revision_name": "todeolho-backend-00013-sdm",
+        "service_name": "todeolho-backend"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "2026/01/20 06:42:08 \u001b[32m/app/internal/votacao/repository.go:150",
+    "timestamp": "2026-01-20T06:42:08.397855Z"
+  }
+]
