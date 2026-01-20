@@ -7,6 +7,10 @@ const BACKEND_URL =
 const nextConfig: NextConfig = {
   output: "standalone",
   reactCompiler: false,
+  experimental: {
+    workerThreads: false,
+    cpus: 1,
+  },
   async rewrites() {
     return [
       {
