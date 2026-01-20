@@ -4,14 +4,14 @@
 # =============================================================================
 
 # Stage 1: Dependencias
-FROM oven/bun:1 AS deps
+FROM oven/bun:1.2.4 AS deps
 WORKDIR /app
 
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
 
 # Stage 2: Builder
-FROM oven/bun:1 AS builder
+FROM oven/bun:1.2.4 AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
