@@ -82,6 +82,9 @@ func (s *Scheduler) Start(ctx context.Context) {
 
 // runStartupSync verifica se o DB esta vazio e roda backfill completo
 func (s *Scheduler) runStartupSync(ctx context.Context) {
+	// Verificar se foi solicitado FORCE_BACKFILL
+	forceBackfill := os.Getenv("FORCE_BACKFILL") == "true"
+	
 	// 1. Verificar se ja existem dados
 	count, err := s.senadorRepo.Count()
 	if err != nil {
@@ -89,11 +92,15 @@ func (s *Scheduler) runStartupSync(ctx context.Context) {
 		return
 	}
 
-	if count > 0 {
+	if count > 0 && !forceBackfill {
 		slog.Info("banco de dados ja populado, pulando backfill inicial", "senadores", count)
 		// Opcional: Ainda rodar um calculo de ranking para garantir cache quente
 		// s.rankingService.CalcularRanking(ctx, nil)
 		return
+	}
+	
+	if forceBackfill {
+		slog.Info("FORCE_BACKFILL=true detectado, executando backfill mesmo com dados existentes", "senadores_existentes", count)
 	}
 
 	slog.Info("banco de dados vazio detectado. INICIANDO BACKFILL COMPLETO...")
