@@ -6,7 +6,7 @@ const BACKEND_URL =
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  reactCompiler: true,
+  reactCompiler: false,
   async rewrites() {
     return [
       {
