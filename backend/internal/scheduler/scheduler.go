@@ -63,7 +63,7 @@ func (s *Scheduler) Start(ctx context.Context) {
 	dailyTicker := time.NewTicker(24 * time.Hour)
 
 	// Sync Semanal (CEAPS, Emendas) - 168h
-	weeklyTicker := time.NewTicker(168 * time.Hour)
+
 
 	go func() {
 		for {
@@ -73,8 +73,6 @@ func (s *Scheduler) Start(ctx context.Context) {
 				return
 			case <-dailyTicker.C:
 				s.runDailySync(ctx)
-			case <-weeklyTicker.C:
-				s.runWeeklySync(ctx)
 			}
 		}
 	}()
@@ -173,7 +171,9 @@ func (s *Scheduler) runStartupSync(ctx context.Context) {
 }
 
 func (s *Scheduler) runDailySync(ctx context.Context) {
-	slog.Info("executando sync diario")
+	slog.Info("executando sync diario integral")
+
+	anoAtual := time.Now().Year()
 
 	// 1. Senadores (Atualizacao cadastral)
 	if err := s.senadorSync.SyncFromAPI(ctx); err != nil {
@@ -186,44 +186,32 @@ func (s *Scheduler) runDailySync(ctx context.Context) {
 	}
 
 	// 3. Metadata do ano atual (para pegar ementas de votacoes recentes)
-	anoAtual := time.Now().Year()
 	if err := s.votacaoSync.SyncMetadata(ctx, anoAtual); err != nil {
 		slog.Error("falha sync metadata votacoes", "error", err)
 	}
 
-	// 4. Proposicoes (Novos projetos ou tramitacoes)
-	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
-		slog.Error("falha sync proposicoes", "error", err)
-	}
-
-	// 5. Recalcular Ranking
-	s.rankingService.CalcularRanking(ctx, nil)
-
-	slog.Info("sync diario finalizado")
-}
-
-func (s *Scheduler) runWeeklySync(ctx context.Context) {
-	slog.Info("executando sync semanal")
-
-	anoAtual := time.Now().Year()
-
-	// 1. CEAPS (Delay de publicacao, checar ano atual)
+	// 4. CEAPS (Despesas) - MOVIDO DE SEMANAL PARA DIARIO
 	if err := s.ceapsSync.SyncFromAPI(ctx, anoAtual); err != nil {
 		slog.Error("falha sync ceaps", "error", err)
 	}
 
-	// 2. Emendas
+	// 5. Emendas - MOVIDO DE SEMANAL PARA DIARIO
 	if err := s.emendaSync.SyncAll(ctx, anoAtual); err != nil {
 		slog.Error("falha sync emendas", "error", err)
 	}
 
-	// 3. Comissoes (Mudancas de membros)
+	// 6. Comissoes (Mudancas de membros) - MOVIDO DE SEMANAL PARA DIARIO
 	if err := s.comissaoSync.SyncFromAPI(ctx); err != nil {
 		slog.Error("falha sync comissoes", "error", err)
 	}
-	
-	// 4. Recalcular Ranking (Refletindo mudancas semanais)
+
+	// 7. Proposicoes (Novos projetos ou tramitacoes)
+	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
+		slog.Error("falha sync proposicoes", "error", err)
+	}
+
+	// 8. Recalcular Ranking
 	s.rankingService.CalcularRanking(ctx, nil)
 
-	slog.Info("sync semanal finalizado")
+	slog.Info("sync diario integral finalizado")
 }

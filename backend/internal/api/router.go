@@ -19,7 +19,7 @@ import (
 )
 
 // SetupRouter configura todas as rotas da API
-func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
+func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey string) *gin.Engine {
 	router := gin.Default()
 
 	// Middleware CORS
@@ -65,6 +65,7 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 		emendaRepo := emenda.NewRepository(db)
 		emendaService := emenda.NewService(emendaRepo, senadorRepo)
 		emendaHandler := emenda.NewHandler(emendaService)
+		emendaSync := emenda.NewSyncService(emendaRepo, senadorRepo, transparenciaAPIKey)
 
 		// Ranking
 		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo, redisClient)
@@ -160,6 +161,54 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 			}
 			c.JSON(http.StatusOK, gin.H{
 				"message": "sync de proposicoes concluido",
+			})
+		})
+
+		v1.POST("/sync/emendas", func(c *gin.Context) {
+			// Start backfill in background or sync (using 2024/2025 default or param)
+			// For simplicity: sync all years 2023-2026 or just current
+			// Since this is heavy, maybe we just trigger one year? Or lets make it accept "ano"?
+			// Implementation plan implied general sync. Lets do loop for 2023..2025 like scheduler?
+			// Better: POST /sync/emendas/:ano
+			
+			// Let's stick to simplest: Sync All years for all senators (heavy)
+			// But ctx timeout is issue.
+			// Let's do like scheduler: 2023..2026 inside a go routine? 
+			// No, manual sync is usually synchronous for feedback.
+			
+			// Let's implement /sync/emendas/:ano
+			ano := time.Now().Year() // default
+			
+			// Using SyncAll from service
+			// It iterates all senators.
+			if err := emendaSync.SyncAll(c.Request.Context(), ano); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return 
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"message": "sync de emendas concluido",
+				"ano": ano,
+			})
+		})
+        
+        // Let's refine: actually we wanted /sync/emendas to match others.
+		// Added the route above. But let's support :ano param optionally or make another route.
+		// Let's follow pattern: /sync/emendas/:ano
+		v1.POST("/sync/emendas/:ano", func(c *gin.Context) {
+			anoStr := c.Param("ano")
+			ano := 2024
+			if _, err := fmt.Sscanf(anoStr, "%d", &ano); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "ano invalido"})
+				return
+			}
+            
+			if err := emendaSync.SyncAll(c.Request.Context(), ano); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"message": "sync de emendas concluido",
+				"ano":     ano,
 			})
 		})
 

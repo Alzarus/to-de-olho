@@ -59,7 +59,8 @@ func main() {
 	}
 
 	// Configurar router
-	router := api.SetupRouter(db, redisClient)
+	transparenciaKey := os.Getenv("TRANSPARENCIA_API_KEY")
+	router := api.SetupRouter(db, redisClient, transparenciaKey)
 
 	// Criar servidor HTTP
 	srv := &http.Server{
@@ -79,7 +80,6 @@ func main() {
 	// Clients
 	legisClient := senado.NewLegisClient()
 	admClient := senado.NewAdmClient()
-	transparenciaKey := os.Getenv("TRANSPARENCIA_API_KEY")
 
 	// Sync Services (Modules)
 	senadorSync := senador.NewSyncService(senadorRepo, legisClient)
