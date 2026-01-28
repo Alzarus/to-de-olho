@@ -63,7 +63,7 @@ func (s *Scheduler) Start(ctx context.Context) {
 	dailyTicker := time.NewTicker(24 * time.Hour)
 
 	// Sync Semanal (CEAPS, Emendas) - 168h
-	weeklyTicker := time.NewTicker(168 * time.Hour)
+
 
 	go func() {
 		for {
