@@ -41,7 +41,7 @@ export function Header() {
             className="rounded-lg"
           />
           <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-tight text-foreground">
+            <span className="text-lg font-bold tracking-tight text-foreground whitespace-nowrap">
               Tô De Olho
             </span>
             <span className="hidden text-xs text-muted-foreground sm:block">

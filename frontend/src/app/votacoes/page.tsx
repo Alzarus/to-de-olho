@@ -84,7 +84,7 @@ function VotacoesContent() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await getVotacoes(page, limit, ano === 0 ? undefined : ano, search);
+        const res = await getVotacoes(page, limit, ano === 0 ? undefined : ano, search, sortDir);
         setData(res.data);
         setTotal(res.total);
       } catch (error) {

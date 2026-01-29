@@ -180,38 +180,46 @@ func (r *Repository) GetStatsByAno(senadorID int, ano int) (*VotacaoStats, error
 	return &stats, nil
 }
 
-// FindAll retorna votacoes com paginacao e filtros
-func (r *Repository) FindAll(limit, offset, ano int, materia string) ([]Votacao, int64, error) {
+// FindAll retorna votacoes com paginacao e filtros (ordem: "asc" ou "desc")
+func (r *Repository) FindAll(limit, offset, ano int, materia, ordem string) ([]Votacao, int64, error) {
 	var votacoes []Votacao
 	var total int64
 
-	// Usamos DISTINCT ON para retornar uma linha por sessao
-	query := r.db.Model(&Votacao{}).
+	// Base query com filtros para count e subquery
+	baseQuery := r.db.Model(&Votacao{})
+
+	if ano > 0 {
+		baseQuery = baseQuery.Where("EXTRACT(YEAR FROM data) = ?", ano)
+	}
+
+	if materia != "" {
+		like := "%" + materia + "%"
+		baseQuery = baseQuery.Where("materia ILIKE ? OR descricao_votacao ILIKE ? OR codigo_sessao ILIKE ?", like, like, like)
+	}
+
+	// Contar total de sessoes unicas
+	if err := baseQuery.Session(&gorm.Session{}).Select("COUNT(DISTINCT sessao_id)").Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Subquery para obter sessoes unicas
+	// Nota: DISTINCT ON requer que o ORDER BY comece com a coluna distinct
+	subQuery := baseQuery.Session(&gorm.Session{}).
 		Select("DISTINCT ON (sessao_id) *").
 		Order("sessao_id, data DESC")
 
-	if ano > 0 {
-		query = query.Where("EXTRACT(YEAR FROM data) = ?", ano)
+	// Query principal ordenando o resultado da subquery pela data
+	sortOrder := "data DESC"
+	if ordem == "asc" {
+		sortOrder = "data ASC"
 	}
 
-	if materia != "" {
-		query = query.Where("materia ILIKE ? OR descricao_votacao ILIKE ?", "%"+materia+"%", "%"+materia+"%")
-	}
+	err := r.db.Table("(?) as v", subQuery).
+		Order(sortOrder).
+		Limit(limit).
+		Offset(offset).
+		Find(&votacoes).Error
 
-	// Contar total (simplificado)
-	// Para paginacao correta com DISTINCT ON, o COUNT precisa ser compativel.
-	// Vamos contar IDs unicos sessao_id para o ano.
-	countQuery := r.db.Model(&Votacao{}).Select("COUNT(DISTINCT sessao_id)")
-	if ano > 0 {
-		countQuery = countQuery.Where("EXTRACT(YEAR FROM data) = ?", ano)
-	}
-	if materia != "" {
-		countQuery = countQuery.Where("materia ILIKE ? OR descricao_votacao ILIKE ?", "%"+materia+"%", "%"+materia+"%")
-	}
-	countQuery.Count(&total)
-
-	// Buscar resultados
-	err := query.Limit(limit).Offset(offset).Find(&votacoes).Error
 	return votacoes, total, err
 }
 
