@@ -49,16 +49,16 @@ func (r *Repository) FindByCodigo(codigo int) (*Senador, error) {
 // Upsert insere ou atualiza um senador
 func (r *Repository) Upsert(senador *Senador) error {
 	return r.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "codigo_parlamentar"}},
-		DoUpdates: clause.AssignmentColumns([]string{"nome", "nome_completo", "partido", "uf", "foto_url", "email", "em_exercicio", "updated_at"}),
+		OnConstraint: "idx_senadores_codigo_parlamentar",
+		DoUpdates:    clause.AssignmentColumns([]string{"nome", "nome_completo", "partido", "uf", "foto_url", "email", "em_exercicio", "updated_at"}),
 	}).Create(senador).Error
 }
 
 // UpsertBatch insere ou atualiza multiplos senadores
 func (r *Repository) UpsertBatch(senadores []Senador) error {
 	return r.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "codigo_parlamentar"}},
-		DoUpdates: clause.AssignmentColumns([]string{"nome", "nome_completo", "partido", "uf", "foto_url", "email", "em_exercicio", "updated_at"}),
+		OnConstraint: "idx_senadores_codigo_parlamentar",
+		DoUpdates:    clause.AssignmentColumns([]string{"nome", "nome_completo", "partido", "uf", "foto_url", "email", "em_exercicio", "updated_at"}),
 	}).CreateInBatches(senadores, 100).Error
 }
 

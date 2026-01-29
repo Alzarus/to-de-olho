@@ -33,7 +33,8 @@ export const getVotacoes = async (
   page = 1,
   limit = 20,
   ano?: number,
-  materia?: string
+  materia?: string,
+  ordem?: string,
 ): Promise<VotacaoResponse> => {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -42,6 +43,7 @@ export const getVotacoes = async (
 
   if (ano) params.append("ano", ano.toString());
   if (materia) params.append("materia", materia);
+  if (ordem) params.append("ordem", ordem);
 
   return fetcher<VotacaoResponse>(`/api/v1/votacoes?${params.toString()}`);
 };

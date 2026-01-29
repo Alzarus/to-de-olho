@@ -130,6 +130,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	ano, _ := strconv.Atoi(c.Query("ano"))
 	materia := c.Query("materia")
+	ordem := c.DefaultQuery("ordem", "desc")
 
 	if page < 1 {
 		page = 1
@@ -139,7 +140,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	votacoes, total, err := h.repo.FindAll(limit, offset, ano, materia)
+	votacoes, total, err := h.repo.FindAll(limit, offset, ano, materia, ordem)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar votacoes"})
 		return

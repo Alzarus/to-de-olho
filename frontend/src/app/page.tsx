@@ -23,9 +23,9 @@ export default function Home() {
     },
     { 
       label: "Votos Registrados", 
-      value: "170k+", 
+      value: "50k+", 
       icon: Activity,
-      description: "Desde 2019"
+      description: "Desde 2023"
     },
     { 
       label: "Economia Identificada", 

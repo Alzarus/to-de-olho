@@ -20,6 +20,19 @@ import {
 
 import { getVotacaoById, VotacaoDetail } from "@/services/votacaoService";
 
+const VOTE_DESCRIPTIONS: Record<string, string> = {
+  AP: "Atividade Parlamentar",
+  LP: "Licença Particular",
+  LS: "Licença Saúde",
+  LG: "Licença Gestante",
+  LC: "Licença Conjunta",
+  MIS: "Missão Oficial",
+  NCom: "Não Compareceu",
+  "P-NR": "Presidente (Não Votou)",
+  "P-NRV": "Presidente (Não Registrou Voto)",
+  "P-OD": "Presidente (Obstrução)",
+};
+
 const VoteBadge = ({ voto }: { voto: string }) => {
   switch (voto) {
     case "Sim":
@@ -47,10 +60,20 @@ const VoteBadge = ({ voto }: { voto: string }) => {
         </Badge>
       );
     default: // NCom or other
+      const description = VOTE_DESCRIPTIONS[voto] || "Outros / Sem descrição";
       return (
-        <Badge variant="outline" className="text-muted-foreground">
-          <HelpCircle className="mr-1 h-3 w-3" /> {voto}
-        </Badge>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+             <TooltipTrigger asChild>
+                <Badge variant="outline" className="text-muted-foreground cursor-help">
+                  <HelpCircle className="mr-1 h-3 w-3" /> {voto}
+                </Badge>
+             </TooltipTrigger>
+             <TooltipContent>
+                <p>{description}</p>
+             </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
   }
 };

@@ -193,8 +193,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
               }}
             />
             <Legend 
-              verticalAlign="bottom" 
-              height={36}
+              verticalAlign="bottom"
               wrapperStyle={{ paddingTop: "20px" }}
               formatter={(value: string) => {
                 const item = chartData.find(d => d.name === value);
