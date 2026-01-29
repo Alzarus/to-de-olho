@@ -241,8 +241,12 @@ function ComparatorContent() {
               href="#add-senators"
               onClick={(e) => {
                 e.preventDefault();
-                const element = document.getElementById('add-senators');
-                element?.scrollIntoView({ behavior: 'smooth' });
+                setIsSelectorExpanded(true);
+                // Pequeno delay para garantir que o estado atualizou e o DOM renderizou antes de scrollar
+                setTimeout(() => {
+                    const element = document.getElementById('add-senators');
+                    element?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
               }}
               className="flex w-40 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted p-4 text-center bg-muted/20 hover:bg-muted/40 transition-colors"
             >

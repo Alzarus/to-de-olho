@@ -1,20 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useComparator } from "@/contexts/comparator-context";
 import { X, Users, ChevronUp, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function ComparatorDock() {
-  const { selectedSenators, removeSenator, clearSelection } = useComparator();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { selectedSenators, removeSenator, clearSelection, isOpen, setIsOpen } = useComparator();
+  // Removed local isExpanded state to rely on context
 
-  // Auto-expand when adding the first few, but maybe keep collapsed if many?
-  // Let's default to collapsed to save space as requested, or expand only on first add?
-  // User said "seria bom um expand para não ocupar tanto espaço inicialmente".
-  // So default is collapsed (false).
-  
   if (selectedSenators.length === 0) {
     return null;
   }
@@ -25,8 +20,8 @@ export function ComparatorDock() {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-4 left-0 right-0 z-50 flex justify-center pointer-events-none"
-        style={{ paddingRight: "var(--removed-body-scroll-bar-size)" }}
+        className="fixed bottom-4 left-0 right-0 z-50 flex justify-center pointer-events-none env-safe-area-bottom"
+        style={{ paddingRight: "var(--removed-body-scroll-bar-size)", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="pointer-events-auto w-[95%] max-w-fit flex flex-col items-center gap-2 rounded-2xl border border-border bg-background p-2 shadow-sm dark:bg-popover">
              
@@ -34,11 +29,11 @@ export function ComparatorDock() {
           <div className="flex items-center gap-2 px-1 sm:gap-3 sm:px-2">
             
             <button
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={() => setIsOpen(!isOpen)}
                 className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-foreground hover:opacity-80 sm:gap-2"
             >
                 <div className="flex shrink-0 items-center justify-center rounded-full bg-primary/10 p-1">
-                    {isExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                    {isOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                 </div>
                 <span className="truncate">{selectedSenators.length} <span className="hidden xs:inline">selecionado(s)</span></span>
             </button>
@@ -70,7 +65,7 @@ export function ComparatorDock() {
 
           {/* Expanded List */}
           <AnimatePresence>
-            {isExpanded && (
+            {isOpen && (
                 <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
