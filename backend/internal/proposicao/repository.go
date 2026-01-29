@@ -2,6 +2,7 @@ package proposicao
 
 import (
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Repository encapsula operacoes de banco de dados para Proposicao
@@ -146,19 +147,18 @@ func (r *Repository) GetProposicoesPorTipo(senadorID int) ([]ProposicaoPorTipo, 
 
 // Upsert insere ou atualiza uma proposicao
 func (r *Repository) Upsert(proposicao *Proposicao) error {
-	return r.db.Save(proposicao).Error
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "codigo_materia"}},
+		DoUpdates: clause.AssignmentColumns([]string{"estagio_tramitacao", "situacao_atual", "pontuacao", "updated_at"}),
+	}).Create(proposicao).Error
 }
 
 // UpsertBatch insere ou atualiza multiplas proposicoes
 func (r *Repository) UpsertBatch(proposicoes []Proposicao) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		for _, p := range proposicoes {
-			if err := tx.Save(&p).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "codigo_materia"}},
+		DoUpdates: clause.AssignmentColumns([]string{"estagio_tramitacao", "situacao_atual", "pontuacao", "updated_at"}),
+	}).CreateInBatches(proposicoes, 100).Error
 }
 
 // DeleteBySenadorID remove todas as proposicoes de um senador

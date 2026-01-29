@@ -2,6 +2,7 @@ package senador
 
 import (
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Repository encapsula operacoes de banco de dados para Senador
@@ -47,19 +48,18 @@ func (r *Repository) FindByCodigo(codigo int) (*Senador, error) {
 
 // Upsert insere ou atualiza um senador
 func (r *Repository) Upsert(senador *Senador) error {
-	return r.db.Save(senador).Error
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "codigo_parlamentar"}},
+		DoUpdates: clause.AssignmentColumns([]string{"nome", "nome_completo", "partido", "uf", "foto_url", "email", "em_exercicio", "updated_at"}),
+	}).Create(senador).Error
 }
 
 // UpsertBatch insere ou atualiza multiplos senadores
 func (r *Repository) UpsertBatch(senadores []Senador) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		for _, s := range senadores {
-			if err := tx.Save(&s).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "codigo_parlamentar"}},
+		DoUpdates: clause.AssignmentColumns([]string{"nome", "nome_completo", "partido", "uf", "foto_url", "email", "em_exercicio", "updated_at"}),
+	}).CreateInBatches(senadores, 100).Error
 }
 
 // Count retorna o total de senadores em exercicio

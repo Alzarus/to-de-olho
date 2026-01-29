@@ -67,10 +67,10 @@ func (s *SyncService) SyncSenador(ctx context.Context, senadorID int) (int, erro
 		return 0, err
 	}
 
-	// Limpar proposicoes antigas antes de re-sincronizar
-	if err := s.repo.DeleteBySenadorID(senadorID); err != nil {
-		slog.Warn("falha ao limpar proposicoes antigas", "senador", senadorID, "error", err)
-	}
+	// Limpar proposicoes antigas nao e mais necessario com Upsert (OnConflict)
+	// if err := s.repo.DeleteBySenadorID(senadorID); err != nil {
+	// 	slog.Warn("falha ao limpar proposicoes antigas", "senador", senadorID, "error", err)
+	// }
 
 	var count int
 	for _, p := range proposicoesAPI {
