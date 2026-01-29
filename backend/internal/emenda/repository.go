@@ -15,7 +15,7 @@ func NewRepository(db *gorm.DB) *Repository {
 
 func (r *Repository) Upsert(emenda *Emenda) error {
 	return r.db.Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "numero"}, {Name: "senador_id"}, {Name: "ano"}},
+		OnConstraint: "idx_emenda_unique",
 		DoUpdates: clause.AssignmentColumns([]string{
 			"tipo",
 			"funcional_programatica",
