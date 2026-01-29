@@ -74,6 +74,7 @@ func (c *Client) GetEmendas(ano int, nomeAutor string, pagina int) ([]EmendaDTO,
 
 	req.Header.Set("chave-api-dados", c.apiKey)
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ToDeOlho/1.0")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

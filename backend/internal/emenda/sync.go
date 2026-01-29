@@ -30,6 +30,7 @@ func (s *SyncService) SyncAll(ctx context.Context, ano int) error {
 	if err != nil {
 		return err
 	}
+	log.Printf("SyncAll Emendas: Found %d senadores for year %d", len(senadores), ano)
 
 	for _, sen := range senadores {
 		if err := s.SyncSenador(ctx, sen, ano); err != nil {
@@ -56,10 +57,14 @@ func (s *SyncService) SyncSenador(ctx context.Context, sen senador.Senador, ano 
 			default:
 			}
 
+			log.Printf("Querying emendas for %s (Page %d)", nomeBusca, pagina)
 			emendasDTO, err := s.transparencia.GetEmendas(ano, nomeBusca, pagina)
 			if err != nil {
+				log.Printf("Erro API emendas for %s: %v", sen.Nome, err)
 				return fmt.Errorf("erro API transparencia: %w", err)
 			}
+
+			log.Printf("Got %d emendas for %s (query: %s)", len(emendasDTO), sen.Nome, nomeBusca)
 
 			if len(emendasDTO) == 0 {
 				break
