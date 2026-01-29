@@ -37,7 +37,7 @@ import {
 import { BRAZIL_STATES } from "@/components/ui/brazil-map-data";
 
 const UF_MAP = Object.fromEntries(
-  BRAZIL_STATES.map((state) => [state.id, state.name])
+  BRAZIL_STATES.map((state) => [state.id, state.name]),
 );
 
 const UFS = [
@@ -131,20 +131,20 @@ function MobileRankingCard({
               >
                 {senador.partido}
               </Badge>
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-xs text-muted-foreground border-b border-dotted cursor-help">
-                    {senador.uf}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs font-medium">
-                    {UF_MAP[senador.uf] || senador.uf}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-muted-foreground border-b border-dotted cursor-help">
+                      {senador.uf}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs font-medium">
+                      {UF_MAP[senador.uf] || senador.uf}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         </Link>
@@ -467,7 +467,7 @@ function RankingError({ message }: { message: string }) {
       </h3>
       <p className="mt-2 text-sm text-muted-foreground max-w-md">{message}</p>
       <p className="mt-4 text-xs text-muted-foreground">
-        Verifique se o backend está rodando em localhost:8080
+        Tente recarregar a página em alguns instantes.
       </p>
     </div>
   );
@@ -706,7 +706,9 @@ function RankingContent() {
             {/* Partido */}
             <Select
               value={partido}
-              onValueChange={(value) => updateUrl({ partido: value === "all" ? null : value })}
+              onValueChange={(value) =>
+                updateUrl({ partido: value === "all" ? null : value })
+              }
             >
               <SelectTrigger className="h-9 w-full sm:w-[180px]">
                 <SelectValue placeholder="Todos os Partidos" />
@@ -724,7 +726,9 @@ function RankingContent() {
             {/* UF */}
             <Select
               value={uf}
-              onValueChange={(value) => updateUrl({ uf: value === "all" ? null : value })}
+              onValueChange={(value) =>
+                updateUrl({ uf: value === "all" ? null : value })
+              }
             >
               <SelectTrigger className="h-9 w-full sm:w-[140px]">
                 <SelectValue placeholder="Todas as UFs" />

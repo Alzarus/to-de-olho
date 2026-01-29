@@ -13,14 +13,12 @@ import type {
 } from "@/types/api";
 
 // Em producao, usamos rewrites do Next.js para /api/* -> backend
-// Em desenvolvimento, apontamos diretamente para localhost:8080
-// Em producao, usamos rewrites do Next.js para /api/* -> backend
-// Em desenvolvimento, apontamos diretamente para localhost:8080 or hardcoded prod
 const API_BASE_URL = "https://todeolho.org";
 
 export async function fetcher<T>(endpoint: string): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    cache: "no-store",
+    // ISR: Revalidar a cada 1 hora (3600s)
+    next: { revalidate: 3600 },
     headers: {
       "Content-Type": "application/json",
     },
