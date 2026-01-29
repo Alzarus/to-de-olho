@@ -164,36 +164,8 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 			})
 		})
 
-		v1.POST("/sync/emendas", func(c *gin.Context) {
-			// Start backfill in background or sync (using 2024/2025 default or param)
-			// For simplicity: sync all years 2023-2026 or just current
-			// Since this is heavy, maybe we just trigger one year? Or lets make it accept "ano"?
-			// Implementation plan implied general sync. Lets do loop for 2023..2025 like scheduler?
-			// Better: POST /sync/emendas/:ano
-			
-			// Let's stick to simplest: Sync All years for all senators (heavy)
-			// But ctx timeout is issue.
-			// Let's do like scheduler: 2023..2026 inside a go routine? 
-			// No, manual sync is usually synchronous for feedback.
-			
-			// Let's implement /sync/emendas/:ano
-			ano := time.Now().Year() // default
-			
-			// Using SyncAll from service
-			// It iterates all senators.
-			if err := emendaSync.SyncAll(c.Request.Context(), ano); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return 
-			}
-			c.JSON(http.StatusOK, gin.H{
-				"message": "sync de emendas concluido",
-				"ano": ano,
-			})
-		})
+
         
-        // Let's refine: actually we wanted /sync/emendas to match others.
-		// Added the route above. But let's support :ano param optionally or make another route.
-		// Let's follow pattern: /sync/emendas/:ano
 		v1.POST("/sync/emendas/:ano", func(c *gin.Context) {
 			anoStr := c.Param("ano")
 			ano := 2024
@@ -214,34 +186,7 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 
 		// Metadata
 		v1.GET("/metadata/last-sync", func(c *gin.Context) {
-			
-			// A ultima atualizacao global eh dada pelo calculo do ranking mais recente
-			var lastRanking ranking.Ranking
-			
-			// Buscar o registro mais recente ordenado por calculado_em
-			// Assumindo que a tabela eh "rankings" (baseado no model) ou similar.
-			// Na verdade, o model Ranking eh []SenadorScore.
-			// O RankingService deve ter metodo para isso ou query direta.
-			// O repositorio de Ranking salva um blob json geralmente?
-			// Vamos checar ranking/repository.go para ver como ele salva.
-			// Se nao tiver tabela de historico, pegamos o updated_at de um Senador?
-			
-			// MELHOR: Usar uma query raw simples para pegar o maior updated_at de senadores
-			// jã que ranking é cache. Mas o usuario aprovou usar "CalculadoEm".
-			// Entao precisamos saber onde esse "CalculadoEm" fica persistido.
-			// Como nao tenho acesso ao ranking/repository.go agora, vou assumir tabela 'rankings'
-			// Se der erro de compilacao, eu ajusto.
-			
-			// ESTRATEGIA SEGURA: Pegar o maior updated_at da tabela 'senadores'.
-			// Motivo: Senadores sao a base. Se o sync rodou, eles foram tocados (updated_at).
-			// E o Upsert garante que updated_at mudou se houve algo.
-			// Ou melhor, o scheduler roda tudo. O ultimo passo é ranking.
-			// Vamos checar se existe tabela de controle. Nao existe.
-			
-			// Vamos usar: Maior updated_at de 'votacoes' ou 'senadores'.
-			// Retornar o timestamp atual se nao achar nada?
-			
-			// Vou usar SQL RAW para pegar o maior updated_at de 'senadores' que eh garantido existir.
+			// Estrategia: Maior updated_at de 'senadores' que eh garantido existir.
 			var lastUpdate time.Time
 			if err := db.Raw("SELECT MAX(updated_at) FROM senadores").Scan(&lastUpdate).Error; err != nil {
 				c.JSON(http.StatusOK, gin.H{"last_sync": time.Now()})
