@@ -17,7 +17,7 @@ type Proposicao struct {
 
 	// Para calculo de score
 	EstagioTramitacao string `json:"estagio_tramitacao"` // Apresentado, EmComissao, AprovadoComissao, AprovadoPlenario, TransformadoLei
-	Pontuacao         int    `json:"pontuacao"`          // Pontos calculados
+	Pontuacao         float64 `json:"pontuacao"`          // Pontos calculados
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -39,7 +39,7 @@ type ProposicaoStats struct {
 	TransformadasEmLei  int     `json:"transformadas_em_lei"`
 	AprovadosPlenario   int     `json:"aprovados_plenario"`
 	EmTramitacao        int     `json:"em_tramitacao"`
-	PontuacaoTotal      int     `json:"pontuacao_total"`      // Score de produtividade
+	PontuacaoTotal      float64 `json:"pontuacao_total"`      // Score de produtividade
 	ScoreNormalizado    float64 `json:"score_normalizado"`    // 0-100
 }
 
@@ -50,7 +50,7 @@ type ProposicaoPorTipo struct {
 }
 
 // CalcularPontuacao calcula a pontuacao de uma proposicao baseado no estagio e tipo
-func (p *Proposicao) CalcularPontuacao() int {
+func (p *Proposicao) CalcularPontuacao() float64 {
 	// Pontos base por estagio
 	pontosBase := map[string]int{
 		"Apresentado":       1,
@@ -78,5 +78,5 @@ func (p *Proposicao) CalcularPontuacao() int {
 		pontos = 1 // Default para apresentado
 	}
 
-	return int(float64(pontos) * multiplicador)
+	return float64(pontos) * multiplicador
 }

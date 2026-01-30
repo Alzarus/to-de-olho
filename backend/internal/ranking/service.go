@@ -82,8 +82,8 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 		dados := s.coletarDadosBrutos(sen.ID, ano)
 		dadosBrutos[sen.ID] = dados
 
-		if float64(dados.pontuacaoProposicoes) > maxPontuacaoProd {
-			maxPontuacaoProd = float64(dados.pontuacaoProposicoes)
+		if dados.pontuacaoProposicoes > maxPontuacaoProd {
+			maxPontuacaoProd = dados.pontuacaoProposicoes
 		}
 		if dados.pontosComissoes > maxPontosComissoes {
 			maxPontosComissoes = dados.pontosComissoes
@@ -168,7 +168,7 @@ type dadosBrutosSenador struct {
 	totalProposicoes     int
 	proposicoesAprovadas int
 	transformadasEmLei   int
-	pontuacaoProposicoes int
+	pontuacaoProposicoes float64
 
 	// Votacoes
 	totalVotacoes     int
@@ -261,7 +261,7 @@ func (s *Service) calcularScoreNormalizado(
 	ano *int,
 ) SenadorScore {
 	// Normalizar Produtividade (0-100)
-	produtividade := (float64(dados.pontuacaoProposicoes) / maxPontuacaoProd) * 100
+	produtividade := (dados.pontuacaoProposicoes / maxPontuacaoProd) * 100
 
 	// Presenca ja vem normalizada (0-100)
 	presenca := dados.taxaPresencaBruta

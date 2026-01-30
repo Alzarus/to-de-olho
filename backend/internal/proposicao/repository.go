@@ -80,7 +80,6 @@ func (r *Repository) GetStats(senadorID int) (*ProposicaoStats, error) {
 	stats.SenadorID = senadorID
 
 	var total, pecs, plps, pls, leis, plenario, tramitacao int64
-	var pontuacaoTotal int
 
 	// Total de proposicoes
 	r.db.Model(&Proposicao{}).Where("senador_id = ?", senadorID).Count(&total)
@@ -121,14 +120,13 @@ func (r *Repository) GetStats(senadorID int) (*ProposicaoStats, error) {
 
 	// Soma de pontuacao
 	var soma struct {
-		Total int
+		Total float64
 	}
 	r.db.Model(&Proposicao{}).
 		Select("COALESCE(SUM(pontuacao), 0) as total").
 		Where("senador_id = ?", senadorID).
 		Scan(&soma)
-	pontuacaoTotal = soma.Total
-	stats.PontuacaoTotal = pontuacaoTotal
+	stats.PontuacaoTotal = soma.Total
 
 	return &stats, nil
 }
@@ -172,7 +170,6 @@ func (r *Repository) GetStatsByAno(senadorID int, ano int) (*ProposicaoStats, er
 	stats.SenadorID = senadorID
 
 	var total, pecs, plps, pls, leis, plenario, tramitacao int64
-	var pontuacaoTotal int
 
 	// Filtro de data: baseado no ano_materia ou data_apresentacao
 	// O mais confiavel para "ano" costuma ser o ano_materia para proposicoes legislativas
@@ -217,14 +214,13 @@ func (r *Repository) GetStatsByAno(senadorID int, ano int) (*ProposicaoStats, er
 
 	// Soma de pontuacao
 	var soma struct {
-		Total int
+		Total float64
 	}
 	r.db.Model(&Proposicao{}).
 		Select("COALESCE(SUM(pontuacao), 0) as total").
 		Where("senador_id = ? AND "+yearFilter, senadorID, ano).
 		Scan(&soma)
-	pontuacaoTotal = soma.Total
-	stats.PontuacaoTotal = pontuacaoTotal
+	stats.PontuacaoTotal = soma.Total
 
 	return &stats, nil
 }
