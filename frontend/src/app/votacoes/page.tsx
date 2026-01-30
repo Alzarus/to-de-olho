@@ -43,7 +43,7 @@ function VotacoesContent() {
   const [data, setData] = useState<Votacao[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  
+
   // Input local para busca (debounce)
   const [localSearch, setLocalSearch] = useState(search);
   const limit = 20;
@@ -52,17 +52,20 @@ function VotacoesContent() {
   usePersistentYear("votacoes");
 
   // Atualizar URL helper - wrapped in useCallback
-  const updateUrl = useCallback((newParams: Record<string, string | number | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (value === null || value === "") {
-        params.delete(key);
-      } else {
-        params.set(key, String(value));
-      }
-    });
-    router.push(`/votacoes?${params.toString()}`);
-  }, [searchParams, router]);
+  const updateUrl = useCallback(
+    (newParams: Record<string, string | number | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(newParams).forEach(([key, value]) => {
+        if (value === null || value === "") {
+          params.delete(key);
+        } else {
+          params.set(key, String(value));
+        }
+      });
+      router.push(`/votacoes?${params.toString()}`);
+    },
+    [searchParams, router],
+  );
 
   // Sync initial localSearch if URL changes externally
   useEffect(() => {
@@ -73,7 +76,7 @@ function VotacoesContent() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localSearch !== search) {
-         updateUrl({ search: localSearch, page: 1 });
+        updateUrl({ search: localSearch, page: 1 });
       }
     }, 500);
     return () => clearTimeout(timer);
@@ -84,7 +87,13 @@ function VotacoesContent() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await getVotacoes(page, limit, ano === 0 ? undefined : ano, search, sortDir);
+        const res = await getVotacoes(
+          page,
+          limit,
+          ano === 0 ? undefined : ano,
+          search,
+          sortDir,
+        );
         setData(res.data);
         setTotal(res.total);
       } catch (error) {
@@ -119,7 +128,8 @@ function VotacoesContent() {
             Votações Nominais
           </h1>
           <p className="mt-1 text-base text-muted-foreground sm:mt-2 sm:text-lg">
-            Acompanhe como votam os senadores nas principais matérias legislativas.
+            Acompanhe como votam os senadores nas principais matérias
+            legislativas.
           </p>
         </div>
 
@@ -133,7 +143,9 @@ function VotacoesContent() {
           </label>
           <Select
             value={ano.toString()}
-            onValueChange={(value) => updateUrl({ ano: Number(value), page: 1 })}
+            onValueChange={(value) =>
+              updateUrl({ ano: Number(value), page: 1 })
+            }
           >
             <SelectTrigger id="ano-select" className="w-full sm:w-[180px]">
               <SelectValue placeholder="Selecione o ano" />
@@ -166,13 +178,16 @@ function VotacoesContent() {
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Busca */}
             <div className="relative flex-1 min-w-[180px] sm:max-w-md">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <Search
+                className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
+                aria-hidden="true"
+              />
               <Input
-                placeholder="Buscar por matéria (PEC, PL...) ou descrição..."
+                placeholder="Buscar por matéria, descrição ou código da sessão..."
                 className="pl-9 pr-8 h-9"
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
-                aria-label="Buscar votação por matéria ou descrição"
+                aria-label="Buscar votação por matéria, descrição ou código"
               />
               {localSearch && (
                 <button
@@ -187,12 +202,16 @@ function VotacoesContent() {
             </div>
           </div>
         </div>
-        
+
         <CardContent className="p-0 overflow-x-auto">
-          <Table role="table" aria-label="Lista de votações nominais" className="min-w-[600px]">
+          <Table
+            role="table"
+            aria-label="Lista de votações nominais"
+            className="min-w-[600px]"
+          >
             <TableHeader>
               <TableRow>
-                <TableHead 
+                <TableHead
                   className="w-[100px] cursor-pointer hover:text-foreground transition-colors select-none"
                   onClick={toggleSort}
                   role="columnheader"
@@ -203,9 +222,15 @@ function VotacoesContent() {
                   <span className="inline-flex items-center gap-1">
                     Data
                     {sortDir === "desc" ? (
-                      <ArrowDown className="h-3 w-3" aria-label="Ordenado por mais recentes" />
+                      <ArrowDown
+                        className="h-3 w-3"
+                        aria-label="Ordenado por mais recentes"
+                      />
                     ) : (
-                      <ArrowUp className="h-3 w-3" aria-label="Ordenado por mais antigas" />
+                      <ArrowUp
+                        className="h-3 w-3"
+                        aria-label="Ordenado por mais antigas"
+                      />
                     )}
                   </span>
                 </TableHead>
@@ -217,8 +242,12 @@ function VotacoesContent() {
               {loading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
                     <TableCell>
                       <Skeleton className="h-4 w-full mb-2" />
                       <Skeleton className="h-3 w-1/2" />
@@ -233,23 +262,39 @@ function VotacoesContent() {
                 </TableRow>
               ) : (
                 sortedData.map((votacao) => (
-                  <TableRow 
-                    key={votacao.sessao_id} 
+                  <TableRow
+                    key={votacao.sessao_id}
                     className="hover:bg-muted/50 cursor-pointer group"
-                    onClick={() => router.push(`/votacoes/${votacao.sessao_id}?backUrl=${encodeURIComponent(`/votacoes?${searchParams.toString()}`)}`)}
+                    onClick={() =>
+                      router.push(
+                        `/votacoes/${votacao.sessao_id}?backUrl=${encodeURIComponent(`/votacoes?${searchParams.toString()}`)}`,
+                      )
+                    }
                     role="row"
                     tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && router.push(`/votacoes/${votacao.sessao_id}`)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" &&
+                      router.push(`/votacoes/${votacao.sessao_id}`)
+                    }
                   >
                     <TableCell className="font-medium whitespace-nowrap">
-                       {new Date(votacao.data).getUTCDate().toString().padStart(2, '0')}/
-                       {(new Date(votacao.data).getUTCMonth() + 1).toString().padStart(2, '0')}/
-                       {new Date(votacao.data).getUTCFullYear()}
+                      {new Date(votacao.data)
+                        .getUTCDate()
+                        .toString()
+                        .padStart(2, "0")}
+                      /
+                      {(new Date(votacao.data).getUTCMonth() + 1)
+                        .toString()
+                        .padStart(2, "0")}
+                      /{new Date(votacao.data).getUTCFullYear()}
                     </TableCell>
                     <TableCell>
-                       <Badge variant="outline" className="group-hover:border-primary/50 transition-colors">
+                      <Badge
+                        variant="outline"
+                        className="group-hover:border-primary/50 transition-colors"
+                      >
                         {votacao.codigo_sessao}
-                       </Badge>
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 min-w-[250px]">
@@ -273,11 +318,11 @@ function VotacoesContent() {
 
       {/* Paginação */}
       {!loading && totalPages > 1 && (
-        <PaginationWithInput 
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={(p) => updateUrl({ page: p })}
-            className="mt-6"
+        <PaginationWithInput
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={(p) => updateUrl({ page: p })}
+          className="mt-6"
         />
       )}
     </div>
@@ -286,7 +331,11 @@ function VotacoesContent() {
 
 export default function VotacoesPage() {
   return (
-    <Suspense fallback={<div className="container py-12 text-center">Carregando...</div>}>
+    <Suspense
+      fallback={
+        <div className="container py-12 text-center">Carregando...</div>
+      }
+    >
       <VotacoesContent />
     </Suspense>
   );

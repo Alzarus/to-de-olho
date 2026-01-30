@@ -186,9 +186,17 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 
 		// Metadata
 		v1.GET("/metadata/last-sync", func(c *gin.Context) {
-			// Estrategia: Maior updated_at de 'senadores' que eh garantido existir.
+			// Estrategia: Maior timestamp entre updated_at de senadores e data de votacoes
 			var lastUpdate time.Time
-			if err := db.Raw("SELECT MAX(updated_at) FROM senadores").Scan(&lastUpdate).Error; err != nil {
+			// Usando UNION ALL para pegar o maior de todos
+			query := `
+				SELECT MAX(ts) FROM (
+					SELECT MAX(updated_at) as ts FROM senadores
+					UNION ALL
+					SELECT MAX(created_at) as ts FROM votacoes
+				) as updates
+			`
+			if err := db.Raw(query).Scan(&lastUpdate).Error; err != nil {
 				c.JSON(http.StatusOK, gin.H{"last_sync": time.Now()})
 				return
 			}
