@@ -83,8 +83,11 @@ export function Header() {
           </ul>
         </nav>
 
-        <div className="flex items-center gap-2">
-          <UpdateBadge />
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* UpdateBadge oculto em telas muito pequenas (<400px) */}
+          <div className="hidden min-[400px]:block">
+            <UpdateBadge />
+          </div>
           <ModeToggle />
           
           {/* Mobile menu button */}
@@ -129,6 +132,10 @@ export function Header() {
           className="border-t border-border/40 bg-background md:hidden absolute w-full left-0 shadow-lg"
           aria-label="Menu de navegação mobile"
         >
+          {/* UpdateBadge visível no menu mobile para telas muito pequenas (<400px) */}
+          <div className="container mx-auto max-w-7xl px-4 py-3 border-b border-border/40 min-[400px]:hidden">
+            <UpdateBadge />
+          </div>
           <ul className="container mx-auto max-w-7xl px-4 py-4 space-y-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href;

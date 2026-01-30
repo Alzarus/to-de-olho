@@ -28,8 +28,8 @@ export function UpdateBadge() {
   if (!lastSync) return null;
 
   return (
-    <Badge variant="outline" className="hidden sm:inline-flex gap-1.5 text-[10px] sm:text-xs font-normal border-muted-foreground/30 text-muted-foreground">
-      <Clock className="w-3 h-3" />
+    <Badge variant="outline" className="inline-flex gap-1 sm:gap-1.5 text-[9px] sm:text-xs font-normal border-muted-foreground/30 text-muted-foreground">
+      <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
       <span className="hidden sm:inline">Dados atualizados em:</span>
       <span className="sm:hidden">Att:</span>
       <span className="font-medium text-foreground">{lastSync}</span>

@@ -12,8 +12,9 @@ import type {
   VotacoesResponse,
 } from "@/types/api";
 
-// Em producao, usamos rewrites do Next.js para /api/* -> backend
-const API_BASE_URL = "https://todeolho.org";
+// Todas as chamadas vao para /api/* e o Next.js rewrite direciona
+// para o backend apropriado (local ou Cloud Run) baseado em BACKEND_URL
+const API_BASE_URL = "";
 
 export async function fetcher<T>(endpoint: string): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {

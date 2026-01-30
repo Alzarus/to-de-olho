@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useEmendas } from "@/hooks/use-senador";
 import { formatCurrency } from "@/lib/utils";
-import { AlertCircle, Info, Search, ArrowUpDown } from "lucide-react";
+import { AlertCircle, Info, Search, ArrowUpDown, X } from "lucide-react";
 import { BrazilMap } from "@/components/ui/brazil-map";
 
 type TipoFiltro = "todos" | "pix" | "definida";
@@ -32,6 +32,64 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
   const [busca, setBusca] = useState("");
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("pago_desc");
 
+  // Hooks devem vir ANTES de qualquer return condicional
+  const emendas = data?.emendas || [];
+  const resumo = data?.resumo;
+
+  // Filtragem e ordenacao (useMemo antes dos returns condicionais)
+  const emendasFiltradas = useMemo(() => {
+    let resultado = [...emendas];
+    
+    // Filtro por tipo
+    if (tipoFiltro === "pix") {
+      resultado = resultado.filter(e => isEmendaEspecial(e.tipo));
+    } else if (tipoFiltro === "definida") {
+      resultado = resultado.filter(e => !isEmendaEspecial(e.tipo));
+    }
+    
+    // Filtro por busca
+    if (busca) {
+      const termo = busca.toLowerCase();
+      resultado = resultado.filter(e => 
+        e.localidade.toLowerCase().includes(termo) ||
+        e.funcional_programatica.toLowerCase().includes(termo) ||
+        e.numero.toLowerCase().includes(termo)
+      );
+    }
+    
+    // Ordenacao
+    resultado.sort((a, b) => {
+      switch (ordenacao) {
+        case "pago_desc": return b.valor_pago - a.valor_pago;
+        case "pago_asc": return a.valor_pago - b.valor_pago;
+        case "empenhado_desc": return b.valor_empenhado - a.valor_empenhado;
+        case "empenhado_asc": return a.valor_empenhado - b.valor_empenhado;
+        case "localidade": return a.localidade.localeCompare(b.localidade);
+        default: return 0;
+      }
+    });
+    
+    return resultado;
+  }, [emendas, tipoFiltro, busca, ordenacao]);
+
+  // Calculos derivados (tambem antes dos returns)
+  const emendasPix = useMemo(() => emendas.filter((e) => isEmendaEspecial(e.tipo)), [emendas]);
+  const totalPix = useMemo(() => emendasPix.reduce((acc, curr) => acc + curr.valor_pago, 0), [emendasPix]);
+
+  const destinos = useMemo(() => {
+    const destinosPorUF = (resumo?.top_localidades || []).reduce<Record<string, number>>(
+      (acc, item) => {
+        const uf = extrairUF(item.localidade);
+        if (!uf) return acc;
+        acc[uf] = (acc[uf] || 0) + item.valor;
+        return acc;
+      },
+      {},
+    );
+    return Object.entries(destinosPorUF).map(([uf, valor]) => ({ uf, valor }));
+  }, [resumo?.top_localidades]);
+
+  // Agora os returns condicionais
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -45,70 +103,17 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
     );
   }
 
-  if (!data || data.emendas.length === 0) {
+  if (!data || emendas.length === 0) {
       return (
           <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <AlertCircle className="h-12 w-12 mb-4 opacity-20" />
-                  <p>Nenhuma emenda encontrada para este período.</p>
-                  <p className="text-xs mt-2">Os dados podem estar em processo de importação.</p>
+                  <p>Nenhuma emenda encontrada para este periodo.</p>
+                  <p className="text-xs mt-2">Os dados podem estar em processo de importacao.</p>
               </CardContent>
           </Card>
       );
   }
-
-    const { resumo, emendas } = data;
-  
-  // Filtrar PIX
-    const emendasPix = emendas.filter((e) => isEmendaEspecial(e.tipo));
-  const totalPix = emendasPix.reduce((acc, curr) => acc + curr.valor_pago, 0);
-
-    const destinosPorUF = (resumo?.top_localidades || []).reduce<Record<string, number>>(
-        (acc, item) => {
-            const uf = extrairUF(item.localidade);
-            if (!uf) return acc;
-            acc[uf] = (acc[uf] || 0) + item.valor;
-            return acc;
-        },
-        {},
-    );
-    const destinos = Object.entries(destinosPorUF).map(([uf, valor]) => ({ uf, valor }));
-
-    // Filtragem e ordenacao
-    const emendasFiltradas = useMemo(() => {
-      let resultado = [...emendas];
-      
-      // Filtro por tipo
-      if (tipoFiltro === "pix") {
-        resultado = resultado.filter(e => isEmendaEspecial(e.tipo));
-      } else if (tipoFiltro === "definida") {
-        resultado = resultado.filter(e => !isEmendaEspecial(e.tipo));
-      }
-      
-      // Filtro por busca
-      if (busca) {
-        const termo = busca.toLowerCase();
-        resultado = resultado.filter(e => 
-          e.localidade.toLowerCase().includes(termo) ||
-          e.funcional_programatica.toLowerCase().includes(termo) ||
-          e.numero.toLowerCase().includes(termo)
-        );
-      }
-      
-      // Ordenacao
-      resultado.sort((a, b) => {
-        switch (ordenacao) {
-          case "pago_desc": return b.valor_pago - a.valor_pago;
-          case "pago_asc": return a.valor_pago - b.valor_pago;
-          case "empenhado_desc": return b.valor_empenhado - a.valor_empenhado;
-          case "empenhado_asc": return a.valor_empenhado - b.valor_empenhado;
-          case "localidade": return a.localidade.localeCompare(b.localidade);
-          default: return 0;
-        }
-      });
-      
-      return resultado;
-    }, [emendas, tipoFiltro, busca, ordenacao]);
 
     return (
     <div className="space-y-6">
@@ -274,8 +279,18 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                           placeholder="Buscar por localidade, função ou número..."
                           value={busca}
                           onChange={(e) => setBusca(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 pr-8"
                       />
+                      {busca && (
+                          <button
+                              type="button"
+                              onClick={() => setBusca("")}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              aria-label="Limpar busca"
+                          >
+                              <X className="h-4 w-4" />
+                          </button>
+                      )}
                   </div>
                   <Select value={ordenacao} onValueChange={(v) => setOrdenacao(v as Ordenacao)}>
                       <SelectTrigger className="w-full sm:w-[200px]">

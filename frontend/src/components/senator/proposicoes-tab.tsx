@@ -6,7 +6,7 @@ import { useProposicoes } from "@/hooks/use-senador";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Gavel, Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { CheckCircle2, Gavel, Search, ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -124,10 +124,20 @@ export function ProposicoesTab({ id }: { id: number }) {
                 <Input
                   type="search"
                   placeholder="Buscar por ementa ou código..."
-                  className="pl-8"
+                  className="pl-8 pr-8"
                   value={searchValue}
                   onChange={handleSearch}
                 />
+                {searchValue && (
+                    <button
+                        type="button"
+                        onClick={() => setSearchValue("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label="Limpar busca"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                )}
               </div>
           </div>
           

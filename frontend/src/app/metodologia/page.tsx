@@ -217,7 +217,7 @@ export default function MetodologiaPage() {
           <p className="text-muted-foreground">
             A metodologia do ranking é inspirada no{" "}
             <strong>State Legislative Effectiveness Score (SLES)</strong>,
-            desenvolvido por Volden e Wiseman (2014; 2018), adaptado para o contexto do
+            desenvolvido por Volden e Wiseman (2014), adaptado para o contexto do
             Senado brasileiro. A abordagem combina indicadores quantitativos de
             produtividade legislativa com métricas de engajamento e
             responsabilidade fiscal.

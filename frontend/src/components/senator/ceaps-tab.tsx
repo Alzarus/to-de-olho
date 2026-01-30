@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, ChevronLeft, ChevronRight, FileText, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, FileText, ArrowDown, ArrowUp, ArrowUpDown, X } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
     Dialog,
@@ -174,10 +174,20 @@ export function CeapsTab({ id, ano }: { id: number; ano: number }) {
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Filtrar por fornecedor..." 
-                        className="pl-8"
+                        className="pl-8 pr-8"
                         value={searchValue}
                         onChange={handleSearch}
                     />
+                    {searchValue && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchValue("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label="Limpar filtro"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
             </div>
 
