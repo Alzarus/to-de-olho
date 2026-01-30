@@ -6,7 +6,7 @@ import { useComissoes } from "@/hooks/use-senador";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, Users, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, Users, Search, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -104,10 +104,20 @@ export function ComissoesTab({ id }: { id: number }) {
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Buscar comissão..." 
-                        className="pl-8"
+                        className="pl-8 pr-8"
                         value={searchValue}
                         onChange={handleSearch}
                     />
+                    {searchValue && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchValue("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label="Limpar busca"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
             </div>
             

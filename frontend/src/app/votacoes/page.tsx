@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, ArrowUp, ArrowDown, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -169,11 +169,21 @@ function VotacoesContent() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <Input
                 placeholder="Buscar por matéria (PEC, PL...) ou descrição..."
-                className="pl-9 h-9"
+                className="pl-9 pr-8 h-9"
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
                 aria-label="Buscar votação por matéria ou descrição"
               />
+              {localSearch && (
+                <button
+                  type="button"
+                  onClick={() => setLocalSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
             </div>
           </div>
         </div>

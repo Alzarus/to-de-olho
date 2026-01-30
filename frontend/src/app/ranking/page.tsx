@@ -693,7 +693,7 @@ function RankingContent() {
               />
               <Input
                 placeholder="Buscar por nome..."
-                className="pl-9 h-9"
+                className="pl-9 pr-8 h-9"
                 value={localSearch}
                 onChange={(e) => {
                   setLocalSearch(e.target.value);
@@ -701,6 +701,19 @@ function RankingContent() {
                 }}
                 aria-label="Buscar senador por nome"
               />
+              {localSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalSearch("");
+                    updateUrl({ busca: null });
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             {/* Partido */}

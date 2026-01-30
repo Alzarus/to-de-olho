@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, CheckCircle2, XCircle, MinusCircle, AlertCircle, HelpCircle, Search, Info } from "lucide-react";
+import { ArrowLeft, Calendar, FileText, CheckCircle2, XCircle, MinusCircle, AlertCircle, HelpCircle, Search, X } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -205,43 +205,34 @@ function VotacaoDetalheContent() {
 
       {/* Scoreboard */}
       <Card className="mb-8 bg-muted/30">
-        <CardContent className="p-6">
-            <div className="grid grid-cols-3 gap-4 text-center">
+        <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
                 <div className="flex flex-col items-center border-r border-border">
-                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">{sim}</span>
-                    <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Sim</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">{sim}</span>
+                    <span className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Sim</span>
                 </div>
                 <div className="flex flex-col items-center border-r border-border">
-                    <span className="text-3xl font-bold text-red-600 dark:text-red-400">{nao}</span>
-                    <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Não</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">{nao}</span>
+                    <span className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Nao</span>
                 </div>
                 <div className="flex flex-col items-center">
-                    <span className="text-3xl font-bold text-gray-600 dark:text-gray-400">{outros}</span>
-                    <span className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    <span className="text-2xl sm:text-3xl font-bold text-gray-600 dark:text-gray-400">{outros}</span>
+                    <span className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">
                       Outros
-                      <TooltipProvider delayDuration={100}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground/70 hover:text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="text-sm">
-                              Inclui: Abstencao, Obstrucao, NCom (Nao Compareceu), 
-                              AP (Ausente por missao), P-NRV (Presente nao votou), 
-                              LS (Licenca Saude), Presidente (art. 51 RISF), entre outros.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                     </span>
                 </div>
             </div>
             {/* Progress Bar */}
-            <div className="mt-6 flex h-4 w-full overflow-hidden rounded-full bg-muted">
+            <div className="mt-4 sm:mt-6 flex h-3 sm:h-4 w-full overflow-hidden rounded-full bg-muted">
                 <div style={{ width: `${(sim / votos.length) * 100}%` }} className="bg-green-500" />
                 <div style={{ width: `${(nao / votos.length) * 100}%` }} className="bg-red-500" />
                 <div style={{ width: `${(outros / votos.length) * 100}%` }} className="bg-gray-400" />
             </div>
+            {/* Legenda de Siglas */}
+            <p className="mt-3 text-[10px] sm:text-xs text-muted-foreground/80 text-center leading-relaxed">
+              <strong>Outros:</strong> Abstencao, Obstrucao, NCom (Nao Compareceu), AP (Ausente por Missao), 
+              P-NRV (Presente Nao Votou), LS (Licenca Saude), MIS (Missao), LP (Licenca Particular), Presidente (art. 51 RISF).
+            </p>
         </CardContent>
       </Card>
 
@@ -255,10 +246,20 @@ function VotacaoDetalheContent() {
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Nome do Senador..." 
-                        className="pl-9" 
+                        className="pl-9 pr-8" 
                         value={filterNome}
                         onChange={(e) => setFilterNome(e.target.value)}
                     />
+                    {filterNome && (
+                        <button
+                            type="button"
+                            onClick={() => setFilterNome("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label="Limpar filtro de nome"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Filter Vote */}
