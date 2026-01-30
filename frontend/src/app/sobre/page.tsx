@@ -56,8 +56,12 @@ export default function SobrePage() {
 
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
-                    PB
+                <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-primary/20">
+                  <img 
+                    src="/pedro-almeida.png" 
+                    alt="Pedro Almeida" 
+                    className="h-full w-full object-cover"
+                  />
                 </div>
                 <div>
                   <h3 className="font-bold text-lg">Pedro Batista de Almeida Filho</h3>
@@ -76,11 +80,11 @@ export default function SobrePage() {
                     <Github className="w-5 h-5" />
                     <span className="sr-only">GitHub</span>
                 </a>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors cursor-not-allowed opacity-50" title="Em breve">
+                <a href="https://www.linkedin.com/in/pedroalmei/" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                     <Linkedin className="w-5 h-5" />
                     <span className="sr-only">LinkedIn</span>
                 </a>
-                 <a href="mailto:contato@todeolho.org" className="text-muted-foreground hover:text-primary transition-colors">
+                 <a href="mailto:pedro.almei@hotmail.com" className="text-muted-foreground hover:text-primary transition-colors">
                     <Mail className="w-5 h-5" />
                      <span className="sr-only">Email</span>
                 </a>
