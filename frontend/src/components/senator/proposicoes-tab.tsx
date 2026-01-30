@@ -153,6 +153,7 @@ export function ProposicoesTab({ id }: { id: number }) {
                       <SelectItem value="PL" title="Projeto de Lei">PL - Projeto de Lei</SelectItem>
                       <SelectItem value="PDL" title="Projeto de Decreto Legislativo">PDL - Decreto Legislativo</SelectItem>
                       <SelectItem value="PRS" title="Projeto de Resolução do Senado">PRS - Resolução do Senado</SelectItem>
+                      <SelectItem value="REQ" title="Requerimento">REQ - Requerimento</SelectItem>
                   </SelectContent>
               </Select>
 

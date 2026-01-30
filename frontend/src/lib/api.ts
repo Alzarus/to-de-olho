@@ -182,3 +182,7 @@ export async function getComissoes(
     `/api/v1/senadores/${id}/comissoes${query}`,
   );
 }
+// Metadata
+export const getLastSync = async (): Promise<{ last_sync: string }> => {
+  return fetcher<{ last_sync: string }>("/api/v1/metadata/last-sync");
+};

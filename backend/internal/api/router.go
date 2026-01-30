@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -186,6 +187,20 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 
 		// Metadata
 		v1.GET("/metadata/last-sync", func(c *gin.Context) {
+			ctx := c.Request.Context()
+			cacheKey := "metadata:last-sync"
+
+			// 1. Tentar cache
+			if redisClient != nil {
+				val, err := redisClient.Get(ctx, cacheKey).Result()
+				if err == nil {
+					c.Header("X-Cache", "HIT")
+					c.Header("Content-Type", "application/json")
+					c.String(http.StatusOK, val)
+					return
+				}
+			}
+
 			// Estrategia: Maior timestamp entre updated_at de senadores e data de votacoes
 			var lastUpdate time.Time
 			// Usando UNION ALL para pegar o maior de todos
@@ -197,10 +212,20 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 				) as updates
 			`
 			if err := db.Raw(query).Scan(&lastUpdate).Error; err != nil {
-				c.JSON(http.StatusOK, gin.H{"last_sync": time.Now()})
-				return
+				lastUpdate = time.Now()
 			}
-			c.JSON(http.StatusOK, gin.H{"last_sync": lastUpdate})
+			
+			response := gin.H{"last_sync": lastUpdate}
+
+			// 2. Salvar cache (TTL 15 min)
+			if redisClient != nil {
+				// Serializar JSON manual para salvar no Redis (otimizacao simples)
+				jsonBytes, _ := json.Marshal(response)
+				redisClient.Set(ctx, cacheKey, jsonBytes, 15*time.Minute)
+			}
+
+			c.Header("X-Cache", "MISS")
+			c.JSON(http.StatusOK, response)
 		})
 
 		// Ranking
