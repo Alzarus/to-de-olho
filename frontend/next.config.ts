@@ -21,6 +21,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "www.senado.leg.br",
+      },
+    ],
+    minimumCacheTTL: 60 * 60 * 24, // 24 horas
+  },
   async headers() {
     return [
       {
@@ -35,6 +44,15 @@ const nextConfig: NextConfig = {
             key: "Access-Control-Allow-Headers",
             value:
               "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+          },
+        ],
+      },
+      {
+        source: "/(api|static|favicon.ico|_next/static).*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
