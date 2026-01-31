@@ -25,10 +25,9 @@ export function UpdateBadge() {
   if (!lastSyncFormatted) return null;
 
   return (
-    <Badge variant="outline" className="inline-flex gap-1 sm:gap-1.5 text-[9px] sm:text-xs font-normal border-muted-foreground/30 text-muted-foreground">
-      <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-      <span className="hidden sm:inline">Dados atualizados em:</span>
-      <span className="sm:hidden">Att:</span>
+    <Badge variant="outline" className="w-full justify-center sm:w-auto inline-flex gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-normal border-muted-foreground/30 text-muted-foreground py-1">
+      <Clock className="w-3 h-3 sm:w-3 sm:h-3" />
+      <span>Dados atualizados em:</span>
       <span className="font-medium text-foreground">{lastSyncFormatted}</span>
     </Badge>
   );

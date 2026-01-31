@@ -103,6 +103,13 @@ func (h *Handler) GetMetodologia(c *gin.Context) {
 				"normalizacao": "Pontos do senador / Maior pontuacao da casa * 100",
 			},
 		},
+		"detalhes_produtividade": []gin.H{
+			{"tipo": "PEC", "peso": "x3.0"},
+			{"tipo": "PLP", "peso": "x2.0"},
+			{"tipo": "PL", "peso": "x1.0"},
+			{"tipo": "Mocoes (RQS/MOC)", "peso": "x0.5"},
+			{"tipo": "Requerimentos (REQ)", "peso": "x0.1"},
+		},
 		"escala": "Todos os scores sao normalizados para escala 0-100 antes da ponderacao",
 	}
 
