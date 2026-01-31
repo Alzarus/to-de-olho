@@ -21,7 +21,9 @@ export function PaginationWithInput({
   const [inputPage, setInputPage] = useState((currentPage || 1).toString());
 
   useEffect(() => {
-    setInputPage((currentPage || 1).toString());
+    if ((currentPage || 1).toString() !== inputPage) {
+        setInputPage((currentPage || 1).toString());
+    }
   }, [currentPage]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

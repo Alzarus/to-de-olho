@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Alzarus/to-de-olho/internal/api"
+	"github.com/joho/godotenv"
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
@@ -28,6 +29,11 @@ func main() {
 	// Configurar logger estruturado (JSON para Cloud Run)
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+
+	// Carregar .env em ambiente local
+	if err := godotenv.Load(); err != nil {
+		slog.Warn("arquivo .env nao encontrado (normal em producao se usar vars de ambiente)")
+	}
 
 	// Conectar ao banco de dados
 	db, err := connectDB()

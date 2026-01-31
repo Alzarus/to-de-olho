@@ -7,20 +7,22 @@ import { useEffect, useState } from "react";
 
 export function UpdateBadge() {
   const { data } = useLastSync();
-  const [lastSyncFormatted, setLastSyncFormatted] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (data?.last_sync) {
-       const date = new Date(data.last_sync);
-       setLastSyncFormatted(date.toLocaleDateString("pt-BR", {
-         day: "2-digit",
-         month: "2-digit",
-         year: "numeric",
-         hour: "2-digit",
-         minute: "2-digit"
-       }));
-    }
-  }, [data]);
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !data?.last_sync) return null;
+
+  const date = new Date(data.last_sync);
+  const lastSyncFormatted = date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 
   if (!lastSyncFormatted) return null;
 
