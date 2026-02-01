@@ -48,7 +48,17 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/(api|static|favicon.ico|_next/static).*",
+        source: "/favicon.ico",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Cachear assets estáticos em /public (se houver folder static)
+        source: "/static/:path*",
         headers: [
           {
             key: "Cache-Control",
