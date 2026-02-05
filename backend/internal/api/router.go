@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -15,12 +14,11 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/Alzarus/to-de-olho/pkg/senado"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 // SetupRouter configura todas as rotas da API
-func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey string) *gin.Engine {
+func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 	router := gin.Default()
 
 	// Middleware CORS
@@ -69,7 +67,7 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 		emendaSync := emenda.NewSyncService(emendaRepo, senadorRepo, transparenciaAPIKey)
 
 		// Ranking
-		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo, redisClient)
+		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo)
 		rankingHandler := ranking.NewHandler(rankingService)
 
 		senadores := v1.Group("/senadores")
@@ -187,22 +185,9 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 
 		// Metadata
 		v1.GET("/metadata/last-sync", func(c *gin.Context) {
-			ctx := c.Request.Context()
-			cacheKey := "metadata:last-sync"
-
-			// 1. Tentar cache
-			if redisClient != nil {
-				val, err := redisClient.Get(ctx, cacheKey).Result()
-				if err == nil {
-					c.Header("X-Cache", "HIT")
-					c.Header("Content-Type", "application/json")
-					c.String(http.StatusOK, val)
-					return
-				}
-			}
-
-			// Estrategia: Maior timestamp entre updated_at de senadores e data de votacoes
+			
 			var lastUpdate time.Time
+			// Estrategia: Maior timestamp entre updated_at de senadores e data de votacoes
 			// Usando UNION ALL para pegar o maior de todos
 			query := `
 				SELECT MAX(ts) FROM (
@@ -216,13 +201,6 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 			}
 			
 			response := gin.H{"last_sync": lastUpdate}
-
-			// 2. Salvar cache (TTL 15 min)
-			if redisClient != nil {
-				// Serializar JSON manual para salvar no Redis (otimizacao simples)
-				jsonBytes, _ := json.Marshal(response)
-				redisClient.Set(ctx, cacheKey, jsonBytes, 15*time.Minute)
-			}
 
 			c.Header("X-Cache", "MISS")
 			c.JSON(http.StatusOK, response)

@@ -33,14 +33,18 @@ func (h *Handler) GetRanking(c *gin.Context) {
 		return
 	}
 
+	// [FIX] Criar uma copia da resposta para nao alterar o item no cache (RAM)
+	// Como 'ranking' e um ponteiro para o cache, alterar ranking.Ranking afetaria todos os requests
+	response := *ranking 
+
 	// Aplicar limite se especificado
 	if limitStr := c.Query("limite"); limitStr != "" {
-		if limite, err := strconv.Atoi(limitStr); err == nil && limite > 0 && limite < len(ranking.Ranking) {
-			ranking.Ranking = ranking.Ranking[:limite]
+		if limite, err := strconv.Atoi(limitStr); err == nil && limite > 0 && limite < len(response.Ranking) {
+			response.Ranking = response.Ranking[:limite]
 		}
 	}
 
-	c.JSON(http.StatusOK, ranking)
+	c.JSON(http.StatusOK, response)
 }
 
 // GetScoreSenador retorna o score detalhado de um senador

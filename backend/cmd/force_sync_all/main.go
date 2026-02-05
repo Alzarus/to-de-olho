@@ -15,7 +15,6 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/Alzarus/to-de-olho/pkg/senado"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -44,8 +43,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 3. Connect Redis (Optional)
-	redisClient := connectRedis()
 
 	// 4. Init Services
 	transparenciaKey := os.Getenv("TRANSPARENCIA_API_KEY")
@@ -76,7 +73,7 @@ func main() {
 	proposicaoSync := proposicao.NewSyncService(proposicaoRepo, senadorRepo, legisClient)
 	
 	rankingService := ranking.NewService(
-		senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo, redisClient,
+		senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo,
 	)
 
 	ctx := context.Background()
@@ -149,11 +146,4 @@ func connectDB() (*gorm.DB, error) {
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
 
-func connectRedis() *redis.Client {
-	redisAddr := os.Getenv("REDIS_ADDR")
-	if redisAddr == "" {
-		return nil // Sem redis localmente geralmente
-	}
-	return redis.NewClient(&redis.Options{Addr: redisAddr})
-}
 

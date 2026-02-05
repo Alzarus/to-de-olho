@@ -2,7 +2,6 @@ package ranking
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -13,7 +12,6 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
-	"github.com/redis/go-redis/v9"
 )
 
 // Service gerencia o calculo de ranking de senadores
@@ -23,7 +21,6 @@ type Service struct {
 	votacaoRepo    *votacao.Repository
 	ceapsRepo      *ceaps.Repository
 	comissaoRepo   *comissao.Repository
-	redisClient    *redis.Client
 }
 
 // NewService cria um novo servico de ranking
@@ -33,7 +30,6 @@ func NewService(
 	votacaoRepo *votacao.Repository,
 	ceapsRepo *ceaps.Repository,
 	comissaoRepo *comissao.Repository,
-	redisClient *redis.Client,
 ) *Service {
 	return &Service{
 		senadorRepo:    senadorRepo,
@@ -41,18 +37,25 @@ func NewService(
 		votacaoRepo:    votacaoRepo,
 		ceapsRepo:      ceapsRepo,
 		comissaoRepo:   comissaoRepo,
-		redisClient:    redisClient,
 	}
 }
 
 // CalcularRanking calcula o ranking de todos os senadores
 func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingResponse, error) {
-	// 1. Tentar buscar do cache
+	// 1. Tentar buscar do cache (Memória Local)
+	// [COST-SAVING] Substituicao do Redis por cache em memoria local
 	cacheKey := "ranking:v2:geral"
 	if ano != nil {
 		cacheKey = fmt.Sprintf("ranking:v2:%d", *ano)
 	}
 
+	// Tenta pegar do cache local
+	if cached := localCache.Get(cacheKey); cached != nil {
+		slog.Info("ranking retornado do cache local (RAM)", "key", cacheKey)
+		return cached, nil
+	}
+
+	/* REDIS DEPRECATED
 	if s.redisClient != nil {
 		val, err := s.redisClient.Get(ctx, cacheKey).Result()
 		if err == nil {
@@ -63,6 +66,7 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 			}
 		}
 	}
+	*/
 
 	slog.Info("iniciando calculo de ranking (cache miss)", "ano", ano)
 
@@ -132,12 +136,16 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 		Metodologia: metodologia,
 	}
 
-	// Salvar no cache (TTL 1 hora)
+	// Salvar no cache local (TTL 1 hora)
+	localCache.Set(cacheKey, response, 1*time.Hour)
+
+	/* REDIS DEPRECATED
 	if s.redisClient != nil {
 		if data, err := json.Marshal(response); err == nil {
 			s.redisClient.Set(ctx, cacheKey, data, 1*time.Hour)
 		}
 	}
+	*/
 
 	return response, nil
 }

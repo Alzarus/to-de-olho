@@ -13,6 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.FRONTEND_URL || "https://todeolho.org"),
   title: {
     default: "Tô De Olho - Transparência no Senado",
     template: "%s | Tô De Olho",
@@ -27,6 +28,8 @@ export const metadata: Metadata = {
     "política",
     "brasil",
     "dados abertos",
+    "fiscalização",
+    "emendas parlamentares",
   ],
   authors: [{ name: "Pedro Eli" }],
   openGraph: {
@@ -35,7 +38,25 @@ export const metadata: Metadata = {
     siteName: "Tô De Olho",
     title: "Tô De Olho - Transparência no Senado",
     description:
-      "Plataforma de transparência e acompanhamento da atuação dos senadores brasileiros.",
+      "Descubra quem são os senadores mais eficientes do Brasil. Ranking completo, gastos e emendas detalhadas.",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Logo Tô De Olho",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tô De Olho - Transparência no Senado",
+    description: "Plataforma de transparência e acompanhamento da atuação dos senadores brasileiros.",
+    images: ["/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
