@@ -9,6 +9,7 @@ spec:
     spec:
       template:
         spec:
+          timeoutSeconds: 7200
           containers:
             - image: southamerica-east1-docker.pkg.dev/to-de-olho-473121/todeolho-images/backend:latest
               command: ["/force_sync"]
