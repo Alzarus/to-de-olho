@@ -12,6 +12,9 @@ import (
 // Este teste realiza uma requisicao REAL para validar o contrato com a API externa.
 // Em CI/CD, idealmente seria executado periodicamente, nao a cada push (devido a rate limits).
 func TestContract_ListaSenadores(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("skipping contract test in CI")
+	}
 	if testing.Short() {
 		t.Skip("skipping contract test in short mode")
 	}
@@ -41,6 +44,9 @@ func TestContract_ListaSenadores(t *testing.T) {
 
 // TestContract_ListaVotacoes verifica se a API Legislativa de votacoes responde (contrato basico)
 func TestContract_ListaVotacoes(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("skipping contract test in CI")
+	}
 	if testing.Short() {
 		t.Skip("skipping contract test in short mode")
 	}
@@ -77,6 +83,9 @@ func TestContract_ListaVotacoes(t *testing.T) {
 
 // TestContract_ListaEmendas verifica se a API da Transparencia retorna emendas (necessita API KEY)
 func TestContract_ListaEmendas(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("skipping contract test in CI")
+	}
 	if testing.Short() {
 		t.Skip("skipping contract test in short mode")
 	}
