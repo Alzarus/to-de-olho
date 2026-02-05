@@ -1,0 +1,29 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: force-backfill-job
+  annotations:
+    run.googleapis.com/launch-stage: BETA
+spec:
+  template:
+    spec:
+      template:
+        spec:
+          containers:
+            - image: southamerica-east1-docker.pkg.dev/to-de-olho-473121/todeolho-images/backend:latest
+              command: ["/force_sync"]
+              env:
+                - name: DATABASE_URL
+                  value: "host=/cloudsql/to-de-olho-473121:southamerica-east1:todeolho-db user=postgres password=T0d30lh0. dbname=todeolho sslmode=disable"
+                - name: FORCE_BACKFILL
+                  value: "true"
+                - name: INICIO_BACKFILL
+                  value: "2023"
+              volumeMounts:
+                - name: cloudsql
+                  mountPath: /cloudsql
+          volumes:
+            - name: cloudsql
+              cloudSqlInstance:
+                instances:
+                  - to-de-olho-473121:southamerica-east1:todeolho-db

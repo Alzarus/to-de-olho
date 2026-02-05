@@ -14,12 +14,11 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/Alzarus/to-de-olho/pkg/senado"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 // SetupRouter configura todas as rotas da API
-func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey string) *gin.Engine {
+func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 	router := gin.Default()
 
 	// Middleware CORS
@@ -68,7 +67,7 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 		emendaSync := emenda.NewSyncService(emendaRepo, senadorRepo, transparenciaAPIKey)
 
 		// Ranking
-		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo, redisClient)
+		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo)
 		rankingHandler := ranking.NewHandler(rankingService)
 
 		senadores := v1.Group("/senadores")
@@ -186,13 +185,25 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client, transparenciaAPIKey str
 
 		// Metadata
 		v1.GET("/metadata/last-sync", func(c *gin.Context) {
-			// Estrategia: Maior updated_at de 'senadores' que eh garantido existir.
+			
 			var lastUpdate time.Time
-			if err := db.Raw("SELECT MAX(updated_at) FROM senadores").Scan(&lastUpdate).Error; err != nil {
-				c.JSON(http.StatusOK, gin.H{"last_sync": time.Now()})
-				return
+			// Estrategia: Maior timestamp entre updated_at de senadores e data de votacoes
+			// Usando UNION ALL para pegar o maior de todos
+			query := `
+				SELECT MAX(ts) FROM (
+					SELECT MAX(updated_at) as ts FROM senadores
+					UNION ALL
+					SELECT MAX(created_at) as ts FROM votacoes
+				) as updates
+			`
+			if err := db.Raw(query).Scan(&lastUpdate).Error; err != nil {
+				lastUpdate = time.Now()
 			}
-			c.JSON(http.StatusOK, gin.H{"last_sync": lastUpdate})
+			
+			response := gin.H{"last_sync": lastUpdate}
+
+			c.Header("X-Cache", "MISS")
+			c.JSON(http.StatusOK, response)
 		})
 
 		// Ranking

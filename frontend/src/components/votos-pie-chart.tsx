@@ -49,6 +49,7 @@ const VOTE_DESCRIPTIONS: Record<string, string> = {
 
 export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  const isMobile = useIsMobile();
 
   const { chartData, outrosDetails } = useMemo(() => {
     const mainItems: { name: string; value: number; color: string; label: string; isGroup: boolean; breakdown?: string }[] = [];
@@ -149,7 +150,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
               onMouseLeave={handlePieLeave}
               onClick={(_, index) => handleClick(chartData[index])}
               style={{ cursor: onSliceClick ? "pointer" : "default" }}
-              isAnimationActive={!useIsMobile()}
+              isAnimationActive={!isMobile}
             >
               {chartData.map((entry, index) => (
                 <Cell 

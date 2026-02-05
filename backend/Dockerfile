@@ -17,6 +17,7 @@ COPY . .
 # CGO_ENABLED=0 garante que nao dependa de libc dinamica
 # -ldflags="-s -w" remove simbolos de debug para reduzir tamanho
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /force_sync cmd/force_sync_all/main.go
 
 # Runtime Stage
 FROM gcr.io/distroless/static-debian12
@@ -25,6 +26,7 @@ WORKDIR /
 
 # Copiar binario do stage anterior
 COPY --from=builder /server /server
+COPY --from=builder /force_sync /force_sync
 
 # Expor porta
 EXPOSE 8080

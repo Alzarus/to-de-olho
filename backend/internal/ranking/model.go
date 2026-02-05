@@ -31,7 +31,7 @@ type ScoreDetalhes struct {
 	TotalProposicoes     int `json:"total_proposicoes"`
 	ProposicoesAprovadas int `json:"proposicoes_aprovadas"`
 	TransformadasEmLei   int `json:"transformadas_em_lei"`
-	PontuacaoProposicoes int `json:"pontuacao_proposicoes"`
+	PontuacaoProposicoes float64 `json:"pontuacao_proposicoes"`
 
 	// Presenca
 	TotalVotacoes        int     `json:"total_votacoes"`

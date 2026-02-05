@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Alzarus/to-de-olho/internal/api"
+	"github.com/joho/godotenv"
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
@@ -19,7 +20,6 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/Alzarus/to-de-olho/pkg/senado"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -28,6 +28,11 @@ func main() {
 	// Configurar logger estruturado (JSON para Cloud Run)
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+
+	// Carregar .env em ambiente local
+	if err := godotenv.Load(); err != nil {
+		slog.Warn("arquivo .env nao encontrado (normal em producao se usar vars de ambiente)")
+	}
 
 	// Conectar ao banco de dados
 	db, err := connectDB()
@@ -50,17 +55,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	/*
 	// Conectar ao Redis
-	redisClient := connectRedis()
-	if redisClient != nil {
-		slog.Info("conectado ao redis")
-	} else {
-		slog.Warn("rodando sem cache redis")
-	}
+	// [COST-SAVING] Redis desabilitado.
+	var redisClient *redis.Client = nil
+	*/
 
 	// Configurar router
 	transparenciaKey := os.Getenv("TRANSPARENCIA_API_KEY")
-	router := api.SetupRouter(db, redisClient, transparenciaKey)
+	router := api.SetupRouter(db, transparenciaKey)
 
 	// Criar servidor HTTP
 	srv := &http.Server{
@@ -96,7 +99,6 @@ func main() {
 		votacaoRepo,
 		ceapsRepo,
 		comissaoRepo,
-		redisClient,
 	)
 
 	// Iniciar Scheduler
@@ -177,25 +179,3 @@ func getPort() string {
 	return ":" + port
 }
 
-func connectRedis() *redis.Client {
-	redisAddr := os.Getenv("REDIS_ADDR")
-	if redisAddr == "" {
-		redisAddr = "localhost:6379"
-	}
-
-	client := redis.NewClient(&redis.Options{
-		Addr:     redisAddr,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	if err := client.Ping(ctx).Err(); err != nil {
-		slog.Warn("redis indisponivel", "error", err)
-		return nil
-	}
-
-	return client
-}

@@ -20,6 +20,14 @@ import {
 
 import { getVotacaoById, VotacaoDetail } from "@/services/votacaoService";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 const VOTE_DESCRIPTIONS: Record<string, string> = {
   AP: "Atividade Parlamentar",
   LP: "Licença Particular",
@@ -263,42 +271,58 @@ function VotacaoDetalheContent() {
                 </div>
 
                 {/* Filter Vote */}
-                <select
-                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Select
                     value={filterVoto}
-                    onChange={(e) => setFilterVoto(e.target.value)}
+                    onValueChange={(val) => setFilterVoto(val === "all" ? "" : val)}
                 >
-                    <option value="">Todos os Votos</option>
-                    <option value="Sim">Sim</option>
-                    <option value="Nao">Não</option>
-                    <option value="Abstencao">Abstenção</option>
-                    <option value="Obstrucao">Obstrução</option>
-                    <option value="Outros">Outros (NCom/Art. 13)</option>
-                </select>
+                    <SelectTrigger className="w-full sm:min-w-[140px]">
+                        <SelectValue placeholder="Todos os Votos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os Votos</SelectItem>
+                        <SelectItem value="Sim">Sim</SelectItem>
+                        <SelectItem value="Nao">Não</SelectItem>
+                        <SelectItem value="Abstencao">Abstenção</SelectItem>
+                        <SelectItem value="Obstrucao">Obstrução</SelectItem>
+                        <SelectItem value="Outros">Outros</SelectItem>
+                    </SelectContent>
+                </Select>
 
                 {/* Filter Party */}
-                <select
-                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Select
                     value={filterPartido}
-                    onChange={(e) => setFilterPartido(e.target.value)}
+                    onValueChange={(val) => setFilterPartido(val === "all" ? "" : val)}
                 >
-                    <option value="">Todos os Partidos</option>
-                    {partidos.map(p => (
-                        <option key={p} value={p}>{p}</option>
-                    ))}
-                </select>
+                    <SelectTrigger className="w-full sm:min-w-[140px]">
+                        <SelectValue placeholder="Todos os Partidos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os Partidos</SelectItem>
+                        {partidos.map((p) => (
+                            <SelectItem key={p} value={p}>
+                                {p}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
 
                 {/* Filter UF */}
-                <select
-                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Select
                     value={filterUF}
-                    onChange={(e) => setFilterUF(e.target.value)}
+                    onValueChange={(val) => setFilterUF(val === "all" ? "" : val)}
                 >
-                    <option value="">Todas as UFs</option>
-                    {ufs.map(uf => (
-                         <option key={uf} value={uf}>{uf}</option>
-                    ))}
-                </select>
+                    <SelectTrigger className="w-full sm:min-w-[140px]">
+                        <SelectValue placeholder="Todas as UFs" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todas as UFs</SelectItem>
+                        {ufs.map((uf) => (
+                            <SelectItem key={uf} value={uf}>
+                                {uf}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
             {/* Active Filters count or Clear */}
             {(filterNome || filterVoto || filterPartido || filterUF) && (
