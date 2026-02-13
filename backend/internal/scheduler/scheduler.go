@@ -14,6 +14,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
+	"github.com/Alzarus/to-de-olho/pkg/retry"
 )
 
 // Scheduler gerencia tarefas agendadas
@@ -72,7 +73,7 @@ func (s *Scheduler) Start(ctx context.Context) {
 				slog.Info("parando scheduler")
 				return
 			case <-dailyTicker.C:
-				s.runDailySync(ctx)
+				s.RunDailySync(ctx)
 			}
 		}
 	}()
@@ -92,8 +93,6 @@ func (s *Scheduler) runStartupSync(ctx context.Context) {
 
 	if count > 0 && !forceBackfill {
 		slog.Info("banco de dados ja populado, pulando backfill inicial", "senadores", count)
-		// Opcional: Ainda rodar um calculo de ranking para garantir cache quente
-		// s.rankingService.CalcularRanking(ctx, nil)
 		return
 	}
 	
@@ -114,18 +113,22 @@ func (s *Scheduler) runStartupSync(ctx context.Context) {
 
 	slog.Info("configuracao de backfill", "ano_inicio", anoInicio, "ano_fim", anoAtual)
 
-	// 3. Sequencia de Sync
+	// 3. Sequencia de Sync (com retry em cada passo)
 	
 	// A. Dados Basicos (Senadores)
 	slog.Info("--- PASSO 1/6: SENADORES ---")
-	if err := s.senadorSync.SyncFromAPI(ctx); err != nil {
+	if err := retry.WithRetry(ctx, 3, "backfill-senadores", func() error {
+		return s.senadorSync.SyncFromAPI(ctx)
+	}); err != nil {
 		slog.Error("falha critica no backfill de senadores", "error", err)
 		return // Sem senadores nao da pra continuar
 	}
 
 	// B. Votacoes (Captura sessoes de todos os anos disponiveis na API)
 	slog.Info("--- PASSO 2/6: VOTACOES (LISTA) ---")
-	if err := s.votacaoSync.SyncFromAPI(ctx); err != nil {
+	if err := retry.WithRetry(ctx, 3, "backfill-votacoes", func() error {
+		return s.votacaoSync.SyncFromAPI(ctx)
+	}); err != nil {
 		slog.Error("falha no backfill de votacoes", "error", err)
 	}
 
@@ -134,30 +137,41 @@ func (s *Scheduler) runStartupSync(ctx context.Context) {
 		slog.Info("--- PROCESSANDO ANO ---", "ano", ano)
 
 		// Metadata de Votacoes (Ementas, Datas corretas)
-		if err := s.votacaoSync.SyncMetadata(ctx, ano); err != nil {
+		anoLoop := ano
+		if err := retry.WithRetry(ctx, 3, "backfill-votacoes-metadata", func() error {
+			return s.votacaoSync.SyncMetadata(ctx, anoLoop)
+		}); err != nil {
 			slog.Error("falha ao sincronizar metadata votacoes", "ano", ano, "error", err)
 		}
 
 		// CEAPS (Despesas)
-		if err := s.ceapsSync.SyncFromAPI(ctx, ano); err != nil {
+		if err := retry.WithRetry(ctx, 3, "backfill-ceaps", func() error {
+			return s.ceapsSync.SyncFromAPI(ctx, anoLoop)
+		}); err != nil {
 			slog.Error("falha ao sincronizar ceaps", "ano", ano, "error", err)
 		}
 
 		// Emendas
-		if err := s.emendaSync.SyncAll(ctx, ano); err != nil {
+		if err := retry.WithRetry(ctx, 3, "backfill-emendas", func() error {
+			return s.emendaSync.SyncAll(ctx, anoLoop)
+		}); err != nil {
 			slog.Error("falha ao sincronizar emendas", "ano", ano, "error", err)
 		}
 	}
 
 	// D. Comissoes (Estado atual/recente)
 	slog.Info("--- PASSO 4/6: COMISSOES ---")
-	if err := s.comissaoSync.SyncFromAPI(ctx); err != nil {
+	if err := retry.WithRetry(ctx, 3, "backfill-comissoes", func() error {
+		return s.comissaoSync.SyncFromAPI(ctx)
+	}); err != nil {
 		slog.Error("falha no backfill de comissoes", "error", err)
 	}
 
 	// E. Proposicoes (Historico)
 	slog.Info("--- PASSO 5/6: PROPOSICOES ---")
-	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
+	if err := retry.WithRetry(ctx, 3, "backfill-proposicoes", func() error {
+		return s.proposicaoSync.SyncFromAPI(ctx)
+	}); err != nil {
 		slog.Error("falha no backfill de proposicoes", "error", err)
 	}
 
@@ -170,43 +184,59 @@ func (s *Scheduler) runStartupSync(ctx context.Context) {
 	}
 }
 
-func (s *Scheduler) runDailySync(ctx context.Context) {
+// RunDailySync executa o sync diario completo com retry em cada passo.
+// Exportado para ser chamado pelo endpoint HTTP do Cloud Scheduler.
+func (s *Scheduler) RunDailySync(ctx context.Context) {
 	slog.Info("executando sync diario integral")
 
 	anoAtual := time.Now().Year()
 
 	// 1. Senadores (Atualizacao cadastral)
-	if err := s.senadorSync.SyncFromAPI(ctx); err != nil {
+	if err := retry.WithRetry(ctx, 3, "sync-senadores", func() error {
+		return s.senadorSync.SyncFromAPI(ctx)
+	}); err != nil {
 		slog.Error("falha sync senadores", "error", err)
 	}
 
 	// 2. Votacoes (Novas sessoes)
-	if err := s.votacaoSync.SyncFromAPI(ctx); err != nil {
+	if err := retry.WithRetry(ctx, 3, "sync-votacoes", func() error {
+		return s.votacaoSync.SyncFromAPI(ctx)
+	}); err != nil {
 		slog.Error("falha sync votacoes", "error", err)
 	}
 
 	// 3. Metadata do ano atual (para pegar ementas de votacoes recentes)
-	if err := s.votacaoSync.SyncMetadata(ctx, anoAtual); err != nil {
+	if err := retry.WithRetry(ctx, 3, "sync-votacoes-metadata", func() error {
+		return s.votacaoSync.SyncMetadata(ctx, anoAtual)
+	}); err != nil {
 		slog.Error("falha sync metadata votacoes", "error", err)
 	}
 
-	// 4. CEAPS (Despesas) - MOVIDO DE SEMANAL PARA DIARIO
-	if err := s.ceapsSync.SyncFromAPI(ctx, anoAtual); err != nil {
+	// 4. CEAPS (Despesas)
+	if err := retry.WithRetry(ctx, 3, "sync-ceaps", func() error {
+		return s.ceapsSync.SyncFromAPI(ctx, anoAtual)
+	}); err != nil {
 		slog.Error("falha sync ceaps", "error", err)
 	}
 
-	// 5. Emendas - MOVIDO DE SEMANAL PARA DIARIO
-	if err := s.emendaSync.SyncAll(ctx, anoAtual); err != nil {
+	// 5. Emendas
+	if err := retry.WithRetry(ctx, 3, "sync-emendas", func() error {
+		return s.emendaSync.SyncAll(ctx, anoAtual)
+	}); err != nil {
 		slog.Error("falha sync emendas", "error", err)
 	}
 
-	// 6. Comissoes (Mudancas de membros) - MOVIDO DE SEMANAL PARA DIARIO
-	if err := s.comissaoSync.SyncFromAPI(ctx); err != nil {
+	// 6. Comissoes (Mudancas de membros)
+	if err := retry.WithRetry(ctx, 3, "sync-comissoes", func() error {
+		return s.comissaoSync.SyncFromAPI(ctx)
+	}); err != nil {
 		slog.Error("falha sync comissoes", "error", err)
 	}
 
 	// 7. Proposicoes (Novos projetos ou tramitacoes)
-	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
+	if err := retry.WithRetry(ctx, 3, "sync-proposicoes", func() error {
+		return s.proposicaoSync.SyncFromAPI(ctx)
+	}); err != nil {
 		slog.Error("falha sync proposicoes", "error", err)
 	}
 
@@ -215,3 +245,4 @@ func (s *Scheduler) runDailySync(ctx context.Context) {
 
 	slog.Info("sync diario integral finalizado")
 }
+

@@ -10,6 +10,7 @@ import type {
   ProposicaoResponse,
   ComissoesResponse,
   VotacoesResponse,
+  StatsResponse,
 } from "@/types/api";
 
 // Todas as chamadas vao para /api/* e o Next.js rewrite direciona
@@ -30,6 +31,11 @@ export async function fetcher<T>(endpoint: string): Promise<T> {
   }
 
   return res.json();
+}
+
+// Stats (home page)
+export async function getStats(): Promise<StatsResponse> {
+  return fetcher<StatsResponse>("/api/v1/stats");
 }
 
 // Ranking

@@ -1,6 +1,7 @@
 package transparencia
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Alzarus/to-de-olho/pkg/retry"
 )
 
 const BaseURL = "https://api.portaldatransparencia.gov.br/api-de-dados"
@@ -58,6 +61,10 @@ func ParseMoney(s string) float64 {
 }
 
 func (c *Client) GetEmendas(ano int, nomeAutor string, pagina int) ([]EmendaDTO, error) {
+	return c.GetEmendasWithCtx(context.Background(), ano, nomeAutor, pagina)
+}
+
+func (c *Client) GetEmendasWithCtx(ctx context.Context, ano int, nomeAutor string, pagina int) ([]EmendaDTO, error) {
 	params := url.Values{}
 	params.Add("ano", fmt.Sprintf("%d", ano))
 	params.Add("pagina", fmt.Sprintf("%d", pagina))
@@ -67,36 +74,51 @@ func (c *Client) GetEmendas(ano int, nomeAutor string, pagina int) ([]EmendaDTO,
 
 	reqURL := fmt.Sprintf("%s/emendas?%s", BaseURL, params.Encode())
 
-	req, err := http.NewRequest("GET", reqURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("chave-api-dados", c.apiKey)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ToDeOlho/1.0")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API returned status: %d", resp.StatusCode)
-	}
-
 	var emendas []EmendaDTO
 
-	// Verificar se body está vazio
-	if resp.ContentLength == 0 {
-		return []EmendaDTO{}, nil
-	}
+	err := retry.WithRetry(ctx, 3, fmt.Sprintf("GetEmendas(ano=%d, autor=%s, pag=%d)", ano, nomeAutor, pagina), func() error {
+		req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+		if err != nil {
+			return err
+		}
 
-	if err := json.NewDecoder(resp.Body).Decode(&emendas); err != nil {
-		// Tentar ler body para debug
-		return nil, fmt.Errorf("erro decode: %w", err)
-	}
+		req.Header.Set("chave-api-dados", c.apiKey)
+		req.Header.Set("Accept", "application/json")
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ToDeOlho/1.0")
 
-	return emendas, nil
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return err // Erro de rede, retry
+		}
+		defer resp.Body.Close()
+
+		// Nao fazer retry em erros 4xx (exceto 429)
+		if resp.StatusCode == http.StatusTooManyRequests {
+			return fmt.Errorf("API rate limit (429)")
+		}
+		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			return fmt.Errorf("API returned client error: %d (nao recuperavel)", resp.StatusCode)
+		}
+		if resp.StatusCode >= 500 {
+			return fmt.Errorf("API returned server error: %d", resp.StatusCode)
+		}
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("API returned status: %d", resp.StatusCode)
+		}
+
+		// Verificar se body esta vazio
+		if resp.ContentLength == 0 {
+			emendas = []EmendaDTO{}
+			return nil
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&emendas); err != nil {
+			return fmt.Errorf("erro decode: %w", err)
+		}
+
+		return nil
+	})
+
+	return emendas, err
 }
+

@@ -226,3 +226,12 @@ export interface VotacoesResponse {
   total_pages: number;
   votacoes: VotacaoItem[];
 }
+
+// Stats da plataforma (home page)
+export interface StatsResponse {
+  total_senadores: number;
+  total_votos: number;
+  total_despesas_ceaps: number;
+  total_emendas: number;
+  ultima_atualizacao: string;
+}

@@ -3,7 +3,7 @@ package emenda
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -30,16 +30,30 @@ func (s *SyncService) SyncAll(ctx context.Context, ano int) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("SyncAll Emendas: Found %d senadores for year %d", len(senadores), ano)
+	slog.Info("SyncAll Emendas: iniciando", "senadores", len(senadores), "ano", ano)
 
+	sucessos := 0
+	falhas := 0
 	for _, sen := range senadores {
 		if err := s.SyncSenador(ctx, sen, ano); err != nil {
-			log.Printf("Erro sync emendas %s: %v", sen.Nome, err)
+			slog.Warn("falha sync emendas para senador",
+				"senador", sen.Nome,
+				"ano", ano,
+				"erro", err,
+			)
+			falhas++
 			continue
 		}
-		// Rate limit para não estourar a API (mesmo syncrono)
+		sucessos++
+		// Rate limit para nao estourar a API
 		time.Sleep(500 * time.Millisecond)
 	}
+
+	slog.Info("SyncAll Emendas: concluido",
+		"ano", ano,
+		"sucessos", sucessos,
+		"falhas", falhas,
+	)
 	return nil
 }
 
@@ -57,14 +71,23 @@ func (s *SyncService) SyncSenador(ctx context.Context, sen senador.Senador, ano 
 			default:
 			}
 
-			log.Printf("Querying emendas for %s (Page %d)", nomeBusca, pagina)
-			emendasDTO, err := s.transparencia.GetEmendas(ano, nomeBusca, pagina)
+			slog.Debug("consultando emendas", "autor", nomeBusca, "pagina", pagina)
+			emendasDTO, err := s.transparencia.GetEmendasWithCtx(ctx, ano, nomeBusca, pagina)
 			if err != nil {
-				log.Printf("Erro API emendas for %s: %v", sen.Nome, err)
+				slog.Warn("erro API emendas apos retries",
+					"senador", sen.Nome,
+					"query", nomeBusca,
+					"pagina", pagina,
+					"erro", err,
+				)
 				return fmt.Errorf("erro API transparencia: %w", err)
 			}
 
-			log.Printf("Got %d emendas for %s (query: %s)", len(emendasDTO), sen.Nome, nomeBusca)
+			slog.Debug("emendas recebidas",
+				"senador", sen.Nome,
+				"query", nomeBusca,
+				"quantidade", len(emendasDTO),
+			)
 
 			if len(emendasDTO) == 0 {
 				break
@@ -87,25 +110,25 @@ func (s *SyncService) SyncSenador(ctx context.Context, sen senador.Senador, ano 
 				}
 
 				if err := s.repo.Upsert(&emenda); err != nil {
-					log.Printf("Erro ao salvar emenda %s: %v", emenda.Numero, err)
+					slog.Warn("erro ao salvar emenda", "numero", emenda.Numero, "erro", err)
 				} else {
 					totalImportado++
 				}
 			}
 
 			pagina++
-			// Limite de segurança para loops infinitos (API mal comportada)
+			// Limite de seguranca para loops infinitos
 			if pagina > 100 {
 				break
 			}
 
-			// Pequeno delay entre páginas
+			// Pequeno delay entre paginas
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
 	if totalImportado > 0 {
-		log.Printf("Sync Emendas: %s (%d) - %d importadas", sen.Nome, ano, totalImportado)
+		slog.Info("emendas importadas", "senador", sen.Nome, "ano", ano, "total", totalImportado)
 	}
 
 	return nil

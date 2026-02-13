@@ -7,35 +7,65 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Trophy, Coins, Users, Activity, ExternalLink, BookOpen, BarChart3 } from "lucide-react";
 import { useRanking } from "@/hooks/use-ranking";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { getStats } from "@/lib/api";
 import type { SenadorScore } from "@/types/api";
+
+function formatNumber(value: number): string {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(0)}k+`;
+  }
+  return value.toString();
+}
+
+function formatCurrency(value: number): string {
+  if (value >= 1_000_000_000) {
+    return `R$ ${(value / 1_000_000_000).toFixed(1)}B`;
+  }
+  if (value >= 1_000_000) {
+    return `R$ ${(value / 1_000_000).toFixed(0)}M`;
+  }
+  if (value >= 1_000) {
+    return `R$ ${(value / 1_000).toFixed(0)}k`;
+  }
+  return `R$ ${value.toFixed(0)}`;
+}
 
 export default function Home() {
   // Fetch Top 3 Senators for the podium
   const { data: rankingData, isLoading } = useRanking(3);
 
-  // Stats - mocked for now, but could be calculated from full list
+  // Fetch real stats from backend
+  const { data: statsData, isLoading: isStatsLoading } = useQuery({
+    queryKey: ["stats"],
+    queryFn: getStats,
+  });
+
   const stats = [
     { 
       label: "Senadores Monitorados", 
-      value: "81", 
+      value: statsData ? statsData.total_senadores.toString() : "--", 
       icon: Users,
       description: "Cobertura completa"
     },
     { 
       label: "Votos Registrados", 
-      value: "50k+", 
+      value: statsData ? formatNumber(statsData.total_votos) : "--", 
       icon: Activity,
       description: "Desde 2023"
     },
     { 
-      label: "Economia Identificada", 
-      value: "R$ 14M", 
+      label: "Despesas Monitoradas", 
+      value: statsData ? formatCurrency(statsData.total_despesas_ceaps) : "--", 
       icon: Coins,
       description: "Em cotas parlamentares"
     },
     { 
-      label: "Dados Processados", 
-      value: "100%", 
+      label: "Emendas Rastreadas", 
+      value: statsData ? formatNumber(statsData.total_emendas) : "--", 
       icon: BarChart3,
       description: "Fontes oficiais"
     },
@@ -92,7 +122,11 @@ export default function Home() {
                 <div className="p-3 rounded-full bg-primary/10 text-primary mb-2">
                     <stat.icon size={24} />
                 </div>
-                <h3 className="text-2xl font-bold tracking-tight">{stat.value}</h3>
+                {isStatsLoading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <h3 className="text-2xl font-bold tracking-tight">{stat.value}</h3>
+                )}
                 <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
                 <p className="text-xs text-muted-foreground/60">{stat.description}</p>
               </CardContent>

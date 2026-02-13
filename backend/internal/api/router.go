@@ -1,8 +1,11 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
@@ -206,6 +209,9 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			c.JSON(http.StatusOK, response)
 		})
 
+		// Stats (dados reais para a home page)
+		v1.GET("/stats", statsHandler(db))
+
 		// Ranking
 		v1.GET("/ranking", rankingHandler.GetRanking)
 		v1.GET("/ranking/metodologia", rankingHandler.GetMetodologia)
@@ -214,11 +220,38 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 	return router
 }
 
+// DailySyncRunner define a interface para executar o sync diario
+// Implementada por scheduler.Scheduler
+type DailySyncRunner interface {
+	RunDailySync(ctx context.Context)
+}
+
+// RegisterSchedulerRoutes registra o endpoint de sync diario
+// para ser chamado pelo Google Cloud Scheduler
+func RegisterSchedulerRoutes(router *gin.Engine, runner DailySyncRunner) {
+	syncSecret := os.Getenv("SYNC_SECRET")
+
+	router.POST("/api/v1/sync/daily", func(c *gin.Context) {
+		// Protecao por header secreto
+		if syncSecret != "" && c.GetHeader("X-Sync-Secret") != syncSecret {
+			c.JSON(http.StatusForbidden, gin.H{"error": "acesso negado"})
+			return
+		}
+
+		slog.Info("sync diario disparado via HTTP")
+		go runner.RunDailySync(c.Request.Context())
+
+		c.JSON(http.StatusAccepted, gin.H{
+			"message": "sync diario iniciado",
+		})
+	})
+}
+
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, X-Sync-Secret")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusNoContent)

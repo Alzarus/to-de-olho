@@ -118,6 +118,9 @@ func main() {
 	defer cancelSched()
 
 	sched.Start(ctxSched)
+	
+	// Registrar endpoint de sync diario (Cloud Scheduler)
+	api.RegisterSchedulerRoutes(router, sched)
 	// -----------------------------------------------------------------------------
 
 	// Iniciar servidor em goroutine

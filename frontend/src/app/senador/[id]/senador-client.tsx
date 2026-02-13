@@ -26,13 +26,19 @@ import { formatCurrency } from "@/lib/utils";
 import { VotosPieChart } from "@/components/votos-pie-chart";
 import { useVotosPorTipo } from "@/hooks/use-senador";
 import { fetcher } from "@/lib/api";
-import { X } from "lucide-react";
+import { X, Info } from "lucide-react";
 import { CompareToggleButton } from "@/components/comparator/compare-toggle-button";
 import { SenatorRadarChart } from "@/components/senator/radar-chart";
 import { EmendasTab } from "@/components/senator/emendas-tab";
 import { ProposicoesTab } from "@/components/senator/proposicoes-tab";
 import { ComissoesTab } from "@/components/senator/comissoes-tab";
 import { CeapsTab } from "@/components/senator/ceaps-tab";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const VOTE_LABELS: Record<string, string> = {
   Sim: "Sim",
@@ -413,8 +419,20 @@ function SenadorContent() {
         <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2 content-start">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-muted-foreground inline-flex items-center gap-1">
                 Produtividade (35%)
+                {senador.produtividade === 0 && (
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[240px]">
+                        <p className="text-xs">Senadores sem proposições registradas no período recebem pontuação zero neste critério (normalização relativa).</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>

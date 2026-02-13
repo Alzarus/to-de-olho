@@ -11,6 +11,7 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  Info,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -180,8 +181,20 @@ function MobileRankingCard({
         >
           <div className="text-center p-2 rounded bg-muted/50" role="listitem">
             <p className="text-xs text-muted-foreground">Produtividade</p>
-            <p className="text-sm font-semibold">
+            <p className="text-sm font-semibold inline-flex items-center gap-1">
               {senador.produtividade.toFixed(1)}
+              {senador.produtividade === 0 && (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                      <p className="text-xs">Senadores sem proposições registradas no período recebem pontuação zero neste critério (normalização relativa).</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </p>
           </div>
           <div className="text-center p-2 rounded bg-muted/50" role="listitem">
@@ -390,8 +403,20 @@ function RankingTable({
                 </Link>
               </td>
               <td className="hidden px-4 py-4 text-center sm:table-cell">
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium inline-flex items-center gap-1">
                   {senador.produtividade.toFixed(1)}
+                  {senador.produtividade === 0 && (
+                    <TooltipProvider delayDuration={0}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[220px]">
+                          <p className="text-xs">Senadores sem proposições registradas no período recebem pontuação zero neste critério (normalização relativa).</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </span>
               </td>
               <td className="hidden px-4 py-4 text-center md:table-cell">
