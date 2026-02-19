@@ -222,27 +222,53 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 
 // DailySyncRunner define a interface para executar o sync diario
 // Implementada por scheduler.Scheduler
-type DailySyncRunner interface {
+// SyncRunner define a interface para o scheduler executar syncs
+type SyncRunner interface {
 	RunDailySync(ctx context.Context)
+	RunBackfill(ctx context.Context)
 }
 
-// RegisterSchedulerRoutes registra o endpoint de sync diario
-// para ser chamado pelo Google Cloud Scheduler
-func RegisterSchedulerRoutes(router *gin.Engine, runner DailySyncRunner) {
+// RegisterSchedulerRoutes registra os endpoints de sync
+// para serem chamados pelo Google Cloud Scheduler ou manualmente
+func RegisterSchedulerRoutes(router *gin.Engine, runner SyncRunner) {
 	syncSecret := os.Getenv("SYNC_SECRET")
 
-	router.POST("/api/v1/sync/daily", func(c *gin.Context) {
-		// Protecao por header secreto
+	// Middleware de autenticacao por header secreto
+	authSync := func(c *gin.Context) bool {
 		if syncSecret != "" && c.GetHeader("X-Sync-Secret") != syncSecret {
 			c.JSON(http.StatusForbidden, gin.H{"error": "acesso negado"})
+			return false
+		}
+		return true
+	}
+
+	// POST /api/v1/sync/daily - Sync diario (Cloud Scheduler)
+	// Executa sincronamente para manter o container vivo no Cloud Run
+	router.POST("/api/v1/sync/daily", func(c *gin.Context) {
+		if !authSync(c) {
 			return
 		}
 
 		slog.Info("sync diario disparado via HTTP")
-		go runner.RunDailySync(c.Request.Context())
+		runner.RunDailySync(c.Request.Context())
 
-		c.JSON(http.StatusAccepted, gin.H{
-			"message": "sync diario iniciado",
+		c.JSON(http.StatusOK, gin.H{
+			"message": "sync diario concluido",
+		})
+	})
+
+	// POST /api/v1/sync/backfill - Backfill completo (manual)
+	// Executa sincronamente; pode levar 30-60 min
+	router.POST("/api/v1/sync/backfill", func(c *gin.Context) {
+		if !authSync(c) {
+			return
+		}
+
+		slog.Info("backfill completo disparado via HTTP")
+		runner.RunBackfill(c.Request.Context())
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "backfill completo concluido",
 		})
 	})
 }

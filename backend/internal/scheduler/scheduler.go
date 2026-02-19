@@ -52,19 +52,14 @@ func NewScheduler(
 	}
 }
 
-// Start inicia o loop de agendamento em background e verifica necessidade de backfill
+// Start inicia o loop de agendamento em background.
+// O backfill nao e mais executado na startup; deve ser disparado
+// via HTTP (POST /api/v1/sync/backfill) para que o Cloud Run
+// mantenha o container vivo durante a execucao.
 func (s *Scheduler) Start(ctx context.Context) {
 	slog.Info("iniciando scheduler")
 
-	// Verificar se precisa de backfill inicial em goroutine separada
-	go s.runStartupSync(ctx)
-
-	// Tickers para cada tarefa
-	// Sync Diario (Votacoes, Dados Cadastrais) - 24h
 	dailyTicker := time.NewTicker(24 * time.Hour)
-
-	// Sync Semanal (CEAPS, Emendas) - 168h
-
 
 	go func() {
 		for {
@@ -79,10 +74,11 @@ func (s *Scheduler) Start(ctx context.Context) {
 	}()
 }
 
-// runStartupSync verifica se o DB esta vazio e roda backfill completo
-func (s *Scheduler) runStartupSync(ctx context.Context) {
-	// Verificar se foi solicitado FORCE_BACKFILL
-	forceBackfill := os.Getenv("FORCE_BACKFILL") == "true"
+// RunBackfill executa o backfill completo de todos os anos.
+// Exportado para ser chamado sincronamente pelo endpoint HTTP,
+// garantindo que o Cloud Run mantenha o container vivo.
+func (s *Scheduler) RunBackfill(ctx context.Context) {
+	forceBackfill := true // Sempre forca quando chamado via HTTP
 	
 	// 1. Verificar se ja existem dados
 	count, err := s.senadorRepo.Count()
@@ -92,15 +88,11 @@ func (s *Scheduler) runStartupSync(ctx context.Context) {
 	}
 
 	if count > 0 && !forceBackfill {
-		slog.Info("banco de dados ja populado, pulando backfill inicial", "senadores", count)
+		slog.Info("banco de dados ja populado, pulando backfill", "senadores", count)
 		return
 	}
-	
-	if forceBackfill {
-		slog.Info("FORCE_BACKFILL=true detectado, executando backfill mesmo com dados existentes", "senadores_existentes", count)
-	}
 
-	slog.Info("banco de dados vazio detectado. INICIANDO BACKFILL COMPLETO...")
+	slog.Info("INICIANDO BACKFILL COMPLETO via HTTP", "senadores_existentes", count)
 
 	// 2. Determinar ano de inicio
 	anoInicio := 2023
