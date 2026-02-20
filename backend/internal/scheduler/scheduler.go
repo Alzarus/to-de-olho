@@ -26,7 +26,8 @@ type Scheduler struct {
 	comissaoSync   *comissao.SyncService
 	proposicaoSync *proposicao.SyncService
 	rankingService *ranking.Service
-	senadorRepo    *senador.Repository // Para checar se banco esta vazio
+	senadorRepo    *senador.Repository
+	votacaoRepo    *votacao.Repository
 }
 
 // NewScheduler cria um novo scheduler
@@ -39,6 +40,7 @@ func NewScheduler(
 	proposicaoSync *proposicao.SyncService,
 	rankingService *ranking.Service,
 	senadorRepo *senador.Repository,
+	votacaoRepo *votacao.Repository,
 ) *Scheduler {
 	return &Scheduler{
 		senadorSync:    senadorSync,
@@ -49,6 +51,7 @@ func NewScheduler(
 		proposicaoSync: proposicaoSync,
 		rankingService: rankingService,
 		senadorRepo:    senadorRepo,
+		votacaoRepo:    votacaoRepo,
 	}
 }
 
@@ -116,12 +119,17 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 		return // Sem senadores nao da pra continuar
 	}
 
-	// B. Votacoes (Captura sessoes de todos os anos disponiveis na API)
-	slog.Info("--- PASSO 2/6: VOTACOES (LISTA) ---")
-	if err := retry.WithRetry(ctx, 3, "backfill-votacoes", func() error {
-		return s.votacaoSync.SyncFromAPI(ctx)
-	}); err != nil {
-		slog.Error("falha no backfill de votacoes", "error", err)
+	// B. Votacoes - PULAR se ja existem dados (evita timeout de 3600s+)
+	votosCount, _ := s.votacaoRepo.Count()
+	if votosCount > 0 {
+		slog.Info("--- PASSO 2/6: VOTACOES (PULANDO - dados existentes) ---", "votos_existentes", votosCount)
+	} else {
+		slog.Info("--- PASSO 2/6: VOTACOES (LISTA) ---")
+		if err := retry.WithRetry(ctx, 3, "backfill-votacoes", func() error {
+			return s.votacaoSync.SyncFromAPI(ctx)
+		}); err != nil {
+			slog.Error("falha no backfill de votacoes", "error", err)
+		}
 	}
 
 	// C. Loop por ano para dados periodicos

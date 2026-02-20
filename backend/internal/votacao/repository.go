@@ -53,6 +53,13 @@ func (r *Repository) CountBySenadorID(senadorID int) (int64, error) {
 	return count, result.Error
 }
 
+// Count retorna total de votacoes no banco
+func (r *Repository) Count() (int64, error) {
+	var count int64
+	result := r.db.Model(&Votacao{}).Count(&count)
+	return count, result.Error
+}
+
 // GetStats retorna estatisticas de votacao de um senador
 func (r *Repository) GetStats(senadorID int) (*VotacaoStats, error) {
 	var stats VotacaoStats

@@ -110,7 +110,8 @@ func main() {
 		comissaoSync,
 		proposicaoSync,
 		rankingService,
-		senadorRepo, // para check de db vazio
+		senadorRepo,
+		votacaoRepo,
 	)
 	
 	// Contexto para o scheduler (cancelado no shutdown)
