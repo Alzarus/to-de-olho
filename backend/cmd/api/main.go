@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/Alzarus/to-de-olho/internal/api"
-	"github.com/joho/godotenv"
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
@@ -20,8 +19,10 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/Alzarus/to-de-olho/pkg/senado"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"strconv"
 )
 
 func main() {
@@ -56,9 +57,9 @@ func main() {
 	}
 
 	/*
-	// Conectar ao Redis
-	// [COST-SAVING] Redis desabilitado.
-	var redisClient *redis.Client = nil
+		// Redis foi removido por questoes de custo no GCP
+		// O sistema operara exclusivamente em cima da performance do Postgres
+		// e de caches na borda (CDN/Next.js)
 	*/
 
 	// Configurar router
@@ -92,7 +93,7 @@ func main() {
 	comissaoSync := comissao.NewSyncService(comissaoRepo, senadorRepo, legisClient)
 	proposicaoSync := proposicao.NewSyncService(proposicaoRepo, senadorRepo, legisClient)
 
-	// Ranking Service (necessario para recalcular aps sync)
+	// Ranking Service (necessario para recalcular aps sync, suporta redis mas passamos nil)
 	rankingService := ranking.NewService(
 		senadorRepo,
 		proposicaoRepo,
@@ -103,9 +104,9 @@ func main() {
 
 	// Iniciar Scheduler
 	sched := scheduler.NewScheduler(
-		senadorSync, 
-		votacaoSync, 
-		ceapsSync, 
+		senadorSync,
+		votacaoSync,
+		ceapsSync,
 		emendaSync,
 		comissaoSync,
 		proposicaoSync,
@@ -113,13 +114,13 @@ func main() {
 		senadorRepo,
 		votacaoRepo,
 	)
-	
+
 	// Contexto para o scheduler (cancelado no shutdown)
 	ctxSched, cancelSched := context.WithCancel(context.Background())
 	defer cancelSched()
 
 	sched.Start(ctxSched)
-	
+
 	// Registrar endpoint de sync diario (Cloud Scheduler)
 	api.RegisterSchedulerRoutes(router, sched)
 	// -----------------------------------------------------------------------------
@@ -163,13 +164,21 @@ func connectDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	// Configurar connection pool
+	// Configurar connection pool dinamico para escalabilidade
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
 	}
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
+
+	maxConns := 100 // default para Cloud Run com alta recorrencia
+	if envMax := os.Getenv("DB_MAX_OPEN_CONNS"); envMax != "" {
+		if parsed, err := strconv.Atoi(envMax); err == nil && parsed > 0 {
+			maxConns = parsed
+		}
+	}
+
+	sqlDB.SetMaxIdleConns(maxConns / 2)
+	sqlDB.SetMaxOpenConns(maxConns)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	return db, nil
@@ -182,4 +191,3 @@ func getPort() string {
 	}
 	return ":" + port
 }
-
