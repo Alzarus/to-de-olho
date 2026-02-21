@@ -5,8 +5,8 @@ import "time"
 // ComissaoMembro representa a participacao de um senador em uma comissao
 type ComissaoMembro struct {
 	ID                 int        `gorm:"primaryKey" json:"id"`
-	SenadorID          int        `gorm:"uniqueIndex:idx_comissao_membro_unico,priority:1;index:idx_comissao_senador;not null" json:"senador_id"`
-	CodigoComissao     string     `gorm:"uniqueIndex:idx_comissao_membro_unico,priority:2;index:idx_comissao_codigo" json:"codigo_comissao"`
+	SenadorID          int        `gorm:"index:idx_comissao_senador;not null" json:"senador_id"`
+	CodigoComissao     string     `gorm:"index:idx_comissao_codigo" json:"codigo_comissao"`
 	SiglaComissao      string     `json:"sigla_comissao"`
 	NomeComissao       string     `json:"nome_comissao"`
 	SiglaCasaComissao  string     `json:"sigla_casa_comissao"` // SF, CN
