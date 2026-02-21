@@ -258,17 +258,20 @@ func RegisterSchedulerRoutes(router *gin.Engine, runner SyncRunner) {
 	})
 
 	// POST /api/v1/sync/backfill - Backfill completo (manual)
-	// Executa sincronamente; pode levar 30-60 min
+	// Retorna 202 imediatamente; backfill roda em background (sem limite de tempo)
 	router.POST("/api/v1/sync/backfill", func(c *gin.Context) {
 		if !authSync(c) {
 			return
 		}
 
 		slog.Info("backfill completo disparado via HTTP")
-		runner.RunBackfill(c.Request.Context())
 
-		c.JSON(http.StatusOK, gin.H{
-			"message": "backfill completo concluido",
+		// Rodar em goroutine com contexto independente do request HTTP
+		// para nao ficar preso ao timeout de 3600s do Cloud Run
+		go runner.RunBackfill(context.Background())
+
+		c.JSON(http.StatusAccepted, gin.H{
+			"message": "backfill iniciado em background",
 		})
 	})
 }

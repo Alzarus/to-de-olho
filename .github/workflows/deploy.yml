@@ -89,6 +89,7 @@ jobs:
             --min-instances=0 \
             --max-instances=2 \
             --timeout=3600 \
+            --no-cpu-throttling \
             --concurrency=80
 
   # ============================================================================
