@@ -65,11 +65,6 @@ func (s *SyncService) SyncSenador(ctx context.Context, senadorID int) (int, erro
 		return 0, err
 	}
 
-	// Limpar comissoes antigas antes de re-sincronizar
-	if err := s.repo.DeleteBySenadorID(senadorID); err != nil {
-		slog.Warn("falha ao limpar comissoes antigas", "senador", senadorID, "error", err)
-	}
-
 	var count int
 	for _, c := range comissoesAPI {
 		comissao := s.convertToModel(c, senadorID)

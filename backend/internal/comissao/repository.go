@@ -3,6 +3,7 @@ package comissao
 import (
 	"fmt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Repository encapsula operacoes de banco de dados para ComissaoMembro
@@ -121,21 +122,26 @@ func (r *Repository) GetComissoesPorCasa(senadorID int) ([]ComissoesPorCasa, err
 	return result, err
 }
 
-// Upsert insere ou atualiza uma comissao
+// Upsert insere ou atualiza uma comissao usando chave composta (senador_id, codigo_comissao)
 func (r *Repository) Upsert(comissao *ComissaoMembro) error {
-	return r.db.Save(comissao).Error
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "senador_id"}, {Name: "codigo_comissao"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"sigla_comissao", "nome_comissao", "sigla_casa_comissao",
+			"descricao_participacao", "data_inicio", "data_fim", "updated_at",
+		}),
+	}).Create(comissao).Error
 }
 
 // UpsertBatch insere ou atualiza multiplas comissoes
 func (r *Repository) UpsertBatch(comissoes []ComissaoMembro) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		for _, c := range comissoes {
-			if err := tx.Save(&c).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	return r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "senador_id"}, {Name: "codigo_comissao"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"sigla_comissao", "nome_comissao", "sigla_casa_comissao",
+			"descricao_participacao", "data_inicio", "data_fim", "updated_at",
+		}),
+	}).CreateInBatches(comissoes, 100).Error
 }
 
 // DeleteBySenadorID remove todas as comissoes de um senador

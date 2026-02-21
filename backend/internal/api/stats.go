@@ -28,7 +28,7 @@ func statsHandler(db *gorm.DB) gin.HandlerFunc {
 		db.Raw("SELECT COUNT(*) FROM votacoes").Scan(&stats.TotalVotos)
 
 		// Total de despesas CEAPS (soma de valores)
-		db.Raw("SELECT COALESCE(SUM(valor), 0) FROM despesa_ceaps").Scan(&stats.TotalDespesasCEAP)
+		db.Raw("SELECT COALESCE(SUM(valor), 0) FROM despesas_ceaps").Scan(&stats.TotalDespesasCEAP)
 
 		// Total de emendas
 		db.Raw("SELECT COUNT(*) FROM emendas").Scan(&stats.TotalEmendas)

@@ -198,14 +198,9 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 		slog.Error("falha sync senadores", "error", err)
 	}
 
-	// 2. Votacoes (Novas sessoes)
-	if err := retry.WithRetry(ctx, 3, "sync-votacoes", func() error {
-		return s.votacaoSync.SyncFromAPI(ctx)
-	}); err != nil {
-		slog.Error("falha sync votacoes", "error", err)
-	}
-
-	// 3. Metadata do ano atual (para pegar ementas de votacoes recentes)
+	// 2. Votacoes - apenas metadata do ano atual (ementas, datas)
+	// O sync completo de votos (82 senadores x todas sessoes) leva 3600s+
+	// e fica reservado exclusivamente ao backfill
 	if err := retry.WithRetry(ctx, 3, "sync-votacoes-metadata", func() error {
 		return s.votacaoSync.SyncMetadata(ctx, anoAtual)
 	}); err != nil {
