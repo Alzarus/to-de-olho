@@ -91,8 +91,15 @@ func (s *SyncService) SyncSenador(ctx context.Context, senadorID int) (int, erro
 		return 0, err
 	}
 
+	anoAtual := time.Now().Year()
+
 	var count int
 	for _, sessao := range sessoes {
+		// [PERFORMANCE] Evitar carregar sessoes antigas no sync diario/atualizacoes
+		if sessao.Ano < anoAtual-2 {
+			continue // Ja deve estar no banco e nao muda mais, se for preciso use backfill
+		}
+
 		var siglaVoto string
 		for _, voto := range sessao.Votos {
 			if voto.CodigoParlamentar == sen.CodigoParlamentar {

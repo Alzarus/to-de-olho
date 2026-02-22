@@ -55,19 +55,6 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 		return cached, nil
 	}
 
-	/* REDIS DEPRECATED
-	if s.redisClient != nil {
-		val, err := s.redisClient.Get(ctx, cacheKey).Result()
-		if err == nil {
-			var response RankingResponse
-			if err := json.Unmarshal([]byte(val), &response); err == nil {
-				slog.Info("ranking retornado do cache", "key", cacheKey)
-				return &response, nil
-			}
-		}
-	}
-	*/
-
 	slog.Info("iniciando calculo de ranking (cache miss)", "ano", ano)
 
 	// Buscar todos os senadores
@@ -136,18 +123,16 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 		Metodologia: metodologia,
 	}
 
-	// Salvar no cache local (TTL 1 hora)
-	localCache.Set(cacheKey, response, 1*time.Hour)
-
-	/* REDIS DEPRECATED
-	if s.redisClient != nil {
-		if data, err := json.Marshal(response); err == nil {
-			s.redisClient.Set(ctx, cacheKey, data, 1*time.Hour)
-		}
-	}
-	*/
+	// Salvar no cache local (TTL 24 horas)
+	localCache.Set(cacheKey, response, 24*time.Hour)
 
 	return response, nil
+}
+
+// InvalidateCache invalida todo o cache de ranking
+func (s *Service) InvalidateCache() {
+	slog.Info("invalidando cache de ranking")
+	localCache.InvalidateAll()
 }
 
 // CalcularScoreSenador calcula o score de um senador especifico

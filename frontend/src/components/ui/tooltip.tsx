@@ -13,8 +13,20 @@ const TooltipProvider = ({ children, ...props }: React.ComponentProps<typeof Too
 
 const Tooltip = TooltipPrimitive.Root;
 
-const TooltipTrigger = TooltipPrimitive.Trigger;
-
+const TooltipTrigger = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger>
+>(({ onClick, ...props }, ref) => (
+  <TooltipPrimitive.Trigger
+    ref={ref}
+    {...props}
+    onClick={(e) => {
+      // Evita comportamentos in-built forms ou navigations em mobile
+      if (onClick) onClick(e);
+    }}
+  />
+));
+TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName;
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>

@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header, Footer } from "@/components/layout";
 import { ComparatorDock } from "@/components/comparator/comparator-dock";
 import { Providers } from "@/lib/providers";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -77,6 +78,9 @@ export default function RootLayout({
             <Toaster richColors position="top-right" />
           </div>
         </Providers>
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        )}
       </body>
     </html>
   );

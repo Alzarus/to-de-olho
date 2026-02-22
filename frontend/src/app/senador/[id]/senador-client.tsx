@@ -48,143 +48,8 @@ const VOTE_LABELS: Record<string, string> = {
   NCom: "Não Compareceu",
 };
 
-import { VotacoesResponse, VotacaoItem } from "@/types/api";
-
-function VotosChartWrapper({ id }: { id: number }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const { data, isLoading } = useVotosPorTipo(id);
-
-  const selectedVoteType = searchParams.get("voto");
-
-  const [votacoes, setVotacoes] = useState<VotacaoItem[]>([]);
-  const [votacoesLoading, setVotacoesLoading] = useState(false);
-
-  const updateVoteType = (type: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (type) {
-      params.set("voto", type);
-    } else {
-      params.delete("voto");
-    }
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
-  // Buscar votações quando tipo selecionado
-  useEffect(() => {
-    if (!selectedVoteType) {
-      setVotacoes([]);
-      return;
-    }
-
-    const fetchVotacoes = async () => {
-      setVotacoesLoading(true);
-      try {
-        const res = await fetcher<VotacoesResponse>(
-          `/api/v1/senadores/${id}/votacoes?limit=1000`,
-        );
-
-        const filtered = res.votacoes.filter((v) => {
-          if (selectedVoteType === "Outros") {
-            const mainTypes = ["Sim", "Nao", "Abstencao", "Obstrucao"];
-            return !mainTypes.includes(v.voto);
-          }
-          return v.voto === selectedVoteType;
-        });
-
-        setVotacoes(filtered);
-      } catch (error) {
-        console.error("Erro ao buscar votações:", error);
-      } finally {
-        setVotacoesLoading(false);
-      }
-    };
-
-    fetchVotacoes();
-  }, [id, selectedVoteType]);
-
-  if (isLoading) return <Skeleton className="h-[300px] w-full" />;
-
-  if (!data || !data.por_tipo) return null;
-
-  const handleSliceClick = (voteType: string) => {
-    updateVoteType(voteType === selectedVoteType ? null : voteType);
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Distribuição de Votos</CardTitle>
-        {selectedVoteType && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => updateVoteType(null)}
-            className="text-muted-foreground"
-          >
-            <X className="mr-1 h-4 w-4" />
-            Limpar filtro
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <VotosPieChart data={data.por_tipo} onSliceClick={handleSliceClick} />
-
-        {/* Lista de votações filtradas */}
-        {selectedVoteType && (
-          <div className="mt-4 border-t pt-4">
-            <h4 className="text-sm font-semibold mb-3">
-              Votações com voto &quot;
-              {VOTE_LABELS[selectedVoteType] || selectedVoteType}&quot;
-              {votacoes.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {votacoes.length}
-                </Badge>
-              )}
-            </h4>
-
-            {votacoesLoading ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : votacoes.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhuma votação encontrada para este tipo.
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {votacoes.map((v) => (
-                  <Link
-                    key={v.id}
-                    href={`/votacoes/${v.sessao_id}?backUrl=${encodeURIComponent(pathname + "?" + searchParams.toString())}`}
-                    className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
-                          {v.materia || "Sem matéria"}
-                        </p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">
-                          {v.descricao_votacao}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="shrink-0 text-xs">
-                        {new Date(v.data).toLocaleDateString("pt-BR")}
-                      </Badge>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+// O componente VotosChartWrapper foi removido em favor do componente VotacoesTab importado acima,
+// o qual possui regras corretas de paginação e filtragem comunicando-se com o backend.
 
 function SenadorSkeleton() {
   return (
@@ -601,7 +466,9 @@ function SenadorContent() {
               </CardContent>
             </Card>
 
-            <VotosChartWrapper id={id} />
+            <div className="lg:col-span-2">
+              <VotacoesTab id={id} />
+            </div>
           </div>
         </TabsContent>
 

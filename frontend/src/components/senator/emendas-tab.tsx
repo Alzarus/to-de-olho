@@ -308,7 +308,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
               </div>
           </CardHeader>
           <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-4 min-h-[800px]">
                   {emendasFiltradas.length === 0 ? (
                       <p className="text-center text-sm text-muted-foreground py-8">
                           Nenhuma emenda encontrada com os filtros aplicados.
@@ -448,14 +448,20 @@ const UF_POR_NOME: Record<string, string> = {
     TOCANTINS: "TO",
 };
 
+const UFS_VALIDAS = new Set(Object.values(UF_POR_NOME));
+
 function extrairUF(localidade: string): string | null {
     if (!localidade) return null;
     const upper = localidade.toUpperCase();
-    if (upper.includes("NACIONAL")) return null;
+    if (upper.includes("NACIONAL") || upper.includes("MÚLTIPLO")) return null;
 
-    const match = upper.match(/\b([A-Z]{2})\b/);
-    if (match && match[1] !== "UF") {
-        return match[1];
+    const matches = upper.match(/\b([A-Z]{2})\b/g);
+    if (matches) {
+        for (const match of matches) {
+            if (UFS_VALIDAS.has(match)) {
+                return match;
+            }
+        }
     }
 
     const normalizada = normalizarLocalidade(upper);

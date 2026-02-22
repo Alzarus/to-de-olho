@@ -46,3 +46,10 @@ func (c *InMemoryCache) Set(key string, response *RankingResponse, ttl time.Dura
 		Expiry:   time.Now().Add(ttl),
 	}
 }
+
+// InvalidateAll clears all cached data
+func (c *InMemoryCache) InvalidateAll() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.data = make(map[string]cacheItem)
+}

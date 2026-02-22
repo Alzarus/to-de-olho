@@ -114,8 +114,8 @@ export function VotacoesTab({ id }: { id: number }) {
                         Nenhuma votação encontrada.
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        <div className="space-y-2">
+                    <div className="space-y-4 min-h-[600px] flex flex-col">
+                        <div className="space-y-2 flex-1">
                             {votacoesData.votacoes.map((v) => (
                                 <Link
                                     key={v.id}

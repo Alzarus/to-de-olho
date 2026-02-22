@@ -238,6 +238,9 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 	// 8. Recalcular Ranking
 	s.rankingService.CalcularRanking(ctx, nil)
 
+	// 9. Invalidar cache para garantir que proximas chamadas peguem o dado atualizado
+	s.rankingService.InvalidateCache()
+
 	slog.Info("sync diario integral finalizado")
 }
 

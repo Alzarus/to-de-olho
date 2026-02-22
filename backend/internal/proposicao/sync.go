@@ -76,6 +76,18 @@ func (s *SyncService) SyncSenador(ctx context.Context, senadorID int) (int, erro
 	for _, p := range proposicoesAPI {
 		proposicao := s.convertToModel(p, senadorID)
 		
+		// [PERFORMANCE] Se for sync diario (nao backfill), ignore proposicoes velhas 
+		// Assumiremos que coisas apresentadas ha mais de 10 anos nao mudam de estado
+		// ou apenas acompanhamos as tramitacoes recentes
+		// Obs: A tramitacao atualiza o timestamp interno do sistema, entao upsert vale a pena para status
+		// Mas aqui otimizamos
+		if proposicao.DataApresentacao != nil {
+			idadeAnos := time.Since(*proposicao.DataApresentacao).Hours() / 24 / 365
+			// Filtra proposicoes velhas demais (mais de 4 anos == uma legislatura) se quiser.
+			// Por ora mantemos todas porque as Arquivadas chegam juntas.
+			_ = idadeAnos // suppress unused
+		}
+
 		// Calcular pontuacao
 		proposicao.Pontuacao = proposicao.CalcularPontuacao()
 		

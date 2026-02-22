@@ -91,11 +91,22 @@ func (r *Repository) GetStats(senadorID int) (*VotacaoStats, error) {
 
 	// Calcular taxas
 	if stats.TotalVotacoes > 0 {
-		// Presenca = (Total - Ausencias) / Total
-		stats.TaxaPresenca = float64(stats.TotalVotacoes-stats.Ausencias) / float64(stats.TotalVotacoes) * 100
+		// Presenca (calculada em cima dos que de fato ele devia estar: registrados + ausencias + obstrucoes)
+		// Ignorando fatores como Licenca, Missao, Presidencia do Senado (P-OD)
+		baseCalculoPresenca := stats.VotosRegistrados + stats.Ausencias + stats.Obstrucoes
+		
+		if baseCalculoPresenca > 0 {
+			stats.TaxaPresenca = float64(stats.VotosRegistrados+stats.Obstrucoes) / float64(baseCalculoPresenca) * 100
+		} else {
+			stats.TaxaPresenca = 0
+		}
 
-		// Participacao = Votos efetivos / Total
-		stats.TaxaParticipacao = float64(stats.VotosRegistrados) / float64(stats.TotalVotacoes) * 100
+		// Participacao = Votos efetivos (Sim, Nao, Abstencao) / Total real baseCalculada
+		if baseCalculoPresenca > 0 {
+			stats.TaxaParticipacao = float64(stats.VotosRegistrados) / float64(baseCalculoPresenca) * 100
+		} else {
+			stats.TaxaParticipacao = 0
+		}
 	}
 
 	return &stats, nil
@@ -180,8 +191,15 @@ func (r *Repository) GetStatsByAno(senadorID int, ano int) (*VotacaoStats, error
 
 	// Calcular taxas
 	if stats.TotalVotacoes > 0 {
-		stats.TaxaPresenca = float64(stats.TotalVotacoes-stats.Ausencias) / float64(stats.TotalVotacoes) * 100
-		stats.TaxaParticipacao = float64(stats.VotosRegistrados) / float64(stats.TotalVotacoes) * 100
+		baseCalculoPresenca := stats.VotosRegistrados + stats.Ausencias + stats.Obstrucoes
+
+		if baseCalculoPresenca > 0 {
+			stats.TaxaPresenca = float64(stats.VotosRegistrados+stats.Obstrucoes) / float64(baseCalculoPresenca) * 100
+			stats.TaxaParticipacao = float64(stats.VotosRegistrados) / float64(baseCalculoPresenca) * 100
+		} else {
+			stats.TaxaPresenca = 0
+			stats.TaxaParticipacao = 0
+		}
 	}
 
 	return &stats, nil
