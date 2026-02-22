@@ -19,15 +19,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Buscar senadores para rotas dinâmicas
-  // Idealmente, buscaríamos do backend, mas para manter simples e rápido sem request pesado no build,
-  // vamos focar nas páginas principais primeiro. O Google descobre os links internos.
-  // Se quiser incluir todos, descomente abaixo:
-
-  /*
   const backendUrl = process.env.BACKEND_URL || "http://localhost:8080";
   try {
     const res = await fetch(`${backendUrl}/api/v1/senadores`);
-    const senadores = await res.json();
+    const data = await res.json();
+    const senadores = data.senadores || [];
+
     const senatorRoutes = senadores.map((s: any) => ({
       url: `${baseUrl}/senador/${s.id}`,
       lastModified: new Date(),
@@ -36,9 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
     return [...routes, ...senatorRoutes];
   } catch (e) {
+    console.error("Erro Sitemap: ", e);
     return routes;
   }
-  */
-
-  return routes;
 }
