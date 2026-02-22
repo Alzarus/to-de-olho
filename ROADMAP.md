@@ -1,40 +1,37 @@
 # Roadmap de Implementação - Tô De Olho
 
-> Ultima atualizacao: 18/01/2026 22:30  
-> Deadline Entrega TCC: 15/01/2026 (Soft) / Defesa: 25/01 - 11/02  
-> Status: **Fase 7 - Deploy & Producao**
+> Ultima atualizacao: 22/02/2026 05:00  
+> Status: **Aprovado (Pós-Defesa)** / Fase 8
 
 ---
 
 ## Cronograma Atualizado
 
-| Fase | Foco principal                         | Situacao         |
-| ---- | -------------------------------------- | ---------------- |
-| 1-5  | Ingestao, API, Ranking, Frontend Base  | **CONCLUIDAS**   |
-| 6    | **Essenciais TCC** (Emendas, Votacoes) | **CONCLUIDA**    |
-| 7    | Polimento, Testes e Deploy             | **EM PROGRESSO** |
-| 8    | Backlog (Gabinete, Fornecedores)       | FUTURO           |
+| Fase | Foco principal                         | Situacao       |
+| ---- | -------------------------------------- | -------------- |
+| 1-5  | Ingestao, API, Ranking, Frontend Base  | **CONCLUIDAS** |
+| 6    | **Essenciais TCC** (Emendas, Votacoes) | **CONCLUIDA**  |
+| 7    | Polimento, Testes e Deploy             | **CONCLUIDA**  |
+| 8    | Expansão Pós-Defesa (Backlog)          | FUTURO         |
 
 ---
 
-### Phase 7: Polishing, Testing & Deploy (⏳ Em Progresso)
+### Phase 7: Polishing, Testing & Deploy (✅ CONCLUIDA)
 
 - [x] **Deploy**: Setup Cloud Run + Firebase Hosting
-- [ ] **Tests**: Playwright E2E tests
-- [ ] **Domain**: Mapeamento final de DNS
-- [x] **GitHub Actions**: CI/CD automatizado para Cloud Run
+- [x] **Tests**: Playwright E2E tests configurados e em pipeline
+- [x] **GitHub Actions**: CI/CD automatizado para Cloud Run com Scaling
 - [x] **Cloud Computing**:
-  - Backend: Cloud Run (Go 1.23)
-  - Frontend: Cloud Run (Next.js 15)
+  - Backend: Cloud Run (Go 1.21+) Escalado
+  - Frontend: Cloud Run (Next.js 15) Escalado
   - Proxy/Edge: Firebase Hosting (p/ Custom Domain + SSL)
-- [ ] **Dominio**: todeolho.org + api.todeolho.org (no mesmo dominio via rewrite)
+- [x] **Dominio**: todeolho.org + api.todeolho.org mapeados e rodando
+- [x] **SEO Completo**: Meta tags, Open Graph, Sitemap dinamico (Next.js)
 
-### Prioridade 2: Qualidade
+### Prioridade 2: Qualidade (✅ Mapeada)
 
-- [x] **Deploy Producao**: Dockerfile otimizado com backfill e sync diario + Cloud Run.
-- [ ] **SEO Completo**: Meta tags, Open Graph, Sitemap (Next.js).
-- [ ] **Performance**: Cache headers, otimizacao de imagens (Bun).
-- [ ] **Testes**: Garantir cobertura minima nos servicos criticos (Ranking/Sync).
+- [x] **Deploy Producao**: Infraestrutura dimensionada e backfill atestado com milhões de inserts.
+- [x] **Testes**: Especiais para API vital e validação do fluxo do Senador no E2E.
 
 ---
 
