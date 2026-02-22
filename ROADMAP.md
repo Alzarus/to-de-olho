@@ -72,10 +72,11 @@ Funcionalidades listadas no TCC como "Desejáveis" ou para trabalhos futuros, ca
 
 ## Health Check (Métricas do Sistema)
 
-| Tabela            | Registros Totais | Mandato Atual (2023+) | Status Sync |
-| ----------------- | ---------------- | --------------------- | ----------- |
-| Senadores         | 81               | 81                    | ✅ OK       |
-| Votações          | ~170k            | 70.432                | ✅ OK       |
-| Despesas CEAPS    | ~26k             | 26.542                | ✅ OK       |
-| Proposições       | ~9k              | 5.008                 | ✅ OK       |
-| Comissões (Vagas) | ~7k              | 3.686                 | ✅ OK       |
+| Domínio de Dados  | Volume / Status (Pós-Backfill 2023+) | Status Sync (Cloud Run)       |
+| ----------------- | ------------------------------------ | ----------------------------- |
+| Senadores         | 82 (Ativos e Suplentes)              | ✅ OK (Diário Completo)       |
+| Votos Registrados | 33.797 votos                         | ✅ OK (Sincronia Incremental) |
+| Despesas CEAPS    | R$ 93.3 Milhões liquidados           | ✅ OK (Diário)                |
+| Verbas de Emendas | 1.281 repasses                       | ✅ OK (Sincronia Incremental) |
+| Proposições       | Filtrado (Ano >= AnoAtual-2)         | ✅ OK (Sincronia Incremental) |
+| Comissões (Vagas) | Participações ativas                 | ✅ OK (Diário)                |
