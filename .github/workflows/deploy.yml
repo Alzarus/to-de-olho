@@ -86,8 +86,8 @@ jobs:
             --set-secrets="TRANSPARENCIA_API_KEY=transparencia-api-key:latest,SYNC_SECRET=sync-secret:latest" \
             --memory=512Mi \
             --cpu=1 \
-            --min-instances=0 \
-            --max-instances=2 \
+            --min-instances=1 \
+            --max-instances=5 \
             --timeout=3600 \
             --no-cpu-throttling \
             --concurrency=80
@@ -139,8 +139,8 @@ jobs:
             --allow-unauthenticated \
             --memory=256Mi \
             --cpu=1 \
-            --min-instances=0 \
-            --max-instances=2 \
+            --min-instances=1 \
+            --max-instances=5 \
             --concurrency=80 \
             --timeout=3600
 
