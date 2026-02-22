@@ -33,6 +33,7 @@ import { EmendasTab } from "@/components/senator/emendas-tab";
 import { ProposicoesTab } from "@/components/senator/proposicoes-tab";
 import { ComissoesTab } from "@/components/senator/comissoes-tab";
 import { CeapsTab } from "@/components/senator/ceaps-tab";
+import { VotacoesTab } from "@/components/senator/votacoes-tab";
 import {
   Tooltip,
   TooltipContent,
