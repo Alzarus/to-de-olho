@@ -25,6 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const data = await res.json();
     const senadores = data.senadores || [];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const senatorRoutes = senadores.map((s: any) => ({
       url: `${baseUrl}/senador/${s.id}`,
       lastModified: new Date(),

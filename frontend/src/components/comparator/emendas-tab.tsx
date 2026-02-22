@@ -72,6 +72,7 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
 
     const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleBarClick = (data: any) => {
          if (data && data.payload && data.payload.id) {
            const senatorId = data.payload.id;

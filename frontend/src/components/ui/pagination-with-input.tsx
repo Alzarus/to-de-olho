@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface PaginationWithInputProps {
   currentPage: number;
@@ -19,12 +19,12 @@ export function PaginationWithInput({
   className = "",
 }: PaginationWithInputProps) {
   const [inputPage, setInputPage] = useState((currentPage || 1).toString());
+  const [prevCurrentPage, setPrevCurrentPage] = useState(currentPage);
 
-  useEffect(() => {
-    if ((currentPage || 1).toString() !== inputPage) {
-        setInputPage((currentPage || 1).toString());
-    }
-  }, [currentPage]);
+  if (currentPage !== prevCurrentPage) {
+      setPrevCurrentPage(currentPage);
+      setInputPage((currentPage || 1).toString());
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Allow empty string to let user delete

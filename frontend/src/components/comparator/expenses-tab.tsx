@@ -40,6 +40,7 @@ const COLORS = [
 ];
 
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -48,6 +49,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           {label}
         </p>
         <div className="space-y-1">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center justify-between gap-4 text-xs">
               <span style={{ color: entry.color }} className="font-medium">
@@ -235,6 +237,7 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
 
   const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleBarClick = (data: any) => {
     if (data && data.payload && data.payload.id) {
         // If it's a senator-specific bar (has ID in payload)
