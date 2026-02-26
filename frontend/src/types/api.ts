@@ -29,6 +29,8 @@ export interface SenadorScore {
   partido: string;
   uf: string;
   foto_url?: string;
+  cargo?: string;
+  titular?: string;
 
   // Scores individuais normalizados (0-100)
   produtividade: number;
@@ -70,6 +72,9 @@ export interface Senador {
   foto_url?: string;
   email?: string;
   telefone?: string;
+  cargo?: string;
+  titular?: string;
+  em_exercicio?: boolean;
   mandatos?: Mandato[];
 }
 

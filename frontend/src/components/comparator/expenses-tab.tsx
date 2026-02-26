@@ -24,6 +24,13 @@ import { useTheme } from "next-themes";
 import { formatCurrency } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 
 interface ExpensesTabProps {
@@ -73,6 +80,7 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const apiYear = year === 0 ? undefined : year;
+  const [evolutionRange, setEvolutionRange] = useState<number>(12);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -232,27 +240,15 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
 
   const evolutionData = Array.from(evolutionMap.values())
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey))
-    .slice(-12);
+    .sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey));
+    
+  const filteredEvolutionData = evolutionRange > 0 
+    ? evolutionData.slice(-evolutionRange) 
+    : evolutionData;
 
   const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleBarClick = (data: any) => {
-    if (data && data.payload && data.payload.id) {
-        // If it's a senator-specific bar (has ID in payload)
-        const senatorId = data.payload.id;
-        if (typeof senatorId === 'number') {
-             router.push(`/senador/${senatorId}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`);
-        }
-    } else if (data && data.activePayload && data.activePayload.length > 0) {
-       // For chart click where specific payload comes from clicking the bar
-       const payload = data.activePayload[0].payload;
-       if (payload.id && typeof payload.id === 'number') {
-          router.push(`/senador/${payload.id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`);
-       }
-    }
-  };
+  // Click handler removed per user instructions
 
 
   return (
@@ -294,7 +290,7 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
                 // @ts-expect-error - payload is valid in Recharts but missing in some type definitions
                 payload={legendPayload}
               />
-              <Bar dataKey="Gasto" fill="#8884d8" name="Gasto Total" onClick={handleBarClick} className="cursor-pointer">
+              <Bar dataKey="Gasto" fill="#8884d8" name="Gasto Total">
                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                  {(totalVsCapData as any[]).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -344,8 +340,6 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
                         key={id} 
                         dataKey={name} 
                         fill={COLORS[index % COLORS.length]} 
-                        onClick={() => router.push(`/senador/${id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`)}
-                        className="cursor-pointer" 
                     />
                   );
               })}
@@ -356,13 +350,24 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
 
       {/* Evolution Line Chart */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-4">
           <CardTitle>Evolução de Gastos ({yearLabel})</CardTitle>
+          <Select value={evolutionRange.toString()} onValueChange={(v) => setEvolutionRange(Number(v))}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="6">Últimos 6 meses</SelectItem>
+              <SelectItem value="12">Últimos 12 meses</SelectItem>
+              <SelectItem value="24">Últimos 24 meses</SelectItem>
+              <SelectItem value="0">Todo o período</SelectItem>
+            </SelectContent>
+          </Select>
         </CardHeader>
         <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
             <LineChart
-              data={evolutionData}
+              data={filteredEvolutionData}
               margin={{ top: 20, right: 10, left: 10, bottom: isMobile ? 60 : 30 }}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#374151" : "#e5e7eb"} />
@@ -393,11 +398,7 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
                         stroke={COLORS[index % COLORS.length]} 
                         strokeWidth={2}
                         dot={{ r: 4 }}
-                        activeDot={{ 
-                            r: 6, 
-                            onClick: () => router.push(`/senador/${id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`),
-                            className: "cursor-pointer"
-                        }}
+                        activeDot={{ r: 6 }}
                       />
                    );
               })}

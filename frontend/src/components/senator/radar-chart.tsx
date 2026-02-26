@@ -34,7 +34,7 @@ export function SenatorRadarChart({ score }: SenatorRadarChartProps) {
       <CardHeader>
         <CardTitle>Perfil de Atuação</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 min-h-[300px]">
+      <CardContent className="flex-1 min-h-[300px] min-w-0 w-full overflow-hidden">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart 
             cx="50%" 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"sort"
 	"time"
 
@@ -58,7 +59,7 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 	slog.Info("iniciando calculo de ranking (cache miss)", "ano", ano)
 
 	// Buscar todos os senadores
-	senadores, err := s.senadorRepo.FindAll()
+	senadores, err := s.senadorRepo.FindAll(false)
 	if err != nil {
 		return nil, err
 	}
@@ -253,8 +254,8 @@ func (s *Service) calcularScoreNormalizado(
 	maxPontosComissoes float64,
 	ano *int,
 ) SenadorScore {
-	// Normalizar Produtividade (0-100)
-	produtividade := (dados.pontuacaoProposicoes / maxPontuacaoProd) * 100
+	// Normalizar Produtividade (0-100) com Logaritmo para suavizar outliers
+	produtividade := (math.Log1p(dados.pontuacaoProposicoes) / math.Log1p(maxPontuacaoProd)) * 100
 
 	// Presenca ja vem normalizada (0-100)
 	presenca := dados.taxaPresencaBruta
@@ -304,6 +305,8 @@ func (s *Service) calcularScoreNormalizado(
 		Partido:       sen.Partido,
 		UF:            sen.UF,
 		FotoURL:       sen.FotoURL,
+		Cargo:         sen.Cargo,
+		Titular:       sen.Titular,
 		Produtividade: arredondar(produtividade),
 		Presenca:      arredondar(presenca),
 		EconomiaCota:  arredondar(economia),

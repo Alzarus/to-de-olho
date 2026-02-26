@@ -12,6 +12,8 @@ type Senador struct {
 	UF                string    `gorm:"size:2" json:"uf"`
 	FotoURL           string    `json:"foto_url,omitempty"`
 	Email             string    `json:"email,omitempty"`
+	Cargo             string    `json:"cargo,omitempty"`
+	Titular           string    `json:"titular,omitempty"`
 	EmExercicio       bool      `gorm:"default:true" json:"em_exercicio"`
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`

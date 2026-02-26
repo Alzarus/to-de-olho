@@ -183,7 +183,14 @@ export default function Home() {
                                             <Badge variant="secondary" className="text-xs">{index + 1}º Lugar</Badge>
                                         </div>
                                         <h3 className="font-bold text-lg leading-tight">{senator.nome}</h3>
-                                        <p className="text-sm text-muted-foreground">{senator.partido} • {senator.uf}</p>
+                                        <div className="flex flex-col gap-1 items-start mt-1">
+                                            <p className="text-sm text-muted-foreground">{senator.partido} • {senator.uf}</p>
+                                            {senator.cargo && senator.cargo !== "Titular" && (
+                                                <Badge variant="outline" className="text-[10px] uppercase text-muted-foreground">
+                                                    {senator.cargo}
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-right">

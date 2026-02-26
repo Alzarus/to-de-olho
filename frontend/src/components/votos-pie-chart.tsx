@@ -130,9 +130,9 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full min-w-0 overflow-hidden">
       <div 
-        className="h-[300px] w-full" 
+        className="h-[250px] sm:h-[350px] w-full min-w-0 relative" 
         role="img" 
         aria-label={`Gráfico de distribuição de votos. Total: ${totalVotos}.`}
       >
@@ -141,9 +141,9 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
             <Pie
               data={chartData}
               cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={80}
+              cy="45%"
+              innerRadius={isMobile ? 60 : 80}
+              outerRadius={isMobile ? 100 : 130}
               paddingAngle={2}
               dataKey="value"
               onMouseEnter={handlePieEnter}
@@ -193,39 +193,45 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
                 backgroundColor: "rgba(255, 255, 255, 0.98)"
               }}
             />
-            <Legend 
-              verticalAlign="bottom"
-              wrapperStyle={{ paddingTop: "20px" }}
-              formatter={(value: string) => {
-                const item = chartData.find(d => d.name === value);
-                const label = item?.label || value;
-                
-                if (value === "Outros" && outrosDetails) {
-                   return (
-                    <span className="inline-flex items-center gap-1">
-                      {label}
-                      <TooltipProvider delayDuration={0}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-[200px]">
-                            <p className="text-xs font-semibold mb-1">Composição:</p>
-                            <p className="text-xs opacity-90 whitespace-pre-line">
-                              {outrosDetails}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </span>
-                  );
-                }
-                return label;
-              }}
-            />
           </PieChart>
         </ResponsiveContainer>
       </div>
+
+      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 pt-2 w-full px-2">
+        {chartData.map((entry, index) => {
+          const value = entry.name;
+          const label = entry.label || value;
+          
+          return (
+            <li key={`item-${index}`} className="flex items-center gap-1.5 text-sm">
+              <span 
+                className="w-3 h-3 block flex-shrink-0" 
+                style={{ backgroundColor: entry.color }} 
+              />
+              {value === "Outros" && outrosDetails ? (
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  {label}
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[200px]">
+                        <p className="text-xs font-semibold mb-1">Composição:</p>
+                        <p className="text-xs opacity-90 whitespace-pre-line">
+                          {outrosDetails}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </span>
+              ) : (
+                <span className="text-muted-foreground">{label}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
 
       {onSliceClick && (
         <p className="text-center text-xs text-muted-foreground">

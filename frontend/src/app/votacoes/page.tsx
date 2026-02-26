@@ -62,7 +62,7 @@ function VotacoesContent() {
           params.set(key, String(value));
         }
       });
-      router.push(`/votacoes?${params.toString()}`);
+      router.push(`/votacoes?${params.toString()}`, { scroll: false });
     },
     [searchParams, router],
   );

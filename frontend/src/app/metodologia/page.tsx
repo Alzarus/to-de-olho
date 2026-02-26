@@ -5,56 +5,61 @@ const criterios = [
     nome: "Produtividade Legislativa",
     peso: "35%",
     descricao:
-      "Avalia a quantidade e qualidade das proposições apresentadas pelo senador, considerando o tipo de matéria e seu estágio de tramitação.",
-    formula: "Score = (Proposições * PesoTipo * PesoEstágio) / MaxPontos",
+      "Mede a capacidade do senador de criar e aprovar leis. Quanto mais longe o projeto avança, mais pontos ele ganha.",
+    formula: "Nota = (Pontos do Senador / Maior Pontuador) x 100",
     detalhes: [
-      "PECs (Propostas de Emenda Constitucional): peso x3",
-      "PLPs (Projetos de Lei Complementar): peso x2",
-      "PLs (Projetos de Lei): peso x1",
-      "Moções (RQS/MOC): peso x0.5",
-      "Requerimentos (REQ): peso x0.1",
-      "Bônus por estágio: Apresentado +1, Em Comissão +2, Aprovado Comissão +4, Aprovado Plenário +8, Transformado em Lei +16",
+      "Apresentado: 1 ponto",
+      "Em discussão nas comissões: 2 pontos",
+      "Aprovado em comissão: 4 pontos",
+      "Aprovado no Plenário: 8 pontos",
+      "Virou lei: 16 pontos",
+    ],
+    extras: [
+      "PECs (mudanças na Constituição): peso x3",
+      "PLPs (Lei Complementar): peso x2",
+      "PLs (Lei Ordinária): peso x1",
+      "Moções (RQS/MOC): peso x0,5",
+      "Requerimentos (REQ): peso x0,1",
+      "Ajuste logarítmico impede que quantidade supere qualidade",
     ],
   },
   {
     nome: "Presença em Votações",
     peso: "25%",
     descricao:
-      "Mede a participação do senador nas sessões deliberativas do Senado Federal, considerando votos registrados em plenário.",
-    formula: "Score = (VotosRegistrados / TotalVotações) * 100",
+      "Mede se o senador comparece quando o Senado vota. Quem não aparece, não está cumprindo seu papel.",
+    formula:
+      "Nota = Votações em que participou / Total de votações disponíveis x 100",
     detalhes: [
-      "Contabiliza todos os votos: Sim, Não, Abstenção",
-      "Ausências são contabilizadas negativamente",
-      "Período de análise: mandato atual",
-      "Justificativas de ausência são desconsideradas",
+      "Qualquer voto conta: Sim, Não ou Abstenção",
+      "Justificativa de ausência não anula a falta",
+      "Considera todo o mandato atual",
     ],
   },
   {
-    nome: "Economia CEAPS",
+    nome: "Economia da Cota Parlamentar (CEAPS)",
     peso: "20%",
     descricao:
-      "Avalia o uso responsável da Cota para Exercício da Atividade Parlamentar, comparando o gasto real com o teto disponível por UF.",
-    formula: "Score = (1 - (GastoReal / TetoCEAPS)) * 100",
+      "Avalia quanto o senador economiza da sua cota mensal de gastos. Quanto menos gastar, melhor a nota.",
+    formula: "Nota = Quanto mais economizar, maior a pontuação",
     detalhes: [
-      "Teto = Verba Indenizatória (R$ 15.000) + Verba Transporte Aéreo (varia por UF)",
-      "AM: R$ 52.798/mês (maior teto) | DF/GO/TO: R$ 36.582/mês (menor teto)",
-      "Média nacional: R$ 46.402/mês (referência março 2025, reajuste 12%)",
-      "Cada UF tem seu teto específico baseado no custo aéreo até Brasília",
-      "Quanto menor o gasto, maior o score",
+      "Cada estado tem um teto diferente de gastos",
+      "Maior teto: Amazonas (~R$ 52 mil/mês)",
+      "Menor teto: DF/Goiás (~R$ 36 mil/mês)",
+      "Gastar ou ultrapassar o teto zera a nota neste critério",
+      "Gastar não é ruim -- mas economia é premiada",
     ],
   },
   {
     nome: "Participação em Comissões",
     peso: "20%",
     descricao:
-      "Mede o engajamento do senador nas comissões temáticas, valorizando posições de liderança e titularidade.",
-    formula:
-      "Score = (Titularidades * 3 + Suplências * 1 + Presidências * 5) / MaxPontos",
+      "Mede o envolvimento do senador nas comissões, onde projetos são discutidos antes de irem ao Plenário.",
+    formula: "Nota = Baseada nos cargos e na quantidade de comissões",
     detalhes: [
-      "Presidência de comissão: 5 pontos",
-      "Titularidade: 3 pontos",
-      "Suplência: 1 ponto",
-      "Relatorias não estão contabilizadas nesta versão (planejado para versão futura)",
+      "Presidente de comissão: 5 pontos",
+      "Membro Titular (com direito a voto): 3 pontos",
+      "Suplente (substituto eventual): 1 ponto",
     ],
   },
 ];
@@ -65,63 +70,66 @@ export default function MetodologiaPage() {
       {/* Header */}
       <div className="mb-12">
         <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          Metodologia do Ranking
+          Como funciona o Ranking
         </h1>
         <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
-          Entenda como calculamos o score de cada senador. Nossa metodologia é
-          baseada em dados públicos e critérios objetivos, inspirada em
-          literatura acadêmica sobre avaliação legislativa.
+          Explicamos de forma transparente como a nota de cada senador é
+          calculada. Todos os dados são públicos e verificáveis.
         </p>
       </div>
 
-      {/* Formula Overview */}
+      {/* How It Works Summary */}
       <Card className="mb-12">
         <CardHeader>
-          <CardTitle>Fórmula Geral</CardTitle>
+          <CardTitle>Como a nota é calculada?</CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="mb-4 text-sm text-muted-foreground">
+            A nota final combina quatro critérios com pesos diferentes, todos
+            em escala de 0 a 100:
+          </p>
           <div className="rounded-lg bg-muted p-6 font-mono text-sm">
             <p className="text-foreground">
-              <span className="text-primary font-bold">Score Total</span> =
+              <span className="text-primary font-bold">Nota Final</span> =
             </p>
             <p className="mt-2 pl-4 text-muted-foreground">
-              (Produtividade * <span className="text-primary">0.35</span>) +
+              Produtividade Legislativa x{" "}
+              <span className="text-primary font-semibold">0,35</span> +
             </p>
             <p className="pl-4 text-muted-foreground">
-              (Presença * <span className="text-primary">0.25</span>) +
+              Presença em Votações x{" "}
+              <span className="text-primary font-semibold">0,25</span> +
             </p>
             <p className="pl-4 text-muted-foreground">
-              (Economia * <span className="text-primary">0.20</span>) +
+              Economia da Cota x{" "}
+              <span className="text-primary font-semibold">0,20</span> +
             </p>
             <p className="pl-4 text-muted-foreground">
-              (Comissões * <span className="text-primary">0.20</span>)
+              Participação em Comissões x{" "}
+              <span className="text-primary font-semibold">0,20</span>
             </p>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Cada critério é normalizado para uma escala de 0 a 100 antes da
-            aplicação dos pesos.
-          </p>
         </CardContent>
       </Card>
 
       {/* Criteria Details */}
       <div className="space-y-8">
         <h2 className="text-2xl font-bold tracking-tight text-foreground">
-          Detalhamento dos Critérios
+          Os quatro critérios
         </h2>
 
         {criterios.map((criterio, index) => (
           <Card key={criterio.nome}>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                     {index + 1}
                   </span>
                   {criterio.nome}
                 </CardTitle>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-                  {criterio.peso}
+                <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+                  Peso: {criterio.peso}
                 </span>
               </div>
             </CardHeader>
@@ -136,7 +144,7 @@ export default function MetodologiaPage() {
 
               <div>
                 <h4 className="mb-2 text-sm font-semibold text-foreground">
-                  Detalhes:
+                  Pontuação:
                 </h4>
                 <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
                   {criterio.detalhes.map((detalhe, i) => (
@@ -144,6 +152,19 @@ export default function MetodologiaPage() {
                   ))}
                 </ul>
               </div>
+
+              {"extras" in criterio && criterio.extras && (
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-foreground">
+                    Peso por tipo de proposta:
+                  </h4>
+                  <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                    {criterio.extras.map((extra, i) => (
+                      <li key={i}>{extra}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -152,17 +173,20 @@ export default function MetodologiaPage() {
       {/* Data Sources */}
       <Card className="mt-12">
         <CardHeader>
-          <CardTitle>Fontes de Dados</CardTitle>
+          <CardTitle>De onde vêm os dados?</CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Todos os dados são públicos. Qualquer pessoa pode verificar
+            nas fontes oficiais:
+          </p>
           <div className="grid gap-6 sm:grid-cols-3">
             <div>
               <h4 className="font-semibold text-foreground">
-                API Legislativa do Senado
+                Senado (Legislativo)
               </h4>
               <p className="mt-1 text-sm text-muted-foreground">
-                Dados legislativos, votações, comissões e informações dos
-                senadores
+                Projetos de lei, votações, comissões e mandatos.
               </p>
               <a
                 href="https://legis.senado.leg.br/dadosabertos"
@@ -175,10 +199,10 @@ export default function MetodologiaPage() {
             </div>
             <div>
               <h4 className="font-semibold text-foreground">
-                API Administrativa do Senado
+                Senado (Administrativo)
               </h4>
               <p className="mt-1 text-sm text-muted-foreground">
-                Dados de despesas CEAPS e informações administrativas
+                Despesas da cota parlamentar (CEAPS).
               </p>
               <a
                 href="https://adm.senado.gov.br/adm-dadosabertos/swagger-ui"
@@ -186,7 +210,7 @@ export default function MetodologiaPage() {
                 rel="noopener noreferrer"
                 className="mt-2 inline-block text-sm text-primary hover:underline"
               >
-                adm.senado.gov.br/adm-dadosabertos/swagger-ui
+                adm.senado.gov.br/adm-dadosabertos
               </a>
             </div>
             <div>
@@ -194,7 +218,7 @@ export default function MetodologiaPage() {
                 Portal da Transparência
               </h4>
               <p className="mt-1 text-sm text-muted-foreground">
-                Dados de contratos, convênios e despesas do Governo Federal
+                Emendas parlamentares e contratos do Governo Federal.
               </p>
               <a
                 href="https://portaldatransparencia.gov.br"
@@ -209,20 +233,52 @@ export default function MetodologiaPage() {
         </CardContent>
       </Card>
 
+      {/* Limitations */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Limitações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
+            <li>
+              <strong>Trabalho de bastidores</strong> (negociações,
+              articulações) não é mensurável com dados públicos.
+            </li>
+            <li>
+              <strong>Gastar menos não é ser melhor</strong> -- a cota tem peso
+              moderado (20%) e varia por estado.
+            </li>
+            <li>
+              <strong>Dados podem ter atraso</strong> -- as fontes oficiais
+              nem sempre atualizam em tempo real.
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+
       {/* Academic References */}
       <Card className="mt-8">
         <CardHeader>
-          <CardTitle>Fundamentação Teórica</CardTitle>
+          <CardTitle>Base científica</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
-            A metodologia do ranking é inspirada no{" "}
-            <strong>State Legislative Effectiveness Score (SLES)</strong>,
-            desenvolvido por Volden e Wiseman (2014), adaptado para o contexto do
-            Senado brasileiro. A abordagem combina indicadores quantitativos de
-            produtividade legislativa com métricas de engajamento e
-            responsabilidade fiscal.
-          </p>
+          <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
+            <li>
+              Baseado no{" "}
+              <strong>
+                Legislative Effectiveness Score
+              </strong>{" "}
+              de Volden e Wiseman (Universidade Vanderbilt, 2014).
+            </li>
+            <li>
+              Índice usado internacionalmente para avaliar parlamentares de
+              forma objetiva.
+            </li>
+            <li>
+              Adaptado para o Senado brasileiro, considerando o sistema
+              multipartidário e os dados disponíveis nas APIs do governo.
+            </li>
+          </ul>
         </CardContent>
       </Card>
     </div>

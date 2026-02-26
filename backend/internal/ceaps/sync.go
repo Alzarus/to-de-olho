@@ -38,7 +38,7 @@ func (s *SyncService) SyncFromAPI(ctx context.Context, ano int) error {
 	slog.Info("despesas recebidas da API", "total", len(despesasAPI))
 
 	// Buscar mapeamento codigo parlamentar -> ID interno
-	senadores, _ := s.senadorRepo.FindAll()
+	senadores, _ := s.senadorRepo.FindAll(false)
 	codigoToID := make(map[int]int)
 	for _, sen := range senadores {
 		codigoToID[sen.CodigoParlamentar] = sen.ID

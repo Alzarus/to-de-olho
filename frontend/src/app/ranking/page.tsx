@@ -146,6 +146,29 @@ function MobileRankingCard({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              {senador.cargo && senador.cargo !== "Titular" && (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span 
+                        tabIndex={0}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        className="flex"
+                      >
+                        <Badge variant="outline" className="max-w-fit px-1.5 py-0 text-[10px] uppercase leading-relaxed text-muted-foreground cursor-help">
+                          {senador.cargo}
+                        </Badge>
+                      </span>
+                    </TooltipTrigger>
+                    {senador.titular && (
+                      <TooltipContent>
+                        <p className="text-xs font-medium">Suplente de {senador.titular}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
           </div>
         </Link>
@@ -398,6 +421,29 @@ function RankingTable({
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                      {senador.cargo && senador.cargo !== "Titular" && (
+                        <TooltipProvider delayDuration={0}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span 
+                                tabIndex={0}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                className="hidden sm:inline-flex"
+                              >
+                                <Badge variant="outline" className="px-1.5 py-0 text-[10px] uppercase text-muted-foreground cursor-help">
+                                  {senador.cargo}
+                                </Badge>
+                              </span>
+                            </TooltipTrigger>
+                            {senador.titular && (
+                              <TooltipContent>
+                                <p className="text-xs font-medium">Suplente de {senador.titular}</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </p>
                   </div>
                 </Link>
@@ -507,6 +553,8 @@ function RankingContent() {
   const ano = anoParam ? Number(anoParam) : 0;
   const partido = searchParams.get("partido") || "";
   const uf = searchParams.get("uf") || "";
+  const inativosParam = searchParams.get("inativos");
+  const inativos = inativosParam === "true";
   const sortBy = searchParams.get("ordenar") || "score_final";
   const sortDir = searchParams.get("direcao") || "desc";
   const search = searchParams.get("busca") || "";
@@ -524,7 +572,7 @@ function RankingContent() {
         params.set(key, String(value));
       }
     });
-    router.push(`/ranking?${params.toString()}`);
+    router.push(`/ranking?${params.toString()}`, { scroll: false });
   };
 
   const handleSort = (key: string) => {
@@ -538,6 +586,7 @@ function RankingContent() {
   const { data, isLoading, error } = useRanking(
     undefined,
     ano === 0 ? undefined : ano,
+    inativos
   );
 
   // Extrair lista de partidos dos dados
@@ -581,7 +630,7 @@ function RankingContent() {
     setLocalSearch("");
   };
 
-  const hasActiveFilters = partido || uf || search;
+  const hasActiveFilters = partido || uf || search || inativos;
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
@@ -780,6 +829,16 @@ function RankingContent() {
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Inativos */}
+            <Button
+              variant={inativos ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => updateUrl({ inativos: inativos ? null : "true" })}
+              className={`h-9 ${inativos ? "" : "text-muted-foreground"}`}
+            >
+              Exibir Inativos
+            </Button>
 
             {/* Limpar filtros */}
             {hasActiveFilters && (

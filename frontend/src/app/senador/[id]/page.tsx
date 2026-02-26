@@ -31,12 +31,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!senador) {
     return {
-      title: "Senador não encontrado | Tô De Olho",
+      title: "Senador não encontrado",
       description: "Informações detalhadas sobre senadores brasileiros.",
     };
   }
 
-  const title = `Senador ${senador.nome} (${senador.partido}-${senador.uf}) | Tô De Olho`;
+  const title = `Senador ${senador.nome || 'Desconhecido'} (${senador.partido || '-'}-${senador.uf || '-'})`;
   const description = `Veja o desempenho de ${senador.nome} no Senado: Produtividade, Presença, Gastos e Emendas. Ranking: ${senador.score_ranking?.posicao}º lugar.`;
 
   return {

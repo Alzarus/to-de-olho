@@ -42,10 +42,12 @@ export async function getStats(): Promise<StatsResponse> {
 export async function getRanking(
   limite?: number,
   ano?: number,
+  inativos?: boolean,
 ): Promise<RankingResponse> {
   const params = new URLSearchParams();
   if (limite) params.append("limite", limite.toString());
   if (ano) params.append("ano", ano.toString());
+  if (inativos) params.append("inativos", "true");
 
   const queryString = params.toString() ? `?${params.toString()}` : "";
   return fetcher<RankingResponse>(`/api/v1/ranking${queryString}`);

@@ -50,6 +50,12 @@ type ParlamentarAPI struct {
 		UrlFotoParlamentar      string `json:"UrlFotoParlamentar"`
 		EmailParlamentar        string `json:"EmailParlamentar"`
 	} `json:"IdentificacaoParlamentar"`
+	Mandato struct {
+		DescricaoParticipacao string `json:"DescricaoParticipacao"`
+		Titular               *struct {
+			NomeParlamentar string `json:"NomeParlamentar"`
+		} `json:"Titular,omitempty"`
+	} `json:"Mandato"`
 }
 
 // === METODOS DO CLIENT ===

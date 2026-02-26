@@ -30,7 +30,7 @@ func (s *SyncService) SyncFromAPI(ctx context.Context) error {
 	slog.Info("iniciando sync de comissoes")
 
 	// Buscar todos os senadores
-	senadores, err := s.senadorRepo.FindAll()
+	senadores, err := s.senadorRepo.FindAll(false)
 	if err != nil {
 		return err
 	}

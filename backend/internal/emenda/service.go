@@ -71,7 +71,7 @@ func (s *Service) ImportarCSV(caminho string) error {
 		indices[normalizarChave(col)] = i
 	}
 
-	senadores, err := s.senadorRepo.FindAll()
+	senadores, err := s.senadorRepo.FindAll(false)
 	if err != nil {
 		return fmt.Errorf("falha ao carregar senadores: %w", err)
 	}

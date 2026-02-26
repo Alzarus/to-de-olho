@@ -72,18 +72,7 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
 
     const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleBarClick = (data: any) => {
-         if (data && data.payload && data.payload.id) {
-           const senatorId = data.payload.id;
-           router.push(`/senador/${senatorId}?tab=emendas${year > 0 ? `&ano=${year}` : ''}`);
-         } else if (data && data.activePayload && data.activePayload.length > 0) {
-            const payload = data.activePayload[0].payload;
-            if (payload.id) {
-                 router.push(`/senador/${payload.id}?tab=emendas${year > 0 ? `&ano=${year}` : ''}`);
-            }
-         }
-    };
+    // Click handler removed per user instructions
 
 
     return (
@@ -122,9 +111,9 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
                                       cursor={{ fill: "transparent" }}
                                   />
                                   <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "11px" }} />
-                                  <Bar dataKey="Empenhado" fill="#94a3b8" name="Empenhado" radius={[0, 4, 4, 0]} onClick={handleBarClick} className="cursor-pointer" />
-                                  <Bar dataKey="Pago" fill="#2563eb" name="Pago" radius={[0, 4, 4, 0]} onClick={handleBarClick} className="cursor-pointer" />
-                                  <Bar dataKey="Pix" fill="#ea580c" name="Emendas PIX" radius={[0, 4, 4, 0]} onClick={handleBarClick} className="cursor-pointer" />
+                                  <Bar dataKey="Empenhado" fill="#94a3b8" name="Empenhado" radius={[0, 4, 4, 0]} />
+                                  <Bar dataKey="Pago" fill="#2563eb" name="Pago" radius={[0, 4, 4, 0]} />
+                                  <Bar dataKey="Pix" fill="#ea580c" name="Emendas PIX" radius={[0, 4, 4, 0]} />
                               </BarChart>
                           ) : (
                               <BarChart
@@ -149,9 +138,9 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
                                       cursor={{ fill: "transparent" }}
                                   />
                                   <Legend wrapperStyle={{ paddingTop: "20px" }} />
-                                  <Bar dataKey="Empenhado" fill="#94a3b8" name="Total Empenhado" radius={[4, 4, 0, 0]} onClick={handleBarClick} className="cursor-pointer" />
-                                  <Bar dataKey="Pago" fill="#2563eb" name="Total Pago" radius={[4, 4, 0, 0]} onClick={handleBarClick} className="cursor-pointer" />
-                                  <Bar dataKey="Pix" fill="#ea580c" name="Emendas PIX (Pago)" radius={[4, 4, 0, 0]} onClick={handleBarClick} className="cursor-pointer" />
+                                  <Bar dataKey="Empenhado" fill="#94a3b8" name="Total Empenhado" radius={[4, 4, 0, 0]} />
+                                  <Bar dataKey="Pago" fill="#2563eb" name="Total Pago" radius={[4, 4, 0, 0]} />
+                                  <Bar dataKey="Pix" fill="#ea580c" name="Emendas PIX (Pago)" radius={[4, 4, 0, 0]} />
                               </BarChart>
                           )}
                       </ResponsiveContainer>

@@ -26,7 +26,7 @@ func NewSyncService(repo *Repository, senadorRepo *senador.Repository, apiKey st
 }
 
 func (s *SyncService) SyncAll(ctx context.Context, ano int) error {
-	senadores, err := s.senadorRepo.FindAll()
+	senadores, err := s.senadorRepo.FindAll(false)
 	if err != nil {
 		return err
 	}

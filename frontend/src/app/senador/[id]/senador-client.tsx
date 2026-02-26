@@ -234,8 +234,36 @@ function SenadorContent() {
               <Badge className="bg-[#d4af37] text-white hover:bg-[#d4af37]/90 whitespace-nowrap">
                 #{senador.posicao > 0 ? senador.posicao : "-"} no ranking
               </Badge>
+              {senadorDetalhes?.cargo && senadorDetalhes.cargo !== "Titular" && (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span 
+                        tabIndex={0}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        className="inline-flex"
+                      >
+                        <Badge variant="secondary" className="whitespace-nowrap bg-muted-foreground/10 text-muted-foreground border-transparent cursor-help">
+                            {senadorDetalhes.cargo}
+                        </Badge>
+                      </span>
+                    </TooltipTrigger>
+                    {senadorDetalhes.titular && (
+                      <TooltipContent>
+                        <p className="text-xs font-medium">Suplente de {senadorDetalhes.titular}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {senadorDetalhes && !senadorDetalhes.em_exercicio && (
+                  <Badge variant="destructive" className="whitespace-nowrap opacity-80">
+                      Inativo (Fora de Exercício)
+                  </Badge>
+              )}
               {mandatoAtual && (
-                <Badge variant="secondary" className="whitespace-nowrap">
+                <Badge variant="outline" className="whitespace-nowrap">
                   Mandato: {formatDate(mandatoAtual.inicio)} -{" "}
                   {formatDate(mandatoAtual.fim)}
                 </Badge>
@@ -256,7 +284,7 @@ function SenadorContent() {
         </div>
 
         {/* Score Card */}
-        <Card className="w-full lg:w-auto lg:min-w-[200px]">
+        <Card className="w-full max-w-full overflow-hidden lg:w-auto lg:min-w-[200px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Score Total ({ano === 0 ? "Mandato" : ano})
@@ -275,9 +303,9 @@ function SenadorContent() {
 
       {/* Score Details */}
       {/* Score Details & Radar */}
-      <div className="mb-12 grid gap-6 lg:grid-cols-3">
+      <div className="mb-12 grid gap-6 lg:grid-cols-3 w-full min-w-0">
         {/* Radar Chart */}
-        <div className="lg:col-span-1 h-[400px] lg:h-auto">
+        <div className="lg:col-span-1 h-[400px] lg:h-auto w-full min-w-0">
           <SenatorRadarChart score={senador} />
         </div>
 
@@ -371,8 +399,8 @@ function SenadorContent() {
       </div>
 
       {/* Detailed Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full overflow-x-auto pb-1 no-scrollbar">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-full min-w-0">
+        <div className="w-full max-w-full overflow-x-auto pb-1 no-scrollbar">
           <TabsList className="w-full justify-start inline-flex min-w-max">
             <TabsTrigger value="proposicoes">Proposições</TabsTrigger>
             <TabsTrigger value="votacoes">Votações</TabsTrigger>
@@ -384,7 +412,7 @@ function SenadorContent() {
 
         <TabsContent value="proposicoes" className="mt-6">
           <div className="space-y-6">
-            <Card>
+            <Card className="w-full max-w-full overflow-hidden">
               <CardHeader>
                 <CardTitle>
                   Produção Legislativa ({ano === 0 ? "Mandato" : ano})
@@ -429,9 +457,9 @@ function SenadorContent() {
           </div>
         </TabsContent>
 
-        <TabsContent value="votacoes" className="mt-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
+        <TabsContent value="votacoes" className="mt-6 w-full min-w-0">
+          <div className="grid gap-6 lg:grid-cols-2 w-full min-w-0">
+            <Card className="w-full max-w-full overflow-hidden lg:col-span-2">
               <CardHeader>
                 <CardTitle>
                   Presença em Votações ({ano === 0 ? "Mandato" : ano})
@@ -467,7 +495,7 @@ function SenadorContent() {
               </CardContent>
             </Card>
 
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 w-full min-w-0">
               <VotacoesTab id={id} />
             </div>
           </div>
@@ -475,7 +503,7 @@ function SenadorContent() {
 
         <TabsContent value="ceaps" className="mt-6">
           <div className="space-y-6">
-            <Card>
+            <Card className="w-full max-w-full overflow-hidden">
               <CardHeader>
                 <CardTitle>
                   Cota para Exercício da Atividade Parlamentar (
@@ -519,7 +547,7 @@ function SenadorContent() {
 
         <TabsContent value="comissoes" className="mt-6">
           <div className="space-y-6">
-            <Card>
+            <Card className="w-full max-w-full overflow-hidden">
               <CardHeader>
                 <CardTitle>
                   Participação em Comissões ({ano === 0 ? "Mandato" : ano})

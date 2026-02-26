@@ -16,13 +16,17 @@ const Tooltip = TooltipPrimitive.Root;
 const TooltipTrigger = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger>
->(({ onClick, ...props }, ref) => (
+>(({ onClick, onPointerDown, ...props }, ref) => (
   <TooltipPrimitive.Trigger
     ref={ref}
     {...props}
     onClick={(e) => {
       // Evita comportamentos in-built forms ou navigations em mobile
       if (onClick) onClick(e);
+    }}
+    onPointerDown={(e) => {
+      e.preventDefault();
+      if (onPointerDown) onPointerDown(e);
     }}
   />
 ));

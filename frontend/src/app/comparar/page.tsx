@@ -56,7 +56,7 @@ function ComparatorContent() {
         params.set(key, String(value));
       }
     });
-    router.push(`/comparar?${params.toString()}`);
+    router.push(`/comparar?${params.toString()}`, { scroll: false });
   };
 
 

@@ -18,13 +18,15 @@ func NewHandler(repo *Repository) *Handler {
 }
 
 // ListAll godoc
-// @Summary Lista todos os senadores em exercicio
+// @Summary Lista todos os senadores (permite inativos)
 // @Tags senadores
 // @Produce json
+// @Param inativos query string false "Incluir senadores fora de exercicio"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/senadores [get]
 func (h *Handler) ListAll(c *gin.Context) {
-	senadores, err := h.repo.FindAll()
+	includeInactive := c.Query("inativos") == "true"
+	senadores, err := h.repo.FindAll(includeInactive)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar senadores"})
 		return

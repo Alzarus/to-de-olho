@@ -26,7 +26,7 @@ export function usePersistentYear(key: string) {
         // Restore from storage
         const params = new URLSearchParams(searchParams.toString());
         params.set("ano", storedYear);
-        router.replace(`${pathname}?${params.toString()}`);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
       }
     }
   }, [searchParams, key, pathname, router]);

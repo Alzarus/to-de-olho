@@ -72,7 +72,7 @@ export default function RootLayout({
         <Providers>
           <div className="flex min-h-screen flex-col overflow-x-hidden pt-16">
             <Header />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 min-w-0 w-full overflow-x-hidden">{children}</main>
             <ComparatorDock />
             <Footer />
             <Toaster richColors position="top-right" />

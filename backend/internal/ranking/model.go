@@ -9,6 +9,8 @@ type SenadorScore struct {
 	Partido   string  `json:"partido"`
 	UF        string  `json:"uf"`
 	FotoURL   string  `json:"foto_url,omitempty"`
+	Cargo     string  `json:"cargo,omitempty"`
+	Titular   string  `json:"titular,omitempty"`
 
 	// Scores individuais normalizados (0-100)
 	Produtividade float64 `json:"produtividade"`

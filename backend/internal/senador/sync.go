@@ -36,13 +36,21 @@ func (s *SyncService) SyncFromAPI(ctx context.Context) error {
 
 	// Converter e salvar cada senador
 	var successCount int
+	var activeCodes []int
 	for _, p := range parlamentares {
 		senador := s.convertToSenador(p)
 		if err := s.repo.Upsert(&senador); err != nil {
 			slog.Error("falha ao salvar senador", "codigo", senador.CodigoParlamentar, "error", err)
 			continue
 		}
+		activeCodes = append(activeCodes, senador.CodigoParlamentar)
 		successCount++
+	}
+
+	if len(activeCodes) > 0 {
+		if err := s.repo.SetInactive(activeCodes); err != nil {
+			slog.Error("falha ao inativar senadores antigos", "error", err)
+		}
 	}
 
 	slog.Info("sync de senadores concluido", "salvos", successCount, "total", len(parlamentares))
@@ -55,6 +63,11 @@ func (s *SyncService) convertToSenador(p senado.ParlamentarAPI) Senador {
 
 	codigo, _ := strconv.Atoi(id.CodigoParlamentar)
 
+	var titular string
+	if p.Mandato.Titular != nil {
+		titular = p.Mandato.Titular.NomeParlamentar
+	}
+
 	return Senador{
 		CodigoParlamentar: codigo,
 		Nome:              id.NomeParlamentar,
@@ -63,6 +76,8 @@ func (s *SyncService) convertToSenador(p senado.ParlamentarAPI) Senador {
 		UF:                id.UfParlamentar,
 		FotoURL:           id.UrlFotoParlamentar,
 		Email:             id.EmailParlamentar,
+		Cargo:             p.Mandato.DescricaoParticipacao,
+		Titular:           titular,
 		EmExercicio:       true,
 	}
 }

@@ -69,11 +69,11 @@ export function PaginationWithInput({
   if (totalPages <= 1) return null;
 
   return (
-    <div className={`flex items-center justify-between text-sm text-muted-foreground ${className}`}>
-      <div>
+    <div className={`flex flex-col sm:flex-row items-center gap-4 sm:justify-between text-sm text-muted-foreground w-full ${className}`}>
+      <div className="shrink-0 text-center sm:text-left">
         Página {currentPage} de {totalPages}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
         <Button
           variant="outline"
           size="sm"

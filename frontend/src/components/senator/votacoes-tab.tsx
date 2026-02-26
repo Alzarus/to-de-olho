@@ -71,8 +71,8 @@ export function VotacoesTab({ id }: { id: number }) {
   if (!chartData || !chartData.por_tipo) return null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="h-fit">
+    <div className="grid gap-6 lg:grid-cols-2 w-full min-w-0">
+        <Card className="h-fit w-full max-w-full overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Distribuição de Votos</CardTitle>
                 {filteredVoto && (
@@ -93,7 +93,7 @@ export function VotacoesTab({ id }: { id: number }) {
         </Card>
 
         {/* List Section */}
-        <Card className="h-fit">
+        <Card className="h-fit w-full max-w-full overflow-hidden">
             <CardHeader>
                 <CardTitle>
                     {filteredVoto 
