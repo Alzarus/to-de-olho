@@ -1,8 +1,11 @@
 package proposicao
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // Repository encapsula operacoes de banco de dados para Proposicao
@@ -74,27 +77,30 @@ func (r *Repository) CountBySenadorID(senadorID int) (int64, error) {
 	return count, result.Error
 }
 
-// GetStats retorna estatisticas de proposicoes de um senador
+// GetStats retorna estatisticas de proposicoes de um senador no atual mandato
 func (r *Repository) GetStats(senadorID int) (*ProposicaoStats, error) {
 	var stats ProposicaoStats
 	stats.SenadorID = senadorID
 
 	var total, pecs, plps, pls, leis, plenario, tramitacao int64
 
+	// Filtro mandato atual
+	mandatoFilter := fmt.Sprintf("senador_id = ? AND EXTRACT(YEAR FROM data_apresentacao) >= %d", utils.GetInicioLegislaturaAtual())
+
 	// Total de proposicoes
-	r.db.Model(&Proposicao{}).Where("senador_id = ?", senadorID).Count(&total)
+	r.db.Model(&Proposicao{}).Where(mandatoFilter, senadorID).Count(&total)
 	stats.TotalProposicoes = int(total)
 
 	// PECs
-	r.db.Model(&Proposicao{}).Where("senador_id = ? AND sigla_subtipo_materia = ?", senadorID, "PEC").Count(&pecs)
+	r.db.Model(&Proposicao{}).Where(mandatoFilter+" AND sigla_subtipo_materia = ?", senadorID, "PEC").Count(&pecs)
 	stats.TotalPECs = int(pecs)
 
 	// PLPs
-	r.db.Model(&Proposicao{}).Where("senador_id = ? AND sigla_subtipo_materia = ?", senadorID, "PLP").Count(&plps)
+	r.db.Model(&Proposicao{}).Where(mandatoFilter+" AND sigla_subtipo_materia = ?", senadorID, "PLP").Count(&plps)
 	stats.TotalPLPs = int(plps)
 
 	// PLs
-	r.db.Model(&Proposicao{}).Where("senador_id = ? AND sigla_subtipo_materia = ?", senadorID, "PL").Count(&pls)
+	r.db.Model(&Proposicao{}).Where(mandatoFilter+" AND sigla_subtipo_materia = ?", senadorID, "PL").Count(&pls)
 	stats.TotalPLs = int(pls)
 
 	// Outros
@@ -102,19 +108,19 @@ func (r *Repository) GetStats(senadorID int) (*ProposicaoStats, error) {
 
 	// Transformadas em lei
 	r.db.Model(&Proposicao{}).Where(
-		"senador_id = ? AND estagio_tramitacao = ?", senadorID, "TransformadoLei",
+		mandatoFilter+" AND estagio_tramitacao = ?", senadorID, "TransformadoLei",
 	).Count(&leis)
 	stats.TransformadasEmLei = int(leis)
 
 	// Aprovados plenario
 	r.db.Model(&Proposicao{}).Where(
-		"senador_id = ? AND estagio_tramitacao IN (?, ?)", senadorID, "AprovadoPlenario", "TransformadoLei",
+		mandatoFilter+" AND estagio_tramitacao IN (?, ?)", senadorID, "AprovadoPlenario", "TransformadoLei",
 	).Count(&plenario)
 	stats.AprovadosPlenario = int(plenario)
 
 	// Em tramitacao
 	r.db.Model(&Proposicao{}).Where(
-		"senador_id = ? AND estagio_tramitacao IN (?, ?, ?)", senadorID, "Apresentado", "EmComissao", "AprovadoComissao",
+		mandatoFilter+" AND estagio_tramitacao IN (?, ?, ?)", senadorID, "Apresentado", "EmComissao", "AprovadoComissao",
 	).Count(&tramitacao)
 	stats.EmTramitacao = int(tramitacao)
 
@@ -124,7 +130,7 @@ func (r *Repository) GetStats(senadorID int) (*ProposicaoStats, error) {
 	}
 	r.db.Model(&Proposicao{}).
 		Select("COALESCE(SUM(pontuacao), 0) as total").
-		Where("senador_id = ?", senadorID).
+		Where(mandatoFilter, senadorID).
 		Scan(&soma)
 	stats.PontuacaoTotal = soma.Total
 

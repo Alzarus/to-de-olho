@@ -3,6 +3,8 @@ package comissao
 import (
 	"fmt"
 	"gorm.io/gorm"
+
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // Repository encapsula operacoes de banco de dados para ComissaoMembro
@@ -72,32 +74,36 @@ func (r *Repository) CountBySenadorID(senadorID int) (int64, error) {
 	return count, result.Error
 }
 
-// GetStats retorna estatisticas de comissoes de um senador
+// GetStats retorna estatisticas de comissoes de um senador limitadas ao mandato atual (2023+)
 func (r *Repository) GetStats(senadorID int) (*ComissaoStats, error) {
 	var stats ComissaoStats
 	stats.SenadorID = senadorID
 
 	var total, titular, suplente, ativas int64
 
+	// Criar string de base filter para mandato
+	anoMandato := utils.GetInicioLegislaturaAtual()
+	mandatoFilter := fmt.Sprintf("senador_id = ? AND (data_inicio >= '%d-01-01' OR data_fim >= '%d-01-01' OR data_fim IS NULL)", anoMandato, anoMandato)
+
 	// Total de participacoes
-	r.db.Model(&ComissaoMembro{}).Where("senador_id = ?", senadorID).Count(&total)
+	r.db.Model(&ComissaoMembro{}).Where(mandatoFilter, senadorID).Count(&total)
 	stats.TotalComissoes = int(total)
 
 	// Titular
 	r.db.Model(&ComissaoMembro{}).Where(
-		"senador_id = ? AND descricao_participacao = ?", senadorID, "Titular",
+		mandatoFilter+" AND descricao_participacao = ?", senadorID, "Titular",
 	).Count(&titular)
 	stats.ComissoesTitular = int(titular)
 
 	// Suplente
 	r.db.Model(&ComissaoMembro{}).Where(
-		"senador_id = ? AND descricao_participacao = ?", senadorID, "Suplente",
+		mandatoFilter+" AND descricao_participacao = ?", senadorID, "Suplente",
 	).Count(&suplente)
 	stats.ComissoesSuplente = int(suplente)
 
 	// Ativas (sem data_fim)
 	r.db.Model(&ComissaoMembro{}).Where(
-		"senador_id = ? AND data_fim IS NULL", senadorID,
+		mandatoFilter+" AND data_fim IS NULL", senadorID,
 	).Count(&ativas)
 	stats.ComissoesAtivas = int(ativas)
 

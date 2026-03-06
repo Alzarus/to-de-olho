@@ -20,7 +20,7 @@ const VOTE_LABELS: Record<string, string> = {
   NCom: "Não Compareceu",
 };
 
-export function VotacoesTab({ id }: { id: number }) {
+export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -34,7 +34,7 @@ export function VotacoesTab({ id }: { id: number }) {
   const { data: chartData, isLoading: isChartLoading } = useVotosPorTipo(id);
   
   // List Data
-  const { data: votacoesData, isLoading: isListLoading } = useVotacoes(id, page, limit, filteredVoto);
+  const { data: votacoesData, isLoading: isListLoading } = useVotacoes(id, page, limit, filteredVoto, ano === 0 ? undefined : ano);
 
   const createQueryString = useCallback(
     (name: string, value: string) => {

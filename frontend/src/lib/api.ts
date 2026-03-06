@@ -90,11 +90,13 @@ export async function getVotacoes(
   page: number = 1,
   limit: number = 20,
   voto: string = "",
+  ano?: number,
 ): Promise<VotacoesResponse> {
   const params = new URLSearchParams();
   params.append("page", page.toString());
   params.append("limit", limit.toString());
   if (voto) params.append("voto", voto);
+  if (ano) params.append("ano", ano.toString());
 
   return fetcher<VotacoesResponse>(
     `/api/v1/senadores/${id}/votacoes?${params.toString()}`,

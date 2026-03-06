@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Trophy, Coins, Users, Activity, ExternalLink, BookOpen, BarChart3 } from "lucide-react";
+import { ArrowRight, Trophy, Coins, Users, Activity, ExternalLink, BookOpen, BarChart3, LineChart } from "lucide-react";
 import { useRanking } from "@/hooks/use-ranking";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -69,6 +69,12 @@ export default function Home() {
       icon: BarChart3,
       description: "Fontes oficiais"
     },
+    { 
+      label: "Acessos na Plataforma", 
+      value: statsData ? formatNumber(statsData.total_acessos) : "--", 
+      icon: LineChart,
+      description: "Cidadãos de olho"
+    },
   ];
 
   return (
@@ -115,7 +121,7 @@ export default function Home() {
 
       {/* Stats Grid */}
       <section className="container mx-auto px-4 md:px-6 -mt-12 mb-20 relative z-10">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           {stats.map((stat, index) => (
             <Card key={index} className="bg-background/60 backdrop-blur-sm border-muted/40 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
               <CardContent className="p-6 flex flex-col items-center text-center space-y-2">

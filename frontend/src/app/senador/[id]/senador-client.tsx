@@ -496,7 +496,7 @@ function SenadorContent() {
             </Card>
 
             <div className="lg:col-span-2 w-full min-w-0">
-              <VotacoesTab id={id} />
+              <VotacoesTab id={id} ano={ano} />
             </div>
           </div>
         </TabsContent>

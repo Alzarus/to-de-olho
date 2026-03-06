@@ -37,6 +37,7 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	votoType := c.Query("voto")
+	ano, _ := strconv.Atoi(c.Query("ano"))
 
 	if page < 1 {
 		page = 1
@@ -46,7 +47,7 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	votacoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, votoType)
+	votacoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, votoType, ano)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar votacoes"})
 		return

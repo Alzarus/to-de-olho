@@ -33,10 +33,11 @@ export function useVotacoes(
   page: number = 1,
   limit: number = 20,
   voto: string = "",
+  ano?: number,
 ) {
   return useQuery({
-    queryKey: ["senador-votacoes", id, page, limit, voto],
-    queryFn: () => getVotacoes(id, page, limit, voto),
+    queryKey: ["senador-votacoes", id, page, limit, voto, ano],
+    queryFn: () => getVotacoes(id, page, limit, voto, ano),
     enabled: id > 0,
     placeholderData: (previousData) => previousData,
   });

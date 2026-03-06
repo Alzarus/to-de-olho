@@ -14,6 +14,7 @@ type StatsResponse struct {
 	TotalVotos        int64     `json:"total_votos"`
 	TotalDespesasCEAP float64   `json:"total_despesas_ceaps"`
 	TotalEmendas      int64     `json:"total_emendas"`
+	TotalAcessos      int64     `json:"total_acessos"`
 	UltimaAtualizacao time.Time `json:"ultima_atualizacao"`
 }
 
@@ -43,6 +44,9 @@ func statsHandler(db *gorm.DB) gin.HandlerFunc {
 				SELECT MAX(data_ultima_atualizacao) as ts FROM emendas
 			) as updates
 		`).Scan(&stats.UltimaAtualizacao)
+
+		// Mock de acessos (enquanto nao ha integracao com analytics real)
+		stats.TotalAcessos = 14592
 
 		c.JSON(http.StatusOK, stats)
 	}

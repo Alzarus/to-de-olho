@@ -3,6 +3,8 @@ package ceaps
 import (
 	"fmt"
 	"gorm.io/gorm"
+	
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // Repository encapsula operacoes de banco de dados para DespesaCEAPS
@@ -105,12 +107,13 @@ func (r *Repository) GetTotalByAno(senadorID int, ano int) (float64, error) {
 	return total, err
 }
 
-// GetTotal retorna total gasto por um senador em todo o mandato (todas os anos)
+	// GetTotal retorna total gasto por um senador em todo o mandato atual (2023 em diante)
+	// Para senadores que atuaram antes, restringe os gastos ao mandato corrente para não prejudicar pontuação
 func (r *Repository) GetTotal(senadorID int) (float64, error) {
 	var total float64
 	err := r.db.Model(&DespesaCEAPS{}).
 		Select("COALESCE(SUM(valor), 0)").
-		Where("senador_id = ?", senadorID).
+		Where("senador_id = ? AND ano >= ?", senadorID, utils.GetInicioLegislaturaAtual()).
 		Scan(&total).Error
 	fmt.Printf("[DEBUG] GetTotal SenadorID=%d Total=%f Err=%v\n", senadorID, total, err)
 	return total, err

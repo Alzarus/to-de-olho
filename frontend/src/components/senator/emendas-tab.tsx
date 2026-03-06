@@ -465,9 +465,11 @@ function extrairUF(localidade: string): string | null {
     }
 
     const normalizada = normalizarLocalidade(upper);
-    for (const [nome, uf] of Object.entries(UF_POR_NOME)) {
+    // Sort keys by length descending to match PARANA before PARA
+    const nomesUFs = Object.keys(UF_POR_NOME).sort((a, b) => b.length - a.length);
+    for (const nome of nomesUFs) {
         if (normalizada.includes(nome)) {
-            return uf;
+            return UF_POR_NOME[nome];
         }
     }
     return null;

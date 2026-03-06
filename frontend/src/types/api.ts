@@ -238,5 +238,6 @@ export interface StatsResponse {
   total_votos: number;
   total_despesas_ceaps: number;
   total_emendas: number;
+  total_acessos: number;
   ultima_atualizacao: string;
 }

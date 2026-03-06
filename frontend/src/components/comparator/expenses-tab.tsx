@@ -80,7 +80,6 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const apiYear = year === 0 ? undefined : year;
-  const [evolutionRange, setEvolutionRange] = useState<number>(12);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -242,9 +241,10 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .sort((a: any, b: any) => a.sortKey.localeCompare(b.sortKey));
     
-  const filteredEvolutionData = evolutionRange > 0 
-    ? evolutionData.slice(-evolutionRange) 
-    : evolutionData;
+  const filteredEvolutionData = evolutionData.filter(d => {
+      if (year === 0) return true;
+      return d.sortKey.startsWith(`${year}-`);
+  });
 
   const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
@@ -352,17 +352,6 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-4">
           <CardTitle>Evolução de Gastos ({yearLabel})</CardTitle>
-          <Select value={evolutionRange.toString()} onValueChange={(v) => setEvolutionRange(Number(v))}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
-              <SelectValue placeholder="Período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="6">Últimos 6 meses</SelectItem>
-              <SelectItem value="12">Últimos 12 meses</SelectItem>
-              <SelectItem value="24">Últimos 24 meses</SelectItem>
-              <SelectItem value="0">Todo o período</SelectItem>
-            </SelectContent>
-          </Select>
         </CardHeader>
         <CardContent className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">

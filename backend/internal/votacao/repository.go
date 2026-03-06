@@ -3,6 +3,8 @@ package votacao
 import (
 	"fmt"
 	"gorm.io/gorm"
+
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // Repository encapsula operacoes de banco de dados para Votacao
@@ -16,11 +18,15 @@ func NewRepository(db *gorm.DB) *Repository {
 }
 
 // FindBySenadorID retorna votacoes de um senador com paginacao e filtros
-func (r *Repository) FindBySenadorID(senadorID int, limit, offset int, votoType string) ([]Votacao, int64, error) {
+func (r *Repository) FindBySenadorID(senadorID int, limit, offset int, votoType string, ano int) ([]Votacao, int64, error) {
 	var votacoes []Votacao
 	var total int64
 
 	query := r.db.Model(&Votacao{}).Where("senador_id = ?", senadorID)
+
+	if ano > 0 {
+		query = query.Where("EXTRACT(YEAR FROM data) = ?", ano)
+	}
 
 	// Filtro por tipo de voto
 	if votoType != "" {
@@ -60,32 +66,34 @@ func (r *Repository) Count() (int64, error) {
 	return count, result.Error
 }
 
-// GetStats retorna estatisticas de votacao de um senador
+// GetStats retorna estatisticas de votacao de um senador restritas ao mandato (2023+)
 func (r *Repository) GetStats(senadorID int) (*VotacaoStats, error) {
 	var stats VotacaoStats
 	stats.SenadorID = senadorID
 
 	var total, registrados, ausencias, obstrucoes int64
 
+	mandatoFilter := fmt.Sprintf("senador_id = ? AND data >= '%d-01-01'", utils.GetInicioLegislaturaAtual())
+
 	// Total de votacoes
-	r.db.Model(&Votacao{}).Where("senador_id = ?", senadorID).Count(&total)
+	r.db.Model(&Votacao{}).Where(mandatoFilter, senadorID).Count(&total)
 	stats.TotalVotacoes = int(total)
 
 	// Votos registrados (Sim, Nao, Abstencao)
 	r.db.Model(&Votacao{}).Where(
-		"senador_id = ? AND voto IN (?, ?, ?)", senadorID, "Sim", "Nao", "Abstencao",
+		mandatoFilter+" AND voto IN (?, ?, ?)", senadorID, "Sim", "Nao", "Abstencao",
 	).Count(&registrados)
 	stats.VotosRegistrados = int(registrados)
 
 	// Ausencias (NCom)
 	r.db.Model(&Votacao{}).Where(
-		"senador_id = ? AND voto = ?", senadorID, "NCom",
+		mandatoFilter+" AND voto = ?", senadorID, "NCom",
 	).Count(&ausencias)
 	stats.Ausencias = int(ausencias)
 
 	// Obstrucoes
 	r.db.Model(&Votacao{}).Where(
-		"senador_id = ? AND voto = ?", senadorID, "Obstrucao",
+		mandatoFilter+" AND voto = ?", senadorID, "Obstrucao",
 	).Count(&obstrucoes)
 	stats.Obstrucoes = int(obstrucoes)
 
