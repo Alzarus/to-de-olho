@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
 
-const FRONTEND_URL = "https://todeolho-frontend-7ynjppp3aq-rj.a.run.app";
+const FRONTEND_URL = process.env.FRONTEND_URL;
 const BACKEND_URL =
-  process.env.BACKEND_URL || "https://todeolho-backend-7ynjppp3aq-rj.a.run.app";
+  process.env.BACKEND_URL || "http://api:8080";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Asset Prefix para garantir carregamento de CSS/JS via Cloud Run direto
-  assetPrefix: process.env.NODE_ENV === "production" ? FRONTEND_URL : undefined,
+  // Asset Prefix para garantir carregamento de CSS/JS (somente se FRONTEND_URL for definido explicitamente)
+  assetPrefix: process.env.NODE_ENV === "production" && FRONTEND_URL ? FRONTEND_URL : undefined,
   reactCompiler: false,
   experimental: {
     workerThreads: false,
