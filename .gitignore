@@ -1,10 +1,13 @@
 # Environment files
 .env
 .env.*
+!.env*.example
 backend/.env
 backend/.env.*
+!backend/.env*.example
 frontend/.env
 frontend/.env.*
+!frontend/.env*.example
 
 # Logs
 *.log
@@ -14,3 +17,12 @@ frontend/.env.*
 Thumbs.db
 
 scripts/sa-key.json
+
+# Artefatos de execucao e debug (nao versionar)
+logs.json
+logs_full.json
+run_log.txt
+run.log
+backend/err.txt
+backend/output_test.json
+backend/api.exe

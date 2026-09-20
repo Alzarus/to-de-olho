@@ -1,20 +1,20 @@
-name: Deploy to Cloud Run
+name: Deploy to Contabo VPS
 
 on:
   push:
     branches: ["master"]
   workflow_dispatch:
 
+concurrency:
+  group: deploy-contabo
+  cancel-in-progress: false
+
 env:
-  PROJECT_ID: to-de-olho-473121
-  REGION: southamerica-east1
-  BACKEND_SERVICE: todeolho-backend
-  FRONTEND_SERVICE: todeolho-frontend
-  REGISTRY: southamerica-east1-docker.pkg.dev
+  REMOTE_DIR: /opt/todeolho
 
 jobs:
   # ============================================================================
-  # Test Backend (Blocking)
+  # Testes do Backend (bloqueante)
   # ============================================================================
   test-backend:
     runs-on: ubuntu-latest
@@ -28,136 +28,137 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.23"
+          cache-dependency-path: backend/go.sum
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Vet
+        run: go vet ./...
 
       - name: Run Tests
         env:
           TRANSPARENCIA_API_KEY: ${{ secrets.TRANSPARENCIA_API_KEY }}
-        run: go test -v ./...
+        run: go test ./...
 
   # ============================================================================
-  # Backend Deploy
+  # Deploy na VM Contabo via SSH + Docker Compose
   # ============================================================================
-  deploy-backend:
+  deploy:
     needs: test-backend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
-
+    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Google Auth
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
-
-      - name: Build Docker Image
-        run: |
-          docker build \
-            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:${{ github.sha }} \
-            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:latest \
-            .
-
-      - name: Push Docker Image
-        run: |
-          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:latest
-
-      - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy ${{ env.BACKEND_SERVICE }} \
-            --image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/backend:${{ github.sha }} \
-            --region=${{ env.REGION }} \
-            --platform=managed \
-            --allow-unauthenticated \
-            --add-cloudsql-instances=${{ env.PROJECT_ID }}:${{ env.REGION }}:todeolho-db \
-            --set-env-vars="INICIO_BACKFILL=2023" \
-            --set-env-vars="FORCE_BACKFILL=false" \
-            --set-env-vars="DATABASE_URL=host=/cloudsql/${{ env.PROJECT_ID }}:${{ env.REGION }}:todeolho-db user=postgres password=${{ secrets.DB_PASSWORD }} dbname=todeolho sslmode=disable" \
-            --set-secrets="TRANSPARENCIA_API_KEY=transparencia-api-key:latest,SYNC_SECRET=sync-secret:latest" \
-            --memory=512Mi \
-            --cpu=1 \
-            --min-instances=1 \
-            --max-instances=5 \
-            --timeout=3600 \
-            --no-cpu-throttling \
-            --concurrency=80
-
-  # ============================================================================
-  # Frontend Deploy
-  # ============================================================================
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    needs: deploy-backend
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Google Auth
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
-
-      - name: Build Docker Image
-        run: |
-          docker build \
-            --build-arg NEXT_PUBLIC_API_URL=https://todeolho.org \
-            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:${{ github.sha }} \
-            -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:latest \
-            .
-
-      - name: Push Docker Image
-        run: |
-          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:${{ github.sha }}
-          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:latest
-
-      - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy ${{ env.FRONTEND_SERVICE }} \
-            --image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/todeolho-images/frontend:${{ github.sha }} \
-            --region=${{ env.REGION }} \
-            --platform=managed \
-            --allow-unauthenticated \
-            --memory=256Mi \
-            --cpu=1 \
-            --min-instances=1 \
-            --max-instances=5 \
-            --concurrency=80 \
-            --timeout=3600
-
-  # ============================================================================
-  # Firebase Hosting Deploy
-  # ============================================================================
-  deploy-hosting:
-    runs-on: ubuntu-latest
-    needs: deploy-frontend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Deploy to Firebase Hosting
+      - name: Configurar chave SSH de deploy
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: firebase deploy --only hosting --token "$FIREBASE_TOKEN" --non-interactive
+          SSH_KEY: ${{ secrets.CONTABO_SSH_KEY }}
+          SSH_HOST: ${{ secrets.CONTABO_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Sincronizar manifestos e codigo-fonte
+        env:
+          SSH_HOST: ${{ secrets.CONTABO_HOST }}
+          SSH_USER: ${{ secrets.CONTABO_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "mkdir -p ${{ env.REMOTE_DIR }}"
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude 'frontend/node_modules' \
+            --exclude '.env' \
+            --exclude '.firebase' \
+            --exclude 'public-firebase' \
+            --exclude 'docs' \
+            --exclude 'img' \
+            backend frontend docker-compose.contabo.yml \
+            "$SSH_USER@$SSH_HOST:${{ env.REMOTE_DIR }}/"
+
+      - name: Gerar .env de producao a partir dos secrets
+        env:
+          SSH_HOST: ${{ secrets.CONTABO_HOST }}
+          SSH_USER: ${{ secrets.CONTABO_USER }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          TRANSPARENCIA_API_KEY: ${{ secrets.TRANSPARENCIA_API_KEY }}
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
+        run: |
+          # O heredoc segue por stdin do ssh: nenhum segredo aparece na linha
+          # de comando nem no log do runner (o Actions ja mascara os valores).
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "umask 077 && cat > ${{ env.REMOTE_DIR }}/.env" <<EOF
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          POSTGRES_DB=${POSTGRES_DB}
+          TRANSPARENCIA_API_KEY=${TRANSPARENCIA_API_KEY}
+          SYNC_SECRET=${SYNC_SECRET}
+          NEXT_PUBLIC_API_URL=https://todeolho.org
+          INICIO_BACKFILL=2023
+          EOF
+
+      - name: Build e subida dos containers
+        env:
+          SSH_HOST: ${{ secrets.CONTABO_HOST }}
+          SSH_USER: ${{ secrets.CONTABO_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" bash -se <<'REMOTE'
+          set -euo pipefail
+          cd /opt/todeolho
+          docker compose -f docker-compose.contabo.yml --env-file .env up -d --build --remove-orphans
+          REMOTE
+
+      - name: Health check
+        env:
+          SSH_HOST: ${{ secrets.CONTABO_HOST }}
+          SSH_USER: ${{ secrets.CONTABO_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" bash -se <<'REMOTE'
+          set -euo pipefail
+          # Backend: alcancado pela rede interna a partir do container web.
+          for i in $(seq 1 30); do
+            if docker exec todeolho-web node -e \
+              "require('http').get('http://api:8080/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))" 2>/dev/null; then
+              echo "[OK] backend respondendo em /health"
+              break
+            fi
+            if [ "$i" = 30 ]; then
+              echo "[FALHA] backend nao respondeu apos 30 tentativas"
+              docker compose -f /opt/todeolho/docker-compose.contabo.yml logs --tail=50 api
+              exit 1
+            fi
+            sleep 5
+          done
+
+          # Frontend: porta de loopback exposta pelo compose.
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5350/)
+          if [ "$code" != "200" ]; then
+            echo "[FALHA] frontend retornou HTTP $code"
+            docker compose -f /opt/todeolho/docker-compose.contabo.yml logs --tail=50 web
+            exit 1
+          fi
+          echo "[OK] frontend respondendo (HTTP 200)"
+          REMOTE
+
+      - name: Limpeza de imagens orfas
+        if: success()
+        env:
+          SSH_HOST: ${{ secrets.CONTABO_HOST }}
+          SSH_USER: ${{ secrets.CONTABO_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "docker image prune -f && docker builder prune -f --keep-storage 2GB"
+
+      - name: Remover chave SSH do runner
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

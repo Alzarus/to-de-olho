@@ -36,14 +36,23 @@ A aplicação segue a arquitetura **Monolito Modular** com frontend desacoplado.
 - [Bun 1.0+](https://bun.sh/) (ou Node.js 20+)
 - [Docker](https://www.docker.com/) (para banco/cache)
 
-### 1. Banco de Dados
+### Modo Integrado (Docker Compose)
 
-Na raiz desta pasta, inicie os serviços de infraestrutura (caso tenha docker-compose configurado ou suba manualmente):
+A forma recomendada de subir o ambiente completo é usando o orquestrador nativo do projeto, presente na raiz (`docker-compose.yml`), passando o arquivo de ambiente desejado (ex: `.env.gsort`):
 
 ```bash
-# Exemplo manual:
+docker compose --env-file .env.gsort up -d
+```
+
+Isso levantará o PostgreSQL, a API, o Frontend Next.js na porta `3000`, e o daemon de rede da Cloudflare simultaneamente.
+
+### Modo Desenvolvimento Individual
+
+Caso prefira rodar as peças soltas:
+```bash
+# Exemplo manual de banco de dados:
 docker run --name pg-todeolho -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:15
-docker run --name redis-todeolho -p 6379:6379 -d redis:7
+# Redis não é mais obrigatório na arquitetura local simplificada
 ```
 
 ### 2. Backend
@@ -78,18 +87,23 @@ Acesse **http://localhost:3000** no seu navegador.
 
 ---
 
-## 📦 Deploy (Produção)
+## 📦 Deploy (Produção / GSORT)
 
-A infraestrutura foi desenhada para **Google Cloud Run** (Serverless Container).
+A infraestrutura atual foi desenhada para a arquitetura **on-premise** via **Docker Compose**, otimizada para o laboratório Gsort (IFBA), desativando os serviços antigos da Google Cloud. O roteamento externo é provido nativamente através de um túnel seguro **Cloudflare Zero Trust** (`cloudflared`), contornando eficientemente a falta de IP estático público e bloqueios de roteador/firewall (NAT) institucionais.
 
-### Pipeline de CI/CD
+### Passos de Deploy
 
-O arquivo `.github/workflows/ci.yml` automatiza o processo:
+O ambiente consolida Banco de Dados, Backend, Frontend e Daemon de Túnel em um orquestrador unificado.
 
-1.  **Testes**: Executa `go test` em cada push na branch `master`.
-2.  **Build**: Gera container Docker otimizado (Distroless image).
-3.  **Publish**: Envia para o Google Container Registry.
-4.  **Deploy**: Atualiza o serviço no Cloud Run.
+1.  Preencha as chaves de API necessárias e o token gerado pela Cloudflare no arquivo `.env.gsort`.
+2.  Compile e suba todos os serviços em background a partir da pasta raiz:
+    ```bash
+    docker compose --env-file .env.gsort up -d --build
+    ```
+3.  Sendo a primeira inicialização local com banco zerado, engatilhe o mapeamento dos dados oficiais (*backfill*) rodando a rotina interna:
+    ```bash
+    docker exec todeolho-api /force_sync
+    ```
 
 ### Estratégia de Ingestão de Dados
 
