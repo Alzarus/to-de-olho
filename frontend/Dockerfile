@@ -26,11 +26,18 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN bun run build
 
 # Stage 3: Runner (imagem minima)
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# O servidor standalone so precisa do binario node. npm/npx/corepack vem na
+# imagem base, nao sao usados em execucao e concentravam as CVEs da imagem.
+# apk upgrade traz as correcoes de libssl/libcrypto sem esperar a tag nova.
+RUN apk upgrade --no-cache \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+              /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 # Criar usuario nao-root
 RUN addgroup --system --gid 1001 nodejs
