@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
@@ -23,6 +22,7 @@ import (
 // SetupRouter configura todas as rotas da API
 func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 	router := gin.Default()
+	usarIPDoVisitante(router)
 
 	// Middleware CORS
 	router.Use(corsMiddleware())
@@ -106,8 +106,11 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			votacoes.GET("/:id", votacaoHandler.GetByID)
 		}
 
-		// Sync (trigger manual para desenvolvimento)
-		v1.POST("/sync/senadores", func(c *gin.Context) {
+		// Sync (trigger manual). Protegido por X-Sync-Secret: sao jobs de
+		// ingestao pesados, nao endpoints publicos.
+		syncGroup := v1.Group("/sync", requireSyncSecret())
+
+		syncGroup.POST("/senadores", func(c *gin.Context) {
 			if err := senadorSync.SyncFromAPI(c.Request.Context()); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -119,7 +122,7 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			})
 		})
 
-		v1.POST("/sync/despesas/:ano", func(c *gin.Context) {
+		syncGroup.POST("/despesas/:ano", func(c *gin.Context) {
 			anoStr := c.Param("ano")
 			ano := 2024 // default
 			if _, err := fmt.Sscanf(anoStr, "%d", &ano); err != nil {
@@ -136,7 +139,7 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			})
 		})
 
-		v1.POST("/sync/votacoes", func(c *gin.Context) {
+		syncGroup.POST("/votacoes", func(c *gin.Context) {
 			if err := votacaoSync.SyncFromAPI(c.Request.Context()); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -146,7 +149,7 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			})
 		})
 
-		v1.POST("/sync/comissoes", func(c *gin.Context) {
+		syncGroup.POST("/comissoes", func(c *gin.Context) {
 			if err := comissaoSync.SyncFromAPI(c.Request.Context()); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -156,7 +159,7 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			})
 		})
 
-		v1.POST("/sync/proposicoes", func(c *gin.Context) {
+		syncGroup.POST("/proposicoes", func(c *gin.Context) {
 			if err := proposicaoSync.SyncFromAPI(c.Request.Context()); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -166,16 +169,14 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			})
 		})
 
-
-        
-		v1.POST("/sync/emendas/:ano", func(c *gin.Context) {
+		syncGroup.POST("/emendas/:ano", func(c *gin.Context) {
 			anoStr := c.Param("ano")
 			ano := 2024
 			if _, err := fmt.Sscanf(anoStr, "%d", &ano); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "ano invalido"})
 				return
 			}
-            
+
 			if err := emendaSync.SyncAll(c.Request.Context(), ano); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
@@ -188,7 +189,7 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 
 		// Metadata
 		v1.GET("/metadata/last-sync", func(c *gin.Context) {
-			
+
 			var lastUpdate time.Time
 			// Estrategia: Maior timestamp entre updated_at de senadores e data de votacoes
 			// Usando UNION ALL para pegar o maior de todos
@@ -202,7 +203,7 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			if err := db.Raw(query).Scan(&lastUpdate).Error; err != nil {
 				lastUpdate = time.Now()
 			}
-			
+
 			response := gin.H{"last_sync": lastUpdate}
 
 			c.Header("X-Cache", "MISS")
@@ -231,24 +232,11 @@ type SyncRunner interface {
 // RegisterSchedulerRoutes registra os endpoints de sync
 // para serem chamados pelo Google Cloud Scheduler ou manualmente
 func RegisterSchedulerRoutes(router *gin.Engine, runner SyncRunner) {
-	syncSecret := os.Getenv("SYNC_SECRET")
-
-	// Middleware de autenticacao por header secreto
-	authSync := func(c *gin.Context) bool {
-		if syncSecret != "" && c.GetHeader("X-Sync-Secret") != syncSecret {
-			c.JSON(http.StatusForbidden, gin.H{"error": "acesso negado"})
-			return false
-		}
-		return true
-	}
+	authSync := requireSyncSecret()
 
 	// POST /api/v1/sync/daily - Sync diario (Cloud Scheduler)
 	// Executa sincronamente para manter o container vivo no Cloud Run
-	router.POST("/api/v1/sync/daily", func(c *gin.Context) {
-		if !authSync(c) {
-			return
-		}
-
+	router.POST("/api/v1/sync/daily", authSync, func(c *gin.Context) {
 		slog.Info("sync diario disparado via HTTP")
 		runner.RunDailySync(c.Request.Context())
 
@@ -259,11 +247,7 @@ func RegisterSchedulerRoutes(router *gin.Engine, runner SyncRunner) {
 
 	// POST /api/v1/sync/backfill - Backfill completo (manual)
 	// Retorna 202 imediatamente; backfill roda em background (sem limite de tempo)
-	router.POST("/api/v1/sync/backfill", func(c *gin.Context) {
-		if !authSync(c) {
-			return
-		}
-
+	router.POST("/api/v1/sync/backfill", authSync, func(c *gin.Context) {
 		slog.Info("backfill completo disparado via HTTP")
 
 		// Rodar em goroutine com contexto independente do request HTTP
@@ -276,11 +260,36 @@ func RegisterSchedulerRoutes(router *gin.Engine, runner SyncRunner) {
 	})
 }
 
+// usarIPDoVisitante faz c.ClientIP() devolver o IP real de quem fez o request.
+//
+// Em producao o trafego chega por Cloudflare -> Nginx Proxy Manager -> Next ->
+// API, entao o IP da conexao e sempre o do conteiner do Next. A Cloudflare
+// sobrescreve CF-Connecting-IP com o IP do visitante; sem o header (ambiente
+// local), o gin volta ao comportamento padrao.
+//
+// Serve para log. Quem alcancar a origem sem passar pela Cloudflare consegue
+// forjar o header, entao o valor nao deve ser usado para autorizar nada.
+func usarIPDoVisitante(r *gin.Engine) {
+	r.TrustedPlatform = gin.PlatformCloudflare
+}
+
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Os endpoints de sync nao sao chamados por navegador: nao recebem
+		// header de CORS e nao respondem preflight. Sem isso, qualquer pagina
+		// aberta por um visitante podia tentar disparar um backfill.
+		if isSyncPath(c.Request.URL.Path) {
+			if c.Request.Method == http.MethodOptions {
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+			c.Next()
+			return
+		}
+
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, X-Sync-Secret")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusNoContent)
