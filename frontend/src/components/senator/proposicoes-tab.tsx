@@ -203,6 +203,15 @@ export function ProposicoesTab({ id }: { id: number }) {
                                 <Badge variant="outline" className="font-mono text-xs">
                                   {prop.sigla_subtipo_materia} {prop.numero_materia}/{prop.ano_materia}
                                 </Badge>
+                                {prop.posicao_autoria !== 1 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                    title="Só o primeiro autor pontua no ranking"
+                                  >
+                                    {prop.posicao_autoria ? "Coautoria" : "Autoria institucional"}
+                                  </Badge>
+                                )}
                                 <span className="text-xs text-muted-foreground">
                                     {prop.data_apresentacao 
                                         ? new Date(prop.data_apresentacao).toLocaleDateString("pt-BR") 
@@ -258,6 +267,7 @@ export function ProposicoesTab({ id }: { id: number }) {
                         </DialogTitle>
                         <DialogDescription className="pt-2">
                              Apresentado em {new Date(prop.data_apresentacao || "").toLocaleDateString("pt-BR")}
+                             {prop.autoria && <><br />Autoria: {prop.autoria}</>}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BRAZIL_STATES } from "@/components/ui/brazil-map-data";
+import { formatPresenca, SEM_DADOS_PRESENCA } from "@/lib/utils";
 
 const UF_MAP = Object.fromEntries(
   BRAZIL_STATES.map((state) => [state.id, state.name]),
@@ -222,8 +223,8 @@ function MobileRankingCard({
           </div>
           <div className="text-center p-2 rounded bg-muted/50" role="listitem">
             <p className="text-xs text-muted-foreground">Presença</p>
-            <p className="text-sm font-semibold">
-              {senador.presenca.toFixed(1)}
+            <p className="text-sm font-semibold" title={senador.presenca == null ? SEM_DADOS_PRESENCA : undefined}>
+              {formatPresenca(senador.presenca)}
             </p>
           </div>
           <div className="text-center p-2 rounded bg-muted/50" role="listitem">
@@ -466,8 +467,8 @@ function RankingTable({
                 </span>
               </td>
               <td className="hidden px-4 py-4 text-center md:table-cell">
-                <span className="text-sm font-medium">
-                  {senador.presenca.toFixed(1)}
+                <span className="text-sm font-medium" title={senador.presenca == null ? SEM_DADOS_PRESENCA : undefined}>
+                  {formatPresenca(senador.presenca)}
                 </span>
               </td>
               <td className="hidden px-4 py-4 text-center lg:table-cell">
@@ -597,33 +598,39 @@ function RankingContent() {
   }, [data]);
 
   // Aplicar filtros e ordenação client-side
+  const filtrar = useCallback(
+    (lista: SenadorScore[]) =>
+      lista.filter(
+        (s) =>
+          (!partido || s.partido === partido) &&
+          (!uf || s.uf === uf) &&
+          (!search || s.nome.toLowerCase().includes(search.toLowerCase())),
+      ),
+    [partido, uf, search],
+  );
+
   const filteredData = useMemo(() => {
     if (!data?.ranking) return [];
 
-    let result = [...data.ranking];
+    const result = filtrar(data.ranking);
 
-    if (partido) {
-      result = result.filter((s) => s.partido === partido);
-    }
-
-    if (uf) {
-      result = result.filter((s) => s.uf === uf);
-    }
-
-    if (search) {
-      const searchLower = search.toLowerCase();
-      result = result.filter((s) => s.nome.toLowerCase().includes(searchLower));
-    }
-
+    // null (sem dado) vai para o fim nos dois sentidos
     const sortKey = sortBy as keyof SenadorScore;
     result.sort((a, b) => {
-      const aVal = a[sortKey] as number;
-      const bVal = b[sortKey] as number;
+      const aVal = a[sortKey] as number | null;
+      const bVal = b[sortKey] as number | null;
+      if (aVal == null || bVal == null) return aVal == null ? (bVal == null ? 0 : 1) : -1;
       return sortDir === "desc" ? bVal - aVal : aVal - bVal;
     });
 
     return result;
-  }, [data, partido, uf, search, sortBy, sortDir]);
+  }, [data, filtrar, sortBy, sortDir]);
+
+  // Fora da ordenacao (item 4 / D4): sem registro de votacao no periodo
+  const semDados = useMemo(
+    () => filtrar(data?.sem_dados ?? []).sort((a, b) => a.nome.localeCompare(b.nome)),
+    [data, filtrar],
+  );
 
   const clearFilters = () => {
     router.push("/ranking");
@@ -902,6 +909,32 @@ function RankingContent() {
           )}
         </CardContent>
       </Card>
+
+      {semDados.length > 0 && (
+        <Card className="mt-6" role="region" aria-label="Senadores com dados insuficientes">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Dados insuficientes</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Sem registro de votação nominal no período, não há presença a medir.
+              Estes senadores ficam fora da ordenação em vez de receber nota zero.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-wrap gap-2">
+              {semDados.map((s) => (
+                <li key={s.senador_id}>
+                  <Link
+                    href={`/senador/${s.senador_id}`}
+                    className="inline-block rounded-md border px-3 py-1 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {s.nome} <span className="text-muted-foreground">({s.partido}/{s.uf})</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Link para metodologia */}
       <div className="mt-6 text-center">

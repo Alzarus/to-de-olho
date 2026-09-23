@@ -119,7 +119,7 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
                             {votacoesData.votacoes.map((v) => (
                                 <Link
                                     key={v.id}
-                                    href={`/votacoes/${v.sessao_id}?backUrl=${encodeURIComponent(pathname + "?" + searchParams.toString())}`}
+                                    href={`/votacoes/${v.codigo_votacao}?backUrl=${encodeURIComponent(pathname + "?" + searchParams.toString())}`}
                                     className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                                 >
                                     <div className="flex items-start justify-between gap-2">

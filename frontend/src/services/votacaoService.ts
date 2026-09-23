@@ -3,12 +3,17 @@ import { fetcher } from "@/lib/api";
 export interface Votacao {
   id: number;
   senador_id: number;
-  sessao_id: string;
+  codigo_votacao: number; // id da votacao (codigoSessaoVotacao do Senado)
+  sessao_id: string; // codigo da sessao: agrupa as votacoes do dia
   codigo_sessao: string;
+  sequencial_votacao?: number | null;
   data: string;
-  voto: string;
+  voto: string; // rotulo: Sim, Nao, Abstencao, Obstrucao ou a sigla
+  sigla_voto: string; // codigo bruto da API
   descricao_votacao: string;
   materia: string;
+  ementa?: string;
+  resultado?: string;
   created_at: string;
 }
 
@@ -35,6 +40,7 @@ export const getVotacoes = async (
   ano?: number,
   materia?: string,
   ordem?: string,
+  sessao?: string,
 ): Promise<VotacaoResponse> => {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -44,6 +50,7 @@ export const getVotacoes = async (
   if (ano) params.append("ano", ano.toString());
   if (materia) params.append("materia", materia);
   if (ordem) params.append("ordem", ordem);
+  if (sessao) params.append("sessao", sessao);
 
   return fetcher<VotacaoResponse>(`/api/v1/votacoes?${params.toString()}`);
 };

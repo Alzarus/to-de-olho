@@ -25,3 +25,12 @@ export function formatCurrency(value: number): string {
   }
   return `R$ ${value.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
 }
+
+// Presenca pode ser null: senador sem registro de votacao no periodo. Sem dado
+// nao vira 0 (item 4 da auditoria).
+export function formatPresenca(presenca: number | null | undefined, casas = 1): string {
+  return presenca == null ? "—" : presenca.toFixed(casas);
+}
+
+export const SEM_DADOS_PRESENCA =
+  "Sem registro de votação nominal no período: dados insuficientes para medir presença.";

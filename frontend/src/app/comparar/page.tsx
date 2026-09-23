@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatPresenca } from "@/lib/utils";
 
 function ComparatorContent() {
   const { selectedSenators, clearSelection, removeSenator } = useComparator();
@@ -114,7 +115,7 @@ function ComparatorContent() {
       d.score_final.toFixed(2),
       d.posicao,
       d.produtividade.toFixed(2),
-      d.presenca.toFixed(2),
+      formatPresenca(d.presenca, 2),
       d.economia_cota.toFixed(2),
       d.comissoes.toFixed(2),
       d.detalhes.total_proposicoes,

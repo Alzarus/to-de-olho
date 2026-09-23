@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { getStats } from "@/lib/api";
 import type { SenadorScore } from "@/types/api";
+import { formatPresenca, SEM_DADOS_PRESENCA } from "@/lib/utils";
 
 function formatNumber(value: number): string {
   if (value >= 1_000_000) {
@@ -220,10 +221,10 @@ export default function Home() {
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-xs">
                                         <span className="text-muted-foreground">Presença</span>
-                                        <span className="font-medium">{senator.presenca.toFixed(1)}</span>
+                                        <span className="font-medium" title={senator.presenca == null ? SEM_DADOS_PRESENCA : undefined}>{formatPresenca(senator.presenca)}</span>
                                     </div>
                                      <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${senator.presenca}%` }}></div>
+                                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${senator.presenca ?? 0}%` }}></div>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
