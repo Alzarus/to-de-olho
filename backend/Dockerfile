@@ -20,7 +20,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server cmd/api/main.g
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /force_sync cmd/force_sync_all/main.go
 
 # Runtime Stage
-FROM gcr.io/distroless/static-debian12
+# Tag explicita (nao :latest). "nonroot" ja traz o usuario usado abaixo.
+FROM gcr.io/distroless/static-debian12:nonroot
 
 WORKDIR /
 
@@ -33,6 +34,10 @@ EXPOSE 8080
 
 # Usuario nao-root para seguranca
 USER nonroot:nonroot
+
+# Sem shell na imagem: o proprio binario checa GET /health (cmd/api/main.go).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD ["/server", "healthcheck"]
 
 # Comando de entrada
 ENTRYPOINT ["/server"]
