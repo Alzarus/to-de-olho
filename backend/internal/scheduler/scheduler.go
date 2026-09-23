@@ -119,30 +119,16 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 		return // Sem senadores nao da pra continuar
 	}
 
-	// B. Votacoes - PULAR se ja existem dados (evita timeout de 3600s+)
-	votosCount, _ := s.votacaoRepo.Count()
-	if votosCount > 0 {
-		slog.Info("--- PASSO 2/6: VOTACOES (PULANDO - dados existentes) ---", "votos_existentes", votosCount)
-	} else {
-		slog.Info("--- PASSO 2/6: VOTACOES (LISTA) ---")
-		if err := retry.WithRetry(ctx, 3, "backfill-votacoes", func() error {
-			return s.votacaoSync.SyncFromAPI(ctx)
-		}); err != nil {
-			slog.Error("falha no backfill de votacoes", "error", err)
-		}
+	// B. Votacoes do recorte, por intervalo de datas (upsert: pode repetir)
+	slog.Info("--- PASSO 2/6: VOTACOES ---")
+	if err := s.votacaoSync.SyncFromAPI(ctx); err != nil {
+		slog.Error("falha no backfill de votacoes", "error", err)
 	}
 
 	// C. Loop por ano para dados periodicos
 	for ano := anoInicio; ano <= anoAtual; ano++ {
 		slog.Info("--- PROCESSANDO ANO ---", "ano", ano)
-
-		// Metadata de Votacoes (Ementas, Datas corretas)
 		anoLoop := ano
-		if err := retry.WithRetry(ctx, 3, "backfill-votacoes-metadata", func() error {
-			return s.votacaoSync.SyncMetadata(ctx, anoLoop)
-		}); err != nil {
-			slog.Error("falha ao sincronizar metadata votacoes", "ano", ano, "error", err)
-		}
 
 		// CEAPS (Despesas)
 		if err := retry.WithRetry(ctx, 3, "backfill-ceaps", func() error {
@@ -169,9 +155,8 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 
 	// E. Proposicoes (Historico)
 	slog.Info("--- PASSO 5/6: PROPOSICOES ---")
-	if err := retry.WithRetry(ctx, 3, "backfill-proposicoes", func() error {
-		return s.proposicaoSync.SyncFromAPI(ctx)
-	}); err != nil {
+	// o retry e por senador, dentro do SyncFromAPI
+	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
 		slog.Error("falha no backfill de proposicoes", "error", err)
 	}
 
@@ -198,13 +183,11 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 		slog.Error("falha sync senadores", "error", err)
 	}
 
-	// 2. Votacoes - apenas metadata do ano atual (ementas, datas)
-	// O sync completo de votos (82 senadores x todas sessoes) leva 3600s+
-	// e fica reservado exclusivamente ao backfill
-	if err := retry.WithRetry(ctx, 3, "sync-votacoes-metadata", func() error {
-		return s.votacaoSync.SyncMetadata(ctx, anoAtual)
-	}); err != nil {
-		slog.Error("falha sync metadata votacoes", "error", err)
+	// 2. Votacoes dos ultimos 30 dias: 1 chamada por mes, com retry, traz todas
+	// as cadeiras de cada votacao. Antes o sync diario so atualizava metadados
+	// e nenhuma votacao nova entrava no banco.
+	if _, err := s.votacaoSync.SyncRecentes(ctx, 30); err != nil {
+		slog.Error("falha sync votacoes recentes", "error", err)
 	}
 
 	// 4. CEAPS (Despesas)
@@ -229,9 +212,7 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 	}
 
 	// 7. Proposicoes (Novos projetos ou tramitacoes)
-	if err := retry.WithRetry(ctx, 3, "sync-proposicoes", func() error {
-		return s.proposicaoSync.SyncFromAPI(ctx)
-	}); err != nil {
+	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
 		slog.Error("falha sync proposicoes", "error", err)
 	}
 

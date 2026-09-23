@@ -2,7 +2,10 @@ package votacao
 
 import (
 	"fmt"
+	"time"
+
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/Alzarus/to-de-olho/internal/utils"
 )
@@ -132,32 +135,30 @@ func (r *Repository) GetVotosPorTipo(senadorID int) ([]VotosPorTipo, error) {
 	return result, err
 }
 
-// Upsert insere ou atualiza uma votacao usando chave composta (senador_id, sessao_id)
-func (r *Repository) Upsert(votacao *Votacao) error {
-	return r.db.Where("senador_id = ? AND sessao_id = ?", votacao.SenadorID, votacao.SessaoID).
-		Assign(*votacao).FirstOrCreate(votacao).Error
-}
-
-// UpdateMetadata atualiza metadados de uma sessao de votacao
-func (r *Repository) UpdateMetadata(sessaoID string, updates map[string]interface{}) error {
-	return r.db.Model(&Votacao{}).Where("sessao_id = ?", sessaoID).Updates(updates).Error
-}
-
-// UpdateVoteBatch atualiza o tipo de voto em massa (para normalizacao)
-func (r *Repository) UpdateVoteBatch(oldVoto, newVoto string) error {
-	return r.db.Model(&Votacao{}).Where("voto = ?", oldVoto).Update("voto", newVoto).Error
-}
-
-// UpsertBatch insere ou atualiza multiplas votacoes
+// UpsertBatch grava votos em lotes de 1.000, pela chave (senador_id, codigo_votacao)
 func (r *Repository) UpsertBatch(votacoes []Votacao) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		for _, v := range votacoes {
-			if err := tx.Save(&v).Error; err != nil {
-				return err
-			}
-		}
+	if len(votacoes) == 0 {
 		return nil
-	})
+	}
+	return r.db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "senador_id"}, {Name: "codigo_votacao"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"sessao_id", "codigo_sessao", "sequencial_votacao", "data", "sigla_voto", "voto",
+			"descricao_votacao", "materia", "ementa", "resultado", "updated_at",
+		}),
+	}).CreateInBatches(votacoes, 1000).Error
+}
+
+// SenadoresEmExercicioSemVotos lista senadores em exercicio sem nenhum voto
+// a partir de `desde`
+func (r *Repository) SenadoresEmExercicioSemVotos(desde time.Time) ([]string, error) {
+	var nomes []string
+	err := r.db.Raw(`
+		SELECT s.nome FROM senadores s
+		WHERE s.em_exercicio
+		  AND NOT EXISTS (SELECT 1 FROM votacoes v WHERE v.senador_id = s.id AND v.data >= ?)
+		ORDER BY s.nome`, desde).Scan(&nomes).Error
+	return nomes, err
 }
 
 // GetStatsByAno retorna estatisticas de votacao filtradas por ano
@@ -213,12 +214,13 @@ func (r *Repository) GetStatsByAno(senadorID int, ano int) (*VotacaoStats, error
 	return &stats, nil
 }
 
-// FindAll retorna votacoes com paginacao e filtros (ordem: "asc" ou "desc")
-func (r *Repository) FindAll(limit, offset, ano int, materia, ordem string) ([]Votacao, int64, error) {
+// FindAll retorna votacoes (uma linha por votacao, nao por voto) com
+// paginacao e filtros. ordem: "asc" ou "desc". sessao filtra pelo codigo da
+// sessao (destino dos links antigos /votacoes/NNNNNN_AAAA, decisao D2).
+func (r *Repository) FindAll(limit, offset, ano int, materia, ordem, sessao string) ([]Votacao, int64, error) {
 	var votacoes []Votacao
 	var total int64
 
-	// Base query com filtros para count e subquery
 	baseQuery := r.db.Model(&Votacao{})
 
 	if ano > 0 {
@@ -227,24 +229,26 @@ func (r *Repository) FindAll(limit, offset, ano int, materia, ordem string) ([]V
 
 	if materia != "" {
 		like := "%" + materia + "%"
-		baseQuery = baseQuery.Where("materia ILIKE ? OR descricao_votacao ILIKE ? OR codigo_sessao ILIKE ?", like, like, like)
+		baseQuery = baseQuery.Where("(materia ILIKE ? OR descricao_votacao ILIKE ? OR ementa ILIKE ? OR codigo_sessao ILIKE ?)", like, like, like, like)
 	}
 
-	// Contar total de sessoes unicas
-	if err := baseQuery.Session(&gorm.Session{}).Select("COUNT(DISTINCT sessao_id)").Count(&total).Error; err != nil {
+	if sessao != "" {
+		baseQuery = baseQuery.Where("sessao_id = ?", sessao)
+	}
+
+	if err := baseQuery.Session(&gorm.Session{}).Select("COUNT(DISTINCT codigo_votacao)").Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Subquery para obter sessoes unicas
-	// Nota: DISTINCT ON requer que o ORDER BY comece com a coluna distinct
+	// DISTINCT ON exige que o ORDER BY comece pela coluna distinta
 	subQuery := baseQuery.Session(&gorm.Session{}).
-		Select("DISTINCT ON (sessao_id) *").
-		Order("sessao_id, data DESC")
+		Select("DISTINCT ON (codigo_votacao) *").
+		Order("codigo_votacao, id")
 
-	// Query principal ordenando o resultado da subquery pela data
-	sortOrder := "data DESC"
+	// Dentro do dia, a ordem das votacoes na sessao (sequencial pode ser nulo)
+	sortOrder := "data DESC, sessao_id DESC, sequencial_votacao DESC NULLS LAST, codigo_votacao DESC"
 	if ordem == "asc" {
-		sortOrder = "data ASC"
+		sortOrder = "data ASC, sessao_id ASC, sequencial_votacao ASC NULLS FIRST, codigo_votacao ASC"
 	}
 
 	err := r.db.Table("(?) as v", subQuery).
@@ -256,37 +260,25 @@ func (r *Repository) FindAll(limit, offset, ano int, materia, ordem string) ([]V
 	return votacoes, total, err
 }
 
-// FindByID retorna uma votacao pelo ID (sessao_id)
-func (r *Repository) FindByID(id string) (*Votacao, error) {
+// FindByID retorna os dados de uma votacao pelo codigo_votacao
+func (r *Repository) FindByID(codigoVotacao int) (*Votacao, error) {
 	var votacao Votacao
-	err := r.db.Where("sessao_id = ?", id).First(&votacao).Error
+	err := r.db.Where("codigo_votacao = ?", codigoVotacao).Order("id").First(&votacao).Error
 	if err != nil {
 		return nil, err
 	}
 	return &votacao, nil
 }
 
-// FindVotosBySessaoID retorna todos os votos de uma sessao especifica
-func (r *Repository) FindVotosBySessaoID(sessaoID string) ([]Votacao, error) {
+// FindVotosByCodigoVotacao retorna os votos de todos os senadores em uma votacao
+func (r *Repository) FindVotosByCodigoVotacao(codigoVotacao int) ([]Votacao, error) {
 	var votacoes []Votacao
-	err := r.db.Debug().Table("votacoes").
+	err := r.db.Table("votacoes").
 		Select("votacoes.*, senadores.nome as senador_nome, senadores.partido as senador_partido, senadores.uf as senador_uf, senadores.foto_url as senador_foto").
 		Joins("JOIN senadores ON senadores.id = votacoes.senador_id").
-		Where("votacoes.sessao_id = ?", sessaoID).
+		Where("votacoes.codigo_votacao = ?", codigoVotacao).
 		Order("senadores.nome ASC").
 		Find(&votacoes).Error
 
 	return votacoes, err
-}
-
-// GetAllSessoesIDs retorna IDs de sessoes distintas para um ano
-func (r *Repository) GetAllSessoesIDs(ano int) ([]string, error) {
-	var ids []string
-	// sessao_id format: "CODE_YEAR"
-	like := fmt.Sprintf("%%_%d", ano)
-	err := r.db.Model(&Votacao{}).
-		Distinct("sessao_id").
-		Where("sessao_id LIKE ?", like).
-		Pluck("sessao_id", &ids).Error
-	return ids, err
 }

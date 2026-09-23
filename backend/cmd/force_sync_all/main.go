@@ -98,12 +98,6 @@ func main() {
 	for ano := startAno; ano <= endAno; ano++ {
 		slog.Info(">>> PROCESSANDO ANO", "ano", ano)
 		
-		// Metadata
-		slog.Info("   > Metadata Votacoes")
-		if err := votacaoSync.SyncMetadata(ctx, ano); err != nil {
-			slog.Error("falha metadata", "ano", ano, "error", err)
-		}
-
 		// CEAPS
 		slog.Info("   > CEAPS")
 		if err := ceapsSync.SyncFromAPI(ctx, ano); err != nil {

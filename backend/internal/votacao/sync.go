@@ -5,18 +5,24 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Alzarus/to-de-olho/internal/senador"
+	"github.com/Alzarus/to-de-olho/internal/utils"
+	"github.com/Alzarus/to-de-olho/pkg/retry"
 	senadoapi "github.com/Alzarus/to-de-olho/pkg/senado"
 )
+
+// clienteLegis e o que o sync usa da API do Senado (interface para testes)
+type clienteLegis interface {
+	ListarVotacoesPeriodo(ctx context.Context, inicio, fim time.Time) ([]senadoapi.VotacaoSessaoAPI, error)
+}
 
 // SyncService gerencia sincronizacao de votacoes
 type SyncService struct {
 	repo        *Repository
 	senadorRepo *senador.Repository
-	client      *senadoapi.LegisClient
+	client      clienteLegis
 }
 
 // NewSyncService cria um novo servico de sincronizacao
@@ -28,242 +34,163 @@ func NewSyncService(repo *Repository, senadorRepo *senador.Repository, client *s
 	}
 }
 
-// SyncFromAPI busca votacoes da API para todos os senadores
+// ResumoCarga descreve o que uma carga de votacoes gravou
+type ResumoCarga struct {
+	Votacoes  int // votacoes nominais recebidas da API
+	Votos     int // linhas gravadas (um voto por senador conhecido)
+	Ignorados int // votos de parlamentares fora da tabela senadores
+}
+
+// SyncFromAPI carrega os votos de todas as votacoes do recorte (posse da
+// legislatura atual ate hoje).
 func (s *SyncService) SyncFromAPI(ctx context.Context) error {
-	slog.Info("iniciando sync de votacoes")
+	_, err := s.SyncPeriodo(ctx, utils.InicioRecorte(), time.Now())
+	return err
+}
 
-	// Buscar todos os senadores
-	senadores, err := s.senadorRepo.FindAll(false)
+// SyncRecentes grava as votacoes dos ultimos `dias` dias (sync diario).
+func (s *SyncService) SyncRecentes(ctx context.Context, dias int) (ResumoCarga, error) {
+	fim := time.Now()
+	return s.SyncPeriodo(ctx, fim.AddDate(0, 0, -dias), fim)
+}
+
+// SyncPeriodo grava os votos das votacoes nominais com sessao em [inicio, fim].
+//
+// Fonte: /votacao?dataInicio=&dataFim=, que traz todas as cadeiras de cada
+// votacao. Substitui as 81 chamadas por senador (que falhavam por corte de
+// resposta e deixavam senadores inteiros de fora, item 4). O periodo e
+// quebrado por mes para manter as respostas pequenas; cada mes tem 3
+// tentativas e qualquer falha interrompe a carga com erro.
+func (s *SyncService) SyncPeriodo(ctx context.Context, inicio, fim time.Time) (ResumoCarga, error) {
+	var resumo ResumoCarga
+
+	senadorPorCodigo, err := s.mapaSenadores()
 	if err != nil {
-		return err
+		return resumo, err
 	}
 
-	var totalVotacoes, totalSenadores int
-
-	for _, sen := range senadores {
-		// A API retorna sessoes de votacao
-		sessoes, err := s.client.ListarVotacoesParlamentar(ctx, sen.CodigoParlamentar)
+	for _, janela := range janelasMensais(inicio, fim) {
+		var votacoesAPI []senadoapi.VotacaoSessaoAPI
+		err := retry.WithRetry(ctx, 3, "votacoes "+janela[0].Format("2006-01"), func() error {
+			var err error
+			votacoesAPI, err = s.client.ListarVotacoesPeriodo(ctx, janela[0], janela[1])
+			return err
+		})
 		if err != nil {
-			slog.Warn("falha ao buscar votacoes", "senador", sen.Nome, "error", err)
+			return resumo, err
+		}
+
+		var votos []Votacao
+		for _, v := range votacoesAPI {
+			convertidos, ignorados, err := converterVotacao(v, senadorPorCodigo)
+			if err != nil {
+				return resumo, err
+			}
+			votos = append(votos, convertidos...)
+			resumo.Ignorados += ignorados
+		}
+		if err := s.repo.UpsertBatch(votos); err != nil {
+			return resumo, fmt.Errorf("falha ao gravar votos de %s: %w", janela[0].Format("2006-01"), err)
+		}
+		resumo.Votacoes += len(votacoesAPI)
+		resumo.Votos += len(votos)
+	}
+
+	slog.Info("votacoes sincronizadas",
+		"inicio", inicio.Format("2006-01-02"), "fim", fim.Format("2006-01-02"),
+		"votacoes", resumo.Votacoes, "votos", resumo.Votos, "ignorados", resumo.Ignorados)
+	return resumo, nil
+}
+
+// SenadoresSemVotos devolve os senadores em exercicio sem nenhum voto desde o
+// inicio do recorte. Lista nao vazia depois de uma carga indica carga
+// incompleta (item 4).
+func (s *SyncService) SenadoresSemVotos() ([]string, error) {
+	return s.repo.SenadoresEmExercicioSemVotos(utils.InicioRecorte())
+}
+
+func (s *SyncService) mapaSenadores() (map[int]int, error) {
+	senadores, err := s.senadorRepo.FindAll(true)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[int]int, len(senadores))
+	for _, sen := range senadores {
+		m[sen.CodigoParlamentar] = sen.ID
+	}
+	return m, nil
+}
+
+// janelasMensais quebra [inicio, fim] em intervalos de um mes-calendario.
+func janelasMensais(inicio, fim time.Time) [][2]time.Time {
+	var janelas [][2]time.Time
+	inicio = time.Date(inicio.Year(), inicio.Month(), inicio.Day(), 0, 0, 0, 0, time.UTC)
+	fim = time.Date(fim.Year(), fim.Month(), fim.Day(), 0, 0, 0, 0, time.UTC)
+	for a := inicio; !a.After(fim); {
+		b := time.Date(a.Year(), a.Month()+1, 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, -1)
+		if b.After(fim) {
+			b = fim
+		}
+		janelas = append(janelas, [2]time.Time{a, b})
+		a = b.AddDate(0, 0, 1)
+	}
+	return janelas
+}
+
+// converterVotacao gera uma linha por voto de senador conhecido.
+func converterVotacao(v senadoapi.VotacaoSessaoAPI, senadorPorCodigo map[int]int) ([]Votacao, int, error) {
+	if v.CodigoSessaoVotacao == 0 {
+		return nil, 0, fmt.Errorf("votacao sem codigoSessaoVotacao (sessao %d, %s)", v.CodigoSessao, v.Identificacao)
+	}
+	dia, err := time.Parse("2006-01-02", v.DataSessao)
+	if err != nil {
+		return nil, 0, fmt.Errorf("data invalida %q na votacao %d: %w", v.DataSessao, v.CodigoSessaoVotacao, err)
+	}
+	// Meio-dia UTC para a data nao mudar de dia em nenhum fuso
+	data := time.Date(dia.Year(), dia.Month(), dia.Day(), 12, 0, 0, 0, time.UTC)
+	codigoSessao := strconv.Itoa(v.CodigoSessao)
+
+	var votos []Votacao
+	var ignorados int
+	for _, voto := range v.Votos {
+		senadorID, ok := senadorPorCodigo[voto.CodigoParlamentar]
+		if !ok {
+			ignorados++
+			slog.Debug("voto de parlamentar fora da tabela senadores", "codigo", voto.CodigoParlamentar, "nome", voto.NomeParlamentar)
 			continue
 		}
-
-		// Processar cada sessao
-		for _, sessao := range sessoes {
-			// Encontrar o voto do senador nesta sessao
-			var siglaVoto string
-			for _, voto := range sessao.Votos {
-				if voto.CodigoParlamentar == sen.CodigoParlamentar {
-					siglaVoto = voto.SiglaVoto
-					break
-				}
-			}
-
-			if siglaVoto == "" {
-				continue // Senador nao votou nesta sessao
-			}
-
-			votacao := s.convertSessaoToVotacao(sessao, sen.ID, siglaVoto)
-			if err := s.repo.Upsert(&votacao); err != nil {
-				slog.Warn("falha ao salvar votacao", "senador", sen.ID, "error", err)
-				continue
-			}
-			totalVotacoes++
-		}
-
-		totalSenadores++
-		slog.Debug("votacoes sincronizadas", "senador", sen.Nome, "sessoes", len(sessoes))
-	}
-
-	slog.Info("sync de votacoes concluido", "senadores", totalSenadores, "votacoes", totalVotacoes)
-	return nil
-}
-
-// SyncSenador busca votacoes de um senador especifico
-func (s *SyncService) SyncSenador(ctx context.Context, senadorID int) (int, error) {
-	sen, err := s.senadorRepo.FindByID(senadorID)
-	if err != nil {
-		return 0, err
-	}
-
-	sessoes, err := s.client.ListarVotacoesParlamentar(ctx, sen.CodigoParlamentar)
-	if err != nil {
-		return 0, err
-	}
-
-	anoAtual := time.Now().Year()
-
-	var count int
-	for _, sessao := range sessoes {
-		// [PERFORMANCE] Evitar carregar sessoes antigas no sync diario/atualizacoes
-		if sessao.Ano < anoAtual-2 {
-			continue // Ja deve estar no banco e nao muda mais, se for preciso use backfill
-		}
-
-		var siglaVoto string
-		for _, voto := range sessao.Votos {
-			if voto.CodigoParlamentar == sen.CodigoParlamentar {
-				siglaVoto = voto.SiglaVoto
-				break
-			}
-		}
-
-		if siglaVoto == "" {
+		if voto.SiglaVoto == "" {
 			continue
 		}
-
-		votacao := s.convertSessaoToVotacao(sessao, sen.ID, siglaVoto)
-		if err := s.repo.Upsert(&votacao); err != nil {
-			continue
-		}
-		count++
+		votos = append(votos, Votacao{
+			SenadorID:         senadorID,
+			CodigoVotacao:     v.CodigoSessaoVotacao,
+			SessaoID:          codigoSessao,
+			CodigoSessao:      codigoSessao,
+			SequencialVotacao: v.SequencialVotacao,
+			Data:              data,
+			SiglaVoto:         voto.SiglaVoto,
+			Voto:              rotuloVoto(voto.SiglaVoto),
+			DescricaoVotacao:  v.DescricaoVotacao,
+			Materia:           v.Identificacao,
+			Ementa:            v.Ementa,
+			Resultado:         v.ResultadoVotacao,
+		})
 	}
-
-	return count, nil
+	return votos, ignorados, nil
 }
 
-// SyncMetadata busca dados ricos (Datas, Ementas) da lista master e atualiza o banco
-func (s *SyncService) SyncMetadata(ctx context.Context, ano int) error {
-	slog.Info("iniciando sync de metadados (batch)", "ano", ano)
-
-	votacoesMaster, err := s.client.ListarVotacoesAno(ctx, ano)
-	if err != nil {
-		return err
-	}
-	slog.Info("sessoes encontradas na API", "total", len(votacoesMaster))
-
-	count := 0
-	for _, vMaster := range votacoesMaster {
-		// Construir ID da Sessao (ex: "12345_2024") to match existing records
-		sessaoID := strconv.Itoa(vMaster.CodigoSessao) + "_" + strconv.Itoa(vMaster.Ano)
-
-	// Parse Date + Time
-		var dataFinal time.Time
-		
-		// Try ISO 8601 first (API return for 2024 List)
-		if t, err := time.Parse("2006-01-02T15:04:05", vMaster.DataSessao); err == nil {
-			dataFinal = t
-		} else if t, err := time.Parse("2006-01-02", vMaster.DataSessao); err == nil {
-			// Fallback to noon UTC
-			dataFinal = time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, time.UTC)
-		}
-
-		// Rich Description: prioritize ementa, fallback to identificacaoMateria
-		materia := ""
-		if vMaster.IdentificacaoMateria != "" {
-			materia = vMaster.IdentificacaoMateria
-		} else if vMaster.Materia.Sigla != "" {
-			materia = fmt.Sprintf("%s %s/%s", vMaster.Materia.Sigla, vMaster.Materia.Numero, vMaster.Materia.Ano)
-		}
-		
-		descricao := vMaster.DescricaoVotacao
-		if vMaster.EmentaLegislativo != "" {
-			descricao = vMaster.EmentaLegislativo
-		}
-
-		// Update all records with this SessaoID
-		updates := map[string]interface{}{}
-		if !dataFinal.IsZero() {
-			updates["data"] = dataFinal
-		}
-		if materia != "" {
-			updates["materia"] = materia
-		}
-		if descricao != "" {
-			 updates["descricao_votacao"] = descricao
-		}
-
-		if len(updates) > 0 {
-			if err := s.repo.UpdateMetadata(sessaoID, updates); err != nil {
-				slog.Warn("falha ao atualizar metadata", "sessao", sessaoID, "err", err)
-			} else {
-				count++
-			}
-		}
-	}
-	
-	s.normalizeVotesBatch()
-
-	slog.Info("sync metadata concluido", "sessoes_atualizadas", count)
-	return nil
-}
-
-func (s *SyncService) normalizeVotesBatch() {
-	mappings := map[string]string{
-		"Não":       "Nao",
-		"Sim":       "Sim", 
-		"Obstrução": "Obstrucao",
-		"P-OD":      "Obstrucao",
-		"MIS":       "Outros",
-		"Lsp":       "Licenca", 
-		"Abstenção": "Abstencao",
-	}
-	
-	for old, new := range mappings {
-		if err := s.repo.UpdateVoteBatch(old, new); err != nil {
-			slog.Warn("falha ao normalizar voto", "old", old, "new", new, "error", err)
-		}
-	}
-}
-
-
-// convertSessaoToVotacao converte uma sessao de votacao para modelo interno
-func (s *SyncService) convertSessaoToVotacao(sessao senadoapi.VotacaoSessaoAPI, senadorID int, siglaVoto string) Votacao {
-	var data time.Time
-	var parsed bool
-
-	if sessao.DataSessao != "" {
-		// Formato: YYYY-MM-DD ou DD/MM/YYYY
-		if t, err := time.Parse("2006-01-02", sessao.DataSessao); err == nil {
-			// Definir meio-dia para evitar problemas de fuso horario
-			data = time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, time.UTC)
-			parsed = true
-		} else if t, err := time.Parse("02/01/2006", sessao.DataSessao); err == nil {
-			data = time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, time.UTC)
-			parsed = true
-		}
-	}
-
-	// Fallback: se nao conseguiu parsear a data, usa o campo Ano da API
-	// para criar uma data valida (1 de janeiro do ano)
-	// Isso garante que filtros por ano funcionem corretamente
-	anoFallback := sessao.Ano
-	if anoFallback == 0 {
-		// Extrair ano do sessao_id (formato: "123456_2023")
-		parts := strings.Split(strconv.Itoa(sessao.CodigoSessao)+"_"+strconv.Itoa(sessao.Ano), "_")
-		if len(parts) >= 2 {
-			if parsed, err := strconv.Atoi(parts[len(parts)-1]); err == nil && parsed >= 1988 && parsed <= 2100 {
-				anoFallback = parsed
-			}
-		}
-	}
-	if !parsed && anoFallback > 0 {
-		// Meio-dia para evitar shift de timezone
-		data = time.Date(anoFallback, time.January, 1, 12, 0, 0, 0, time.UTC)
-	}
-
-	return Votacao{
-		SenadorID:        senadorID,
-		SessaoID:         strconv.Itoa(sessao.CodigoSessao) + "_" + strconv.Itoa(sessao.Ano),
-		CodigoSessao:     strconv.Itoa(sessao.CodigoSessao),
-		Data:             data,
-		Voto:             normalizeVoto(siglaVoto),
-		DescricaoVotacao: sessao.DescricaoVotacao,
-		Materia:          "",
-	}
-}
-
-func normalizeVoto(voto string) string {
-	switch voto {
+// rotuloVoto normaliza o voto para exibicao e para os filtros do frontend.
+// A sigla bruta fica em SiglaVoto; P-OD (presidente) nao vira mais Obstrucao.
+func rotuloVoto(sigla string) string {
+	switch sigla {
 	case "Não", "Nao":
 		return "Nao"
-	case "Sim":
-		return "Sim"
-	case "Obstrução", "P-OD":
+	case "Obstrução", "Obstrucao":
 		return "Obstrucao"
 	case "Abstenção", "Abstencao":
 		return "Abstencao"
 	default:
-		return voto
+		return sigla
 	}
 }
