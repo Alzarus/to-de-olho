@@ -1,7 +1,6 @@
 package votacao
 
 import (
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -69,58 +68,32 @@ func (r *Repository) Count() (int64, error) {
 	return count, result.Error
 }
 
-// GetStats retorna estatisticas de votacao de um senador restritas ao mandato (2023+)
+// GetStats retorna estatisticas de votacao de um senador desde o inicio do
+// recorte (posse da legislatura atual)
 func (r *Repository) GetStats(senadorID int) (*VotacaoStats, error) {
-	var stats VotacaoStats
-	stats.SenadorID = senadorID
+	return r.stats(senadorID, "data >= ?", utils.InicioRecorte())
+}
 
-	var total, registrados, ausencias, obstrucoes int64
-
-	mandatoFilter := fmt.Sprintf("senador_id = ? AND data >= '%d-01-01'", utils.GetInicioLegislaturaAtual())
-
-	// Total de votacoes
-	r.db.Model(&Votacao{}).Where(mandatoFilter, senadorID).Count(&total)
-	stats.TotalVotacoes = int(total)
-
-	// Votos registrados (Sim, Nao, Abstencao)
-	r.db.Model(&Votacao{}).Where(
-		mandatoFilter+" AND voto IN (?, ?, ?)", senadorID, "Sim", "Nao", "Abstencao",
-	).Count(&registrados)
-	stats.VotosRegistrados = int(registrados)
-
-	// Ausencias (NCom)
-	r.db.Model(&Votacao{}).Where(
-		mandatoFilter+" AND voto = ?", senadorID, "NCom",
-	).Count(&ausencias)
-	stats.Ausencias = int(ausencias)
-
-	// Obstrucoes
-	r.db.Model(&Votacao{}).Where(
-		mandatoFilter+" AND voto = ?", senadorID, "Obstrucao",
-	).Count(&obstrucoes)
-	stats.Obstrucoes = int(obstrucoes)
-
-	// Calcular taxas
-	if stats.TotalVotacoes > 0 {
-		// Presenca (calculada em cima dos que de fato ele devia estar: registrados + ausencias + obstrucoes)
-		// Ignorando fatores como Licenca, Missao, Presidencia do Senado (P-OD)
-		baseCalculoPresenca := stats.VotosRegistrados + stats.Ausencias + stats.Obstrucoes
-		
-		if baseCalculoPresenca > 0 {
-			stats.TaxaPresenca = float64(stats.VotosRegistrados+stats.Obstrucoes) / float64(baseCalculoPresenca) * 100
-		} else {
-			stats.TaxaPresenca = 0
-		}
-
-		// Participacao = Votos efetivos (Sim, Nao, Abstencao) / Total real baseCalculada
-		if baseCalculoPresenca > 0 {
-			stats.TaxaParticipacao = float64(stats.VotosRegistrados) / float64(baseCalculoPresenca) * 100
-		} else {
-			stats.TaxaParticipacao = 0
-		}
+// stats conta os votos por sigla bruta e aplica a classificacao
+func (r *Repository) stats(senadorID int, filtro string, args ...any) (*VotacaoStats, error) {
+	var linhas []struct {
+		SiglaVoto string
+		Total     int
 	}
-
-	return &stats, nil
+	err := r.db.Model(&Votacao{}).
+		Select("sigla_voto, COUNT(*) AS total").
+		Where("senador_id = ?", senadorID).
+		Where(filtro, args...).
+		Group("sigla_voto").
+		Scan(&linhas).Error
+	if err != nil {
+		return nil, err
+	}
+	porSigla := make(map[string]int, len(linhas))
+	for _, l := range linhas {
+		porSigla[l.SiglaVoto] = l.Total
+	}
+	return calcularStats(senadorID, porSigla), nil
 }
 
 // GetVotosPorTipo retorna contagem de votos por tipo
@@ -161,57 +134,10 @@ func (r *Repository) SenadoresEmExercicioSemVotos(desde time.Time) ([]string, er
 	return nomes, err
 }
 
-// GetStatsByAno retorna estatisticas de votacao filtradas por ano
+// GetStatsByAno retorna estatisticas de votacao das sessoes de um ano
 func (r *Repository) GetStatsByAno(senadorID int, ano int) (*VotacaoStats, error) {
-	var stats VotacaoStats
-	stats.SenadorID = senadorID
-
-	var total, registrados, ausencias, obstrucoes int64
-
-	// Filtro de data: inicio do ano e inicio do proximo ano
-	dataInicio := fmt.Sprintf("%d-01-01", ano)
-	dataProximoAno := fmt.Sprintf("%d-01-01", ano+1)
-	dateFilter := "data >= ? AND data < ?"
-
-	// Total de votacoes
-	r.db.Debug().Model(&Votacao{}).Where("senador_id = ? AND "+dateFilter, senadorID, dataInicio, dataProximoAno).Count(&total)
-	stats.TotalVotacoes = int(total)
-
-	// Votos registrados
-	r.db.Model(&Votacao{}).Where(
-		"senador_id = ? AND voto IN (?, ?, ?) AND "+dateFilter,
-		senadorID, "Sim", "Nao", "Abstencao", dataInicio, dataProximoAno,
-	).Count(&registrados)
-	stats.VotosRegistrados = int(registrados)
-
-	// Ausencias
-	r.db.Model(&Votacao{}).Where(
-		"senador_id = ? AND voto = ? AND "+dateFilter,
-		senadorID, "NCom", dataInicio, dataProximoAno,
-	).Count(&ausencias)
-	stats.Ausencias = int(ausencias)
-
-	// Obstrucoes
-	r.db.Model(&Votacao{}).Where(
-		"senador_id = ? AND voto = ? AND "+dateFilter,
-		senadorID, "Obstrucao", dataInicio, dataProximoAno,
-	).Count(&obstrucoes)
-	stats.Obstrucoes = int(obstrucoes)
-
-	// Calcular taxas
-	if stats.TotalVotacoes > 0 {
-		baseCalculoPresenca := stats.VotosRegistrados + stats.Ausencias + stats.Obstrucoes
-
-		if baseCalculoPresenca > 0 {
-			stats.TaxaPresenca = float64(stats.VotosRegistrados+stats.Obstrucoes) / float64(baseCalculoPresenca) * 100
-			stats.TaxaParticipacao = float64(stats.VotosRegistrados) / float64(baseCalculoPresenca) * 100
-		} else {
-			stats.TaxaPresenca = 0
-			stats.TaxaParticipacao = 0
-		}
-	}
-
-	return &stats, nil
+	return r.stats(senadorID, "data >= ? AND data < ?",
+		time.Date(ano, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(ano+1, 1, 1, 0, 0, 0, 0, time.UTC))
 }
 
 // FindAll retorna votacoes (uma linha por votacao, nao por voto) com

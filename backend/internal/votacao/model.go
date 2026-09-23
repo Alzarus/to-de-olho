@@ -38,15 +38,23 @@ func (Votacao) TableName() string {
 	return "votacoes"
 }
 
-// VotacaoStats representa estatisticas de votacao de um senador
+// VotacaoStats representa estatisticas de votacao de um senador.
+// Classificacao dos codigos em classificacao.go.
 type VotacaoStats struct {
-	SenadorID           int     `json:"senador_id"`
-	TotalVotacoes       int     `json:"total_votacoes"`
-	VotosRegistrados    int     `json:"votos_registrados"`    // Sim + Nao + Abstencao
-	Ausencias           int     `json:"ausencias"`            // NCom (Nao Compareceu)
-	Obstrucoes          int     `json:"obstrucoes"`
-	TaxaPresenca        float64 `json:"taxa_presenca"`        // 0-100
-	TaxaParticipacao    float64 `json:"taxa_participacao"`    // Votos efetivos / Total
+	SenadorID             int     `json:"senador_id"`
+	TotalVotacoes         int     `json:"total_votacoes"`         // registros no periodo, de qualquer tipo
+	VotosRegistrados      int     `json:"votos_registrados"`      // Sim + Nao + Abstencao
+	Presentes             int     `json:"presentes"`              // inclui Votou (secreta), P-NRV, presidencia
+	Ausencias             int     `json:"ausencias"`              // AP + NCom: contam como falta
+	AusenciasAP           int     `json:"ausencias_ap"`           // "Atividade parlamentar", declarada pelo senador
+	NaoCompareceu         int     `json:"nao_compareceu"`         // NCom
+	AusenciasJustificadas int     `json:"ausencias_justificadas"` // licencas e missoes: fora do denominador em B
+	Obstrucoes            int     `json:"obstrucoes"`
+	PresencaBruta         float64 `json:"presenca_bruta"`    // A: presentes / (total - NA)
+	PresencaAjustada      float64 `json:"presenca_ajustada"` // B: presentes / (total - NA - justificadas)
+	TaxaPresenca          float64 `json:"taxa_presenca"`     // = B (metrica oficial, 0-100)
+	TaxaParticipacao      float64 `json:"taxa_participacao"` // votos efetivos / denominador de B
+	DadosSuficientes      bool    `json:"dados_suficientes"` // false: nenhum registro que conte no periodo
 }
 
 // VotosPorTipo representa contagem de votos por tipo
