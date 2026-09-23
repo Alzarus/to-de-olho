@@ -90,27 +90,20 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 		maxPontosComissoes = 1
 	}
 
-	// Calcular scores normalizados
-	var scores []SenadorScore
-
-
+	// Calcular scores normalizados; quem nao tem dado sai da ordenacao
+	var scores, semDados []SenadorScore
 	for _, sen := range senadores {
 		dados := dadosBrutos[sen.ID]
 		score := s.calcularScoreNormalizado(sen, dados, maxPontuacaoProd, maxPontosComissoes, ano)
+		if score.DadosInsuficientes {
+			semDados = append(semDados, score)
+			continue
+		}
 		scores = append(scores, score)
 	}
+	ordenar(scores)
 
-	// Ordenar por score final (decrescente)
-	sort.Slice(scores, func(i, j int) bool {
-		return scores[i].ScoreFinal > scores[j].ScoreFinal
-	})
-
-	// Atribuir posicoes
-	for i := range scores {
-		scores[i].Posicao = i + 1
-	}
-
-	slog.Info("ranking calculado", "total_senadores", len(scores))
+	slog.Info("ranking calculado", "total_senadores", len(scores), "sem_dados", len(semDados))
 
 	metodologia := "Score = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)"
 	if ano != nil {
@@ -119,6 +112,7 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 
 	response := &RankingResponse{
 		Ranking:     scores,
+		SemDados:    semDados,
 		Total:       len(scores),
 		CalculadoEm: time.Now(),
 		Metodologia: metodologia,
@@ -145,10 +139,12 @@ func (s *Service) CalcularScoreSenador(ctx context.Context, senadorID int, ano *
 		return nil, err
 	}
 
-	// Buscar o senador no ranking
-	for _, score := range ranking.Ranking {
-		if score.SenadorID == senadorID {
-			return &score, nil
+	// Buscar o senador no ranking ou entre os sem dados
+	for _, lista := range [][]SenadorScore{ranking.Ranking, ranking.SemDados} {
+		for _, score := range lista {
+			if score.SenadorID == senadorID {
+				return &score, nil
+			}
 		}
 	}
 
@@ -160,14 +156,13 @@ func (s *Service) CalcularScoreSenador(ctx context.Context, senadorID int, ano *
 type dadosBrutosSenador struct {
 	// Proposicoes
 	totalProposicoes     int
+	totalCoautorias      int
 	proposicoesAprovadas int
 	transformadasEmLei   int
 	pontuacaoProposicoes float64
 
 	// Votacoes
-	totalVotacoes     int
-	votosRegistrados  int
-	taxaPresencaBruta float64
+	votacoes *votacao.VotacaoStats // nil se a consulta falhou
 
 	// CEAPS
 	gastoAnual float64
@@ -194,6 +189,7 @@ func (s *Service) coletarDadosBrutos(senadorID int, ano *int) *dadosBrutosSenado
 
 	if err == nil {
 		dados.totalProposicoes = propStats.TotalProposicoes
+		dados.totalCoautorias = propStats.TotalCoautorias
 		dados.proposicoesAprovadas = propStats.AprovadosPlenario
 		dados.transformadasEmLei = propStats.TransformadasEmLei
 		dados.pontuacaoProposicoes = propStats.PontuacaoTotal
@@ -208,9 +204,9 @@ func (s *Service) coletarDadosBrutos(senadorID int, ano *int) *dadosBrutosSenado
 	}
 
 	if err == nil {
-		dados.totalVotacoes = votStats.TotalVotacoes
-		dados.votosRegistrados = votStats.VotosRegistrados
-		dados.taxaPresencaBruta = votStats.TaxaPresenca
+		dados.votacoes = votStats
+	} else {
+		slog.Error("falha ao buscar stats de votacao", "senador", senadorID, "error", err)
 	}
 
 	// CEAPS
@@ -221,7 +217,6 @@ func (s *Service) coletarDadosBrutos(senadorID int, ano *int) *dadosBrutosSenado
 	} else {
 		// Mandato: Soma de todos os anos
 		gastoTotal, err := s.ceapsRepo.GetTotal(senadorID)
-		fmt.Printf("[DEBUG-SERVICE] SenadorID=%d GetTotal=%f Err=%v\n", senadorID, gastoTotal, err)
 		if err == nil {
 			dados.gastoAnual = gastoTotal
 		}
@@ -257,8 +252,20 @@ func (s *Service) calcularScoreNormalizado(
 	// Normalizar Produtividade (0-100) com Logaritmo para suavizar outliers
 	produtividade := (math.Log1p(dados.pontuacaoProposicoes) / math.Log1p(maxPontuacaoProd)) * 100
 
-	// Presenca ja vem normalizada (0-100)
-	presenca := dados.taxaPresencaBruta
+	// Presenca: metrica B (ajustada), 0-100. Sem registro que conte no
+	// periodo nao ha presenca a medir: fica nula e o senador sai da ordenacao
+	// em vez de levar 0 (item 4).
+	var presenca *float64
+	var presencaNoScore float64
+	vs := dados.votacoes
+	if vs == nil {
+		vs = &votacao.VotacaoStats{}
+	}
+	if vs.DadosSuficientes {
+		p := arredondar(vs.PresencaAjustada)
+		presenca = &p
+		presencaNoScore = vs.PresencaAjustada
+	}
 
 	// Economia CEAPS (0-100)
 	// Quanto menos gasta, maior o score
@@ -295,9 +302,14 @@ func (s *Service) calcularScoreNormalizado(
 
 	// Score final ponderado
 	scoreFinal := (produtividade * PesoProdutividade) +
-		(presenca * PesoPresenca) +
+		(presencaNoScore * PesoPresenca) +
 		(economia * PesoEconomia) +
 		(comissoes * PesoComissoes)
+
+	insuficiente := presenca == nil
+	if insuficiente {
+		scoreFinal = 0
+	}
 
 	return SenadorScore{
 		SenadorID:     sen.ID,
@@ -308,19 +320,26 @@ func (s *Service) calcularScoreNormalizado(
 		Cargo:         sen.Cargo,
 		Titular:       sen.Titular,
 		Produtividade: arredondar(produtividade),
-		Presenca:      arredondar(presenca),
+		Presenca:      presenca,
 		EconomiaCota:  arredondar(economia),
 		Comissoes:     arredondar(comissoes),
 		ScoreFinal:    arredondar(scoreFinal),
+		DadosInsuficientes: insuficiente,
 		CalculadoEm:   time.Now(),
 		Detalhes: ScoreDetalhes{
 			TotalProposicoes:     dados.totalProposicoes,
+			TotalCoautorias:      dados.totalCoautorias,
 			ProposicoesAprovadas: dados.proposicoesAprovadas,
 			TransformadasEmLei:   dados.transformadasEmLei,
 			PontuacaoProposicoes: dados.pontuacaoProposicoes,
-			TotalVotacoes:        dados.totalVotacoes,
-			VotacoesParticipadas: dados.votosRegistrados,
-			TaxaPresencaBruta:    arredondar(dados.taxaPresencaBruta),
+			TotalVotacoes:         vs.TotalVotacoes,
+			VotacoesParticipadas:  vs.VotosRegistrados,
+			Presentes:             vs.Presentes,
+			AusenciasAP:           vs.AusenciasAP,
+			NaoCompareceu:         vs.NaoCompareceu,
+			AusenciasJustificadas: vs.AusenciasJustificadas,
+			TaxaPresencaBruta:     arredondar(vs.PresencaBruta),
+			TaxaPresencaAjustada:  arredondar(vs.PresencaAjustada),
 			GastoCEAPS:           arredondar(dados.gastoAnual),
 			TetoCEAPS:            tetoPeriodo,
 			ComissoesAtivas:      dados.comissoesAtivas,
@@ -328,6 +347,20 @@ func (s *Service) calcularScoreNormalizado(
 			ComissoesSuplente:    dados.comissoesSuplente,
 			PontosComissoes:      arredondar(dados.pontosComissoes),
 		},
+	}
+}
+
+// ordenar ordena por score final decrescente, com desempate por nome para o
+// resultado nao depender da ordem de leitura, e atribui as posicoes
+func ordenar(scores []SenadorScore) {
+	sort.SliceStable(scores, func(i, j int) bool {
+		if scores[i].ScoreFinal != scores[j].ScoreFinal {
+			return scores[i].ScoreFinal > scores[j].ScoreFinal
+		}
+		return scores[i].Nome < scores[j].Nome
+	})
+	for i := range scores {
+		scores[i].Posicao = i + 1
 	}
 }
 

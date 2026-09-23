@@ -160,8 +160,12 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 		slog.Error("falha no backfill de proposicoes", "error", err)
 	}
 
-	// F. Calculo de Ranking Final
+	// F. Calculo de Ranking Final, so com a carga completa
 	slog.Info("--- PASSO 6/6: CALCULANDO RANKING ---")
+	if !s.cargaCompleta() {
+		return
+	}
+	s.rankingService.InvalidateCache()
 	if _, err := s.rankingService.CalcularRanking(ctx, nil); err != nil {
 		slog.Error("falha ao calcular ranking inicial", "error", err)
 	} else {
@@ -216,12 +220,32 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 		slog.Error("falha sync proposicoes", "error", err)
 	}
 
-	// 8. Recalcular Ranking
-	s.rankingService.CalcularRanking(ctx, nil)
-
-	// 9. Invalidar cache para garantir que proximas chamadas peguem o dado atualizado
+	// 8. Invalidar o cache e recalcular o ranking, so com a carga completa.
+	// Carga incompleta mantem o ranking em cache (ate o TTL de 24h); quem
+	// ficar sem votos aparece como "dados insuficientes", nunca como 0.
+	if !s.cargaCompleta() {
+		return
+	}
 	s.rankingService.InvalidateCache()
+	if _, err := s.rankingService.CalcularRanking(ctx, nil); err != nil {
+		slog.Error("falha ao recalcular ranking", "error", err)
+	}
 
 	slog.Info("sync diario integral finalizado")
 }
 
+// cargaCompleta confere que todo senador em exercicio tem ao menos um voto no
+// recorte (item 4). Um senador sem votos indica carga que falhou para ele.
+func (s *Scheduler) cargaCompleta() bool {
+	semVotos, err := s.votacaoSync.SenadoresSemVotos()
+	if err != nil {
+		slog.Error("falha na checagem de completude das votacoes", "error", err)
+		return false
+	}
+	if len(semVotos) > 0 {
+		slog.Error("carga incompleta: senadores em exercicio sem votos no recorte; ranking nao recalculado",
+			"total", len(semVotos), "senadores", semVotos)
+		return false
+	}
+	return true
+}
