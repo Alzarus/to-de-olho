@@ -83,6 +83,9 @@ func main() {
 			for _, sql := range []string{
 				"DROP INDEX IF EXISTS idx_votacao_unica",
 				"DROP INDEX IF EXISTS idx_materia_senador",
+				// restricao de uma versao antiga do modelo, existe em producao e
+				// tambem impede coautoria (achada no ensaio em staging, 23/09)
+				"ALTER TABLE proposicoes DROP CONSTRAINT IF EXISTS idx_proposicoes_codigo_materia",
 				"TRUNCATE votacoes, proposicoes RESTART IDENTITY",
 			} {
 				fmt.Println("  ", sql)
@@ -157,6 +160,18 @@ func validar(db *gorm.DB) bool {
 		}
 		return n
 	}
+
+	fmt.Println("  schema: indices unicos esperados")
+	var unicos []string
+	db.Raw(`SELECT tablename || '.' || indexname FROM pg_indexes
+		WHERE tablename IN ('votacoes', 'proposicoes') AND indexdef LIKE 'CREATE UNIQUE%'
+		ORDER BY 1`).Scan(&unicos)
+	esperados := "proposicoes.idx_proposicao_senador_materia proposicoes.proposicoes_pkey votacoes.idx_votacao_senador_votacao votacoes.votacoes_pkey"
+	marca := "ok"
+	if strings.Join(unicos, " ") != esperados {
+		marca, ok = "FALHOU (esperado: "+esperados+")", false
+	}
+	fmt.Printf("   %s  %s\n", strings.Join(unicos, " "), marca)
 
 	fmt.Println("  item 3")
 	informar("votacoes distintas no recorte", contar(`SELECT COUNT(DISTINCT codigo_votacao) FROM votacoes WHERE data >= ?`, recorte), "423 ate 03/09/2026")

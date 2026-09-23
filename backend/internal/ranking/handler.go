@@ -78,21 +78,22 @@ func (h *Handler) GetScoreSenador(c *gin.Context) {
 func (h *Handler) GetMetodologia(c *gin.Context) {
 	metodologia := gin.H{
 		"titulo":      "Metodologia do Ranking de Senadores",
-		"versao":      "2.0",
+		"versao":      "2.0", // v1 = TCC; v2 = correcao de 23/09/2026 (METODOLOGIA.md, historico de versoes)
+		"historico":   "https://github.com/Alzarus/to-de-olho/blob/master/METODOLOGIA.md#histórico-de-versões",
 		"referencia":  "Volden, C. & Wiseman, A. E. (2018). Legislative Effectiveness in the American States",
 		"formula":     "Score = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)",
 		"criterios": []gin.H{
 			{
 				"nome":        "Produtividade Legislativa",
 				"peso":        "35%",
-				"descricao":   "Capacidade de avancar proposicoes pelo processo legislativo",
-				"normalizacao": "Pontuacao do senador / Maior pontuacao da casa * 100",
+				"descricao":   "Capacidade de avancar proposicoes pelo processo legislativo. So o primeiro autor pontua; coautorias nao somam pontos",
+				"normalizacao": "ln(1 + pontos do senador) / ln(1 + maior pontuacao da casa) * 100",
 			},
 			{
 				"nome":        "Presenca em Votacoes",
 				"peso":        "25%",
-				"descricao":   "Participacao em votacoes nominais",
-				"normalizacao": "(Total - Ausencias) / Total * 100",
+				"descricao":   "Presenca nas votacoes nominais do Plenario desde a posse da legislatura. Licencas e missoes oficiais saem da conta; 'atividade parlamentar' (AP) e 'nao compareceu' contam como falta. Sem registro no periodo: fora da ordenacao",
+				"normalizacao": "Presentes / (Votacoes - NA - Licencas e missoes) * 100",
 			},
 			{
 				"nome":        "Economia na Cota (CEAPS)",
@@ -103,7 +104,7 @@ func (h *Handler) GetMetodologia(c *gin.Context) {
 			{
 				"nome":        "Participacao em Comissoes",
 				"peso":        "20%",
-				"descricao":   "Trabalho tecnico em comissoes permanentes e temporarias",
+				"descricao":   "Participacao em colegiados: titular 2 pontos, suplente 1, +1 por participacao ativa",
 				"normalizacao": "Pontos do senador / Maior pontuacao da casa * 100",
 			},
 		},
