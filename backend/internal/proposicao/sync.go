@@ -197,7 +197,9 @@ func (s *SyncService) buscarDetalhes(ctx context.Context, sen senador.Senador, l
 			defer wg.Done()
 			for i := range fila {
 				id := pendentes[i]
-				erros[i] = retry.WithRetry(ctx, 3, fmt.Sprintf("processo %d", id), func() error {
+				// 5 tentativas (backoff ate 8s): com 4 em paralelo a API devolve 429
+				// em ~1% das chamadas
+				erros[i] = retry.WithRetry(ctx, 5, fmt.Sprintf("processo %d", id), func() error {
 					var err error
 					detalhes[i], err = s.client.ObterProcesso(ctx, id)
 					return err

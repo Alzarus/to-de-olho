@@ -177,7 +177,9 @@ func validar(db *gorm.DB) bool {
 	informar("materias distintas", contar(`SELECT COUNT(DISTINCT codigo_materia) FROM proposicoes`), "bem menos que as linhas")
 	checar("linhas com (senador, materia) repetido", contar(`SELECT COUNT(*) FROM (SELECT 1 FROM proposicoes GROUP BY senador_id, codigo_materia HAVING COUNT(*) > 1) x`), 0)
 	checar("materias com mais de um primeiro autor", contar(`SELECT COUNT(*) FROM (SELECT 1 FROM proposicoes WHERE posicao_autoria = 1 GROUP BY codigo_materia HAVING COUNT(*) > 1) x`), 0)
-	informar("linhas sem posicao de autoria (senador fora de autoriaIniciativa)", contar(`SELECT COUNT(*) FROM proposicoes WHERE posicao_autoria IS NULL`), "0")
+	// autoria institucional (Comissao Diretora, comissao, partido, lideranca):
+	// o texto cita senadores, mas autoriaIniciativa nao. Ninguem e primeiro autor.
+	informar("linhas sem posicao (autoria institucional, nao pontuam)", contar(`SELECT COUNT(*) FROM proposicoes WHERE posicao_autoria IS NULL`), "dry-run 22-23/09: 404, 48 no recorte")
 	checar("coautorias com pontuacao > 0", contar(`SELECT COUNT(*) FROM proposicoes WHERE COALESCE(posicao_autoria, 0) <> 1 AND pontuacao > 0`), 0)
 	informar("proposicoes do Alan Rick (5672)", contar(`SELECT COUNT(*) FROM proposicoes p JOIN senadores s ON s.id = p.senador_id WHERE s.codigo_parlamentar = 5672`), "385")
 	informar("proposicoes do Esperidiao Amin (22)", contar(`SELECT COUNT(*) FROM proposicoes p JOIN senadores s ON s.id = p.senador_id WHERE s.codigo_parlamentar = 22`), "sobe; deixa de perder ~64%")
