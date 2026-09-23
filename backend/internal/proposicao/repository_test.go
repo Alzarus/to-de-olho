@@ -13,8 +13,8 @@ func TestUpsertPreservaCoautoriaEAtualizaCampos(t *testing.T) {
 
 	// a mesma materia para dois senadores: antes do item 1 o segundo sumia
 	lote := []Proposicao{
-		{SenadorID: 1, CodigoMateria: "155808", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(1), DataApresentacao: &data},
-		{SenadorID: 2, CodigoMateria: "155808", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(2), DataApresentacao: &data},
+		{SenadorID: 1, CodigoMateria: "155808", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(1), TipoAutor: "SENADOR", DataApresentacao: &data},
+		{SenadorID: 2, CodigoMateria: "155808", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(2), TipoAutor: "SENADOR", DataApresentacao: &data},
 	}
 	for i := range lote {
 		lote[i].Pontuacao = lote[i].CalcularPontuacao()
@@ -50,11 +50,14 @@ func TestStatsSoAutoriaPrincipalPontuaEConta(t *testing.T) {
 	fora := time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC) // legislatura anterior
 
 	lote := []Proposicao{
-		{SenadorID: 1, CodigoMateria: "1", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(1), DataApresentacao: &dentro, AnoMateria: 2024},
-		{SenadorID: 1, CodigoMateria: "2", SiglaSubtipoMateria: "PL", EstagioTramitacao: "TransformadoLei", PosicaoAutoria: ptr(1), DataApresentacao: &dentro, AnoMateria: 2024},
-		{SenadorID: 1, CodigoMateria: "3", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "AprovadoPlenario", PosicaoAutoria: ptr(5), DataApresentacao: &dentro, AnoMateria: 2024},
-		{SenadorID: 1, CodigoMateria: "4", SiglaSubtipoMateria: "PL", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(1), DataApresentacao: &fora, AnoMateria: 2023},
-		{SenadorID: 2, CodigoMateria: "1", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(2), DataApresentacao: &dentro, AnoMateria: 2024},
+		{SenadorID: 1, CodigoMateria: "1", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(1), TipoAutor: "SENADOR", DataApresentacao: &dentro, AnoMateria: 2024},
+		{SenadorID: 1, CodigoMateria: "2", SiglaSubtipoMateria: "PL", EstagioTramitacao: "TransformadoLei", PosicaoAutoria: ptr(1), TipoAutor: "SENADOR", DataApresentacao: &dentro, AnoMateria: 2024},
+		{SenadorID: 1, CodigoMateria: "3", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "AprovadoPlenario", PosicaoAutoria: ptr(5), TipoAutor: "SENADOR", DataApresentacao: &dentro, AnoMateria: 2024},
+		{SenadorID: 1, CodigoMateria: "4", SiglaSubtipoMateria: "PL", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(1), TipoAutor: "SENADOR", DataApresentacao: &fora, AnoMateria: 2023},
+		{SenadorID: 2, CodigoMateria: "1", SiglaSubtipoMateria: "PEC", EstagioTramitacao: "Apresentado", PosicaoAutoria: ptr(2), TipoAutor: "SENADOR", DataApresentacao: &dentro, AnoMateria: 2024},
+		// sem pontos: veto de materia propria e materia de quando era deputado
+		{SenadorID: 1, CodigoMateria: "5", SiglaSubtipoMateria: "VET", EstagioTramitacao: "TransformadoLei", PosicaoAutoria: ptr(1), TipoAutor: "SENADOR", DataApresentacao: &dentro, AnoMateria: 2024},
+		{SenadorID: 1, CodigoMateria: "6", SiglaSubtipoMateria: "PL", EstagioTramitacao: "TransformadoLei", PosicaoAutoria: ptr(1), TipoAutor: "DEPUTADO", DataApresentacao: &dentro, AnoMateria: 2024},
 	}
 	for i := range lote {
 		lote[i].Pontuacao = lote[i].CalcularPontuacao()
@@ -69,7 +72,8 @@ func TestStatsSoAutoriaPrincipalPontuaEConta(t *testing.T) {
 	}
 	// principal no recorte: PEC apresentada (3) + PL virou lei (16) = 19
 	if st.TotalProposicoes != 2 || st.TotalCoautorias != 1 || st.TotalPECs != 1 || st.TotalPLs != 1 ||
-		st.TransformadasEmLei != 1 || st.AprovadosPlenario != 1 || st.EmTramitacao != 1 || st.PontuacaoTotal != 19 {
+		st.TransformadasEmLei != 1 || st.AprovadosPlenario != 1 || st.EmTramitacao != 1 || st.PontuacaoTotal != 19 ||
+		st.TotalSemPontos != 2 {
 		t.Errorf("stats do mandato erradas: %+v", st)
 	}
 
@@ -78,8 +82,11 @@ func TestStatsSoAutoriaPrincipalPontuaEConta(t *testing.T) {
 		t.Errorf("coautor de PEC nao pode pontuar: %+v", st2)
 	}
 
-	ano, _ := repo.GetStatsByAno(1, 2023)
-	if ano.TotalProposicoes != 1 || ano.PontuacaoTotal != 1 {
-		t.Errorf("stats por ano erradas: %+v", ano)
+	// janeiro de 2023 e da legislatura anterior: fora tambem do ranking anual
+	if ano, _ := repo.GetStatsByAno(1, 2023); ano.TotalProposicoes != 0 {
+		t.Errorf("2023 nao pode contar materia de janeiro: %+v", ano)
+	}
+	if ano, _ := repo.GetStatsByAno(1, 2024); ano.TotalProposicoes != 2 || ano.PontuacaoTotal != 19 {
+		t.Errorf("stats de 2024 erradas: %+v", ano)
 	}
 }

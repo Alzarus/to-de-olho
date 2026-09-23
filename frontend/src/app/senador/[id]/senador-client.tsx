@@ -291,12 +291,23 @@ function SenadorContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-primary">
-              {senador.score_final.toFixed(1)}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              de 100 pontos possíveis
-            </p>
+            {senador.dados_insuficientes ? (
+              <>
+                <p className="text-4xl font-bold text-muted-foreground">—</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Fora da ordenação: {senador.motivo ?? "dados insuficientes"}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-4xl font-bold text-primary">
+                  {senador.score_final.toFixed(1)}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  de 100 pontos possíveis
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -571,18 +582,17 @@ function SenadorContent() {
                       {formatCurrency(senador.detalhes.teto_ceaps)}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Teto {ano === 0 ? "no periodo" : "anual"}
+                      Teto no período
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {(senador.detalhes.meses_exercicio ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} meses em exercício
                     </p>
                   </div>
                   <div>
                     <p className="text-3xl font-bold text-green-600">
-                      {(
-                        ((senador.detalhes.teto_ceaps -
-                          senador.detalhes.gasto_ceaps) /
-                          senador.detalhes.teto_ceaps) *
-                        100
-                      ).toFixed(1)}
-                      %
+                      {senador.detalhes.teto_ceaps > 0
+                        ? `${senador.economia_cota.toFixed(1)}%`
+                        : "—"}
                     </p>
                     <p className="text-sm text-muted-foreground">Economia</p>
                   </div>
@@ -605,10 +615,15 @@ function SenadorContent() {
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <p className="text-3xl font-bold text-foreground">
-                      {senador.detalhes.comissoes_ativas}
+                      {senador.detalhes.comissoes_titular + senador.detalhes.comissoes_suplente}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Comissões ativas
+                      Colegiados no período
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {senador.detalhes.comissoes_ativas} em andamento
+                      {(senador.detalhes.comissoes_fora_da_conta ?? 0) > 0 &&
+                        ` · ${senador.detalhes.comissoes_fora_da_conta} frentes, grupos e conselhos de honrarias fora da conta`}
                     </p>
                   </div>
                   <div>
@@ -630,6 +645,9 @@ function SenadorContent() {
                       {senador.detalhes.pontos_comissoes.toFixed(0)}
                     </p>
                     <p className="text-sm text-muted-foreground">Pontos</p>
+                    <p className="text-xs text-muted-foreground">
+                      Titular 2, suplente 1, uma vez por colegiado
+                    </p>
                   </div>
                 </div>
               </CardContent>

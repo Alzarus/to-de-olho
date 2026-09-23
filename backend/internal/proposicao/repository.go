@@ -1,6 +1,8 @@
 package proposicao
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -76,27 +78,37 @@ func (r *Repository) CountBySenadorID(senadorID int) (int64, error) {
 	return count, result.Error
 }
 
-// GetStats retorna estatisticas de proposicoes de um senador apresentadas a
-// partir do inicio do recorte (posse da legislatura atual)
+// GetStats retorna estatisticas de proposicoes apresentadas desde o inicio do
+// recorte (posse da legislatura atual)
 func (r *Repository) GetStats(senadorID int) (*ProposicaoStats, error) {
-	return r.stats(senadorID, "data_apresentacao >= ?", utils.InicioRecorte())
+	return r.GetStatsPeriodo(senadorID, utils.InicioRecorte(), time.Now())
 }
 
-// condicaoPrincipal marca a linha em que o senador e o primeiro autor
-const condicaoPrincipal = "posicao_autoria = 1"
+// condicaoSenador: o senador assina na condicao de senador (nao de deputado)
+const condicaoSenador = "tipo_autor IN ('SENADOR', 'LIDER', 'PRESIDENTE_SF')"
 
-// stats agrega as estatisticas de um senador em uma query. Contagens e
-// pontuacao consideram so a autoria principal; coautorias sao contadas a parte.
-func (r *Repository) stats(senadorID int, filtro string, args ...any) (*ProposicaoStats, error) {
+// condicaoPrincipal espelha Proposicao.AutoriaPrincipal: primeiro autor, como
+// senador, e nao e veto
+const condicaoPrincipal = "(posicao_autoria = 1 AND " + condicaoSenador + " AND sigla_subtipo_materia <> 'VET')"
+
+// condicaoCoautoria: assinou como senador, fora da primeira posicao
+const condicaoCoautoria = "(posicao_autoria > 1 AND " + condicaoSenador + " AND sigla_subtipo_materia <> 'VET')"
+
+// GetStatsPeriodo agrega as estatisticas das materias apresentadas em
+// [inicio, fim). Contagens e pontuacao consideram so a autoria principal;
+// coautorias e materias sem pontos (vetos, autoria como deputado ou
+// institucional) sao contadas a parte.
+func (r *Repository) GetStatsPeriodo(senadorID int, inicio, fim time.Time) (*ProposicaoStats, error) {
 	var linha struct {
-		Total, Coautorias, Pecs, Plps, Pls, Leis, Plenario, Tramitacao int
+		Total, Coautorias, SemPontos, Pecs, Plps, Pls, Leis, Plenario, Tramitacao int
 		Pontuacao                                                       float64
 	}
 	p := condicaoPrincipal
 	err := r.db.Model(&Proposicao{}).
 		Select(`
 			COUNT(*) FILTER (WHERE `+p+`) AS total,
-			COUNT(*) FILTER (WHERE COALESCE(posicao_autoria, 0) <> 1) AS coautorias,
+			COUNT(*) FILTER (WHERE `+condicaoCoautoria+`) AS coautorias,
+			COUNT(*) FILTER (WHERE NOT COALESCE(`+p+` OR `+condicaoCoautoria+`, false)) AS sem_pontos,
 			COUNT(*) FILTER (WHERE `+p+` AND sigla_subtipo_materia = 'PEC') AS pecs,
 			COUNT(*) FILTER (WHERE `+p+` AND sigla_subtipo_materia = 'PLP') AS plps,
 			COUNT(*) FILTER (WHERE `+p+` AND sigla_subtipo_materia = 'PL') AS pls,
@@ -104,8 +116,7 @@ func (r *Repository) stats(senadorID int, filtro string, args ...any) (*Proposic
 			COUNT(*) FILTER (WHERE `+p+` AND estagio_tramitacao IN ('AprovadoPlenario', 'TransformadoLei')) AS plenario,
 			COUNT(*) FILTER (WHERE `+p+` AND estagio_tramitacao IN ('Apresentado', 'EmComissao', 'AprovadoComissao')) AS tramitacao,
 			COALESCE(SUM(pontuacao) FILTER (WHERE `+p+`), 0) AS pontuacao`).
-		Where("senador_id = ?", senadorID).
-		Where(filtro, args...).
+		Where("senador_id = ? AND data_apresentacao >= ? AND data_apresentacao < ?", senadorID, inicio, fim).
 		Scan(&linha).Error
 	if err != nil {
 		return nil, err
@@ -115,6 +126,7 @@ func (r *Repository) stats(senadorID int, filtro string, args ...any) (*Proposic
 		SenadorID:          senadorID,
 		TotalProposicoes:   linha.Total,
 		TotalCoautorias:    linha.Coautorias,
+		TotalSemPontos:     linha.SemPontos,
 		TotalPECs:          linha.Pecs,
 		TotalPLPs:          linha.Plps,
 		TotalPLs:           linha.Pls,
@@ -143,7 +155,7 @@ func (r *Repository) GetProposicoesPorTipo(senadorID int) ([]ProposicaoPorTipo, 
 var colunasAtualizaveis = []string{
 	"sigla_subtipo_materia", "numero_materia", "ano_materia", "descricao_identificacao",
 	"ementa", "situacao_atual", "data_apresentacao", "estagio_tramitacao", "pontuacao",
-	"posicao_autoria", "total_autores", "autoria", "updated_at",
+	"posicao_autoria", "total_autores", "tipo_autor", "autoria", "updated_at",
 }
 
 var conflitoSenadorMateria = clause.OnConflict{
@@ -169,8 +181,9 @@ func (r *Repository) DeleteBySenadorID(senadorID int) error {
 	return r.db.Where("senador_id = ?", senadorID).Delete(&Proposicao{}).Error
 }
 
-// GetStatsByAno retorna estatisticas de proposicoes filtradas pelo ano da
-// materia (producao por safra)
+// GetStatsByAno retorna estatisticas das materias apresentadas no ano, dentro
+// do recorte (janeiro de 2023 e da legislatura anterior)
 func (r *Repository) GetStatsByAno(senadorID int, ano int) (*ProposicaoStats, error) {
-	return r.stats(senadorID, "ano_materia = ?", ano)
+	inicio, fim := utils.PeriodoDoAno(ano)
+	return r.GetStatsPeriodo(senadorID, inicio, fim)
 }

@@ -71,7 +71,13 @@ func (r *Repository) Count() (int64, error) {
 // GetStats retorna estatisticas de votacao de um senador desde o inicio do
 // recorte (posse da legislatura atual)
 func (r *Repository) GetStats(senadorID int) (*VotacaoStats, error) {
-	return r.stats(senadorID, "data >= ?", utils.InicioRecorte())
+	inicio, fim := utils.PeriodoDoMandato()
+	return r.GetStatsPeriodo(senadorID, inicio, fim)
+}
+
+// GetStatsPeriodo retorna estatisticas das votacoes com sessao em [inicio, fim)
+func (r *Repository) GetStatsPeriodo(senadorID int, inicio, fim time.Time) (*VotacaoStats, error) {
+	return r.stats(senadorID, "data >= ? AND data < ?", inicio, fim)
 }
 
 // stats conta os votos por sigla bruta e aplica a classificacao
@@ -136,8 +142,8 @@ func (r *Repository) SenadoresEmExercicioSemVotos(desde time.Time) ([]string, er
 
 // GetStatsByAno retorna estatisticas de votacao das sessoes de um ano
 func (r *Repository) GetStatsByAno(senadorID int, ano int) (*VotacaoStats, error) {
-	return r.stats(senadorID, "data >= ? AND data < ?",
-		time.Date(ano, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(ano+1, 1, 1, 0, 0, 0, 0, time.UTC))
+	inicio, fim := utils.PeriodoDoAno(ano)
+	return r.GetStatsPeriodo(senadorID, inicio, fim)
 }
 
 // FindAll retorna votacoes (uma linha por votacao, nao por voto) com

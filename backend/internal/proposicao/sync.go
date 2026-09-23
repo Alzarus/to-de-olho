@@ -142,11 +142,12 @@ func (s *SyncService) montarProposicoes(ctx context.Context, sen senador.Senador
 		p := s.convertToModel(api, sen.ID)
 
 		posicao, total, ok := PosicaoNoTexto(api.Autoria, sen.Nome)
+		tipo := "SENADOR" // o texto so resolve entradas "Senador"/"Senadora"
 		if ok {
 			resumo.Texto++
 		} else {
 			var err error
-			posicao, total, err = s.posicaoPeloDetalhe(api.ID, sen.CodigoParlamentar)
+			posicao, total, tipo, err = s.posicaoPeloDetalhe(api.ID, sen.CodigoParlamentar)
 			if err != nil {
 				return nil, resumo, fmt.Errorf("detalhe do processo %d: %w", api.ID, err)
 			}
@@ -158,6 +159,9 @@ func (s *SyncService) montarProposicoes(ctx context.Context, sen senador.Senador
 			}
 		}
 		p.PosicaoAutoria, p.TotalAutores = intOuNulo(posicao), intOuNulo(total)
+		if posicao > 0 {
+			p.TipoAutor = tipo
+		}
 		p.Pontuacao = p.CalcularPontuacao()
 		proposicoes = append(proposicoes, p)
 	}
@@ -224,23 +228,24 @@ func (s *SyncService) buscarDetalhes(ctx context.Context, sen senador.Senador, l
 
 // posicaoPeloDetalhe devolve a ordem do senador em autoriaIniciativa, a partir
 // do detalhe ja buscado. posicao = 0 quando o senador nao esta na lista.
-func (s *SyncService) posicaoPeloDetalhe(idProcesso, codigoParlamentar int) (posicao, total int, err error) {
+func (s *SyncService) posicaoPeloDetalhe(idProcesso, codigoParlamentar int) (posicao, total int, tipo string, err error) {
 	detalhe, ok := s.detalhes[idProcesso]
 	if !ok || detalhe == nil {
-		return 0, 0, fmt.Errorf("detalhe do processo %d nao carregado", idProcesso)
+		return 0, 0, "", fmt.Errorf("detalhe do processo %d nao carregado", idProcesso)
 	}
-	posicao, total = PosicaoNoDetalhe(detalhe.AutoriaIniciativa, codigoParlamentar)
-	return posicao, total, nil
+	posicao, total, tipo = PosicaoNoDetalhe(detalhe.AutoriaIniciativa, codigoParlamentar)
+	return posicao, total, tipo, nil
 }
 
-// PosicaoNoDetalhe devolve a ordem oficial do parlamentar e o total de autores.
-func PosicaoNoDetalhe(autores []senadoapi.AutorIniciativa, codigoParlamentar int) (posicao, total int) {
+// PosicaoNoDetalhe devolve a ordem oficial do parlamentar, o total de autores
+// e a condicao em que ele assina (siglaTipo).
+func PosicaoNoDetalhe(autores []senadoapi.AutorIniciativa, codigoParlamentar int) (posicao, total int, tipo string) {
 	for _, a := range autores {
 		if a.CodigoParlamentar != nil && *a.CodigoParlamentar == codigoParlamentar {
-			posicao = a.Ordem
+			posicao, tipo = a.Ordem, a.SiglaTipo
 		}
 	}
-	return posicao, len(autores)
+	return posicao, len(autores), tipo
 }
 
 func intOuNulo(v int) *int {

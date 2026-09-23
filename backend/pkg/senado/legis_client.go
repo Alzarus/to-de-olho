@@ -390,6 +390,7 @@ func (c *LegisClient) ListarVotacoesPeriodo(ctx context.Context, inicio, fim tim
 type AutorIniciativa struct {
 	Autor             string `json:"autor"`
 	Ordem             int    `json:"ordem"`
+	SiglaTipo         string `json:"siglaTipo"` // SENADOR, LIDER, PRESIDENTE_SF, DEPUTADO...
 	CodigoParlamentar *int   `json:"codigoParlamentar"` // null para autor nao parlamentar (Camara, Presidencia...)
 }
 

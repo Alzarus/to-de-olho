@@ -1,7 +1,8 @@
 package ceaps
 
 import (
-	"fmt"
+	"time"
+
 	"gorm.io/gorm"
 	
 	"github.com/Alzarus/to-de-olho/internal/utils"
@@ -115,19 +116,38 @@ func (r *Repository) GetTotal(senadorID int) (float64, error) {
 		Select("COALESCE(SUM(valor), 0)").
 		Where("senador_id = ? AND ano >= ?", senadorID, utils.GetInicioLegislaturaAtual()).
 		Scan(&total).Error
-	fmt.Printf("[DEBUG] GetTotal SenadorID=%d Total=%f Err=%v\n", senadorID, total, err)
 	return total, err
-}
-
-// Upsert insere ou atualiza uma despesa usando chave composta
-func (r *Repository) Upsert(despesa *DespesaCEAPS) error {
-	_ = despesa.BeforeCreate(nil)
-	return r.db.Where("senador_id = ? AND cnpj_cpf = ? AND data_emissao = ? AND valor_centavos = ?",
-		despesa.SenadorID, despesa.CNPJCPF, despesa.DataEmissao, despesa.ValorCentavos).
-		Assign(*despesa).FirstOrCreate(despesa).Error
 }
 
 // DeleteByAno remove todas as despesas de um determinado ano
 func (r *Repository) DeleteByAno(ano int) error {
 	return r.db.Where("ano = ?", ano).Delete(&DespesaCEAPS{}).Error
+}
+
+// GetTotalPeriodo soma as despesas com competencia (ano, mes) nos meses que
+// tocam [inicio, fim). E a fonte do criterio de economia: mesmo periodo das
+// votacoes e proposicoes (janeiro de 2023 e da legislatura anterior e fica de
+// fora do mandato).
+func (r *Repository) GetTotalPeriodo(senadorID int, inicio, fim time.Time) (float64, error) {
+	var total float64
+	ultimo := fim.Add(-time.Nanosecond)
+	err := r.db.Model(&DespesaCEAPS{}).
+		Select("COALESCE(SUM(valor), 0)").
+		Where("senador_id = ? AND ano * 100 + mes BETWEEN ? AND ?", senadorID,
+			inicio.Year()*100+int(inicio.Month()), ultimo.Year()*100+int(ultimo.Month())).
+		Scan(&total).Error
+	return total, err
+}
+
+// SubstituirAno troca todas as despesas do ano numa transacao
+func (r *Repository) SubstituirAno(ano int, despesas []DespesaCEAPS) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("ano = ?", ano).Delete(&DespesaCEAPS{}).Error; err != nil {
+			return err
+		}
+		if len(despesas) == 0 {
+			return nil
+		}
+		return tx.CreateInBatches(despesas, 1000).Error
+	})
 }

@@ -115,17 +115,21 @@ func TestMontarProposicoesFalhaNoDetalheDevolveErro(t *testing.T) {
 
 func TestCalcularPontuacaoSoPrimeiroAutor(t *testing.T) {
 	casos := []struct {
-		posicao  *int
-		esperado float64
+		sigla, tipo string
+		posicao     *int
+		esperado    float64
 	}{
-		{ptr(1), 3 * 16},
-		{ptr(2), 0},
-		{nil, 0},
+		{"PEC", "SENADOR", ptr(1), 3 * 16},
+		{"PEC", "LIDER", ptr(1), 3 * 16},
+		{"PEC", "SENADOR", ptr(2), 0},
+		{"PEC", "", nil, 0},
+		{"PL", "DEPUTADO", ptr(1), 0}, // autoria de quando era deputado
+		{"VET", "SENADOR", ptr(1), 0}, // veto e ato do Presidente da Republica
 	}
 	for _, c := range casos {
-		p := Proposicao{SiglaSubtipoMateria: "PEC", EstagioTramitacao: "TransformadoLei", PosicaoAutoria: c.posicao}
+		p := Proposicao{SiglaSubtipoMateria: c.sigla, TipoAutor: c.tipo, EstagioTramitacao: "TransformadoLei", PosicaoAutoria: c.posicao}
 		if got := p.CalcularPontuacao(); got != c.esperado {
-			t.Errorf("posicao %v: pontuacao %v; esperado %v", val(c.posicao), got, c.esperado)
+			t.Errorf("%s %s posicao %v: pontuacao %v; esperado %v", c.sigla, c.tipo, val(c.posicao), got, c.esperado)
 		}
 	}
 }

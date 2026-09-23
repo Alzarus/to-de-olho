@@ -30,3 +30,26 @@ func InicioRecorte() time.Time {
 	}
 	return InicioLegislatura(time.Now())
 }
+
+// PeriodoDoMandato e [inicio do recorte, agora): o periodo do ranking do mandato.
+func PeriodoDoMandato() (inicio, fim time.Time) {
+	return InicioRecorte(), time.Now()
+}
+
+// PeriodoDoAno e o ano-calendario cortado pelo recorte e por agora. Em 2023,
+// janeiro fica de fora (legislatura anterior); no ano corrente, o fim e hoje.
+// Todas as fontes do ranking anual usam este mesmo intervalo.
+func PeriodoDoAno(ano int) (inicio, fim time.Time) {
+	inicio = time.Date(ano, time.January, 1, 0, 0, 0, 0, time.UTC)
+	fim = time.Date(ano+1, time.January, 1, 0, 0, 0, 0, time.UTC)
+	if r := InicioRecorte(); inicio.Before(r) {
+		inicio = r
+	}
+	if agora := time.Now(); fim.After(agora) {
+		fim = agora
+	}
+	if fim.Before(inicio) {
+		fim = inicio
+	}
+	return inicio, fim
+}

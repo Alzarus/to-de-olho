@@ -27,7 +27,9 @@ var sufixoOutros = regexp.MustCompile(`(?i)\s+e\s+outros\.?\s*$`)
 
 // PosicaoNoTexto devolve a posicao (1 = primeiro autor) de nomeParlamentar no
 // texto de autoria e o total de autores. total = 0 quando o texto termina em
-// "e outros" (total desconhecido).
+// "e outros" (total desconhecido). So resolve quando a entrada do senador vem
+// como "Senador"/"Senadora": autoria como deputado, lider ou presidente cai
+// no detalhe, que informa o tipo de autor.
 func PosicaoNoTexto(autoria, nomeParlamentar string) (posicao, total int, ok bool) {
 	texto := strings.TrimSpace(autoria)
 	eOutros := false
@@ -41,12 +43,15 @@ func PosicaoNoTexto(autoria, nomeParlamentar string) (posicao, total int, ok boo
 	}
 
 	var nomes []string
+	var comoSenador []bool
 	for resto := texto; strings.TrimSpace(resto) != ""; {
 		m := entradaAutor.FindStringSubmatchIndex(resto)
 		if m == nil {
 			return 0, 0, false // estrutura nao reconhecida (ex.: "Comissao de Constituicao, Justica e ...")
 		}
-		nomes = append(nomes, normalizarNome(resto[m[2]:m[3]]))
+		entrada := resto[m[2]:m[3]]
+		nomes = append(nomes, normalizarNome(entrada))
+		comoSenador = append(comoSenador, tratamentoSenador(entrada))
 		resto = resto[m[1]:]
 	}
 
@@ -57,6 +62,9 @@ func PosicaoNoTexto(autoria, nomeParlamentar string) (posicao, total int, ok boo
 		}
 		if posicao != 0 {
 			return 0, 0, false // nome repetido: ambiguo
+		}
+		if !comoSenador[i] {
+			return 0, 0, false // autoria em outra condicao: o detalhe decide
 		}
 		posicao = i + 1
 	}
@@ -88,6 +96,16 @@ func normalizarNome(nome string) string {
 	}
 	return strings.Join(palavras, " ")
 }
+
+// tratamentoSenador indica se a entrada comeca com "Senador" ou "Senadora".
+func tratamentoSenador(entrada string) bool {
+	palavras := strings.Fields(strings.ToLower(entrada))
+	return len(palavras) > 1 && (palavras[0] == "senador" || palavras[0] == "senadora")
+}
+
+// TiposSenador sao os siglaTipo de autoriaIniciativa em que o autor age como
+// senador. DEPUTADO (materia apresentada quando era deputado) nao conta.
+var TiposSenador = map[string]bool{"SENADOR": true, "LIDER": true, "PRESIDENTE_SF": true}
 
 // MesmoNome compara dois nomes com a mesma normalizacao de PosicaoNoTexto.
 func MesmoNome(a, b string) bool {

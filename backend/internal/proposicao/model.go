@@ -21,6 +21,7 @@ type Proposicao struct {
 	// Autoria (item 9): so o primeiro autor pontua
 	PosicaoAutoria *int   `json:"posicao_autoria"` // 1 = primeiro autor
 	TotalAutores   *int   `json:"total_autores"`   // null quando a API so informa "e outros"
+	TipoAutor      string `json:"tipo_autor,omitempty"` // SENADOR, LIDER, PRESIDENTE_SF, DEPUTADO (siglaTipo da API)
 	Autoria        string `json:"autoria,omitempty"` // texto bruto da API, para auditoria
 
 	// Para calculo de score
@@ -41,6 +42,7 @@ type ProposicaoStats struct {
 	SenadorID           int     `json:"senador_id"`
 	TotalProposicoes    int     `json:"total_proposicoes"`    // de autoria principal (primeiro autor)
 	TotalCoautorias     int     `json:"total_coautorias"`     // assinadas como coautor: nao pontuam
+	TotalSemPontos      int     `json:"total_sem_pontos"`     // vetos, autoria como deputado ou institucional
 	TotalPECs           int     `json:"total_pecs"`           // Propostas de Emenda Constitucional
 	TotalPLPs           int     `json:"total_plps"`           // Projetos de Lei Complementar
 	TotalPLs            int     `json:"total_pls"`            // Projetos de Lei
@@ -58,9 +60,11 @@ type ProposicaoPorTipo struct {
 	Total int    `json:"total"`
 }
 
-// AutoriaPrincipal indica se o senador e o primeiro autor da materia.
+// AutoriaPrincipal indica se a materia pontua para o senador: primeiro autor,
+// na condicao de senador (nao de deputado), e nao e veto (veto e ato do
+// Presidente da Republica sobre materia ja aprovada).
 func (p *Proposicao) AutoriaPrincipal() bool {
-	return p.PosicaoAutoria != nil && *p.PosicaoAutoria == 1
+	return p.PosicaoAutoria != nil && *p.PosicaoAutoria == 1 && TiposSenador[p.TipoAutor] && p.SiglaSubtipoMateria != "VET"
 }
 
 // CalcularPontuacao calcula a pontuacao de uma proposicao baseado no estagio e tipo.

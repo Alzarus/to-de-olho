@@ -1,6 +1,7 @@
 package ceaps
 
 import (
+	"math"
 	"time"
 
 	"gorm.io/gorm"
@@ -8,22 +9,24 @@ import (
 
 // DespesaCEAPS representa um lancamento da Cota para o Exercicio da Atividade Parlamentar
 type DespesaCEAPS struct {
-	ID        int `gorm:"primaryKey" json:"id"`
-	SenadorID int `gorm:"uniqueIndex:idx_despesa_unica,priority:1;index:idx_despesa_senador_ano;not null" json:"senador_id"`
+	ID int `gorm:"primaryKey" json:"id"`
+	// IDOrigem e o id do lancamento na API do Senado: a chave. A chave antiga
+	// (senador, cnpj, data, valor) juntava lancamentos distintos com o mesmo
+	// fornecedor, dia e valor (ex.: 28 de 71 do Davi Alcolumbre em 2025).
+	IDOrigem  int `gorm:"uniqueIndex:idx_despesa_origem;not null" json:"id_origem"`
+	SenadorID int `gorm:"index:idx_despesa_senador_ano;not null" json:"senador_id"`
 	Ano       int `gorm:"index:idx_despesa_senador_ano;not null" json:"ano"`
 	Mes       int `json:"mes"`
 
 	// Dados do lancamento
 	TipoDespesa string     `json:"tipo_despesa"`
 	Fornecedor  string     `json:"fornecedor"`
-	CNPJCPF     string     `gorm:"column:cnpj_cpf;uniqueIndex:idx_despesa_unica,priority:2" json:"cnpj_cpf"`
+	CNPJCPF     string     `gorm:"column:cnpj_cpf" json:"cnpj_cpf"`
 	Documento   string     `json:"documento,omitempty"`
-	DataEmissao *time.Time `gorm:"uniqueIndex:idx_despesa_unica,priority:3" json:"data_emissao,omitempty"`
+	DataEmissao *time.Time `json:"data_emissao,omitempty"`
 	Valor       float64    `json:"valor"`
 
-	// Chave natural para idempotencia (upsert)
-	// Composta: (senador_id, cnpj_cpf, data_emissao, valor_centavos)
-	ValorCentavos int64 `gorm:"uniqueIndex:idx_despesa_unica,priority:4" json:"-"`
+	ValorCentavos int64 `json:"-"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -36,7 +39,7 @@ func (DespesaCEAPS) TableName() string {
 
 // BeforeCreate converte valor para centavos antes de inserir
 func (d *DespesaCEAPS) BeforeCreate(_ *gorm.DB) error {
-	d.ValorCentavos = int64(d.Valor * 100)
+	d.ValorCentavos = int64(math.Round(d.Valor * 100))
 	return nil
 }
 

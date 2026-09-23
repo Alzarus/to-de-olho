@@ -119,3 +119,24 @@ func TestContract_ListaEmendas(t *testing.T) {
 	
 	// Poderiamos decodificar um item para validar struct, mas so o 200 ja garante que a chave funciona e endpoint existe
 }
+
+// TestContract_Exercicios: periodos de exercicio de um titular com dois
+// mandatos (Amin), de quem se afastou e voltou (Renan Filho) e de um suplente
+func TestContract_Exercicios(t *testing.T) {
+	if os.Getenv("CI") != "" || testing.Short() {
+		t.Skip("contract test")
+	}
+	client := NewLegisClient()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	for _, codigo := range []int{22, 5207, 5974} {
+		ex, err := client.ListarExercicios(ctx, codigo)
+		if err != nil {
+			t.Fatalf("%d: %v", codigo, err)
+		}
+		if len(ex) == 0 || ex[0].Inicio == "" || ex[0].Legislatura == 0 {
+			t.Errorf("%d: exercicios vazios ou incompletos: %+v", codigo, ex)
+		}
+		t.Logf("%d: %+v", codigo, ex)
+	}
+}

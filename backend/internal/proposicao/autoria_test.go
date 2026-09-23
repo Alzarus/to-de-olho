@@ -28,6 +28,8 @@ func TestPosicaoNoTexto(t *testing.T) {
 		{"nome repetido e ambiguo", "Senador Alan Rick (UNIÃO/AC), Senador Alan Rick (PL/AC)", "Alan Rick", 0, 0, false},
 		{"vazio", "", "Alan Rick", 0, 0, false},
 		{"nome com ponto", "Senador Dr. Hiran (PP/RR), Senador Alan Rick (UNIÃO/AC)", "Dr. Hiran", 1, 2, true},
+		{"como deputado vai para o detalhe", "Deputado Alan Rick (UNIÃO/AC)", "Alan Rick", 0, 0, false},
+		{"como lider vai para o detalhe", "Líder do PL Alan Rick (PL/AC), Senador Magno Malta (PL/ES)", "Alan Rick", 0, 0, false},
 	}
 
 	for _, c := range casos {

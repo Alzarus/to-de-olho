@@ -4,6 +4,7 @@ export interface ScoreDetalhes {
   // Produtividade
   total_proposicoes: number; // autoria principal (primeiro autor)
   total_coautorias: number; // coautorias: aparecem na ficha, nao pontuam
+  total_sem_pontos?: number; // vetos, autoria como deputado ou institucional
   proposicoes_aprovadas: number;
   transformadas_em_lei: number;
   pontuacao_proposicoes: number;
@@ -20,13 +21,15 @@ export interface ScoreDetalhes {
 
   // Economia CEAPS
   gasto_ceaps: number;
-  teto_ceaps: number;
+  teto_ceaps: number; // teto mensal da UF x meses em exercicio
+  meses_exercicio?: number; // no periodo
 
   // Comissoes
   comissoes_ativas: number;
   comissoes_titular: number;
   comissoes_suplente: number;
   pontos_comissoes: number;
+  comissoes_fora_da_conta?: number; // frentes, grupos de amizade, honrarias
 }
 
 export interface SenadorScore {
@@ -48,6 +51,7 @@ export interface SenadorScore {
   score_final: number;
   posicao: number; // 0 quando fora da ordenacao
   dados_insuficientes: boolean;
+  motivo?: string; // por que ficou fora da ordenacao
 
   // Detalhes para transparencia
   detalhes: ScoreDetalhes;
@@ -190,6 +194,7 @@ export interface Proposicao {
   estagio_tramitacao: string;
   pontuacao: number;
   posicao_autoria?: number | null; // 1 = primeiro autor; null = autoria institucional
+  tipo_autor?: string; // SENADOR, LIDER, PRESIDENTE_SF, DEPUTADO
   total_autores?: number | null;
   autoria?: string;
 }

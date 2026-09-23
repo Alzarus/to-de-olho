@@ -1,15 +1,18 @@
-// rebackfill_v3 recarrega votacoes e proposicoes com o schema v3 (itens 1, 2,
-// 3, 4 e 9 da auditoria). Ver PLANO-MIGRACAO.md §6.
+// rebackfill_v3 recarrega votacoes, proposicoes, comissao_membros, mandatos e
+// despesas_ceaps
+// com o schema v3 (itens 1-4 e 6-9 da auditoria). Ver PLANO-MIGRACAO.md §6 e §11.
 //
 // Feito para rodar num banco de STAGING restaurado do dump de producao; as
-// duas tabelas prontas sao depois trocadas em producao com pg_dump/pg_restore.
+// cinco tabelas prontas sao depois trocadas em producao com pg_dump/pg_restore.
 //
-//  1. DDL: remove os indices unicos antigos e trunca as duas tabelas
+//  1. DDL: remove os indices unicos antigos e trunca as quatro tabelas
+//     (votacoes, proposicoes, comissao_membros, mandatos)
 //  2. AutoMigrate: cria colunas e indices novos (em tabela vazia, NOT NULL passa)
 //  3. votos do recorte por intervalo de datas (1 chamada por mes, com retry)
-//  4. proposicoes por senador em exercicio (retry por senador, autoria)
-//  5. checagem de completude e queries de validacao (§7)
-//  6. ranking recalculado e resumo (mediana, desvio, 100%, casos do plano)
+//  4. periodos de exercicio, comissoes e CEAPS (retry)
+//  5. proposicoes por senador em exercicio (retry por senador, autoria)
+//  6. checagem de completude e queries de validacao (§7 e §11)
+//  7. ranking recalculado e resumo (mediana, desvio, 100%, casos do plano)
 //
 // A tabela senadores NAO e sincronizada: os senador_id das tabelas novas tem
 // de ser os mesmos de producao.
@@ -43,6 +46,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/utils"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
+	"github.com/Alzarus/to-de-olho/pkg/retry"
 	"github.com/Alzarus/to-de-olho/pkg/senado"
 )
 
@@ -59,7 +63,7 @@ func main() {
 		sair("DATABASE_URL ausente ou invalido")
 	}
 	if !*soRelatorio && *confirmar != u.Host {
-		sair(fmt.Sprintf("recusado: -confirmar %q nao bate com o host do DATABASE_URL (%s). Este comando TRUNCA votacoes e proposicoes.", *confirmar, u.Host))
+		sair(fmt.Sprintf("recusado: -confirmar %q nao bate com o host do DATABASE_URL (%s). Este comando TRUNCA votacoes, proposicoes, comissao_membros, mandatos e despesas_ceaps.", *confirmar, u.Host))
 	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Warn)})
@@ -86,7 +90,9 @@ func main() {
 				// restricao de uma versao antiga do modelo, existe em producao e
 				// tambem impede coautoria (achada no ensaio em staging, 23/09)
 				"ALTER TABLE proposicoes DROP CONSTRAINT IF EXISTS idx_proposicoes_codigo_materia",
-				"TRUNCATE votacoes, proposicoes RESTART IDENTITY",
+				// CEAPS: chave antiga juntava lancamentos distintos (achado de 23/09)
+				"DROP INDEX IF EXISTS idx_despesa_unica",
+				"TRUNCATE votacoes, proposicoes, comissao_membros, mandatos, despesas_ceaps RESTART IDENTITY",
 			} {
 				fmt.Println("  ", sql)
 				if err := tx.Exec(sql).Error; err != nil {
@@ -100,7 +106,7 @@ func main() {
 		}
 
 		etapa("2. AutoMigrate")
-		if err := db.AutoMigrate(&votacao.Votacao{}, &proposicao.Proposicao{}); err != nil {
+		if err := db.AutoMigrate(&votacao.Votacao{}, &proposicao.Proposicao{}, &comissao.ComissaoMembro{}, &senador.Mandato{}, &ceaps.DespesaCEAPS{}); err != nil {
 			sair("AutoMigrate: " + err.Error())
 		}
 
@@ -112,7 +118,25 @@ func main() {
 		}
 		fmt.Printf("   votacoes=%d votos=%d ignorados(fora de senadores)=%d em %s\n", resumo.Votacoes, resumo.Votos, resumo.Ignorados, time.Since(t).Round(time.Second))
 
-		etapa("4. Proposicoes")
+		etapa("4. Exercicios, comissoes e CEAPS")
+		t = time.Now()
+		if err := senador.NewSyncService(senadorRepo, client).SyncExercicios(ctx); err != nil {
+			sair("exercicios: " + err.Error())
+		}
+		if err := comissao.NewSyncService(comissao.NewRepository(db), senadorRepo, client).SyncFromAPI(ctx); err != nil {
+			sair("comissoes: " + err.Error())
+		}
+
+		// CEAPS de cada ano do recorte, como retrato da API
+		ceapsSync := ceaps.NewSyncService(ceaps.NewRepository(db), senadorRepo, senado.NewAdmClient())
+		for ano := utils.InicioRecorte().Year(); ano <= time.Now().Year(); ano++ {
+			if err := retry.WithRetry(ctx, 3, fmt.Sprintf("ceaps %d", ano), func() error { return ceapsSync.SyncFromAPI(ctx, ano) }); err != nil {
+				sair(fmt.Sprintf("ceaps %d: %s", ano, err))
+			}
+		}
+		fmt.Printf("   exercicios, comissoes e CEAPS em %s\n", time.Since(t).Round(time.Second))
+
+		etapa("5. Proposicoes")
 		t = time.Now()
 		if err := proposicao.NewSyncService(proposicaoRepo, senadorRepo, client).SyncFromAPI(ctx); err != nil {
 			sair("proposicoes: " + err.Error())
@@ -120,10 +144,10 @@ func main() {
 		fmt.Printf("   em %s\n", time.Since(t).Round(time.Second))
 	}
 
-	etapa("5. Validacao (PLANO-MIGRACAO.md §7)")
+	etapa("6. Validacao (PLANO-MIGRACAO.md §7 e §11)")
 	ok := validar(db)
 
-	etapa("6. Ranking")
+	etapa("7. Ranking")
 	rk := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceaps.NewRepository(db), comissao.NewRepository(db))
 	resp, err := rk.CalcularRanking(ctx, nil)
 	if err != nil {
@@ -167,6 +191,7 @@ func validar(db *gorm.DB) bool {
 		WHERE tablename IN ('votacoes', 'proposicoes') AND indexdef LIKE 'CREATE UNIQUE%'
 		ORDER BY 1`).Scan(&unicos)
 	esperados := "proposicoes.idx_proposicao_senador_materia proposicoes.proposicoes_pkey votacoes.idx_votacao_senador_votacao votacoes.votacoes_pkey"
+	// comissao_membros e mandatos nao tem indice unico alem da chave primaria
 	marca := "ok"
 	if strings.Join(unicos, " ") != esperados {
 		marca, ok = "FALHOU (esperado: "+esperados+")", false
@@ -177,6 +202,8 @@ func validar(db *gorm.DB) bool {
 	informar("votacoes distintas no recorte", contar(`SELECT COUNT(DISTINCT codigo_votacao) FROM votacoes WHERE data >= ?`, recorte), "423 ate 03/09/2026")
 	informar("votacoes da sessao 473484 (19/08/2025)", contar(`SELECT COUNT(DISTINCT codigo_votacao) FROM votacoes WHERE sessao_id = '473484'`), "24")
 	informar("linhas de voto no recorte", contar(`SELECT COUNT(*) FROM votacoes WHERE data >= ?`, recorte), "~31.387")
+	checar("despesas CEAPS sem id de origem", contar(`SELECT COUNT(*) FROM despesas_ceaps WHERE id_origem IS NULL OR id_origem = 0`), 0)
+	informar("despesas CEAPS gravadas (anos do recorte)", contar(`SELECT COUNT(*) FROM despesas_ceaps`), "antes: 70.143; fonte (81 atuais): 73.265 em 23/09")
 	checar("linhas com (senador, votacao) repetido", contar(`SELECT COUNT(*) FROM (SELECT 1 FROM votacoes GROUP BY senador_id, codigo_votacao HAVING COUNT(*) > 1) x`), 0)
 
 	fmt.Println("  item 4")
@@ -195,7 +222,24 @@ func validar(db *gorm.DB) bool {
 	// autoria institucional (Comissao Diretora, comissao, partido, lideranca):
 	// o texto cita senadores, mas autoriaIniciativa nao. Ninguem e primeiro autor.
 	informar("linhas sem posicao (autoria institucional, nao pontuam)", contar(`SELECT COUNT(*) FROM proposicoes WHERE posicao_autoria IS NULL`), "dry-run 22-23/09: 404, 48 no recorte")
-	checar("coautorias com pontuacao > 0", contar(`SELECT COUNT(*) FROM proposicoes WHERE COALESCE(posicao_autoria, 0) <> 1 AND pontuacao > 0`), 0)
+	checar("linhas que pontuam sem ser autoria principal como senador", contar(`SELECT COUNT(*) FROM proposicoes WHERE pontuacao > 0
+		AND NOT (posicao_autoria = 1 AND tipo_autor IN ('SENADOR', 'LIDER', 'PRESIDENTE_SF') AND sigla_subtipo_materia <> 'VET')`), 0)
+	checar("linhas com posicao e sem tipo de autor", contar(`SELECT COUNT(*) FROM proposicoes WHERE posicao_autoria IS NOT NULL AND COALESCE(tipo_autor, '') = ''`), 0)
+	informar("sem pontos no recorte: vetos", contar(`SELECT COUNT(*) FROM proposicoes WHERE sigla_subtipo_materia = 'VET' AND data_apresentacao >= ?`, recorte), "41 com posicao 1 no ensaio de 23/09")
+	informar("sem pontos no recorte: autoria como deputado", contar(`SELECT COUNT(*) FROM proposicoes WHERE tipo_autor = 'DEPUTADO' AND data_apresentacao >= ?`, recorte), "-")
+
+	fmt.Println("  itens 6, 7 e 8")
+	checar("senadores em exercicio sem periodo de exercicio no recorte", contar(`
+		SELECT COUNT(*) FROM senadores s WHERE s.em_exercicio AND NOT EXISTS (
+			SELECT 1 FROM mandatos m WHERE m.senador_id = s.id AND (m.fim IS NULL OR m.fim >= ?))`, recorte), 0)
+	checar("senadores em exercicio sem periodo em aberto", contar(`
+		SELECT COUNT(*) FROM senadores s WHERE s.em_exercicio AND NOT EXISTS (
+			SELECT 1 FROM mandatos m WHERE m.senador_id = s.id AND m.fim IS NULL)`), 0)
+	// a propria API tem algumas (ex.: CPMI Fundos de Pensao, 2003); so importa se tocar o recorte
+	checar("participacoes com fim antes do inicio que tocam o recorte", contar(`SELECT COUNT(*) FROM comissao_membros
+		WHERE data_fim < data_inicio AND (data_inicio >= ? OR data_fim >= ?)`, recorte, recorte), 0)
+	informar("participacoes com fim antes do inicio (erro da API, fora do recorte)", contar(`SELECT COUNT(*) FROM comissao_membros WHERE data_fim < data_inicio`), "5 em 23/09: 2003 e 2015")
+	informar("participacoes em comissao gravadas", contar(`SELECT COUNT(*) FROM comissao_membros`), "antes: 3.870, 439 com datas invertidas")
 	informar("proposicoes do Alan Rick (5672)", contar(`SELECT COUNT(*) FROM proposicoes p JOIN senadores s ON s.id = p.senador_id WHERE s.codigo_parlamentar = 5672`), "385")
 	informar("proposicoes do Esperidiao Amin (22)", contar(`SELECT COUNT(*) FROM proposicoes p JOIN senadores s ON s.id = p.senador_id WHERE s.codigo_parlamentar = 22`), "sobe; deixa de perder ~64%")
 
@@ -236,7 +280,7 @@ func resumirRanking(db *gorm.DB, resp *ranking.RankingResponse) {
 	}
 	fmt.Printf("   ordenados: %d   sem dados: %d\n", len(resp.Ranking), len(resp.SemDados))
 	for _, s := range resp.SemDados {
-		fmt.Printf("     sem dados: %s (%d registros)\n", s.Nome, s.Detalhes.TotalVotacoes)
+		fmt.Printf("     sem dados: %-26s %s (%.1f meses, %d votacoes)\n", s.Nome, s.Motivo, s.Detalhes.MesesExercicio, s.Detalhes.TotalVotacoes)
 	}
 	fmt.Printf("   %-14s %8s %8s %8s\n", "presenca", "mediana", "desvio", "com 100")
 	fmt.Printf("   %-14s %8.1f %8.1f %5d/%d   (plano: 89,8 / 11,0 / 2/81)\n", "A bruta", mediana(as), desvio(as), cemA, len(as))

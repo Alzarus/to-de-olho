@@ -118,6 +118,10 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 		slog.Error("falha critica no backfill de senadores", "error", err)
 		return // Sem senadores nao da pra continuar
 	}
+	// periodos de exercicio: base do teto da cota e do piso de tempo (item 8)
+	if err := s.senadorSync.SyncExercicios(ctx); err != nil {
+		slog.Error("falha no backfill de exercicios", "error", err)
+	}
 
 	// B. Votacoes do recorte, por intervalo de datas (upsert: pode repetir)
 	slog.Info("--- PASSO 2/6: VOTACOES ---")
@@ -185,6 +189,9 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 		return s.senadorSync.SyncFromAPI(ctx)
 	}); err != nil {
 		slog.Error("falha sync senadores", "error", err)
+	}
+	if err := s.senadorSync.SyncExercicios(ctx); err != nil {
+		slog.Error("falha sync exercicios", "error", err)
 	}
 
 	// 2. Votacoes dos ultimos 30 dias: 1 chamada por mes, com retry, traz todas

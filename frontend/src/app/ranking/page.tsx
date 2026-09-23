@@ -915,8 +915,9 @@ function RankingContent() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Dados insuficientes</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Sem registro de votação nominal no período, não há presença a medir.
-              Estes senadores ficam fora da ordenação em vez de receber nota zero.
+              Menos de 6 meses em exercício no período, ou nenhum registro de
+              votação: não há base para comparar. Estes senadores ficam fora da
+              ordenação em vez de ocupar uma posição que o dado não sustenta.
             </p>
           </CardHeader>
           <CardContent>
@@ -928,6 +929,7 @@ function RankingContent() {
                     className="inline-block rounded-md border px-3 py-1 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {s.nome} <span className="text-muted-foreground">({s.partido}/{s.uf})</span>
+                    {s.motivo && <span className="block text-xs text-muted-foreground">{s.motivo}</span>}
                   </Link>
                 </li>
               ))}

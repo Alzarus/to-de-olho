@@ -34,3 +34,19 @@ func TestInicioRecorteSobrescritoPorVariavel(t *testing.T) {
 		t.Errorf("valor invalido deveria cair no padrao, obtido %s", got)
 	}
 }
+
+func TestPeriodoDoAno(t *testing.T) {
+	t.Setenv("RECORTE_INICIO", "2023-02-01")
+	ini, fim := PeriodoDoAno(2023)
+	if ini.Format("2006-01-02") != "2023-02-01" || fim.Format("2006-01-02") != "2024-01-01" {
+		t.Errorf("2023: %s..%s (janeiro e da legislatura anterior)", ini, fim)
+	}
+	ini, fim = PeriodoDoAno(2024)
+	if ini.Format("2006-01-02") != "2024-01-01" || fim.Format("2006-01-02") != "2025-01-01" {
+		t.Errorf("2024: %s..%s", ini, fim)
+	}
+	ano := time.Now().Year()
+	if _, fim = PeriodoDoAno(ano); fim.After(time.Now()) {
+		t.Errorf("ano corrente termina hoje, nao em dezembro: %s", fim)
+	}
+}

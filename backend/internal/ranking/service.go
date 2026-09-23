@@ -2,6 +2,7 @@ package ranking
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -12,6 +13,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/senador"
+	"github.com/Alzarus/to-de-olho/internal/utils"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 )
 
@@ -41,16 +43,15 @@ func NewService(
 	}
 }
 
-// CalcularRanking calcula o ranking de todos os senadores
+// CalcularRanking calcula o ranking de todos os senadores em exercicio.
+//
+// Todas as fontes usam o mesmo periodo: o mandato (desde a posse da
+// legislatura) ou um ano-calendario cortado pelo recorte e por hoje.
 func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingResponse, error) {
-	// 1. Tentar buscar do cache (Memória Local)
-	// [COST-SAVING] Substituicao do Redis por cache em memoria local
-	cacheKey := "ranking:v2:geral"
+	cacheKey := "ranking:v3:geral"
 	if ano != nil {
-		cacheKey = fmt.Sprintf("ranking:v2:%d", *ano)
+		cacheKey = fmt.Sprintf("ranking:v3:%d", *ano)
 	}
-
-	// Tenta pegar do cache local
 	if cached := localCache.Get(cacheKey); cached != nil {
 		slog.Info("ranking retornado do cache local (RAM)", "key", cacheKey)
 		return cached, nil
@@ -58,43 +59,30 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 
 	slog.Info("iniciando calculo de ranking (cache miss)", "ano", ano)
 
-	// Buscar todos os senadores
 	senadores, err := s.senadorRepo.FindAll(false)
 	if err != nil {
 		return nil, err
 	}
 
-	// Primeiro, coletar dados brutos de todos para normalizacao
-	var maxPontuacaoProd float64
-	var maxPontosComissoes float64
-
-	dadosBrutos := make(map[int]*dadosBrutosSenador)
-
+	inicio, fim := periodo(ano)
+	dadosBrutos := make(map[int]*dadosBrutosSenador, len(senadores))
 	for _, sen := range senadores {
-		dados := s.coletarDadosBrutos(sen.ID, ano)
-		dadosBrutos[sen.ID] = dados
+		dadosBrutos[sen.ID] = s.coletarDadosBrutos(sen.ID, inicio, fim)
+	}
 
-		if dados.pontuacaoProposicoes > maxPontuacaoProd {
-			maxPontuacaoProd = dados.pontuacaoProposicoes
+	// A escala (maior pontuacao da Casa) sai so de quem entra na ordenacao
+	maxPontuacaoProd, maxPontosComissoes := 1.0, 1.0
+	for _, d := range dadosBrutos {
+		if motivoInsuficiente(d) != "" {
+			continue
 		}
-		if dados.pontosComissoes > maxPontosComissoes {
-			maxPontosComissoes = dados.pontosComissoes
-		}
+		maxPontuacaoProd = math.Max(maxPontuacaoProd, d.prop.PontuacaoTotal)
+		maxPontosComissoes = math.Max(maxPontosComissoes, float64(d.com.Pontos))
 	}
 
-	// Garantir minimos para evitar divisao por zero
-	if maxPontuacaoProd == 0 {
-		maxPontuacaoProd = 1
-	}
-	if maxPontosComissoes == 0 {
-		maxPontosComissoes = 1
-	}
-
-	// Calcular scores normalizados; quem nao tem dado sai da ordenacao
 	var scores, semDados []SenadorScore
 	for _, sen := range senadores {
-		dados := dadosBrutos[sen.ID]
-		score := s.calcularScoreNormalizado(sen, dados, maxPontuacaoProd, maxPontosComissoes, ano)
+		score := s.calcularScoreNormalizado(sen, dadosBrutos[sen.ID], maxPontuacaoProd, maxPontosComissoes)
 		if score.DadosInsuficientes {
 			semDados = append(semDados, score)
 			continue
@@ -102,6 +90,7 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 		scores = append(scores, score)
 	}
 	ordenar(scores)
+	sort.Slice(semDados, func(i, j int) bool { return semDados[i].Nome < semDados[j].Nome })
 
 	slog.Info("ranking calculado", "total_senadores", len(scores), "sem_dados", len(semDados))
 
@@ -117,11 +106,16 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 		CalculadoEm: time.Now(),
 		Metodologia: metodologia,
 	}
-
-	// Salvar no cache local (TTL 24 horas)
 	localCache.Set(cacheKey, response, 24*time.Hour)
-
 	return response, nil
+}
+
+// periodo do ranking: mandato ou ano (ver utils.PeriodoDoAno)
+func periodo(ano *int) (inicio, fim time.Time) {
+	if ano != nil {
+		return utils.PeriodoDoAno(*ano)
+	}
+	return utils.PeriodoDoMandato()
 }
 
 // InvalidateCache invalida todo o cache de ranking
@@ -132,14 +126,11 @@ func (s *Service) InvalidateCache() {
 
 // CalcularScoreSenador calcula o score de um senador especifico
 func (s *Service) CalcularScoreSenador(ctx context.Context, senadorID int, ano *int) (*SenadorScore, error) {
-	// Reutilizar o calculo do ranking completo para garantir consistencia da posicao
-	// Como o ranking tem cache, isso e eficiente
+	// Reutiliza o ranking completo (em cache) para a posicao ser consistente
 	ranking, err := s.CalcularRanking(ctx, ano)
 	if err != nil {
 		return nil, err
 	}
-
-	// Buscar o senador no ranking ou entre os sem dados
 	for _, lista := range [][]SenadorScore{ranking.Ranking, ranking.SemDados} {
 		for _, score := range lista {
 			if score.SenadorID == senadorID {
@@ -147,205 +138,148 @@ func (s *Service) CalcularScoreSenador(ctx context.Context, senadorID int, ano *
 			}
 		}
 	}
-
 	return nil, fmt.Errorf("senador nao encontrado no ranking")
 }
 
-
-// dadosBrutosSenador armazena dados brutos antes da normalizacao
+// dadosBrutosSenador guarda o que cada fonte devolveu para o periodo
 type dadosBrutosSenador struct {
-	// Proposicoes
-	totalProposicoes     int
-	totalCoautorias      int
-	proposicoesAprovadas int
-	transformadasEmLei   int
-	pontuacaoProposicoes float64
-
-	// Votacoes
-	votacoes *votacao.VotacaoStats // nil se a consulta falhou
-
-	// CEAPS
-	gastoAnual float64
-
-	// Comissoes
-	comissoesAtivas   int
-	comissoesTitular  int
-	comissoesSuplente int
-	pontosComissoes   float64
+	prop  *proposicao.ProposicaoStats
+	vot   *votacao.VotacaoStats
+	com   *comissao.ComissaoStats
+	gasto float64 // CEAPS no periodo
+	meses float64 // meses em exercicio no periodo
+	erro  error   // alguma consulta falhou
 }
 
 // coletarDadosBrutos busca dados de todos os modulos para um senador
-func (s *Service) coletarDadosBrutos(senadorID int, ano *int) *dadosBrutosSenador {
-	dados := &dadosBrutosSenador{}
-
-	// Proposicoes
-	var propStats *proposicao.ProposicaoStats
+func (s *Service) coletarDadosBrutos(senadorID int, inicio, fim time.Time) *dadosBrutosSenador {
+	d := &dadosBrutosSenador{}
+	var erros []error
 	var err error
-	if ano != nil {
-		propStats, err = s.proposicaoRepo.GetStatsByAno(senadorID, *ano)
-	} else {
-		propStats, err = s.proposicaoRepo.GetStats(senadorID)
+	if d.prop, err = s.proposicaoRepo.GetStatsPeriodo(senadorID, inicio, fim); err != nil {
+		erros = append(erros, err)
 	}
-
-	if err == nil {
-		dados.totalProposicoes = propStats.TotalProposicoes
-		dados.totalCoautorias = propStats.TotalCoautorias
-		dados.proposicoesAprovadas = propStats.AprovadosPlenario
-		dados.transformadasEmLei = propStats.TransformadasEmLei
-		dados.pontuacaoProposicoes = propStats.PontuacaoTotal
+	if d.vot, err = s.votacaoRepo.GetStatsPeriodo(senadorID, inicio, fim); err != nil {
+		erros = append(erros, err)
 	}
-
-	// Votacoes
-	var votStats *votacao.VotacaoStats
-	if ano != nil {
-		votStats, err = s.votacaoRepo.GetStatsByAno(senadorID, *ano)
-	} else {
-		votStats, err = s.votacaoRepo.GetStats(senadorID)
+	if d.com, err = s.comissaoRepo.GetStatsPeriodo(senadorID, inicio, fim); err != nil {
+		erros = append(erros, err)
 	}
-
-	if err == nil {
-		dados.votacoes = votStats
-	} else {
-		slog.Error("falha ao buscar stats de votacao", "senador", senadorID, "error", err)
+	if d.gasto, err = s.ceapsRepo.GetTotalPeriodo(senadorID, inicio, fim); err != nil {
+		erros = append(erros, err)
 	}
-
-	// CEAPS
-	if ano != nil {
-		if gastoAnual, err := s.ceapsRepo.GetTotalByAno(senadorID, *ano); err == nil {
-			dados.gastoAnual = gastoAnual
-		}
-	} else {
-		// Mandato: Soma de todos os anos
-		gastoTotal, err := s.ceapsRepo.GetTotal(senadorID)
-		if err == nil {
-			dados.gastoAnual = gastoTotal
-		}
+	if d.meses, err = s.senadorRepo.MesesEmExercicio(senadorID, inicio, fim); err != nil {
+		erros = append(erros, err)
 	}
-
-	// Comissoes
-	var comStats *comissao.ComissaoStats
-	if ano != nil {
-		comStats, err = s.comissaoRepo.GetStatsByAno(senadorID, *ano)
-	} else {
-		comStats, err = s.comissaoRepo.GetStats(senadorID)
+	if len(erros) > 0 {
+		d.erro = errors.Join(erros...)
+		slog.Error("falha ao coletar dados do ranking", "senador", senadorID, "error", d.erro)
 	}
+	return d
+}
 
-	if err == nil {
-		dados.comissoesAtivas = comStats.ComissoesAtivas
-		dados.comissoesTitular = comStats.ComissoesTitular
-		dados.comissoesSuplente = comStats.ComissoesSuplente
-		// Pontuacao: Titular = 2 pts, Suplente = 1 pt, Ativa = 1 pt bonus
-		dados.pontosComissoes = float64(comStats.ComissoesTitular*2 + comStats.ComissoesSuplente + comStats.ComissoesAtivas)
+// motivoInsuficiente devolve por que o senador fica fora da ordenacao, ou ""
+func motivoInsuficiente(d *dadosBrutosSenador) string {
+	switch {
+	case d.erro != nil || d.prop == nil || d.vot == nil || d.com == nil:
+		return "falha ao consultar os dados"
+	case d.meses < PisoMesesExercicio:
+		return fmt.Sprintf("menos de %.0f meses em exercicio no periodo", PisoMesesExercicio)
+	case !d.vot.DadosSuficientes:
+		return "sem registro de votacao no periodo"
 	}
-
-	return dados
+	return ""
 }
 
 // calcularScoreNormalizado calcula o score final normalizado
 func (s *Service) calcularScoreNormalizado(
 	sen senador.Senador,
-	dados *dadosBrutosSenador,
+	d *dadosBrutosSenador,
 	maxPontuacaoProd float64,
 	maxPontosComissoes float64,
-	ano *int,
 ) SenadorScore {
-	// Normalizar Produtividade (0-100) com Logaritmo para suavizar outliers
-	produtividade := (math.Log1p(dados.pontuacaoProposicoes) / math.Log1p(maxPontuacaoProd)) * 100
+	prop, vot, com := d.prop, d.vot, d.com
+	if prop == nil {
+		prop = &proposicao.ProposicaoStats{}
+	}
+	if vot == nil {
+		vot = &votacao.VotacaoStats{}
+	}
+	if com == nil {
+		com = &comissao.ComissaoStats{}
+	}
 
-	// Presenca: metrica B (ajustada), 0-100. Sem registro que conte no
-	// periodo nao ha presenca a medir: fica nula e o senador sai da ordenacao
-	// em vez de levar 0 (item 4).
+	// Produtividade (0-100), escala logaritmica para suavizar outliers
+	produtividade := math.Min(100, math.Log1p(prop.PontuacaoTotal)/math.Log1p(maxPontuacaoProd)*100)
+
+	// Presenca: metrica B (ajustada). Sem registro que conte no periodo nao
+	// ha presenca a medir: fica nula (item 4)
 	var presenca *float64
-	var presencaNoScore float64
-	vs := dados.votacoes
-	if vs == nil {
-		vs = &votacao.VotacaoStats{}
-	}
-	if vs.DadosSuficientes {
-		p := arredondar(vs.PresencaAjustada)
+	if vot.DadosSuficientes {
+		p := arredondar(vot.PresencaAjustada)
 		presenca = &p
-		presencaNoScore = vs.PresencaAjustada
 	}
 
-	// Economia CEAPS (0-100)
-	// Quanto menos gasta, maior o score
-	// Buscar teto da UF, se nao houver usa media
+	// Economia (0-100): teto proporcional aos meses em exercicio (item 8)
 	tetoMensal, ok := TetoCEAPSPorUF[sen.UF]
 	if !ok {
-		tetoMensal = 40000.0 // Fallback seguro
+		tetoMensal = TetoCEAPSMedia / 12
 	}
-	var tetoPeriodo float64
-	
-	if ano != nil {
-		// Teto anual para um ano especifico
-		tetoPeriodo = tetoMensal * 12
-	} else {
-		// Teto acumulado do mandato (desde Fev/2023 ate agora)
-		inicioMandato := time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC)
-		mesesCorridos := time.Since(inicioMandato).Hours() / 24 / 30
-		if mesesCorridos < 1 {
-			mesesCorridos = 1
-		}
-		tetoPeriodo = tetoMensal * mesesCorridos
-	}
-
-	economia := (1 - (dados.gastoAnual / tetoPeriodo)) * 100
-	if economia < 0 {
-		economia = 0 // Se gastou mais que o teto, score 0
-	}
-	if economia > 100 {
-		economia = 100 // Cap em 100
+	tetoPeriodo := tetoMensal * d.meses
+	economia := 0.0
+	if tetoPeriodo > 0 {
+		economia = math.Max(0, math.Min(100, (1-d.gasto/tetoPeriodo)*100))
 	}
 
 	// Comissoes (0-100)
-	comissoes := (dados.pontosComissoes / maxPontosComissoes) * 100
+	comissoes := math.Min(100, float64(com.Pontos)/maxPontosComissoes*100)
 
-	// Score final ponderado
-	scoreFinal := (produtividade * PesoProdutividade) +
-		(presencaNoScore * PesoPresenca) +
-		(economia * PesoEconomia) +
-		(comissoes * PesoComissoes)
-
-	insuficiente := presenca == nil
-	if insuficiente {
-		scoreFinal = 0
+	motivo := motivoInsuficiente(d)
+	scoreFinal := 0.0
+	if motivo == "" {
+		scoreFinal = produtividade*PesoProdutividade + vot.PresencaAjustada*PesoPresenca +
+			economia*PesoEconomia + comissoes*PesoComissoes
 	}
 
 	return SenadorScore{
-		SenadorID:     sen.ID,
-		Nome:          sen.Nome,
-		Partido:       sen.Partido,
-		UF:            sen.UF,
-		FotoURL:       sen.FotoURL,
-		Cargo:         sen.Cargo,
-		Titular:       sen.Titular,
-		Produtividade: arredondar(produtividade),
-		Presenca:      presenca,
-		EconomiaCota:  arredondar(economia),
-		Comissoes:     arredondar(comissoes),
-		ScoreFinal:    arredondar(scoreFinal),
-		DadosInsuficientes: insuficiente,
-		CalculadoEm:   time.Now(),
+		SenadorID:          sen.ID,
+		Nome:               sen.Nome,
+		Partido:            sen.Partido,
+		UF:                 sen.UF,
+		FotoURL:            sen.FotoURL,
+		Cargo:              sen.Cargo,
+		Titular:            sen.Titular,
+		Produtividade:      arredondar(produtividade),
+		Presenca:           presenca,
+		EconomiaCota:       arredondar(economia),
+		Comissoes:          arredondar(comissoes),
+		ScoreFinal:         arredondar(scoreFinal),
+		DadosInsuficientes: motivo != "",
+		Motivo:             motivo,
+		CalculadoEm:        time.Now(),
 		Detalhes: ScoreDetalhes{
-			TotalProposicoes:     dados.totalProposicoes,
-			TotalCoautorias:      dados.totalCoautorias,
-			ProposicoesAprovadas: dados.proposicoesAprovadas,
-			TransformadasEmLei:   dados.transformadasEmLei,
-			PontuacaoProposicoes: dados.pontuacaoProposicoes,
-			TotalVotacoes:         vs.TotalVotacoes,
-			VotacoesParticipadas:  vs.VotosRegistrados,
-			Presentes:             vs.Presentes,
-			AusenciasAP:           vs.AusenciasAP,
-			NaoCompareceu:         vs.NaoCompareceu,
-			AusenciasJustificadas: vs.AusenciasJustificadas,
-			TaxaPresencaBruta:     arredondar(vs.PresencaBruta),
-			TaxaPresencaAjustada:  arredondar(vs.PresencaAjustada),
-			GastoCEAPS:           arredondar(dados.gastoAnual),
-			TetoCEAPS:            tetoPeriodo,
-			ComissoesAtivas:      dados.comissoesAtivas,
-			ComissoesTitular:     dados.comissoesTitular,
-			ComissoesSuplente:    dados.comissoesSuplente,
-			PontosComissoes:      arredondar(dados.pontosComissoes),
+			TotalProposicoes:      prop.TotalProposicoes,
+			TotalCoautorias:       prop.TotalCoautorias,
+			TotalSemPontos:        prop.TotalSemPontos,
+			ProposicoesAprovadas:  prop.AprovadosPlenario,
+			TransformadasEmLei:    prop.TransformadasEmLei,
+			PontuacaoProposicoes:  prop.PontuacaoTotal,
+			TotalVotacoes:         vot.TotalVotacoes,
+			VotacoesParticipadas:  vot.VotosRegistrados,
+			Presentes:             vot.Presentes,
+			AusenciasAP:           vot.AusenciasAP,
+			NaoCompareceu:         vot.NaoCompareceu,
+			AusenciasJustificadas: vot.AusenciasJustificadas,
+			TaxaPresencaBruta:     arredondar(vot.PresencaBruta),
+			TaxaPresencaAjustada:  arredondar(vot.PresencaAjustada),
+			GastoCEAPS:            arredondar(d.gasto),
+			TetoCEAPS:             arredondar(tetoPeriodo),
+			MesesExercicio:        arredondar(d.meses),
+			ComissoesAtivas:       com.ComissoesAtivas,
+			ComissoesTitular:      com.ComissoesTitular,
+			ComissoesSuplente:     com.ComissoesSuplente,
+			ComissoesForaDaConta:  com.ForaDaConta,
+			PontosComissoes:       float64(com.Pontos),
 		},
 	}
 }

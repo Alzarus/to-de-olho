@@ -13,7 +13,9 @@ const criterios = [
       "Aprovado em comissão: 4 pontos",
       "Aprovado no Plenário: 8 pontos",
       "Virou lei: 16 pontos",
-      "Só o primeiro autor pontua: coautorias aparecem na ficha, sem pontos",
+      "Só o primeiro autor pontua, e só como senador: coautorias aparecem na ficha, sem pontos",
+      "Matérias de quando o senador era deputado não pontuam",
+      "Vetos não pontuam: são ato do Presidente sobre lei já aprovada",
       "Matérias de autoria institucional (Mesa, comissão, partido) não pontuam para ninguém",
     ],
     extras: [
@@ -46,8 +48,10 @@ const criterios = [
     peso: "20%",
     descricao:
       "Avalia quanto o senador economiza da sua cota mensal de gastos. Quanto menos gastar, melhor a nota.",
-    formula: "Nota = Quanto mais economizar, maior a pontuação",
+    formula: "Nota = (1 − Gasto no período / Teto no período) x 100",
     detalhes: [
+      "Teto no período = teto mensal do estado x meses em exercício",
+      "Quem assumiu depois tem teto menor: a nota mede economia, não a data da posse",
       "Cada estado tem um teto diferente de gastos",
       "Maior teto: Amazonas (~R$ 52 mil/mês)",
       "Menor teto: DF/Goiás (~R$ 36 mil/mês)",
@@ -64,7 +68,8 @@ const criterios = [
     detalhes: [
       "Membro titular (com direito a voto): 2 pontos",
       "Suplente (substituto eventual): 1 ponto",
-      "Participação ativa no período: +1 ponto",
+      "Cada comissão conta uma vez no período, pelo papel mais alto",
+      "Frentes parlamentares, grupos de amizade e conselhos de honrarias não contam",
       "A API do Senado não informa quem preside a comissão; presidência não pontua à parte",
     ],
   },
@@ -179,15 +184,20 @@ export default function MetodologiaPage() {
       {/* Sem dados */}
       <Card className="mt-12">
         <CardHeader>
-          <CardTitle>Senadores sem dados suficientes</CardTitle>
+          <CardTitle>Período e dados insuficientes</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Se um senador não tem nenhum registro de votação que conte no
-            período, não há presença a medir. Ele fica fora da ordenação e
-            aparece à parte, como &quot;dados insuficientes&quot;: o último
-            lugar seria uma afirmação que o dado não sustenta. Produtividade
-            zero continua sendo nota zero, porque é um dado real.
+            Todos os critérios usam o mesmo período: desde a posse da
+            legislatura (01/02/2023) no ranking do mandato, ou o ano escolhido
+            no ranking anual.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Fica fora da ordenação, como &quot;dados insuficientes&quot;, quem
+            esteve menos de 6 meses em exercício no período ou não tem nenhum
+            registro de votação: o último lugar seria uma afirmação que o dado
+            não sustenta. Produtividade zero continua sendo nota zero, porque é
+            um dado real.
           </p>
         </CardContent>
       </Card>
@@ -309,12 +319,35 @@ export default function MetodologiaPage() {
                 secreto e presidência da sessão, e 58 de 81 senadores tinham
                 100%. Agora licenças e missões saem da conta, como o TCC
                 descreve, e &quot;atividade parlamentar&quot; conta como falta.
-                Mediana de 94,3; 7 de 81 com 100%.
+                Mediana de 94,3.
               </li>
               <li>
                 Uma falha ao buscar os dados de um senador virava presença zero.
                 Agora a carga tenta de novo e, sem dado, o senador fica fora da
                 ordenação.
+              </li>
+              <li>
+                Comissões: frentes parlamentares, grupos de amizade e conselhos
+                de honrarias contavam, e cada recondução pontuava de novo. Agora
+                só colegiados legislativos, uma vez cada, com a mesma fórmula no
+                ano e no mandato.
+              </li>
+              <li>
+                Cota: o teto era igual para todos desde fevereiro de 2023, e
+                quem tomou posse em 2026 tinha economia perto de 100. Agora o
+                teto é proporcional aos meses em exercício, e é preciso ter ao
+                menos 6 meses no período para entrar na ordenação.
+              </li>
+              <li>
+                Vetos e matérias de quando o senador era deputado pontuavam.
+                Agora não pontuam.
+              </li>
+              <li>
+                Os critérios usavam períodos diferentes (a cota incluía janeiro
+                de 2023, da legislatura anterior), e a carga perdia dados: R$
+                3,75 milhões em lançamentos da cota e 11% das participações em
+                comissões com datas trocadas. Agora todas as fontes usam o mesmo
+                período, e os dados foram recarregados como na fonte.
               </li>
               <li>
                 Este texto divergia do cálculo em três pontos, agora alinhados:

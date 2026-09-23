@@ -2,6 +2,7 @@ package ceaps
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -25,43 +26,49 @@ func NewSyncService(repo *Repository, senadorRepo *senador.Repository, client *s
 	}
 }
 
-// SyncFromAPI busca despesas da API e atualiza o banco
+// SyncFromAPI grava as despesas de um ano como retrato da API: dentro de uma
+// transacao, apaga o ano e insere o que a API devolveu (inclusive correcoes e
+// exclusoes feitas na origem). Falha na busca nao apaga nada.
 func (s *SyncService) SyncFromAPI(ctx context.Context, ano int) error {
 	slog.Info("iniciando sync de despesas CEAPS", "ano", ano)
 
-	// Buscar da API Administrativa
 	despesasAPI, err := s.client.ListarDespesasCEAPS(ctx, ano)
 	if err != nil {
 		return err
 	}
+	if len(despesasAPI) == 0 {
+		return fmt.Errorf("API devolveu 0 despesas para %d", ano)
+	}
 
-	slog.Info("despesas recebidas da API", "total", len(despesasAPI))
-
-	// Buscar mapeamento codigo parlamentar -> ID interno
-	senadores, _ := s.senadorRepo.FindAll(false)
-	codigoToID := make(map[int]int)
+	senadores, err := s.senadorRepo.FindAll(true)
+	if err != nil {
+		return err
+	}
+	codigoToID := make(map[int]int, len(senadores))
 	for _, sen := range senadores {
 		codigoToID[sen.CodigoParlamentar] = sen.ID
 	}
 
-	// Converter e salvar cada despesa
-	var successCount, skipCount int
+	despesas := make([]DespesaCEAPS, 0, len(despesasAPI))
+	vistos := make(map[int]bool, len(despesasAPI))
+	var ignorados int
 	for _, d := range despesasAPI {
-		senadorID, exists := codigoToID[d.CodSenador]
-		if !exists {
-			skipCount++
+		senadorID, ok := codigoToID[d.CodSenador]
+		if !ok {
+			ignorados++ // parlamentar fora da tabela senadores
 			continue
 		}
-
-		despesa := s.convertToDespesa(d, senadorID)
-		if err := s.repo.Upsert(&despesa); err != nil {
-			slog.Error("falha ao salvar despesa", "senador", d.CodSenador, "error", err)
-			continue
+		if d.ID == 0 || vistos[d.ID] {
+			return fmt.Errorf("despesa sem id ou com id repetido na API (%d)", d.ID)
 		}
-		successCount++
+		vistos[d.ID] = true
+		despesas = append(despesas, s.convertToDespesa(d, senadorID))
 	}
 
-	slog.Info("sync de despesas concluido", "salvos", successCount, "ignorados", skipCount, "total", len(despesasAPI))
+	if err := s.repo.SubstituirAno(ano, despesas); err != nil {
+		return fmt.Errorf("falha ao gravar despesas de %d: %w", ano, err)
+	}
+	slog.Info("sync de despesas concluido", "ano", ano, "salvos", len(despesas), "ignorados", ignorados, "total", len(despesasAPI))
 	return nil
 }
 
@@ -80,6 +87,7 @@ func (s *SyncService) convertToDespesa(d senado.DespesaCEAPSAPI, senadorID int) 
 	}
 
 	despesa := DespesaCEAPS{
+		IDOrigem:    d.ID,
 		SenadorID:   senadorID,
 		Ano:         d.Ano,
 		Mes:         d.Mes,
