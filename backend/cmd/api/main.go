@@ -26,6 +26,12 @@ import (
 )
 
 func main() {
+	// "server healthcheck" e chamado pelo HEALTHCHECK do Dockerfile: a imagem
+	// distroless nao tem shell nem curl, entao o proprio binario faz o GET.
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		os.Exit(healthcheck())
+	}
+
 	// Configurar logger estruturado (JSON para Cloud Run)
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
@@ -182,6 +188,20 @@ func connectDB() (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	return db, nil
+}
+
+// healthcheck devolve 0 se a API local responde 200 em /health, 1 caso contrario.
+func healthcheck() int {
+	client := http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get("http://127.0.0.1" + getPort() + "/health")
+	if err != nil {
+		return 1
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 1
+	}
+	return 0
 }
 
 func getPort() string {

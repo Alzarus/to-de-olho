@@ -4,7 +4,13 @@
 # (backend/cmd/api, CGO_ENABLED=0 GOOS=linux) nem pela imagem web em execucao.
 # Cada entrada leva um comentario com o motivo e a data da revisao.
 #
-# Vazio desde 22/09/2026: com Go 1.27 e golang.org/x/crypto v0.57.0, as CVEs de
-# x/crypto/ssh, openpgp e x/sys/windows que estavam aqui foram corrigidas na
-# origem (item 20 da AUDITORIA.md). O arquivo fica porque o job trivy-fs do CI
-# aponta para ele.
+# Em 22/09/2026, com Go 1.27 e golang.org/x/crypto v0.57.0, as CVEs de
+# x/crypto/ssh e x/sys/windows foram corrigidas na origem (item 20 da
+# AUDITORIA.md). Sobra so a entrada abaixo.
+
+# --- golang.org/x/crypto/openpgp ---------------------------------------------
+# Pacote descontinuado, sem versao corrigida publicada. Nenhum codigo do
+# projeto importa openpgp; confirmado com
+#   GOOS=linux go list -deps ./cmd/... | grep x/crypto/openpgp   (0 linhas)
+# Revisado em 22/09/2026.
+GO-2026-5932

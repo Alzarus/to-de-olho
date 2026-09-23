@@ -50,3 +50,40 @@ jobs:
           exit-code: "1"
           trivyignores: .trivyignore
           version: v0.74.0
+
+  # Varredura das imagens de producao. A de arquivos (trivy-fs) nao enxerga a
+  # imagem base (Go stdlib no binario, pacotes do alpine, npm embutido no node).
+  # Falha em CRITICAL/HIGH que ja tenham correcao publicada.
+  trivy-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construir imagens
+        run: |
+          docker build -t todeolho-api:ci ./backend
+          docker build -t todeolho-web:ci ./frontend
+
+      - name: Trivy (imagem da API)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: todeolho-api:ci
+          scanners: vuln,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          trivyignores: .trivyignore
+          version: v0.74.0
+
+      - name: Trivy (imagem web)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: todeolho-web:ci
+          scanners: vuln,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          trivyignores: .trivyignore
+          version: v0.74.0
