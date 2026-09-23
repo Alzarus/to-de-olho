@@ -22,7 +22,7 @@ import {
   usePathname,
 } from "next/navigation";
 import { useSenadorScore, useSenador } from "@/hooks/use-senador";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatPresenca, SEM_DADOS_PRESENCA } from "@/lib/utils";
 import { VotosPieChart } from "@/components/votos-pie-chart";
 import { useVotosPorTipo } from "@/hooks/use-senador";
 import { fetcher } from "@/lib/api";
@@ -291,12 +291,23 @@ function SenadorContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-primary">
-              {senador.score_final.toFixed(1)}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              de 100 pontos possíveis
-            </p>
+            {senador.dados_insuficientes ? (
+              <>
+                <p className="text-4xl font-bold text-muted-foreground">—</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Fora da ordenação: {senador.motivo ?? "dados insuficientes"}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-4xl font-bold text-primary">
+                  {senador.score_final.toFixed(1)}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  de 100 pontos possíveis
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -349,12 +360,15 @@ function SenadorContent() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">
-                {senador.presenca.toFixed(1)}
+                {formatPresenca(senador.presenca)}
               </p>
+              {senador.presenca == null && (
+                <p className="mt-1 text-xs text-muted-foreground">{SEM_DADOS_PRESENCA}</p>
+              )}
               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full rounded-full bg-primary transition-all"
-                  style={{ width: `${Math.min(senador.presenca, 100)}%` }}
+                  style={{ width: `${Math.min(senador.presenca ?? 0, 100)}%` }}
                 />
               </div>
             </CardContent>
@@ -425,7 +439,10 @@ function SenadorContent() {
                       {senador.detalhes.total_proposicoes}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Proposições apresentadas
+                      Proposições de autoria principal
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      + {senador.detalhes.total_coautorias ?? 0} coautorias (não pontuam)
                     </p>
                   </div>
                   <div>
@@ -468,27 +485,69 @@ function SenadorContent() {
               <CardContent>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
+                    <p className="text-3xl font-bold text-primary">
+                      {formatPresenca(senador.presenca)}
+                      {senador.presenca != null && "%"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Presença (usada no ranking)
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Licenças e missões oficiais fora da conta
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-foreground">
+                      {senador.presenca == null
+                        ? "—"
+                        : `${senador.detalhes.taxa_presenca_bruta.toFixed(1)}%`}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Presença bruta
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Sobre todas as votações do período
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-3xl font-bold text-foreground">
                       {senador.detalhes.total_votacoes}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Votações no período
+                      Votações nominais no período
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {senador.detalhes.presentes ?? 0} com presença registrada
                     </p>
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-green-600">
-                      {senador.detalhes.votacoes_participadas}
+                    <p className="text-3xl font-bold text-orange-600">
+                      {senador.detalhes.ausencias_ap ?? 0}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Votações participadas
+                      Ausências por &quot;atividade parlamentar&quot;
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Justificativa declarada pelo próprio senador; conta como falta
                     </p>
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-primary">
-                      {senador.detalhes.taxa_presenca_bruta.toFixed(1)}%
+                    <p className="text-3xl font-bold text-red-600">
+                      {senador.detalhes.nao_compareceu ?? 0}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Taxa de presença
+                      Não compareceu
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-muted-foreground">
+                      {senador.detalhes.ausencias_justificadas ?? 0}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Licenças e missões oficiais
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Não contam como falta
                     </p>
                   </div>
                 </div>
@@ -523,18 +582,17 @@ function SenadorContent() {
                       {formatCurrency(senador.detalhes.teto_ceaps)}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Teto {ano === 0 ? "no periodo" : "anual"}
+                      Teto no período
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {(senador.detalhes.meses_exercicio ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} meses em exercício
                     </p>
                   </div>
                   <div>
                     <p className="text-3xl font-bold text-green-600">
-                      {(
-                        ((senador.detalhes.teto_ceaps -
-                          senador.detalhes.gasto_ceaps) /
-                          senador.detalhes.teto_ceaps) *
-                        100
-                      ).toFixed(1)}
-                      %
+                      {senador.detalhes.teto_ceaps > 0
+                        ? `${senador.economia_cota.toFixed(1)}%`
+                        : "—"}
                     </p>
                     <p className="text-sm text-muted-foreground">Economia</p>
                   </div>
@@ -557,10 +615,15 @@ function SenadorContent() {
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <p className="text-3xl font-bold text-foreground">
-                      {senador.detalhes.comissoes_ativas}
+                      {senador.detalhes.comissoes_titular + senador.detalhes.comissoes_suplente}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Comissões ativas
+                      Colegiados no período
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {senador.detalhes.comissoes_ativas} em andamento
+                      {(senador.detalhes.comissoes_fora_da_conta ?? 0) > 0 &&
+                        ` · ${senador.detalhes.comissoes_fora_da_conta} frentes, grupos e conselhos de honrarias fora da conta`}
                     </p>
                   </div>
                   <div>
@@ -582,6 +645,9 @@ function SenadorContent() {
                       {senador.detalhes.pontos_comissoes.toFixed(0)}
                     </p>
                     <p className="text-sm text-muted-foreground">Pontos</p>
+                    <p className="text-xs text-muted-foreground">
+                      Titular 2, suplente 1, uma vez por colegiado
+                    </p>
                   </div>
                 </div>
               </CardContent>

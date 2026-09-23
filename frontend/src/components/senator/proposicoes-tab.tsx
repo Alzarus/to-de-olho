@@ -5,6 +5,7 @@ import { PaginationWithInput } from "@/components/ui/pagination-with-input";
 import { useProposicoes } from "@/hooks/use-senador";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import type { Proposicao } from "@/types/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, Gavel, Search, ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,16 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+
+// Por que a materia nao pontua (espelha Proposicao.AutoriaPrincipal no backend)
+const TIPOS_SENADOR = ["SENADOR", "LIDER", "PRESIDENTE_SF"];
+function rotuloSemPontos(prop: Proposicao): string | null {
+  if (prop.sigla_subtipo_materia === "VET") return "Veto";
+  if (prop.posicao_autoria == null) return "Autoria institucional";
+  if (prop.tipo_autor && !TIPOS_SENADOR.includes(prop.tipo_autor)) return "Autoria como deputado";
+  if (prop.posicao_autoria !== 1) return "Coautoria";
+  return null;
+}
 
 export function ProposicoesTab({ id }: { id: number }) {
   const router = useRouter();
@@ -203,6 +214,15 @@ export function ProposicoesTab({ id }: { id: number }) {
                                 <Badge variant="outline" className="font-mono text-xs">
                                   {prop.sigla_subtipo_materia} {prop.numero_materia}/{prop.ano_materia}
                                 </Badge>
+                                {rotuloSemPontos(prop) && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                    title="Não pontua no ranking: só conta o primeiro autor, como senador"
+                                  >
+                                    {rotuloSemPontos(prop)}
+                                  </Badge>
+                                )}
                                 <span className="text-xs text-muted-foreground">
                                     {prop.data_apresentacao 
                                         ? new Date(prop.data_apresentacao).toLocaleDateString("pt-BR") 
@@ -258,6 +278,7 @@ export function ProposicoesTab({ id }: { id: number }) {
                         </DialogTitle>
                         <DialogDescription className="pt-2">
                              Apresentado em {new Date(prop.data_apresentacao || "").toLocaleDateString("pt-BR")}
+                             {prop.autoria && <><br />Autoria: {prop.autoria}</>}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">

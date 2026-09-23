@@ -24,7 +24,7 @@ export function SenatorRadarChart({ score }: SenatorRadarChartProps) {
 
   const data = [
     { subject: "Produtividade", value: score.produtividade, fullMark: 100 },
-    { subject: "Presença", value: score.presenca, fullMark: 100 },
+    { subject: "Presença", value: score.presenca ?? 0, fullMark: 100 }, // sem dado: a ficha mostra "—"
     { subject: "Economia", value: score.economia_cota, fullMark: 100 },
     { subject: "Comissões", value: score.comissoes, fullMark: 100 },
   ];

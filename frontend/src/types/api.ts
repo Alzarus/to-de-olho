@@ -2,7 +2,9 @@
 
 export interface ScoreDetalhes {
   // Produtividade
-  total_proposicoes: number;
+  total_proposicoes: number; // autoria principal (primeiro autor)
+  total_coautorias: number; // coautorias: aparecem na ficha, nao pontuam
+  total_sem_pontos?: number; // vetos, autoria como deputado ou institucional
   proposicoes_aprovadas: number;
   transformadas_em_lei: number;
   pontuacao_proposicoes: number;
@@ -10,17 +12,24 @@ export interface ScoreDetalhes {
   // Presenca
   total_votacoes: number;
   votacoes_participadas: number;
-  taxa_presenca_bruta: number;
+  presentes: number;
+  ausencias_ap: number; // "Atividade parlamentar": conta como falta
+  nao_compareceu: number;
+  ausencias_justificadas: number; // licencas e missoes: fora do denominador
+  taxa_presenca_bruta: number; // A
+  taxa_presenca_ajustada: number; // B (a que entra no score)
 
   // Economia CEAPS
   gasto_ceaps: number;
-  teto_ceaps: number;
+  teto_ceaps: number; // teto mensal da UF x meses em exercicio
+  meses_exercicio?: number; // no periodo
 
   // Comissoes
   comissoes_ativas: number;
   comissoes_titular: number;
   comissoes_suplente: number;
   pontos_comissoes: number;
+  comissoes_fora_da_conta?: number; // frentes, grupos de amizade, honrarias
 }
 
 export interface SenadorScore {
@@ -34,13 +43,15 @@ export interface SenadorScore {
 
   // Scores individuais normalizados (0-100)
   produtividade: number;
-  presenca: number;
+  presenca: number | null; // null: sem registro de votacao no periodo
   economia_cota: number;
   comissoes: number;
 
   // Score final ponderado (0-100)
   score_final: number;
-  posicao: number;
+  posicao: number; // 0 quando fora da ordenacao
+  dados_insuficientes: boolean;
+  motivo?: string; // por que ficou fora da ordenacao
 
   // Detalhes para transparencia
   detalhes: ScoreDetalhes;
@@ -49,6 +60,7 @@ export interface SenadorScore {
 
 export interface RankingResponse {
   ranking: SenadorScore[];
+  sem_dados?: SenadorScore[]; // fora da ordenacao: "dados insuficientes"
   total: number;
   calculado_em: string;
   metodologia: string;
@@ -181,6 +193,10 @@ export interface Proposicao {
   data_apresentacao?: string;
   estagio_tramitacao: string;
   pontuacao: number;
+  posicao_autoria?: number | null; // 1 = primeiro autor; null = autoria institucional
+  tipo_autor?: string; // SENADOR, LIDER, PRESIDENTE_SF, DEPUTADO
+  total_autores?: number | null;
+  autoria?: string;
 }
 
 export interface ProposicaoResponse {
@@ -216,7 +232,9 @@ export interface ComissoesResponse {
 // Votacoes
 export interface VotacaoItem {
   id: number;
+  codigo_votacao: number;
   sessao_id: string;
+  sigla_voto: string;
   data: string;
   voto: string;
   materia: string;

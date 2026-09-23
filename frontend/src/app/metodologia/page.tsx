@@ -6,13 +6,17 @@ const criterios = [
     peso: "35%",
     descricao:
       "Mede a capacidade do senador de criar e aprovar leis. Quanto mais longe o projeto avança, mais pontos ele ganha.",
-    formula: "Nota = (Pontos do Senador / Maior Pontuador) x 100",
+    formula: "Nota = ln(1 + Pontos do Senador) / ln(1 + Maior Pontuador) x 100",
     detalhes: [
       "Apresentado: 1 ponto",
       "Em discussão nas comissões: 2 pontos",
       "Aprovado em comissão: 4 pontos",
       "Aprovado no Plenário: 8 pontos",
       "Virou lei: 16 pontos",
+      "Só o primeiro autor pontua, e só como senador: coautorias aparecem na ficha, sem pontos",
+      "Matérias de quando o senador era deputado não pontuam",
+      "Vetos não pontuam: são ato do Presidente sobre lei já aprovada",
+      "Matérias de autoria institucional (Mesa, comissão, partido) não pontuam para ninguém",
     ],
     extras: [
       "PECs (mudanças na Constituição): peso x3",
@@ -27,13 +31,16 @@ const criterios = [
     nome: "Presença em Votações",
     peso: "25%",
     descricao:
-      "Mede se o senador comparece quando o Senado vota. Quem não aparece, não está cumprindo seu papel.",
+      "Mede se o senador comparece quando o Senado vota. Cada votação nominal do Plenário conta separadamente.",
     formula:
-      "Nota = Votações em que participou / Total de votações disponíveis x 100",
+      "Nota = Presenças / (Votações no período − Licenças e missões oficiais) x 100",
     detalhes: [
-      "Qualquer voto conta: Sim, Não ou Abstenção",
-      "Justificativa de ausência não anula a falta",
-      "Considera todo o mandato atual",
+      "Conta como presença: Sim, Não, Abstenção, voto secreto, presente sem registrar voto e presidência da sessão",
+      "Licenças (saúde, particular) e missões oficiais saem da conta: não penalizam nem ajudam",
+      "\"Atividade parlamentar\" (AP) conta como falta: é uma justificativa declarada pelo próprio senador, sem verificação",
+      "\"Não compareceu\" conta como falta",
+      "Considera as votações desde a posse da legislatura atual (01/02/2023)",
+      "A ficha mostra também a presença bruta, sem descontar licenças",
     ],
   },
   {
@@ -41,8 +48,10 @@ const criterios = [
     peso: "20%",
     descricao:
       "Avalia quanto o senador economiza da sua cota mensal de gastos. Quanto menos gastar, melhor a nota.",
-    formula: "Nota = Quanto mais economizar, maior a pontuação",
+    formula: "Nota = (1 − Gasto no período / Teto no período) x 100",
     detalhes: [
+      "Teto no período = teto mensal do estado x meses em exercício",
+      "Quem assumiu depois tem teto menor: a nota mede economia, não a data da posse",
       "Cada estado tem um teto diferente de gastos",
       "Maior teto: Amazonas (~R$ 52 mil/mês)",
       "Menor teto: DF/Goiás (~R$ 36 mil/mês)",
@@ -55,11 +64,13 @@ const criterios = [
     peso: "20%",
     descricao:
       "Mede o envolvimento do senador nas comissões, onde projetos são discutidos antes de irem ao Plenário.",
-    formula: "Nota = Baseada nos cargos e na quantidade de comissões",
+    formula: "Nota = (Pontos do Senador / Maior Pontuador) x 100",
     detalhes: [
-      "Presidente de comissão: 5 pontos",
-      "Membro Titular (com direito a voto): 3 pontos",
+      "Membro titular (com direito a voto): 2 pontos",
       "Suplente (substituto eventual): 1 ponto",
+      "Cada comissão conta uma vez no período, pelo papel mais alto",
+      "Frentes parlamentares, grupos de amizade e conselhos de honrarias não contam",
+      "A API do Senado não informa quem preside a comissão; presidência não pontua à parte",
     ],
   },
 ];
@@ -170,6 +181,27 @@ export default function MetodologiaPage() {
         ))}
       </div>
 
+      {/* Sem dados */}
+      <Card className="mt-12">
+        <CardHeader>
+          <CardTitle>Período e dados insuficientes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Todos os critérios usam o mesmo período: desde a posse da
+            legislatura (01/02/2023) no ranking do mandato, ou o ano escolhido
+            no ranking anual.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Fica fora da ordenação, como &quot;dados insuficientes&quot;, quem
+            esteve menos de 6 meses em exercício no período ou não tem nenhum
+            registro de votação: o último lugar seria uma afirmação que o dado
+            não sustenta. Produtividade zero continua sendo nota zero, porque é
+            um dado real.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Data Sources */}
       <Card className="mt-12">
         <CardHeader>
@@ -253,6 +285,100 @@ export default function MetodologiaPage() {
               nem sempre atualizam em tempo real.
             </li>
           </ul>
+        </CardContent>
+      </Card>
+
+      {/* Historico de versoes */}
+      <Card className="mt-8" id="historico">
+        <CardHeader>
+          <CardTitle>Histórico de versões</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 text-sm text-muted-foreground">
+          <div>
+            <h3 className="font-semibold text-foreground">
+              v2 · 23/09/2026 · correção do cálculo
+            </h3>
+            <p className="mt-1">
+              Uma auditoria do próprio projeto encontrou pontos em que o código
+              não seguia a metodologia descrita no TCC. A v2 corrige o código;
+              as fórmulas do TCC não mudam.
+            </p>
+            <ul className="mt-2 list-inside list-disc space-y-1">
+              <li>
+                Coautorias eram descartadas: cada matéria ficava com um único
+                senador, o primeiro em ordem alfabética. Agora cada senador tem
+                suas matérias, e só o primeiro autor pontua.
+              </li>
+              <li>
+                Votações de uma mesma sessão contavam como uma só: das 423
+                votações do mandato, 155 entravam na conta. Agora cada votação
+                conta.
+              </li>
+              <li>
+                A presença ignorava &quot;atividade parlamentar&quot;, voto
+                secreto e presidência da sessão, e 58 de 81 senadores tinham
+                100%. Agora licenças e missões saem da conta, como o TCC
+                descreve, e &quot;atividade parlamentar&quot; conta como falta.
+                Mediana de 94,3.
+              </li>
+              <li>
+                Uma falha ao buscar os dados de um senador virava presença zero.
+                Agora a carga tenta de novo e, sem dado, o senador fica fora da
+                ordenação.
+              </li>
+              <li>
+                Comissões: frentes parlamentares, grupos de amizade e conselhos
+                de honrarias contavam, e cada recondução pontuava de novo. Agora
+                só colegiados legislativos, uma vez cada, com a mesma fórmula no
+                ano e no mandato.
+              </li>
+              <li>
+                Cota: o teto era igual para todos desde fevereiro de 2023, e
+                quem tomou posse em 2026 tinha economia perto de 100. Agora o
+                teto é proporcional aos meses em exercício, e é preciso ter ao
+                menos 6 meses no período para entrar na ordenação.
+              </li>
+              <li>
+                Vetos e matérias de quando o senador era deputado pontuavam.
+                Agora não pontuam.
+              </li>
+              <li>
+                Os critérios usavam períodos diferentes (a cota incluía janeiro
+                de 2023, da legislatura anterior), e a carga perdia dados: R$
+                3,75 milhões em lançamentos da cota e 11% das participações em
+                comissões com datas trocadas. Agora todas as fontes usam o mesmo
+                período, e os dados foram recarregados como na fonte.
+              </li>
+              <li>
+                Este texto divergia do cálculo em três pontos, agora alinhados:
+                dizia que &quot;justificativa de ausência não anula a falta&quot;
+                (o oposto do TCC); dava a produtividade em escala linear (o
+                cálculo é logarítmico); e dava presidente 5, titular 3 e
+                suplente 1 nas comissões (o cálculo dá titular 2, suplente 1 e
+                +1 por participação ativa).
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground">v1 · 2026 · TCC</h3>
+            <p className="mt-1">
+              Metodologia do Trabalho de Conclusão de Curso (IFBA): quatro
+              critérios com pesos 35/25/20/20.
+            </p>
+          </div>
+          <p>
+            A versão completa, com fórmulas e a tabela de códigos de voto, está
+            em{" "}
+            <a
+              href="https://github.com/Alzarus/to-de-olho/blob/master/METODOLOGIA.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              METODOLOGIA.md
+            </a>
+            .
+          </p>
         </CardContent>
       </Card>
 

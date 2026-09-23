@@ -156,6 +156,15 @@ type VotacaoSessaoAPI struct {
 	EmentaLegislativo  string            `json:"ementaLegislativo"`
 	IdentificacaoMateria string          `json:"identificacaoMateria"` // Ex: "PEC 10/2024"
 	Materia            MateriaRes        `json:"materia"`
+
+	// Campos de /votacao?dataInicio=&dataFim= (fonte da carga v3)
+	CodigoSessaoVotacao int    `json:"codigoSessaoVotacao"` // chave da votacao: unica e nunca nula
+	SequencialVotacao   *int   `json:"sequencialVotacao"`   // pode vir null
+	CodigoMateria       *int   `json:"codigoMateria"`
+	Identificacao       string `json:"identificacao"` // Ex: "PLP 124/2022 (Substitutivo-CD)"
+	Ementa              string `json:"ementa"`
+	ResultadoVotacao    string `json:"resultadoVotacao"`
+
 	VotacaoSecreta     string            `json:"votacaoSecreta"`
 	TotalVotosSim      int               `json:"totalVotosSim"`
 	TotalVotosNao      int               `json:"totalVotosNao"`
@@ -166,7 +175,8 @@ type VotacaoSessaoAPI struct {
 type VotoParlamentar struct {
 	CodigoParlamentar int    `json:"codigoParlamentar"`
 	NomeParlamentar   string `json:"nomeParlamentar"`
-	SiglaVoto         string `json:"siglaVotoParlamentar"` // Votou, Sim, Nao, Abstencao, NCom
+	SiglaVoto         string `json:"siglaVotoParlamentar"` // Votou, Sim, Não, AP, LS, P-NRV, NCom...
+	SiglaUF           string `json:"siglaUFParlamentar"`
 	DescricaoVoto     string `json:"descricaoVotoParlamentar"`
 }
 
@@ -361,6 +371,70 @@ func (c *LegisClient) ListarVotacoesAno(ctx context.Context, ano int) ([]Votacao
 	}
 
 	return result, nil
+}
+
+// ListarVotacoesPeriodo busca as votacoes nominais com data de sessao no
+// intervalo [inicio, fim]. Cada votacao traz os votos de todas as cadeiras
+// ocupadas naquele dia.
+// Endpoint: /votacao?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD
+func (c *LegisClient) ListarVotacoesPeriodo(ctx context.Context, inicio, fim time.Time) ([]VotacaoSessaoAPI, error) {
+	url := fmt.Sprintf("%s/votacao?dataInicio=%s&dataFim=%s", c.baseURL, inicio.Format("2006-01-02"), fim.Format("2006-01-02"))
+	var result []VotacaoSessaoAPI
+	if err := c.getJSON(ctx, url, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// AutorIniciativa e um autor de /processo/{id}, com a ordem oficial.
+type AutorIniciativa struct {
+	Autor             string `json:"autor"`
+	Ordem             int    `json:"ordem"`
+	SiglaTipo         string `json:"siglaTipo"` // SENADOR, LIDER, PRESIDENTE_SF, DEPUTADO...
+	CodigoParlamentar *int   `json:"codigoParlamentar"` // null para autor nao parlamentar (Camara, Presidencia...)
+}
+
+// ProcessoDetalhe e o subconjunto usado de /processo/{id}.
+type ProcessoDetalhe struct {
+	ID                int               `json:"id"`
+	CodigoMateria     int               `json:"codigoMateria"`
+	Identificacao     string            `json:"identificacao"`
+	AutoriaIniciativa []AutorIniciativa `json:"autoriaIniciativa"`
+}
+
+// ObterProcesso busca o detalhe de um processo (id da listagem /processo).
+func (c *LegisClient) ObterProcesso(ctx context.Context, idProcesso int) (*ProcessoDetalhe, error) {
+	url := fmt.Sprintf("%s/processo/%d", c.baseURL, idProcesso)
+	var result ProcessoDetalhe
+	if err := c.getJSON(ctx, url, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// getJSON faz GET e decodifica o corpo. Um corpo cortado pela API (o que
+// acontece em respostas grandes) vira erro de decodificacao, para o chamador
+// tentar de novo.
+func (c *LegisClient) getJSON(ctx context.Context, url string, out any) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("erro criando request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("erro na requisicao: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("status inesperado %d em %s", resp.StatusCode, url)
+	}
+	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+		return fmt.Errorf("erro decodificando JSON de %s: %w", url, err)
+	}
+	return nil
 }
 
 // ObterVotacao busca detalhes de uma sessao especifica

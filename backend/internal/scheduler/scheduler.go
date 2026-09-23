@@ -118,31 +118,21 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 		slog.Error("falha critica no backfill de senadores", "error", err)
 		return // Sem senadores nao da pra continuar
 	}
+	// periodos de exercicio: base do teto da cota e do piso de tempo (item 8)
+	if err := s.senadorSync.SyncExercicios(ctx); err != nil {
+		slog.Error("falha no backfill de exercicios", "error", err)
+	}
 
-	// B. Votacoes - PULAR se ja existem dados (evita timeout de 3600s+)
-	votosCount, _ := s.votacaoRepo.Count()
-	if votosCount > 0 {
-		slog.Info("--- PASSO 2/6: VOTACOES (PULANDO - dados existentes) ---", "votos_existentes", votosCount)
-	} else {
-		slog.Info("--- PASSO 2/6: VOTACOES (LISTA) ---")
-		if err := retry.WithRetry(ctx, 3, "backfill-votacoes", func() error {
-			return s.votacaoSync.SyncFromAPI(ctx)
-		}); err != nil {
-			slog.Error("falha no backfill de votacoes", "error", err)
-		}
+	// B. Votacoes do recorte, por intervalo de datas (upsert: pode repetir)
+	slog.Info("--- PASSO 2/6: VOTACOES ---")
+	if err := s.votacaoSync.SyncFromAPI(ctx); err != nil {
+		slog.Error("falha no backfill de votacoes", "error", err)
 	}
 
 	// C. Loop por ano para dados periodicos
 	for ano := anoInicio; ano <= anoAtual; ano++ {
 		slog.Info("--- PROCESSANDO ANO ---", "ano", ano)
-
-		// Metadata de Votacoes (Ementas, Datas corretas)
 		anoLoop := ano
-		if err := retry.WithRetry(ctx, 3, "backfill-votacoes-metadata", func() error {
-			return s.votacaoSync.SyncMetadata(ctx, anoLoop)
-		}); err != nil {
-			slog.Error("falha ao sincronizar metadata votacoes", "ano", ano, "error", err)
-		}
 
 		// CEAPS (Despesas)
 		if err := retry.WithRetry(ctx, 3, "backfill-ceaps", func() error {
@@ -169,14 +159,17 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 
 	// E. Proposicoes (Historico)
 	slog.Info("--- PASSO 5/6: PROPOSICOES ---")
-	if err := retry.WithRetry(ctx, 3, "backfill-proposicoes", func() error {
-		return s.proposicaoSync.SyncFromAPI(ctx)
-	}); err != nil {
+	// o retry e por senador, dentro do SyncFromAPI
+	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
 		slog.Error("falha no backfill de proposicoes", "error", err)
 	}
 
-	// F. Calculo de Ranking Final
+	// F. Calculo de Ranking Final, so com a carga completa
 	slog.Info("--- PASSO 6/6: CALCULANDO RANKING ---")
+	if !s.cargaCompleta() {
+		return
+	}
+	s.rankingService.InvalidateCache()
 	if _, err := s.rankingService.CalcularRanking(ctx, nil); err != nil {
 		slog.Error("falha ao calcular ranking inicial", "error", err)
 	} else {
@@ -197,14 +190,15 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 	}); err != nil {
 		slog.Error("falha sync senadores", "error", err)
 	}
+	if err := s.senadorSync.SyncExercicios(ctx); err != nil {
+		slog.Error("falha sync exercicios", "error", err)
+	}
 
-	// 2. Votacoes - apenas metadata do ano atual (ementas, datas)
-	// O sync completo de votos (82 senadores x todas sessoes) leva 3600s+
-	// e fica reservado exclusivamente ao backfill
-	if err := retry.WithRetry(ctx, 3, "sync-votacoes-metadata", func() error {
-		return s.votacaoSync.SyncMetadata(ctx, anoAtual)
-	}); err != nil {
-		slog.Error("falha sync metadata votacoes", "error", err)
+	// 2. Votacoes dos ultimos 30 dias: 1 chamada por mes, com retry, traz todas
+	// as cadeiras de cada votacao. Antes o sync diario so atualizava metadados
+	// e nenhuma votacao nova entrava no banco.
+	if _, err := s.votacaoSync.SyncRecentes(ctx, 30); err != nil {
+		slog.Error("falha sync votacoes recentes", "error", err)
 	}
 
 	// 4. CEAPS (Despesas)
@@ -229,18 +223,36 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 	}
 
 	// 7. Proposicoes (Novos projetos ou tramitacoes)
-	if err := retry.WithRetry(ctx, 3, "sync-proposicoes", func() error {
-		return s.proposicaoSync.SyncFromAPI(ctx)
-	}); err != nil {
+	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
 		slog.Error("falha sync proposicoes", "error", err)
 	}
 
-	// 8. Recalcular Ranking
-	s.rankingService.CalcularRanking(ctx, nil)
-
-	// 9. Invalidar cache para garantir que proximas chamadas peguem o dado atualizado
+	// 8. Invalidar o cache e recalcular o ranking, so com a carga completa.
+	// Carga incompleta mantem o ranking em cache (ate o TTL de 24h); quem
+	// ficar sem votos aparece como "dados insuficientes", nunca como 0.
+	if !s.cargaCompleta() {
+		return
+	}
 	s.rankingService.InvalidateCache()
+	if _, err := s.rankingService.CalcularRanking(ctx, nil); err != nil {
+		slog.Error("falha ao recalcular ranking", "error", err)
+	}
 
 	slog.Info("sync diario integral finalizado")
 }
 
+// cargaCompleta confere que todo senador em exercicio tem ao menos um voto no
+// recorte (item 4). Um senador sem votos indica carga que falhou para ele.
+func (s *Scheduler) cargaCompleta() bool {
+	semVotos, err := s.votacaoSync.SenadoresSemVotos()
+	if err != nil {
+		slog.Error("falha na checagem de completude das votacoes", "error", err)
+		return false
+	}
+	if len(semVotos) > 0 {
+		slog.Error("carga incompleta: senadores em exercicio sem votos no recorte; ranking nao recalculado",
+			"total", len(semVotos), "senadores", semVotos)
+		return false
+	}
+	return true
+}

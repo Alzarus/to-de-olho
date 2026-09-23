@@ -1,7 +1,8 @@
 package comissao
 
 import (
-	"fmt"
+	"time"
+
 	"gorm.io/gorm"
 
 	"github.com/Alzarus/to-de-olho/internal/utils"
@@ -74,45 +75,23 @@ func (r *Repository) CountBySenadorID(senadorID int) (int64, error) {
 	return count, result.Error
 }
 
-// GetStats retorna estatisticas de comissoes de um senador limitadas ao mandato atual (2023+)
+// GetStats retorna estatisticas de comissoes no periodo do mandato (desde o
+// inicio do recorte)
 func (r *Repository) GetStats(senadorID int) (*ComissaoStats, error) {
-	var stats ComissaoStats
-	stats.SenadorID = senadorID
+	inicio, fim := utils.PeriodoDoMandato()
+	return r.GetStatsPeriodo(senadorID, inicio, fim)
+}
 
-	var total, titular, suplente, ativas int64
-
-	// Criar string de base filter para mandato
-	anoMandato := utils.GetInicioLegislaturaAtual()
-	mandatoFilter := fmt.Sprintf("senador_id = ? AND (data_inicio >= '%d-01-01' OR data_fim >= '%d-01-01' OR data_fim IS NULL)", anoMandato, anoMandato)
-
-	// Total de participacoes
-	r.db.Model(&ComissaoMembro{}).Where(mandatoFilter, senadorID).Count(&total)
-	stats.TotalComissoes = int(total)
-
-	// Titular
-	r.db.Model(&ComissaoMembro{}).Where(
-		mandatoFilter+" AND descricao_participacao = ?", senadorID, "Titular",
-	).Count(&titular)
-	stats.ComissoesTitular = int(titular)
-
-	// Suplente
-	r.db.Model(&ComissaoMembro{}).Where(
-		mandatoFilter+" AND descricao_participacao = ?", senadorID, "Suplente",
-	).Count(&suplente)
-	stats.ComissoesSuplente = int(suplente)
-
-	// Ativas (sem data_fim)
-	r.db.Model(&ComissaoMembro{}).Where(
-		mandatoFilter+" AND data_fim IS NULL", senadorID,
-	).Count(&ativas)
-	stats.ComissoesAtivas = int(ativas)
-
-	// Calcular taxa de titularidade
-	if stats.TotalComissoes > 0 {
-		stats.TaxaTitularidade = float64(stats.ComissoesTitular) / float64(stats.TotalComissoes) * 100
+// GetStatsPeriodo pontua as participacoes que tocam [inicio, fim). Regras em
+// pontuacao.go (itens 6 e 7 da auditoria).
+func (r *Repository) GetStatsPeriodo(senadorID int, inicio, fim time.Time) (*ComissaoStats, error) {
+	var participacoes []ComissaoMembro
+	err := r.db.Where("senador_id = ? AND (data_inicio IS NULL OR data_inicio < ?) AND (data_fim IS NULL OR data_fim >= ?)",
+		senadorID, fim, inicio).Find(&participacoes).Error
+	if err != nil {
+		return nil, err
 	}
-
-	return &stats, nil
+	return calcularStats(senadorID, participacoes, fim), nil
 }
 
 // GetComissoesPorCasa retorna contagem de comissoes por casa
@@ -127,24 +106,19 @@ func (r *Repository) GetComissoesPorCasa(senadorID int) ([]ComissoesPorCasa, err
 	return result, err
 }
 
-// Upsert insere ou atualiza uma comissao usando chave composta (senador_id, codigo_comissao)
-func (r *Repository) Upsert(comissao *ComissaoMembro) error {
-	return r.db.Where("senador_id = ? AND codigo_comissao = ?",
-		comissao.SenadorID, comissao.CodigoComissao).
-		Assign(*comissao).FirstOrCreate(comissao).Error
-}
-
-// UpsertBatch insere ou atualiza multiplas comissoes
-func (r *Repository) UpsertBatch(comissoes []ComissaoMembro) error {
+// SubstituirDoSenador troca todas as participacoes do senador pela lista da
+// API, numa transacao. A API devolve o historico completo, uma entrada por
+// periodo; o upsert antigo por (senador, comissao) juntava periodos
+// diferentes numa linha so e deixava data_fim anterior a data_inicio.
+func (r *Repository) SubstituirDoSenador(senadorID int, participacoes []ComissaoMembro) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		for _, c := range comissoes {
-			if err := tx.Where("senador_id = ? AND codigo_comissao = ?",
-				c.SenadorID, c.CodigoComissao).
-				Assign(c).FirstOrCreate(&c).Error; err != nil {
-				return err
-			}
+		if err := tx.Where("senador_id = ?", senadorID).Delete(&ComissaoMembro{}).Error; err != nil {
+			return err
 		}
-		return nil
+		if len(participacoes) == 0 {
+			return nil
+		}
+		return tx.CreateInBatches(participacoes, 500).Error
 	})
 }
 
@@ -154,48 +128,9 @@ func (r *Repository) DeleteBySenadorID(senadorID int) error {
 	return r.db.Where("senador_id = ?", senadorID).Delete(&ComissaoMembro{}).Error
 }
 
-// GetStatsByAno retorna estatisticas de comissoes filtradas por ano
+// GetStatsByAno retorna estatisticas de comissoes no ano, dentro do recorte.
+// Mesma formula do mandato (item 7).
 func (r *Repository) GetStatsByAno(senadorID int, ano int) (*ComissaoStats, error) {
-	var stats ComissaoStats
-	stats.SenadorID = senadorID
-
-	var total, titular, suplente int64
-
-	// Filtro de participacao no ano:
-	// data_inicio < inicio_proximo_ano AND (data_fim >= inicio_ano OR data_fim IS NULL)
-	dataInicioAno := fmt.Sprintf("%d-01-01", ano)
-	dataProximoAno := fmt.Sprintf("%d-01-01", ano+1)
-
-	// Criterio de filtro para "ativo durante o ano"
-	dateFilter := "data_inicio < ? AND (data_fim >= ? OR data_fim IS NULL)"
-	args := []interface{}{dataProximoAno, dataInicioAno}
-
-	// Total de participacoes
-	r.db.Model(&ComissaoMembro{}).Where("senador_id = ? AND "+dateFilter, append([]interface{}{senadorID}, args...)...).Count(&total)
-	stats.TotalComissoes = int(total)
-
-	// Titular
-	r.db.Model(&ComissaoMembro{}).Where(
-		"senador_id = ? AND descricao_participacao = ? AND "+dateFilter,
-		append([]interface{}{senadorID, "Titular"}, args...)...,
-	).Count(&titular)
-	stats.ComissoesTitular = int(titular)
-
-	// Suplente
-	r.db.Model(&ComissaoMembro{}).Where(
-		"senador_id = ? AND descricao_participacao = ? AND "+dateFilter,
-		append([]interface{}{senadorID, "Suplente"}, args...)...,
-	).Count(&suplente)
-	stats.ComissoesSuplente = int(suplente)
-
-	// Ativas (sem data_fim ou data_fim no futuro do ano... mas simplificando, seria se estava ativa em algum momento)
-	// Comissoes "Ativas" no contexto anual significa se participou.
-	stats.ComissoesAtivas = int(total) // No contexto anual, todas contadas foram ativas em algum momento
-
-	// Calcular taxa de titularidade
-	if stats.TotalComissoes > 0 {
-		stats.TaxaTitularidade = float64(stats.ComissoesTitular) / float64(stats.TotalComissoes) * 100
-	}
-
-	return &stats, nil
+	inicio, fim := utils.PeriodoDoAno(ano)
+	return r.GetStatsPeriodo(senadorID, inicio, fim)
 }

@@ -29,7 +29,9 @@ type ComissaoStats struct {
 	TotalComissoes       int     `json:"total_comissoes"`
 	ComissoesTitular     int     `json:"comissoes_titular"`
 	ComissoesSuplente    int     `json:"comissoes_suplente"`
-	ComissoesAtivas      int     `json:"comissoes_ativas"`      // Sem data_fim
+	ComissoesAtivas      int     `json:"comissoes_ativas"`      // colegiados em que continuava no fim do periodo (informativo)
+	Pontos               int     `json:"pontos"`                // titular 2 + suplente 1, uma vez por colegiado
+	ForaDaConta          int     `json:"fora_da_conta"`         // frentes, grupos de amizade e conselhos de honrarias
 	TaxaTitularidade     float64 `json:"taxa_titularidade"`     // Titular / Total * 100
 }
 

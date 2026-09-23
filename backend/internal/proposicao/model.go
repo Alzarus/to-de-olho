@@ -5,8 +5,11 @@ import "time"
 // Proposicao representa uma proposicao legislativa de autoria de um senador
 type Proposicao struct {
 	ID                int       `gorm:"primaryKey" json:"id"`
-	SenadorID         int       `gorm:"index:idx_proposicao_senador;not null" json:"senador_id"`
-	CodigoMateria     string    `gorm:"uniqueIndex:idx_materia_senador" json:"codigo_materia"`
+	// Uma linha por (senador, materia): coautorias sao preservadas (item 1).
+	// O indice mudou de nome de proposito: o AutoMigrate decide pelo nome, e
+	// com o nome antigo nao criaria o indice composto.
+	SenadorID         int       `gorm:"uniqueIndex:idx_proposicao_senador_materia,priority:1;index:idx_proposicao_senador;not null" json:"senador_id"`
+	CodigoMateria     string    `gorm:"uniqueIndex:idx_proposicao_senador_materia,priority:2;index:idx_proposicao_materia;not null" json:"codigo_materia"`
 	SiglaSubtipoMateria string  `json:"sigla_subtipo_materia"` // PEC, PLP, PL, etc.
 	NumeroMateria     string    `json:"numero_materia"`
 	AnoMateria        int       `json:"ano_materia"`
@@ -14,6 +17,12 @@ type Proposicao struct {
 	Ementa            string    `json:"ementa,omitempty"`
 	SituacaoAtual     string    `json:"situacao_atual,omitempty"` // Em tramitacao, Arquivada, Transformada em Lei
 	DataApresentacao  *time.Time `json:"data_apresentacao,omitempty"`
+
+	// Autoria (item 9): so o primeiro autor pontua
+	PosicaoAutoria *int   `json:"posicao_autoria"` // 1 = primeiro autor
+	TotalAutores   *int   `json:"total_autores"`   // null quando a API so informa "e outros"
+	TipoAutor      string `json:"tipo_autor,omitempty"` // SENADOR, LIDER, PRESIDENTE_SF, DEPUTADO (siglaTipo da API)
+	Autoria        string `json:"autoria,omitempty"` // texto bruto da API, para auditoria
 
 	// Para calculo de score
 	EstagioTramitacao string `json:"estagio_tramitacao"` // Apresentado, EmComissao, AprovadoComissao, AprovadoPlenario, TransformadoLei
@@ -31,7 +40,9 @@ func (Proposicao) TableName() string {
 // ProposicaoStats representa estatisticas de proposicoes de um senador
 type ProposicaoStats struct {
 	SenadorID           int     `json:"senador_id"`
-	TotalProposicoes    int     `json:"total_proposicoes"`
+	TotalProposicoes    int     `json:"total_proposicoes"`    // de autoria principal (primeiro autor)
+	TotalCoautorias     int     `json:"total_coautorias"`     // assinadas como coautor: nao pontuam
+	TotalSemPontos      int     `json:"total_sem_pontos"`     // vetos, autoria como deputado ou institucional
 	TotalPECs           int     `json:"total_pecs"`           // Propostas de Emenda Constitucional
 	TotalPLPs           int     `json:"total_plps"`           // Projetos de Lei Complementar
 	TotalPLs            int     `json:"total_pls"`            // Projetos de Lei
@@ -49,8 +60,21 @@ type ProposicaoPorTipo struct {
 	Total int    `json:"total"`
 }
 
-// CalcularPontuacao calcula a pontuacao de uma proposicao baseado no estagio e tipo
+// AutoriaPrincipal indica se a materia pontua para o senador: primeiro autor,
+// na condicao de senador (nao de deputado), e nao e veto (veto e ato do
+// Presidente da Republica sobre materia ja aprovada).
+func (p *Proposicao) AutoriaPrincipal() bool {
+	return p.PosicaoAutoria != nil && *p.PosicaoAutoria == 1 && TiposSenador[p.TipoAutor] && p.SiglaSubtipoMateria != "VET"
+}
+
+// CalcularPontuacao calcula a pontuacao de uma proposicao baseado no estagio e tipo.
+// Coautoria nao pontua (item 9, regra do LES de Volden & Wiseman: conta o
+// sponsor, nao o cosponsor).
 func (p *Proposicao) CalcularPontuacao() float64 {
+	if !p.AutoriaPrincipal() {
+		return 0
+	}
+
 	// Pontos base por estagio
 	pontosBase := map[string]int{
 		"Apresentado":       1,

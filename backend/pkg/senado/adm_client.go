@@ -32,6 +32,7 @@ func NewAdmClient() *AdmClient {
 
 // DespesaCEAPSAPI representa uma despesa retornada pela API
 type DespesaCEAPSAPI struct {
+	ID             int     `json:"id"` // unico por lancamento
 	Ano            int     `json:"ano"`
 	Mes            int     `json:"mes"`
 	CodSenador     int     `json:"codSenador"`

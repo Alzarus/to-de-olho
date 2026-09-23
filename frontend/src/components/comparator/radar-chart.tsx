@@ -58,7 +58,7 @@ export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartPro
           value = senator.produtividade;
           break;
         case "Presença":
-          value = senator.presenca;
+          value = senator.presenca ?? 0; // sem dado: a ficha mostra "—"
           break;
         case "Economia":
           value = senator.economia_cota;

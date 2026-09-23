@@ -2,6 +2,7 @@ package votacao
 
 import (
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -124,6 +125,7 @@ func (h *Handler) GetVotosPorTipo(c *gin.Context) {
 // @Param limit query int false "Limite (default 20)"
 // @Param ano query int false "Ano (default atual)"
 // @Param materia query string false "Filtro por materia/descricao"
+// @Param sessao query string false "Codigo da sessao (todas as votacoes dela)"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/votacoes [get]
 func (h *Handler) GetAll(c *gin.Context) {
@@ -132,6 +134,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	ano, _ := strconv.Atoi(c.Query("ano"))
 	materia := c.Query("materia")
 	ordem := c.DefaultQuery("ordem", "desc")
+	sessao := c.Query("sessao")
 
 	if page < 1 {
 		page = 1
@@ -141,7 +144,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	votacoes, total, err := h.repo.FindAll(limit, offset, ano, materia, ordem)
+	votacoes, total, err := h.repo.FindAll(limit, offset, ano, materia, ordem, sessao)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar votacoes"})
 		return
@@ -155,28 +158,42 @@ func (h *Handler) GetAll(c *gin.Context) {
 	})
 }
 
+// idLegado casa o formato antigo de id de votacao, "codigoSessao_ano"
+var idLegado = regexp.MustCompile(`^(\d+)_\d+$`)
+
 // GetByID godoc
 // @Summary Retorna detalhes de uma votacao e lista de votos
 // @Tags votacoes
 // @Produce json
-// @Param id path string true "ID da Sessao de Votacao"
+// @Param id path int true "Codigo da votacao (codigoSessaoVotacao)"
 // @Success 200 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{} "nao encontrada; para id legado NNNNNN_AAAA, traz sessao_id"
 // @Router /api/v1/votacoes/{id} [get]
 func (h *Handler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 
-	// Metadata da votacao
-	votacao, err := h.repo.FindByID(id)
+	// Links antigos apontavam para a sessao inteira (D2): o cliente redireciona
+	// para a lista de votacoes da sessao
+	if m := idLegado.FindStringSubmatch(id); m != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "id de votacao legado", "sessao_id": m[1]})
+		return
+	}
+
+	codigo, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id invalido"})
+		return
+	}
+
+	votacao, err := h.repo.FindByID(codigo)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "votacao nao encontrada"})
 		return
 	}
 
-	// Lista de votos
-	votos, err := h.repo.FindVotosBySessaoID(id)
+	votos, err := h.repo.FindVotosByCodigoVotacao(codigo)
 	if err != nil {
-		// DEBUG: Exposing error details to frontend/curl
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar votos", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar votos"})
 		return
 	}
 

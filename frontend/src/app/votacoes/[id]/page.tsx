@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -88,6 +88,7 @@ const VoteBadge = ({ voto }: { voto: string }) => {
 
 function VotacaoDetalheContent() {
   const params = useParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const backUrl = searchParams.get("backUrl") || "/votacoes";
 
@@ -105,6 +106,14 @@ function VotacaoDetalheContent() {
   useEffect(() => {
     if (!id) return;
 
+    // Id antigo "codigoSessao_ano": o next.config ja redireciona no servidor;
+    // isto cobre a navegacao do lado do cliente
+    const legado = /^(\d+)_\d+$/.exec(id);
+    if (legado) {
+      router.replace(`/votacoes?sessao=${legado[1]}`);
+      return;
+    }
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -119,7 +128,7 @@ function VotacaoDetalheContent() {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, router]);
 
   if (loading) {
     return (

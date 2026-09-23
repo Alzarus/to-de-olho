@@ -13,6 +13,18 @@ const nextConfig: NextConfig = {
     workerThreads: false,
     cpus: 1,
   },
+  // Links antigos de votacao apontavam para a sessao inteira ("codigoSessao_ano").
+  // Desde a v3 cada votacao tem id proprio; o link antigo vai para a lista das
+  // votacoes daquela sessao (decisao D2 do PLANO-MIGRACAO.md).
+  async redirects() {
+    return [
+      {
+        source: "/votacoes/:sessao([0-9]+)_:ano([0-9]+)",
+        destination: "/votacoes?sessao=:sessao",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

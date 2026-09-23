@@ -39,6 +39,8 @@ function VotacoesContent() {
   const ano = anoParam ? Number(anoParam) : 0;
   const search = searchParams.get("search") || "";
   const sortDir = searchParams.get("ordem") || "desc";
+  // Votacoes de uma sessao (destino dos links antigos /votacoes/NNNNNN_AAAA)
+  const sessao = searchParams.get("sessao") || "";
 
   const [data, setData] = useState<Votacao[]>([]);
   const [total, setTotal] = useState(0);
@@ -90,9 +92,10 @@ function VotacoesContent() {
         const res = await getVotacoes(
           page,
           limit,
-          ano === 0 ? undefined : ano,
+          ano === 0 || sessao ? undefined : ano,
           search,
           sortDir,
+          sessao || undefined,
         );
         setData(res.data);
         setTotal(res.total);
@@ -104,7 +107,7 @@ function VotacoesContent() {
     };
 
     fetchData();
-  }, [page, ano, search]);
+  }, [page, ano, search, sessao]);
 
   // Aplicar ordenação client-side
   const sortedData = [...data].sort((a, b) => {
@@ -131,6 +134,18 @@ function VotacoesContent() {
             Acompanhe como votam os senadores nas principais matérias
             legislativas.
           </p>
+          {sessao && (
+            <p className="mt-2 text-sm text-muted-foreground" role="status">
+              Mostrando as votações da sessão {sessao}.{" "}
+              <button
+                type="button"
+                onClick={() => updateUrl({ sessao: null, page: 1 })}
+                className="font-medium text-primary hover:underline"
+              >
+                Ver todas
+              </button>
+            </p>
+          )}
         </div>
 
         {/* Seletor de Ano */}
@@ -263,18 +278,18 @@ function VotacoesContent() {
               ) : (
                 sortedData.map((votacao) => (
                   <TableRow
-                    key={votacao.sessao_id}
+                    key={votacao.codigo_votacao}
                     className="hover:bg-muted/50 cursor-pointer group"
                     onClick={() =>
                       router.push(
-                        `/votacoes/${votacao.sessao_id}?backUrl=${encodeURIComponent(`/votacoes?${searchParams.toString()}`)}`,
+                        `/votacoes/${votacao.codigo_votacao}?backUrl=${encodeURIComponent(`/votacoes?${searchParams.toString()}`)}`,
                       )
                     }
                     role="row"
                     tabIndex={0}
                     onKeyDown={(e) =>
                       e.key === "Enter" &&
-                      router.push(`/votacoes/${votacao.sessao_id}`)
+                      router.push(`/votacoes/${votacao.codigo_votacao}`)
                     }
                   >
                     <TableCell className="font-medium whitespace-nowrap">

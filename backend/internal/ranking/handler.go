@@ -35,7 +35,7 @@ func (h *Handler) GetRanking(c *gin.Context) {
 
 	// [FIX] Criar uma copia da resposta para nao alterar o item no cache (RAM)
 	// Como 'ranking' e um ponteiro para o cache, alterar ranking.Ranking afetaria todos os requests
-	response := *ranking 
+	response := *ranking
 
 	// Aplicar limite se especificado
 	if limitStr := c.Query("limite"); limitStr != "" {
@@ -77,33 +77,34 @@ func (h *Handler) GetScoreSenador(c *gin.Context) {
 // GET /api/v1/ranking/metodologia
 func (h *Handler) GetMetodologia(c *gin.Context) {
 	metodologia := gin.H{
-		"titulo":      "Metodologia do Ranking de Senadores",
-		"versao":      "2.0",
-		"referencia":  "Volden, C. & Wiseman, A. E. (2018). Legislative Effectiveness in the American States",
-		"formula":     "Score = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)",
+		"titulo":     "Metodologia do Ranking de Senadores",
+		"versao":     "2.0", // v1 = TCC; v2 = correcao de 23/09/2026 (METODOLOGIA.md, historico de versoes)
+		"historico":  "https://github.com/Alzarus/to-de-olho/blob/master/METODOLOGIA.md#histórico-de-versões",
+		"referencia": "Volden, C. & Wiseman, A. E. (2018). Legislative Effectiveness in the American States",
+		"formula":    "Score = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)",
 		"criterios": []gin.H{
 			{
-				"nome":        "Produtividade Legislativa",
-				"peso":        "35%",
-				"descricao":   "Capacidade de avancar proposicoes pelo processo legislativo",
-				"normalizacao": "Pontuacao do senador / Maior pontuacao da casa * 100",
+				"nome":         "Produtividade Legislativa",
+				"peso":         "35%",
+				"descricao":    "Capacidade de avancar proposicoes pelo processo legislativo. So o primeiro autor pontua, e so como senador (nao como deputado); coautorias e vetos nao somam pontos",
+				"normalizacao": "ln(1 + pontos do senador) / ln(1 + maior pontuacao da casa) * 100",
 			},
 			{
-				"nome":        "Presenca em Votacoes",
-				"peso":        "25%",
-				"descricao":   "Participacao em votacoes nominais",
-				"normalizacao": "(Total - Ausencias) / Total * 100",
+				"nome":         "Presenca em Votacoes",
+				"peso":         "25%",
+				"descricao":    "Presenca nas votacoes nominais do Plenario desde a posse da legislatura. Licencas e missoes oficiais saem da conta; 'atividade parlamentar' (AP) e 'nao compareceu' contam como falta. Sem registro no periodo: fora da ordenacao",
+				"normalizacao": "Presentes / (Votacoes - NA - Licencas e missoes) * 100",
 			},
 			{
-				"nome":        "Economia na Cota (CEAPS)",
-				"peso":        "20%",
-				"descricao":   "Responsabilidade fiscal no uso da cota parlamentar",
-				"normalizacao": "(1 - Gasto / Teto) * 100",
+				"nome":         "Economia na Cota (CEAPS)",
+				"peso":         "20%",
+				"descricao":    "Responsabilidade fiscal no uso da cota parlamentar. Teto = teto mensal da UF x meses em exercicio no periodo",
+				"normalizacao": "(1 - Gasto no periodo / Teto no periodo) * 100",
 			},
 			{
-				"nome":        "Participacao em Comissoes",
-				"peso":        "20%",
-				"descricao":   "Trabalho tecnico em comissoes permanentes e temporarias",
+				"nome":         "Participacao em Comissoes",
+				"peso":         "20%",
+				"descricao":    "Colegiados legislativos no periodo, uma vez cada: titular 2 pontos, suplente 1. Frentes, grupos de amizade e conselhos de honrarias nao contam",
 				"normalizacao": "Pontos do senador / Maior pontuacao da casa * 100",
 			},
 		},
@@ -114,7 +115,9 @@ func (h *Handler) GetMetodologia(c *gin.Context) {
 			{"tipo": "Mocoes (RQS/MOC)", "peso": "x0.5"},
 			{"tipo": "Requerimentos (REQ)", "peso": "x0.1"},
 		},
-		"escala": "Todos os scores sao normalizados para escala 0-100 antes da ponderacao",
+		"escala":              "Todos os scores sao normalizados para escala 0-100 antes da ponderacao",
+		"periodo":             "Mesmo periodo para todos os criterios: desde a posse da legislatura (mandato) ou o ano, cortado pelo recorte",
+		"dados_insuficientes": "Fora da ordenacao: menos de 6 meses em exercicio no periodo, ou nenhum registro de votacao",
 	}
 
 	c.JSON(http.StatusOK, metodologia)
