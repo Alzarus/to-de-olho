@@ -94,6 +94,17 @@ func (r *Repository) SubstituirMandatos(senadorID int, mandatos []Mandato) error
 	})
 }
 
+// FindEmExercicioEm devolve os senadores que ocupavam a cadeira no dia, pelos
+// periodos de exercicio (Fim inclusivo). Usado pelo ranking de uma legislatura
+// encerrada (item 14): quem saiu em fevereiro continua nela.
+func (r *Repository) FindEmExercicioEm(dia time.Time) ([]Senador, error) {
+	var senadores []Senador
+	err := r.db.Where(`EXISTS (SELECT 1 FROM mandatos m WHERE m.senador_id = senadores.id
+		AND m.inicio <= ? AND (m.fim IS NULL OR m.fim >= ?))`, dia, dia).
+		Order("nome ASC").Find(&senadores).Error
+	return senadores, err
+}
+
 // MesesEmExercicio soma, em meses, os dias em que o senador ocupou a cadeira
 // dentro de [inicio, fim).
 func (r *Repository) MesesEmExercicio(senadorID int, inicio, fim time.Time) (float64, error) {

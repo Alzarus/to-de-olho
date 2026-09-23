@@ -72,6 +72,12 @@ type RankingResponse struct {
 	Total       int            `json:"total"`     // len(Ranking)
 	CalculadoEm time.Time      `json:"calculado_em"`
 	Metodologia string         `json:"metodologia"`
+
+	// Periodo [inicio, fim) em AAAA-MM-DD. LegislaturaEncerrada: nos primeiros
+	// 6 meses de uma legislatura, o ranking do mandato mostra a anterior.
+	PeriodoInicio        string `json:"periodo_inicio"`
+	PeriodoFim           string `json:"periodo_fim"`
+	LegislaturaEncerrada bool   `json:"legislatura_encerrada"`
 }
 
 // Pesos dos criterios conforme metodologia-ranking.md

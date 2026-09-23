@@ -64,6 +64,10 @@ export interface RankingResponse {
   total: number;
   calculado_em: string;
   metodologia: string;
+  periodo_inicio?: string; // AAAA-MM-DD
+  periodo_fim?: string; // AAAA-MM-DD, exclusivo
+  // Nos 6 primeiros meses de uma legislatura, o ranking do mandato mostra a anterior
+  legislatura_encerrada?: boolean;
 }
 
 export interface Mandato {

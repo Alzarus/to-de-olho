@@ -545,6 +545,25 @@ function RankingError({ message }: { message: string }) {
   );
 }
 
+// Anos do seletor: da primeira legislatura com dados (2023) ate o ano corrente
+const ANOS_DISPONIVEIS = Array.from(
+  { length: new Date().getFullYear() - 2023 + 1 },
+  (_, i) => new Date().getFullYear() - i,
+);
+
+// AAAA-MM-DD -> DD/MM/AAAA, sem passar por Date (fuso)
+function formatarData(iso: string): string {
+  const [a, m, d] = iso.split("-");
+  return `${d}/${m}/${a}`;
+}
+
+// periodo_fim e exclusivo (a posse da legislatura seguinte): mostra o dia anterior
+function formatarDataFimInclusivo(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return formatarData(d.toISOString().slice(0, 10));
+}
+
 function RankingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -670,14 +689,26 @@ function RankingContent() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="0">Mandato Completo</SelectItem>
-              <SelectItem value="2026">2026</SelectItem>
-              <SelectItem value="2025">2025</SelectItem>
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2023">2023</SelectItem>
+              {ANOS_DISPONIVEIS.map((a) => (
+                <SelectItem key={a} value={a.toString()}>
+                  {a}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
       </header>
+
+      {data?.legislatura_encerrada && data.periodo_inicio && data.periodo_fim && (
+        <div
+          role="note"
+          className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-foreground"
+        >
+          <strong>Legislatura encerrada.</strong> Este é o ranking final do mandato de{" "}
+          {formatarData(data.periodo_inicio)} a {formatarDataFimInclusivo(data.periodo_fim)}. A nova
+          legislatura entra no ranking quando completar 6 meses, o mínimo de exercício da metodologia.
+        </div>
+      )}
 
       {/* Cards de critérios - apenas desktop */}
       <div
