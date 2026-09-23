@@ -1,0 +1,10 @@
+# Achados do Trivy aceitos, com justificativa por linha.
+#
+# Regra: so entra aqui o que NAO e alcancavel pelo binario de producao
+# (backend/cmd/api, CGO_ENABLED=0 GOOS=linux) nem pela imagem web em execucao.
+# Cada entrada leva um comentario com o motivo e a data da revisao.
+#
+# Vazio desde 22/09/2026: com Go 1.27 e golang.org/x/crypto v0.57.0, as CVEs de
+# x/crypto/ssh, openpgp e x/sys/windows que estavam aqui foram corrigidas na
+# origem (item 20 da AUDITORIA.md). O arquivo fica porque o job trivy-fs do CI
+# aponta para ele.

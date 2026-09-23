@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
 
       - name: Verify dependencies
@@ -32,3 +32,21 @@ jobs:
 
       - name: Vet
         run: go vet ./...
+
+  # Varredura de dependencias e segredos. Falha so em CRITICAL; o que for
+  # aceito conscientemente vai para o .trivyignore com justificativa.
+  trivy-fs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy (dependencias e segredos)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret
+          severity: CRITICAL
+          exit-code: "1"
+          trivyignores: .trivyignore
+          version: v0.74.0
