@@ -17,6 +17,12 @@ const GA_CONEXAO = GA_ATIVO
       "https://*.analytics.google.com",
     ]
   : [];
+// A Cloudflare injeta na borda o beacon do Web Analytics (RUM) em todo HTML
+// servido por ela: o script vem de static.cloudflareinsights.com e as
+// medições são enviadas para cloudflareinsights.com. Não aparece no teste
+// local, só atrás do proxy, por isso fica explícito aqui.
+const CF_SCRIPT = ["https://static.cloudflareinsights.com"];
+const CF_CONEXAO = ["https://cloudflareinsights.com"];
 // Com assetPrefix, JS/CSS/fontes de /_next vêm dessa origem em vez da própria.
 const ORIGEM_ASSETS =
   !isDev && FRONTEND_URL ? [new URL(FRONTEND_URL).origin] : [];
@@ -40,6 +46,7 @@ const CSP = [
     "'unsafe-inline'",
     ...(isDev ? ["'unsafe-eval'"] : []),
     ...ORIGEM_ASSETS,
+    ...CF_SCRIPT,
     ...GA_SCRIPT,
   ],
   ["style-src", "'self'", "'unsafe-inline'", ...ORIGEM_ASSETS],
@@ -61,8 +68,9 @@ const CSP = [
   ],
   // Inter vem do next/font, que baixa a fonte no build e serve de /_next.
   ["font-src", "'self'", ...ORIGEM_ASSETS],
-  // O cliente só fala com /api/* na mesma origem (rewrite para a API Go).
-  ["connect-src", "'self'", ...GA_CONEXAO],
+  // O cliente só fala com /api/* na mesma origem (rewrite para a API Go);
+  // NEXT_PUBLIC_API_URL não é lido pelo código do navegador.
+  ["connect-src", "'self'", ...CF_CONEXAO, ...GA_CONEXAO],
   ["frame-src", "'none'"],
   ["object-src", "'none'"],
   ["base-uri", "'self'"],
