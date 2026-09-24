@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { VotosPorTipo } from "@/types/api";
+import { ChartTooltipContent } from "@/components/ui/chart-tooltip";
+import { cn } from "@/lib/utils";
 
 // Cores atualizadas para melhor distinção e contraste
 const COLORS: Record<string, string> = {
@@ -33,6 +35,8 @@ const MAIN_TYPES = ["Sim", "Nao", "Abstencao", "Obstrucao"];
 interface VotosPieChartProps {
   data: VotosPorTipo[];
   onSliceClick?: (voteType: string) => void;
+  /** Tipo de voto atualmente filtrado (para `aria-pressed` na legenda). */
+  activeType?: string;
 }
 
 const VOTE_DESCRIPTIONS: Record<string, string> = {
@@ -47,7 +51,7 @@ const VOTE_DESCRIPTIONS: Record<string, string> = {
   "P-OD": "Presidente (Obstrução)",
 };
 
-export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
+export function VotosPieChart({ data, onSliceClick, activeType }: VotosPieChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const isMobile = useIsMobile();
 
@@ -157,7 +161,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
                   key={`cell-${index}`} 
                   fill={entry.color} 
                   strokeWidth={activeIndex === index ? 3 : 0}
-                  stroke={activeIndex === index ? "#1e293b" : undefined}
+                  stroke={activeIndex === index ? "var(--foreground)" : undefined}
                   style={{
                     filter: activeIndex === index ? "brightness(1.1)" : undefined,
                     transition: "all 0.2s ease-in-out"
@@ -165,33 +169,27 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
                 />
               ))}
             </Pie>
-            <RechartsTooltip 
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(value: any, name: any, props: any) => {
-                const item = props.payload;
-                if (item.isGroup) {
-                  return [
-                    <div key="tooltip-content" className="flex flex-col gap-1">
-                      <span>{value} votos</span>
-                      <div className="border-t pt-2 mt-1">
-                        <p className="text-xs font-semibold mb-1 text-foreground">Composição:</p>
-                        <p className="text-xs text-muted-foreground font-normal">
-                          {item.breakdown}
-                        </p>
-                      </div>
-                    </div>,
-                    item.label
-                  ];
-                }
-                return [value, item.label];
-              }}
-              contentStyle={{ 
-                borderRadius: "8px", 
-                border: "none", 
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                padding: "12px",
-                backgroundColor: "rgba(255, 255, 255, 0.98)"
-              }}
+            <RechartsTooltip
+              content={({ active, payload }) => (
+                <ChartTooltipContent
+                  active={active}
+                  payload={payload}
+                  hideLabel
+                  nameFormatter={(name, entry) => entry.payload?.label ?? String(name)}
+                  valueFormatter={(value) => `${value} votos`}
+                  colorFormatter={(entry) => entry.payload?.color}
+                  extra={(items) => {
+                    const item = items[0]?.payload;
+                    if (!item?.isGroup || !item.breakdown) return null;
+                    return (
+                      <>
+                        <p className="mb-1 font-semibold text-popover-foreground">Composição:</p>
+                        <p>{item.breakdown}</p>
+                      </>
+                    );
+                  }}
+                />
+              )}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -201,32 +199,57 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
         {chartData.map((entry, index) => {
           const value = entry.name;
           const label = entry.label || value;
-          
+          const isActive = activeType === value;
+          const swatch = (
+            <span
+              aria-hidden="true"
+              className="w-3 h-3 block flex-shrink-0"
+              style={{ backgroundColor: entry.color }}
+            />
+          );
+
           return (
-            <li key={`item-${index}`} className="flex items-center gap-1.5 text-sm">
-              <span 
-                className="w-3 h-3 block flex-shrink-0" 
-                style={{ backgroundColor: entry.color }} 
-              />
-              {value === "Outros" && outrosDetails ? (
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
+            <li key={`item-${index}`} className="flex items-center gap-1 text-sm">
+              {onSliceClick ? (
+                <button
+                  type="button"
+                  onClick={() => handleClick(entry)}
+                  aria-pressed={isActive}
+                  aria-label={`Filtrar votos: ${label} (${entry.value})`}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-sm px-1 py-0.5 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    isActive ? "font-semibold text-foreground underline underline-offset-4" : "text-muted-foreground",
+                  )}
+                >
+                  {swatch}
                   {label}
-                  <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[200px]">
-                        <p className="text-xs font-semibold mb-1">Composição:</p>
-                        <p className="text-xs opacity-90 whitespace-pre-line">
-                          {outrosDetails}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </span>
+                </button>
               ) : (
-                <span className="text-muted-foreground">{label}</span>
+                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  {swatch}
+                  {label}
+                </span>
+              )}
+              {value === "Outros" && outrosDetails && (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Composição de Outros"
+                        className="inline-flex rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-help transition-colors"
+                      >
+                        <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                      <p className="text-xs font-semibold mb-1">Composição:</p>
+                      <p className="text-xs whitespace-pre-line">
+                        {outrosDetails}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </li>
           );
@@ -235,7 +258,7 @@ export function VotosPieChart({ data, onSliceClick }: VotosPieChartProps) {
 
       {onSliceClick && (
         <p className="text-center text-xs text-muted-foreground">
-          Clique nas fatias para filtrar a lista abaixo
+          Clique nas fatias ou na legenda para filtrar a lista abaixo
         </p>
       )}
     </div>

@@ -20,8 +20,8 @@ import {
   Line,
   Cell,
 } from "recharts";
-import { useTheme } from "next-themes";
 import { formatCurrency } from "@/lib/utils";
+import { ChartTooltipContent } from "@/components/ui/chart-tooltip";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -47,36 +47,9 @@ const COLORS = [
 ];
 
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-lg border bg-background p-2 shadow-sm max-w-[300px] z-50">
-        <p className="font-semibold text-sm mb-2 break-words text-foreground leading-tight">
-          {label}
-        </p>
-        <div className="space-y-1">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center justify-between gap-4 text-xs">
-              <span style={{ color: entry.color }} className="font-medium">
-                {entry.name}:
-              </span>
-              <span className="font-bold text-foreground">
-                {formatCurrency(entry.value)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  return null;
-};
+const formatCurrencyValue = (value: unknown) => formatCurrency(Number(value) || 0);
 
 export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const apiYear = year === 0 ? undefined : year;
@@ -266,23 +239,28 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
               layout="vertical"
               margin={{ top: 20, right: 10, left: 10, bottom: isMobile ? 60 : 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isDark ? "#374151" : "#e5e7eb"} />
-              <XAxis type="number" tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border)" />
+              <XAxis type="number" tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
               <YAxis 
                 dataKey="name" 
                 type="category" 
                 width={isMobile ? 100 : 150} 
-                tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: isMobile ? 11 : 12 }} 
+                tick={{ fill: "var(--muted-foreground)", fontSize: isMobile ? 11 : 12 }} 
                 tickFormatter={(val) => truncate(val, isMobile ? 12 : 20)}
               />
-              <Tooltip 
-                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                 formatter={(value: any) => formatCurrency(value)}
-                 contentStyle={{ 
-                    backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#e5e7eb",
-                    color: isDark ? "#f3f4f6" : "#111827"
-                }}
+              <Tooltip
+                cursor={{ fill: "var(--muted)", opacity: 0.5 }}
+                content={({ active, payload, label }) => (
+                  <ChartTooltipContent
+                    active={active}
+                    payload={payload}
+                    label={label}
+                    valueFormatter={formatCurrencyValue}
+                    colorFormatter={(entry) =>
+                      entry.dataKey === "Gasto" ? entry.payload?.color : "#82ca9d"
+                    }
+                  />
+                )}
               />
               <Legend 
                 wrapperStyle={{ paddingTop: "10px", fontSize: isMobile ? "11px" : "12px" }} 
@@ -313,20 +291,30 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
               layout="vertical"
               margin={{ top: 20, right: 10, left: 10, bottom: isMobile ? 80 : 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={isDark ? "#374151" : "#e5e7eb"} />
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border)" />
               
               {/* Swapped Axis for better readability */}
-              <XAxis type="number" tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 10 }} />
+              <XAxis type="number" tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} />
               <YAxis 
                 dataKey="category" 
                 type="category" 
                 width={isMobile ? 110 : 200}
-                tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 10 }}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
                 tickFormatter={(val) => truncate(val, isMobile ? 15 : 30)}
                 interval={0}
               />
 
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? "#374151" : "#f3f4f6", opacity: 0.5 }} />
+              <Tooltip
+                cursor={{ fill: "var(--muted)", opacity: 0.5 }}
+                content={({ active, payload, label }) => (
+                  <ChartTooltipContent
+                    active={active}
+                    payload={payload}
+                    label={label}
+                    valueFormatter={formatCurrencyValue}
+                  />
+                )}
+              />
               <Legend 
                 wrapperStyle={{ paddingTop: "10px", fontSize: isMobile ? "11px" : "12px" }} 
                 formatter={(value) => truncate(value, isMobile ? 15 : 30)}
@@ -358,21 +346,22 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
               data={filteredEvolutionData}
               margin={{ top: 20, right: 10, left: 10, bottom: isMobile ? 60 : 30 }}
             >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#374151" : "#e5e7eb"} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis 
                 dataKey={isMobile ? "shortDate" : "date"} 
-                tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 11 }} 
+                tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} 
                 interval={isMobile ? 1 : 0}
               />
-              <YAxis tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} width={isMobile ? 40 : 60} tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 11 }} />
-              <Tooltip 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(value: any) => formatCurrency(value)}
-                contentStyle={{ 
-                    backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#e5e7eb",
-                    color: isDark ? "#f3f4f6" : "#111827"
-                }}
+              <YAxis tickFormatter={(val) => `R$${(val/1000).toFixed(0)}k`} width={isMobile ? 40 : 60} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
+              <Tooltip
+                content={({ active, payload, label }) => (
+                  <ChartTooltipContent
+                    active={active}
+                    payload={payload}
+                    label={label}
+                    valueFormatter={formatCurrencyValue}
+                  />
+                )}
               />
               <Legend wrapperStyle={{ paddingTop: "20px", fontSize: isMobile ? "11px" : "12px" }} />
               {selectedIds.map((id, index) => {

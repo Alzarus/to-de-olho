@@ -11,9 +11,9 @@ import {
   Tooltip
 } from "recharts";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useTheme } from "next-themes";
 import type { SenadorScore } from "@/types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartTooltipContent } from "@/components/ui/chart-tooltip";
 
 interface ComparatorRadarChartProps {
   senators: (SenadorScore & { color: string })[];
@@ -21,8 +21,6 @@ interface ComparatorRadarChartProps {
 }
 
 export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartProps) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
   const isMobile = useIsMobile();
   const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 
@@ -86,15 +84,15 @@ export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartPro
             data={chartData}
             margin={{ top: 10, right: 30, bottom: 10, left: 30 }}
           >
-            <PolarGrid stroke={isDark ? "#374151" : "#e5e7eb"} />
+            <PolarGrid stroke="var(--border)" />
             <PolarAngleAxis
               dataKey="subject"
-              tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 12 }}
+              tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
             />
             <PolarRadiusAxis
               angle={30}
               domain={[0, 100]}
-              tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 10 }}
+              tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
             />
             {senators.map((senator) => (
               <Radar
@@ -112,14 +110,11 @@ export function ComparatorRadarChart({ senators, year }: ComparatorRadarChartPro
               iconType="square"
               iconSize={10}
             />
-             <Tooltip 
-                contentStyle={{ 
-                    backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#e5e7eb",
-                    borderRadius: "8px",
-                    color: isDark ? "#f3f4f6" : "#111827"
-                }}
-             />
+            <Tooltip
+              content={({ active, payload, label }) => (
+                <ChartTooltipContent active={active} payload={payload} label={label} />
+              )}
+            />
           </RadarChart>
         </ResponsiveContainer>
       </CardContent>

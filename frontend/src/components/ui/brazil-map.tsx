@@ -75,6 +75,8 @@ export function BrazilMap({ data = [], className, onHover }: BrazilMapProps) {
                       d={state.path}
                       id={state.id}
                       tabIndex={0}
+                      role="img"
+                      aria-label={`${state.name}: ${formattedValue ?? "sem dados"}`}
                       onClick={(e) => {
                         e.currentTarget.focus();
                         // Stop propagation if it's inside another clickable area
@@ -82,6 +84,9 @@ export function BrazilMap({ data = [], className, onHover }: BrazilMapProps) {
                       }}
                       className={cn(
                         "transition-colors duration-200 cursor-pointer outline-none focus:outline-none",
+                        // Foco visível: contorno na cor do texto (contraste >= 3:1 contra o
+                        // preenchimento azul e o cinza); --ring (azul) sumiria sobre o azul.
+                        "focus-visible:stroke-foreground focus-visible:[stroke-width:4] focus-visible:opacity-100",
                         hasData
                           ? "fill-blue-600 dark:fill-blue-500 hover:opacity-80 focus:opacity-80"
                           : "fill-gray-200 dark:fill-gray-800 hover:fill-gray-300 dark:hover:fill-gray-700 focus:fill-gray-300 dark:focus:fill-gray-700",
@@ -95,7 +100,7 @@ export function BrazilMap({ data = [], className, onHover }: BrazilMapProps) {
                       {state.name} ({state.id})
                     </div>
                     {formattedValue && (
-                      <div className="text-xs font-medium opacity-90">
+                      <div className="text-xs font-medium">
                         {formattedValue}
                       </div>
                     )}

@@ -10,17 +10,15 @@ import {
   Tooltip
 } from "recharts";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useTheme } from "next-themes";
 import type { SenadorScore } from "@/types/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartTooltipContent } from "@/components/ui/chart-tooltip";
 
 interface SenatorRadarChartProps {
   score: SenadorScore;
 }
 
 export function SenatorRadarChart({ score }: SenatorRadarChartProps) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
 
   const data = [
     { subject: "Produtividade", value: score.produtividade, fullMark: 100 },
@@ -43,10 +41,10 @@ export function SenatorRadarChart({ score }: SenatorRadarChartProps) {
             data={data}
             margin={{ top: 10, right: 30, bottom: 10, left: 30 }}
           >
-            <PolarGrid stroke={isDark ? "#374151" : "#e5e7eb"} />
+            <PolarGrid stroke="var(--border)" />
             <PolarAngleAxis
               dataKey="subject"
-              tick={{ fill: isDark ? "#9ca3af" : "#4b5563", fontSize: 12 }}
+              tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
             />
             <PolarRadiusAxis
               angle={30}
@@ -62,15 +60,12 @@ export function SenatorRadarChart({ score }: SenatorRadarChartProps) {
               fillOpacity={0.5}
               isAnimationActive={!useIsMobile()}
             />
-            <Tooltip 
-                cursor={false}
-                contentStyle={{ 
-                    backgroundColor: isDark ? "#1f2937" : "#ffffff",
-                    borderColor: isDark ? "#374151" : "#e5e7eb",
-                    borderRadius: "8px",
-                    color: isDark ? "#f3f4f6" : "#111827"
-                }}
-             />
+            <Tooltip
+              cursor={false}
+              content={({ active, payload, label }) => (
+                <ChartTooltipContent active={active} payload={payload} label={label} />
+              )}
+            />
           </RadarChart>
         </ResponsiveContainer>
       </CardContent>
