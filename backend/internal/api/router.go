@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -26,8 +27,12 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 	router := gin.Default()
 	usarIPDoVisitante(router)
 
-	// Middleware CORS
+	// Ordem: CORS (só headers, responde o preflight sem gastar ficha), limite
+	// por origem (recusa cedo, antes de qualquer consulta ao banco) e, por
+	// último, o Cache-Control das leituras que passaram.
 	router.Use(corsMiddleware())
+	router.Use(limitarRequisicoes(ConfigLimiteDoAmbiente(), time.Now))
+	router.Use(cacheDeLeitura())
 
 	// Health check
 	router.GET("/health", healthHandler(db))
@@ -121,7 +126,7 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 
 		// Sync (trigger manual). Protegido por X-Sync-Secret: sao jobs de
 		// ingestao pesados, nao endpoints publicos.
-		syncGroup := v1.Group("/sync", requireSyncSecret())
+		syncGroup := v1.Group("/sync", requireSyncSecret(), semPrazoDeEscrita())
 
 		syncGroup.POST("/senadores", func(c *gin.Context) {
 			if err := senadorSync.SyncFromAPI(c.Request.Context()); err != nil {
@@ -269,7 +274,7 @@ func RegisterSchedulerRoutes(router *gin.Engine, runner SyncRunner) {
 
 	// POST /api/v1/sync/daily - Sync diario (Cloud Scheduler)
 	// Executa sincronamente para manter o container vivo no Cloud Run
-	router.POST("/api/v1/sync/daily", authSync, func(c *gin.Context) {
+	router.POST("/api/v1/sync/daily", authSync, semPrazoDeEscrita(), func(c *gin.Context) {
 		slog.Info("sync diario disparado via HTTP")
 		runner.RunDailySync(c.Request.Context())
 
@@ -302,8 +307,32 @@ func RegisterSchedulerRoutes(router *gin.Engine, runner SyncRunner) {
 //
 // Serve para log. Quem alcancar a origem sem passar pela Cloudflare consegue
 // forjar o header, entao o valor nao deve ser usado para autorizar nada.
+//
+// Sem o header, o IP é o da conexão. O padrão do gin confiava em qualquer
+// proxy e lia X-Forwarded-For, que o cliente escreve como quiser: bastava
+// variar esse header para aparecer como outra pessoa no log e no contador de
+// acessos. O limite por origem (limite.go) também parte dessa regra.
 func usarIPDoVisitante(r *gin.Engine) {
 	r.TrustedPlatform = gin.PlatformCloudflare
+	if err := r.SetTrustedProxies(nil); err != nil {
+		// Com nil o gin não tem o que validar; o erro só existiria com CIDR inválido.
+		slog.Error("falha ao desligar proxies confiáveis", "error", err)
+	}
+}
+
+// semPrazoDeEscrita tira o prazo de escrita (WriteTimeout do http.Server) de
+// um sync já autenticado. O prazo protege as rotas públicas de cliente lento,
+// mas um sync síncrono (/sync/daily, /sync/despesas/:ano...) leva minutos e
+// perderia a resposta no meio. Só entra depois de requireSyncSecret, então
+// ninguém sem o segredo ganha conexão sem prazo.
+func semPrazoDeEscrita() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		err := http.NewResponseController(c.Writer).SetWriteDeadline(time.Time{})
+		if err != nil && !errors.Is(err, http.ErrNotSupported) {
+			slog.Warn("sync sem prazo de escrita falhou", "path", c.Request.URL.Path, "error", err)
+		}
+		c.Next()
+	}
 }
 
 func corsMiddleware() gin.HandlerFunc {
@@ -320,8 +349,11 @@ func corsMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// A API pública é só leitura. O único POST (/api/v1/acessos) vem do
+		// próprio site, na mesma origem, e mesma origem não passa por CORS:
+		// anunciar POST, PUT e DELETE só convidava outras páginas a tentar.
 		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
 
 		if c.Request.Method == "OPTIONS" {

@@ -53,24 +53,12 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 	
 	// Paginacao. Agregados tem rota propria (/mensal, /fornecedores): a
 	// lista nao serve para somar e nao precisa devolver milhares de linhas.
-	limit := 20
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = min(l, limiteMaximo)
-		}
-	}
+	pag := utils.LerPaginacao(c.Query("limit"), c.Query("page"), 20, limiteMaximo)
+	limit, page, offset := pag.Limit, pag.Page, pag.Offset
 
-	page := 1
-	if pageStr := c.Query("page"); pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
-	
 	queryStr := c.Query("q")
 	tipo := c.Query("tipo")
 	sort := c.Query("sort")
-	offset := (page - 1) * limit
 
 	despesas, total, err := h.repo.FindBySenadorID(senadorID, ano, limit, offset, queryStr, tipo, sort)
 	if err != nil {

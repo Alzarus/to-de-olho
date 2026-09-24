@@ -39,21 +39,11 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		return
 	}
 
-	// Paginacao
-	limit := 20
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = l
-		}
-	}
+	// Paginação com teto (ver utils.LerPaginacao): antes ?limit= não tinha
+	// limite e ?limit=100000 devolvia a tabela inteira de uma vez.
+	pag := utils.LerPaginacao(c.Query("limit"), c.Query("page"), 20, utils.LimiteMaximoPadrao)
+	limit, page, offset := pag.Limit, pag.Page, pag.Offset
 
-	page := 1
-	if pageStr := c.Query("page"); pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
-	
 	queryStr := c.Query("q")
 	sigla := c.Query("sigla")
 	status := c.Query("status")
@@ -65,8 +55,6 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 			ano = a
 		}
 	}
-
-	offset := (page - 1) * limit
 
 	proposicoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, queryStr, ano, sigla, status, sort)
 	if err != nil {

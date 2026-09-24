@@ -37,19 +37,11 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		return
 	}
 
-	// Parametros de paginacao
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	// Paginação com teto de limit e de offset (ver utils.LerPaginacao)
+	pag := utils.LerPaginacao(c.Query("limit"), c.Query("page"), 20, utils.LimiteMaximoPadrao)
+	limit, page, offset := pag.Limit, pag.Page, pag.Offset
 	votoType := c.Query("voto")
 	ano, _ := strconv.Atoi(c.Query("ano"))
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	offset := (page - 1) * limit
 
 	votacoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, votoType, ano)
 	if err != nil {
@@ -135,8 +127,9 @@ func (h *Handler) GetVotosPorTipo(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/votacoes [get]
 func (h *Handler) GetAll(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	// Paginação com teto de limit e de offset (ver utils.LerPaginacao)
+	pag := utils.LerPaginacao(c.Query("limit"), c.Query("page"), 20, utils.LimiteMaximoPadrao)
+	limit, page, offset := pag.Limit, pag.Page, pag.Offset
 	ano, _ := strconv.Atoi(c.Query("ano"))
 
 	secreta, err := parseSecreta(c.Query("secreta"))
@@ -153,14 +146,6 @@ func (h *Handler) GetAll(c *gin.Context) {
 		Secreta:    secreta,
 		Resultados: parseLista(c.Query("resultado")),
 	}
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	offset := (page - 1) * limit
 
 	votacoes, total, err := h.repo.FindAll(limit, offset, filtro)
 	if err != nil {
@@ -196,6 +181,11 @@ func (h *Handler) GetFacetas(c *gin.Context) {
 // siglaValida limita os valores de tipo/resultado a siglas simples
 var siglaValida = regexp.MustCompile(`^[A-Z0-9-]{1,20}$`)
 
+// maxItensLista limita quantas siglas ?tipo= ou ?resultado= viram filtro. As
+// facetas reais são poucas dezenas; sem teto, uma query string longa virava
+// um IN (...) com milhares de itens em cada consulta.
+const maxItensLista = 30
+
 // parseLista le uma lista separada por virgula, em maiusculas, sem vazios,
 // repetidos ou valores fora do formato de sigla.
 func parseLista(valor string) []string {
@@ -203,7 +193,7 @@ func parseLista(valor string) []string {
 	vistos := map[string]bool{}
 	for _, item := range strings.Split(valor, ",") {
 		item = strings.ToUpper(strings.TrimSpace(item))
-		if item == "" || vistos[item] || !siglaValida.MatchString(item) {
+		if item == "" || vistos[item] || !siglaValida.MatchString(item) || len(out) >= maxItensLista {
 			continue
 		}
 		vistos[item] = true
