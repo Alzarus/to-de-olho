@@ -21,9 +21,10 @@ const criterios = [
     extras: [
       "PECs (mudanças na Constituição): peso x3",
       "PLPs (Lei Complementar): peso x2",
-      "PLs (Lei Ordinária): peso x1",
-      "Moções (RQS/MOC): peso x0,5",
-      "Requerimentos (REQ): peso x0,1",
+      "Projetos de lei, de decreto legislativo e de resolução (PL, PLS, PDL, PDS, PRS, PRN): peso x1",
+      "Requerimentos ao Plenário, moções e propostas de fiscalização (RQS, MOC, PFS): peso x0,5",
+      "Requerimentos de comissão e indicações (REQ, INS, RDH e outros): peso x0,1",
+      "Emendas da Câmara, ofícios, mensagens, petições e outros documentos que não são autoria do senador: não pontuam",
       "Ajuste logarítmico impede que quantidade supere qualidade",
     ],
   },
@@ -296,6 +297,28 @@ export default function MetodologiaPage() {
           <CardTitle>Histórico de versões</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 text-sm text-muted-foreground">
+          <div>
+            <h3 className="font-semibold text-foreground">
+              v2.2 · 23/09/2026 · peso para todas as siglas de proposição
+            </h3>
+            <ul className="mt-2 list-inside list-disc space-y-1">
+              <li>
+                Até a v2.1 só PEC, PLP, RQS/MOC e REQ tinham peso definido. As
+                outras cerca de 40 siglas valiam como um projeto de lei sem que
+                isso estivesse decidido: uma indicação, que é só uma sugestão a
+                outro Poder, valia o mesmo que um PL.
+              </li>
+              <li>
+                Agora cada sigla tem peso pela força jurídica do instrumento. PEC
+                x3 e PLP x2, definidos no TCC, não mudam. Emendas da Câmara,
+                ofícios e petições não pontuam: não são autoria do senador.
+              </li>
+              <li>
+                Efeito pequeno: 26 de 78 senadores mudam de posição, 0,5 em
+                média; no top 10, só o 10º e o 11º trocam de lugar.
+              </li>
+            </ul>
+          </div>
           <div>
             <h3 className="font-semibold text-foreground">
               v2.1 · 23/09/2026 · presença mais próxima do TCC

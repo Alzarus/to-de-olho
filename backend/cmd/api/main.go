@@ -64,6 +64,11 @@ func main() {
 		slog.Error("falha no auto-migrate", "error", err)
 		os.Exit(1)
 	}
+	// Reaplica a regra de pontuacao vigente (v2.2) nas proposicoes gravadas (idempotente)
+	if _, err := proposicao.RecalcularPontuacao(db); err != nil {
+		slog.Error("falha ao recalcular pontuacao das proposicoes", "error", err)
+		os.Exit(1)
+	}
 	// Completa colunas novas de votacoes nas linhas antigas (idempotente)
 	if err := votacao.PreencherHistorico(db); err != nil {
 		slog.Error("falha ao preencher historico de votacoes", "error", err)

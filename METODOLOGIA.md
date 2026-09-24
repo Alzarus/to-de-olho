@@ -5,7 +5,7 @@ está publicado em [todeolho.org/metodologia](https://todeolho.org/metodologia).
 Toda mudança de regra entra aqui com data e motivo, na seção
 [Histórico de versões](#histórico-de-versões).
 
-**Versão vigente: v2.1**
+**Versão vigente: v2.2**
 
 ---
 
@@ -47,7 +47,21 @@ Avança conforme a proposição anda no processo legislativo:
 | Aprovada no Plenário | 8 |
 | Transformada em lei | 16 |
 
-Multiplicador por tipo: PEC ×3; PLP ×2; PL ×1; RQS e MOC ×0,5; REQ ×0,1.
+Multiplicador por tipo (v2.2). Critério: força jurídica do instrumento e
+dificuldade de aprová-lo; vale zero o que não é iniciativa legislativa do
+próprio senador.
+
+| peso | siglas | por quê |
+|---|---|---|
+| ×3 | PEC | Muda a Constituição: 3/5 em dois turnos |
+| ×2 | PLP | Lei complementar: maioria absoluta |
+| ×1 | PL, PLS, PDL, PDS, PRS, PRN | Normas com efeito próprio. PLS e PDS são as siglas antigas de PL e PDL; o PDL susta atos do Executivo; o PRS trata de competências exclusivas do Senado |
+| ×0,5 | RQS, MOC, PFS | Requerimento ao Plenário, moção e proposta de fiscalização e controle |
+| ×0,1 | REQ, INS e requerimentos de comissão (RDH, RQN, RAS, RCE, RQJ, RMA, RCT, RQE, RQI, RDR, RRA, RRE, RFF, RTG, RQR, R.S, R.C) | Pedidos de audiência, informação ou homenagem; indicação é sugestão sem efeito vinculante |
+| ×0 | ECD, SCD, OFS, MSG, OFN, PET, DEN, CON, SIN, DIV, ATS, PCE, PRM | Não são autoria legislativa do senador. ECD e SCD são emenda e substitutivo da Câmara à mesma matéria (contariam em dobro) |
+
+Sigla que não está na tabela não pontua e é registrada no log da carga até
+ter peso decidido.
 
 **Só o primeiro autor pontua, e só como senador.** Coautorias aparecem na ficha
 do senador como contagem e não somam pontos. É a regra do *Legislative Effectiveness Score*
@@ -165,6 +179,20 @@ ordenados. Produtividade zero continua sendo nota zero: é um dado real
 ---
 
 ## Histórico de versões
+
+### v2.2 — 23/09/2026: peso para todas as siglas de proposição
+
+Até a v2.1 só PEC, PLP, RQS/MOC e REQ tinham peso definido. As outras ~40
+siglas valiam ×1, como um projeto de lei, sem que isso estivesse decidido ou
+publicado. Uma indicação (INS), que é só uma sugestão a outro Poder, valia o
+mesmo que um PL; emendas da Câmara (ECD) pontuavam de novo a mesma matéria.
+A v2.2 dá peso a todas as siglas (tabela na seção 1). PEC ×3 e PLP ×2, os
+pesos que o TCC define, não mudam.
+
+Efeito medido antes da troca (ranking do mandato, 78 senadores): 26 mudam de
+posição, 0,5 posição em média; só dois mudam 4 ou mais (Mara Gabrilli 30º →
+37º e Jaime Bagattoli 35º → 39º, ambos com muitas indicações). No top 10, só
+o 10º e o 11º trocam de lugar.
 
 ### v2.1 — 23/09/2026: presença mais próxima do TCC e virada de legislatura
 

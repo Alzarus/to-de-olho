@@ -67,6 +67,36 @@ func (p *Proposicao) AutoriaPrincipal() bool {
 	return p.PosicaoAutoria != nil && *p.PosicaoAutoria == 1 && TiposSenador[p.TipoAutor] && p.SiglaSubtipoMateria != "VET"
 }
 
+// pesosPorTipo e o multiplicador de cada sigla (metodologia v2.2): segue a
+// forca juridica do instrumento e a dificuldade de aprova-lo. Vale zero o que
+// nao e iniciativa legislativa do proprio senador (emenda ou substitutivo da
+// Camara a mesma materia, oficio, mensagem, peticao, denuncia).
+var pesosPorTipo = map[string]float64{
+	// Constituicao: 3/5 em dois turnos
+	"PEC": 3.0,
+	// Lei complementar: maioria absoluta
+	"PLP": 2.0,
+	// Normas com efeito proprio. PLS e PDS sao as siglas antigas de PL e PDL
+	"PL": 1.0, "PLS": 1.0, "PDL": 1.0, "PDS": 1.0, "PRS": 1.0, "PRN": 1.0,
+	// Requerimento ao Plenario, mocao e proposta de fiscalizacao e controle
+	"RQS": 0.5, "MOC": 0.5, "PFS": 0.5,
+	// Requerimentos de comissao e indicacao (sugestao sem efeito vinculante)
+	"REQ": 0.1, "INS": 0.1, "RDH": 0.1, "RQN": 0.1, "RAS": 0.1, "RCE": 0.1, "RQJ": 0.1,
+	"RMA": 0.1, "RCT": 0.1, "RQE": 0.1, "RQI": 0.1, "RDR": 0.1, "RRA": 0.1, "RRE": 0.1,
+	"RFF": 0.1, "RTG": 0.1, "RQR": 0.1, "R.S": 0.1, "R.C": 0.1,
+	// Nao e autoria legislativa do senador
+	"ECD": 0, "SCD": 0, "OFS": 0, "MSG": 0, "OFN": 0, "PET": 0, "DEN": 0,
+	"CON": 0, "SIN": 0, "DIV": 0, "ATS": 0, "PCE": 0, "PRM": 0,
+}
+
+// PesoTipo devolve o multiplicador da sigla. Sigla fora da tabela vale zero
+// (ok = false): antes da v2.2 ela valia 1, como um projeto de lei, sem
+// ninguem decidir isso. O sync registra a sigla nova no log.
+func PesoTipo(sigla string) (peso float64, ok bool) {
+	peso, ok = pesosPorTipo[sigla]
+	return peso, ok
+}
+
 // CalcularPontuacao calcula a pontuacao de uma proposicao baseado no estagio e tipo.
 // Coautoria nao pontua (item 9, regra do LES de Volden & Wiseman: conta o
 // sponsor, nao o cosponsor).
@@ -84,18 +114,8 @@ func (p *Proposicao) CalcularPontuacao() float64 {
 		"TransformadoLei":   16,
 	}
 
-	// Multiplicador por tipo de proposicao
-	multiplicador := 1.0
-	switch p.SiglaSubtipoMateria {
-	case "PEC":
-		multiplicador = 3.0
-	case "PLP":
-		multiplicador = 2.0
-	case "RQS", "MOC":
-		multiplicador = 0.5
-	case "REQ":
-		multiplicador = 0.1
-	}
+	// Multiplicador por tipo de proposicao (metodologia v2.2)
+	multiplicador, _ := PesoTipo(p.SiglaSubtipoMateria)
 
 	pontos := pontosBase[p.EstagioTramitacao]
 	if pontos == 0 {
