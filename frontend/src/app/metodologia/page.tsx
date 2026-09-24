@@ -265,6 +265,24 @@ export default function MetodologiaPage() {
               </a>
             </div>
           </div>
+          <div className="mt-6 border-t pt-6">
+            <h4 className="font-semibold text-foreground">
+              Nome popular e descrição das matérias
+            </h4>
+            <p className="mt-1 text-sm text-muted-foreground">
+              O nome popular de uma matéria (como &ldquo;Marco Legal da
+              Inteligência Artificial&rdquo; para o PL 2338/2023) é o apelido
+              registrado pelo próprio Senado. Quando o Senado não registra
+              apelido, usamos uma lista curta de nomes que aparecem em páginas
+              oficiais (Agência Senado, Câmara ou gov.br), marcada como
+              &ldquo;nome popular&rdquo; e com o link da fonte. A descrição
+              breve é a explicação da ementa publicada pelo Senado ou, na falta
+              dela, a própria ementa, e os temas são a classificação do Senado.
+              Nenhum texto é gerado por inteligência artificial. A
+              identificação oficial (&ldquo;PL 2338/2023&rdquo;) fica sempre
+              visível.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

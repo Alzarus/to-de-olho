@@ -1,0 +1,67 @@
+{
+ "id": 8701679,
+ "codigoMateria": 164914,
+ "identificacao": "PLP 68/2024",
+ "sigla": "PLP",
+ "descricaoSigla": "Projeto de Lei Complementar",
+ "numero": "68",
+ "ano": 2024,
+ "objetivo": "Revisora",
+ "casaIdentificadora": "SF",
+ "conteudo": {
+  "id": 7577647,
+  "idTipo": 11,
+  "siglaTipo": "NORMA_GERAL",
+  "tipo": "Norma Geral",
+  "ementa": "Institui o Imposto sobre Bens e Serviços (IBS), a Contribuição Social sobre Bens e Serviços (CBS) e o Imposto Seletivo (IS); e dá outras providências.",
+  "tipoNormaIndicada": "LCP"
+ },
+ "documento": {
+  "id": 9725946,
+  "siglaTipo": "PROJETO_LEI_COMPLEMENTAR",
+  "tipo": "Projeto de Lei Complementar",
+  "dataApresentacao": "2024-07-22",
+  "dataLeitura": "2024-08-07",
+  "casaLeitura": "SF",
+  "url": "https://legis.senado.gov.br/sdleg-getter/documento?dm=9725946",
+  "autoria": [
+   {
+    "autor": "Câmara dos Deputados",
+    "siglaTipo": "CAMARA",
+    "descricaoTipo": "CAMARA",
+    "ordem": 1,
+    "outrosAutoresNaoInformados": "Não",
+    "idEnte": 2,
+    "siglaEnte": "CD",
+    "casaEnte": "CD",
+    "ente": "Câmara dos Deputados"
+   }
+  ],
+  "resumoAutoria": "Câmara dos Deputados"
+ },
+ "tramitando": "Não",
+ "classificacoes": [
+  {
+   "codigo": 33804940,
+   "descricao": "Tributos",
+   "descricaoHierarquia": "Economia e Desenvolvimento / Tributos"
+  },
+  {
+   "codigo": 33805002,
+   "descricao": "Administração Tributária",
+   "descricaoHierarquia": "Economia e Desenvolvimento / Tributos / Administração Tributária"
+  }
+ ],
+ "autoriaIniciativa": [
+  {
+   "autor": "Presidência da República",
+   "siglaTipo": "PRESIDENTE_REPUBLICA",
+   "descricaoTipo": "PRESIDENTE_REPUBLICA",
+   "ordem": 1,
+   "outrosAutoresNaoInformados": "Não",
+   "idEnte": 55126,
+   "siglaEnte": "PR",
+   "ente": "Presidência da República"
+  }
+ ]
+}

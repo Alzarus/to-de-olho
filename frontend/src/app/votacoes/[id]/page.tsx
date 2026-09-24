@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/tooltip";
 
 import { getVotacaoById, VotacaoDetail } from "@/services/votacaoService";
+import { descricaoMateria, tituloMateria, usaDescricaoVotacao } from "@/lib/materia";
+import { DescricaoExpansivel, MarcaCuradoria, TemasChips } from "@/components/materia/materia-info";
 
 import {
   Select,
@@ -199,14 +201,31 @@ function VotacaoDetalheContent() {
       {/* Header Info */}
       <div className="mb-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-                 <Badge variant="outline" className="mb-2">{votacao.codigo_sessao}</Badge>
+            <div className="max-w-4xl">
+                 <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" title="Código da sessão">{votacao.codigo_sessao}</Badge>
+                    {votacao.materia && (
+                      <Badge variant="secondary" className="font-mono">{votacao.materia}</Badge>
+                    )}
+                 </div>
                  <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl mb-2">
-                    {votacao.materia || "Sem Matéria Vinculada"}
+                    {votacao.materia ? tituloMateria(votacao, votacao.materia) : "Sem Matéria Vinculada"}
                  </h1>
-                 <p className="text-lg text-muted-foreground max-w-4xl">
+                 {votacao.apelido_fonte === "curadoria" && (
+                    <MarcaCuradoria fonteUrl={votacao.apelido_fonte_url} comLink className="mb-2" />
+                 )}
+                 {!usaDescricaoVotacao(votacao.sigla_materia) && (
+                    <DescricaoExpansivel
+                      texto={descricaoMateria(votacao, votacao.ementa)}
+                      className="mb-2 [&>p]:text-base"
+                    />
+                 )}
+                 <p className="text-lg text-muted-foreground">
                     {votacao.descricao_votacao}
                  </p>
+                 {!usaDescricaoVotacao(votacao.sigla_materia) && (
+                    <TemasChips temas={votacao.temas} max={6} className="mt-3" />
+                 )}
             </div>
             <div className="mt-4 sm:mt-0 text-right">
                 <p className="text-sm font-medium text-muted-foreground">Data da Votação</p>

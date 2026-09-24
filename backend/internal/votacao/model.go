@@ -1,6 +1,10 @@
 package votacao
 
-import "time"
+import (
+	"time"
+
+	"github.com/Alzarus/to-de-olho/internal/materia"
+)
 
 // Votacao representa o voto de um senador em uma votacao nominal.
 //
@@ -29,6 +33,10 @@ type Votacao struct {
 	// voto individual nao e publicado: a sigla de quem votou e "Votou".
 	// Nulo so em linhas antigas ate PreencherHistorico rodar.
 	Secreta *bool `gorm:"index:idx_votacao_secreta" json:"secreta"`
+	// CodigoMateria e IdProcesso ligam a votacao a tabela materias (nome
+	// popular e descricao). Nulos so em linhas antigas, ate o proximo sync.
+	CodigoMateria *int `gorm:"index:idx_votacao_codigo_materia" json:"codigo_materia,omitempty"`
+	IdProcesso    *int `json:"id_processo,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -38,6 +46,14 @@ type Votacao struct {
 	SenadorPartido string `gorm:"->" json:"senador_partido,omitempty"`
 	SenadorUF      string `gorm:"->" json:"senador_uf,omitempty"`
 	SenadorFoto    string `gorm:"->" json:"senador_foto,omitempty"`
+
+	// Nome popular e descricao, via LEFT JOIN de materias (read-only, sem
+	// coluna em votacoes). ApelidoFonte: "oficial" ou "curadoria".
+	Apelido          *string       `gorm:"->;-:migration" json:"apelido,omitempty"`
+	ApelidoFonte     *string       `gorm:"->;-:migration" json:"apelido_fonte,omitempty"`
+	ApelidoFonteURL  *string       `gorm:"->;-:migration" json:"apelido_fonte_url,omitempty"`
+	ExplicacaoEmenta *string       `gorm:"->;-:migration" json:"explicacao_ementa,omitempty"`
+	Temas            materia.Temas `gorm:"->;-:migration" json:"temas,omitempty"`
 }
 
 // TableName define o nome da tabela

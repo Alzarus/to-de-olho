@@ -175,6 +175,12 @@ ordenados. Produtividade zero continua sendo nota zero: é um dado real
   (votações nominais por período, matérias por autor, detalhe do processo)
 - Senado Federal, dados abertos administrativos: CEAPS
 - Portal da Transparência: emendas parlamentares
+- Nome popular e descrição das matérias (só exibição, fora do cálculo): o
+  apelido oficial do Senado (`apelido` de `/processo/{id}`); sem ele, uma
+  curadoria curta do projeto, marcada como "nome popular" e com o link da página
+  oficial que usa o nome (Agência Senado, senado.leg.br, camara.leg.br ou
+  gov.br). A descrição é a `explicacaoEmenta` do Senado ou, na falta dela, a
+  ementa; os temas são as `classificacoes` do processo. Nada é gerado por IA.
 
 ---
 

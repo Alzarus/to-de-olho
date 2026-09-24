@@ -6,6 +6,8 @@ import { useProposicoes } from "@/hooks/use-senador";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Proposicao } from "@/types/api";
+import { descricaoMateria, tituloMateria } from "@/lib/materia";
+import { DescricaoExpansivel, MarcaCuradoria, TemasChips } from "@/components/materia/materia-info";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, Gavel, Search, ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -27,6 +29,10 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+
+// "PL 2338/2023": a identificacao da API, senao montada dos campos
+const identificacao = (p: Proposicao) =>
+  p.descricao_identificacao?.trim() || `${p.sigla_subtipo_materia} ${p.numero_materia}/${p.ano_materia}`;
 
 // Por que a materia nao pontua (espelha Proposicao.AutoriaPrincipal no backend)
 const TIPOS_SENADOR = ["SENADOR", "LIDER", "PRESIDENTE_SF"];
@@ -230,13 +236,11 @@ export function ProposicoesTab({ id }: { id: number }) {
                                 </span>
                               </div>
                               <h3 className="font-semibold leading-tight group-hover:text-primary transition-colors">
-                                {prop.ementa}
+                                {tituloMateria(prop, identificacao(prop))}
                               </h3>
-                              {prop.descricao_identificacao && (
-                                  <p className="text-sm text-muted-foreground line-clamp-2">
-                                      {prop.descricao_identificacao}
-                                  </p>
-                              )}
+                              {prop.apelido_fonte === "curadoria" && <MarcaCuradoria />}
+                              <DescricaoExpansivel texto={descricaoMateria(prop, prop.ementa)} />
+                              <TemasChips temas={prop.temas} />
                             </div>
                             <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0">
                                 <Badge 
@@ -274,18 +278,36 @@ export function ProposicoesTab({ id }: { id: number }) {
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="leading-snug pr-8">
-                             {prop.sigla_subtipo_materia} {prop.numero_materia}/{prop.ano_materia}
+                             {tituloMateria(prop, identificacao(prop))}
                         </DialogTitle>
+                        <div>
+                            <Badge variant="outline" className="font-mono text-xs">{identificacao(prop)}</Badge>
+                        </div>
+                        {prop.apelido_fonte === "curadoria" && (
+                            <MarcaCuradoria fonteUrl={prop.apelido_fonte_url} comLink />
+                        )}
                         <DialogDescription className="pt-2">
                              Apresentado em {new Date(prop.data_apresentacao || "").toLocaleDateString("pt-BR")}
                              {prop.autoria && <><br />Autoria: {prop.autoria}</>}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
+                        {prop.explicacao_ementa && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-muted-foreground">Explicação da ementa (Senado)</h4>
+                                <p className="text-base">{prop.explicacao_ementa}</p>
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <h4 className="text-sm font-medium text-muted-foreground">Ementa</h4>
                             <p className="text-base">{prop.ementa}</p>
                         </div>
+                        {prop.temas && prop.temas.length > 0 && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-muted-foreground">Temas</h4>
+                                <TemasChips temas={prop.temas} max={10} />
+                            </div>
+                        )}
                          {prop.descricao_identificacao && (
                             <div className="space-y-2">
                                 <h4 className="text-sm font-medium text-muted-foreground">Identificação</h4>

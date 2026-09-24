@@ -183,6 +183,8 @@ func converterVotacao(v senadoapi.VotacaoSessaoAPI, senadorPorCodigo map[int]int
 			Resultado:         v.ResultadoVotacao,
 			SiglaMateria:      sigla,
 			Secreta:           secreta,
+			CodigoMateria:     positivoOuNulo(v.CodigoMateria),
+			IdProcesso:        positivoOuNulo(v.IdProcesso),
 		})
 	}
 	return votos, ignorados, nil
@@ -231,4 +233,13 @@ func rotuloVoto(sigla string) string {
 	default:
 		return sigla
 	}
+}
+
+// positivoOuNulo copia o ponteiro, tratando 0 como ausente
+func positivoOuNulo(v *int) *int {
+	if v == nil || *v <= 0 {
+		return nil
+	}
+	c := *v
+	return &c
 }

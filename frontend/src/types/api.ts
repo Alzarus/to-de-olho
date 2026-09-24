@@ -1,3 +1,5 @@
+import type { CamposMateria } from "@/lib/materia";
+
 // Types espelhando modelos do backend Go
 
 export interface ScoreDetalhes {
@@ -207,7 +209,7 @@ export interface EmendasResponse {
 }
 
 // Proposicoes
-export interface Proposicao {
+export interface Proposicao extends CamposMateria {
   id: number;
   senador_id: number;
   codigo_materia: string;
@@ -257,7 +259,7 @@ export interface ComissoesResponse {
   comissoes: ComissaoMembro[];
 }
 // Votacoes
-export interface VotacaoItem {
+export interface VotacaoItem extends CamposMateria {
   id: number;
   codigo_votacao: number;
   sessao_id: string;
@@ -266,6 +268,8 @@ export interface VotacaoItem {
   voto: string;
   materia: string;
   descricao_votacao: string;
+  ementa?: string;
+  sigla_materia?: string;
 }
 
 export interface VotacoesResponse {

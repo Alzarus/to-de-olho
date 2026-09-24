@@ -3,6 +3,7 @@ package senado
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,6 +12,10 @@ import (
 const (
 	BaseURLLegis = "https://legis.senado.leg.br/dadosabertos"
 )
+
+// ErrNaoEncontrado e devolvido (embrulhado) quando a API responde 404: nao
+// adianta tentar de novo.
+var ErrNaoEncontrado = errors.New("nao encontrado na API do Senado")
 
 // LegisClient consome a API Legislativa do Senado
 type LegisClient struct {
@@ -161,6 +166,7 @@ type VotacaoSessaoAPI struct {
 	CodigoSessaoVotacao int    `json:"codigoSessaoVotacao"` // chave da votacao: unica e nunca nula
 	SequencialVotacao   *int   `json:"sequencialVotacao"`   // pode vir null
 	CodigoMateria       *int   `json:"codigoMateria"`
+	IdProcesso          *int   `json:"idProcesso"` // id de /processo/{id}: detalhe da materia
 	Identificacao       string `json:"identificacao"` // Ex: "PLP 124/2022 (Substitutivo-CD)"
 	Sigla               string `json:"sigla"`         // tipo da materia: PLP, PEC, MSF...
 	Ementa              string `json:"ementa"`
@@ -401,6 +407,40 @@ type ProcessoDetalhe struct {
 	CodigoMateria     int               `json:"codigoMateria"`
 	Identificacao     string            `json:"identificacao"`
 	AutoriaIniciativa []AutorIniciativa `json:"autoriaIniciativa"`
+
+	// Campos da tabela materias (nome popular e descricao breve)
+	Sigla   string `json:"sigla"`
+	Apelido string `json:"apelido"` // ausente quando vazio; pode vir com quebra de linha ou espaco no fim
+	Conteudo struct {
+		Ementa           string `json:"ementa"`
+		ExplicacaoEmenta string `json:"explicacaoEmenta"` // opcional
+	} `json:"conteudo"`
+	Classificacoes []ClassificacaoProcesso `json:"classificacoes"`
+	Documento      struct {
+		URL string `json:"url"`
+	} `json:"documento"`
+}
+
+// ClassificacaoProcesso e um tema da materia ("Tributos", "Educacao"...).
+type ClassificacaoProcesso struct {
+	Codigo              int    `json:"codigo"`
+	Descricao           string `json:"descricao"`
+	DescricaoHierarquia string `json:"descricaoHierarquia"`
+}
+
+// ObterIDProcesso resolve o id de /processo/{id} a partir do codigoMateria.
+// Devolve 0 sem erro quando a API nao conhece o codigo.
+// Endpoint: /processo?codigoMateria={codigo}
+func (c *LegisClient) ObterIDProcesso(ctx context.Context, codigoMateria int) (int, error) {
+	url := fmt.Sprintf("%s/processo?codigoMateria=%d", c.baseURL, codigoMateria)
+	var result []MateriaAPI
+	if err := c.getJSON(ctx, url, &result); err != nil {
+		return 0, err
+	}
+	if len(result) == 0 {
+		return 0, nil
+	}
+	return result[0].ID, nil
 }
 
 // ObterProcesso busca o detalhe de um processo (id da listagem /processo).
@@ -429,6 +469,9 @@ func (c *LegisClient) getJSON(ctx context.Context, url string, out any) error {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("%w: %s", ErrNaoEncontrado, url)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("status inesperado %d em %s", resp.StatusCode, url)
 	}

@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/Alzarus/to-de-olho/internal/materia"
 	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
@@ -47,11 +48,13 @@ func (r *Repository) FindBySenadorID(senadorID int, limit, offset int, votoType 
 	}
 
 	// Aplicar ordenacao e paginacao
-	result := query.Order("data DESC").
+	result := query.Select("votacoes.*, " + materia.ColunasSelect).
+		Joins(materia.Join("votacoes.codigo_materia")).
+		Order("votacoes.data DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&votacoes)
-	
+
 	return votacoes, total, result.Error
 }
 
@@ -124,7 +127,8 @@ func (r *Repository) UpsertBatch(votacoes []Votacao) error {
 		Columns: []clause.Column{{Name: "senador_id"}, {Name: "codigo_votacao"}},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"sessao_id", "codigo_sessao", "sequencial_votacao", "data", "sigla_voto", "voto",
-			"descricao_votacao", "materia", "ementa", "resultado", "sigla_materia", "secreta", "updated_at",
+			"descricao_votacao", "materia", "ementa", "resultado", "sigla_materia", "secreta",
+			"codigo_materia", "id_processo", "updated_at",
 		}),
 	}).CreateInBatches(votacoes, 1000).Error
 }
@@ -166,12 +170,14 @@ func (r *Repository) FindAll(limit, offset int, f FiltroLista) ([]Votacao, int64
 		Order("codigo_votacao, id")
 
 	// Dentro do dia, a ordem das votacoes na sessao (sequencial pode ser nulo)
-	sortOrder := "data DESC, sessao_id DESC, sequencial_votacao DESC NULLS LAST, codigo_votacao DESC"
+	sortOrder := "v.data DESC, v.sessao_id DESC, v.sequencial_votacao DESC NULLS LAST, v.codigo_votacao DESC"
 	if f.Ordem == "asc" {
-		sortOrder = "data ASC, sessao_id ASC, sequencial_votacao ASC NULLS FIRST, codigo_votacao ASC"
+		sortOrder = "v.data ASC, v.sessao_id ASC, v.sequencial_votacao ASC NULLS FIRST, v.codigo_votacao ASC"
 	}
 
 	err := r.db.Table("(?) as v", subQuery).
+		Select("v.*, " + materia.ColunasSelect).
+		Joins(materia.Join("v.codigo_materia")).
 		Order(sortOrder).
 		Limit(limit).
 		Offset(offset).
@@ -189,7 +195,8 @@ func (r *Repository) filtrar(q *gorm.DB, f FiltroLista) *gorm.DB {
 	}
 	if f.Materia != "" {
 		like := "%" + f.Materia + "%"
-		q = q.Where("(materia ILIKE ? OR descricao_votacao ILIKE ? OR ementa ILIKE ? OR codigo_sessao ILIKE ?)", like, like, like, like)
+		q = q.Where("(materia ILIKE ? OR descricao_votacao ILIKE ? OR ementa ILIKE ? OR codigo_sessao ILIKE ? OR "+
+			materia.CondicaoApelido("codigo_materia")+")", like, like, like, like, like, like)
 	}
 	if f.Sessao != "" {
 		q = q.Where("sessao_id = ?", f.Sessao)
@@ -243,7 +250,12 @@ func (r *Repository) Facetas(ano int) (*Facetas, error) {
 // FindByID retorna os dados de uma votacao pelo codigo_votacao
 func (r *Repository) FindByID(codigoVotacao int) (*Votacao, error) {
 	var votacao Votacao
-	err := r.db.Where("codigo_votacao = ?", codigoVotacao).Order("id").First(&votacao).Error
+	err := r.db.Table("votacoes").
+		Select("votacoes.*, "+materia.ColunasSelect).
+		Joins(materia.Join("votacoes.codigo_materia")).
+		Where("votacoes.codigo_votacao = ?", codigoVotacao).
+		Order("votacoes.id").
+		Take(&votacao).Error
 	if err != nil {
 		return nil, err
 	}

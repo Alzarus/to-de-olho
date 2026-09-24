@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/Alzarus/to-de-olho/internal/materia"
 	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
@@ -24,11 +25,13 @@ func (r *Repository) FindBySenadorID(senadorID int, limit int, offset int, query
 	var proposicoes []Proposicao
 	var total int64
 	
-	dbQuery := r.db.Model(&Proposicao{}).Where("senador_id = ?", senadorID)
+	// Colunas qualificadas: o JOIN de materias tambem tem ementa e codigo_materia
+	dbQuery := r.db.Model(&Proposicao{}).Where("proposicoes.senador_id = ?", senadorID)
 
 	if queryStr != "" {
 		search := "%" + queryStr + "%"
-		dbQuery = dbQuery.Where("(ementa ILIKE ? OR descricao_identificacao ILIKE ? OR codigo_materia ILIKE ?)", search, search, search)
+		dbQuery = dbQuery.Where("(proposicoes.ementa ILIKE ? OR proposicoes.descricao_identificacao ILIKE ? OR proposicoes.codigo_materia ILIKE ? OR "+
+			materia.CondicaoApelido(materia.CodigoTextoParaInt("proposicoes.codigo_materia"))+")", search, search, search, search, search)
 	}
 
 	if ano > 0 {
@@ -50,15 +53,17 @@ func (r *Repository) FindBySenadorID(senadorID int, limit int, offset int, query
 
 	// Sorting
 	// Default: Data DESC (NULLS LAST to keep invalid dates at bottom), fallback to Ano/Codigo
-	order := "data_apresentacao DESC NULLS LAST, ano_materia DESC, codigo_materia DESC"
+	order := "proposicoes.data_apresentacao DESC NULLS LAST, proposicoes.ano_materia DESC, proposicoes.codigo_materia DESC"
 	
 	if sort == "data_asc" {
-		order = "data_apresentacao ASC NULLS LAST, ano_materia ASC, codigo_materia ASC"
+		order = "proposicoes.data_apresentacao ASC NULLS LAST, proposicoes.ano_materia ASC, proposicoes.codigo_materia ASC"
 	} else if sort == "ano_desc" {
-		order = "ano_materia DESC, data_apresentacao DESC NULLS LAST"
+		order = "proposicoes.ano_materia DESC, proposicoes.data_apresentacao DESC NULLS LAST"
 	}
 	
-	dbQuery = dbQuery.Order(order)
+	dbQuery = dbQuery.Select("proposicoes.*, " + materia.ColunasSelect).
+		Joins(materia.Join(materia.CodigoTextoParaInt("proposicoes.codigo_materia"))).
+		Order(order)
 
 	if limit > 0 {
 		dbQuery = dbQuery.Limit(limit)
@@ -156,7 +161,7 @@ func (r *Repository) GetProposicoesPorTipo(senadorID int) ([]ProposicaoPorTipo, 
 var colunasAtualizaveis = []string{
 	"sigla_subtipo_materia", "numero_materia", "ano_materia", "descricao_identificacao",
 	"ementa", "situacao_atual", "data_apresentacao", "estagio_tramitacao", "pontuacao",
-	"posicao_autoria", "total_autores", "tipo_autor", "autoria", "updated_at",
+	"posicao_autoria", "total_autores", "tipo_autor", "autoria", "id_processo", "updated_at",
 }
 
 var conflitoSenadorMateria = clause.OnConflict{

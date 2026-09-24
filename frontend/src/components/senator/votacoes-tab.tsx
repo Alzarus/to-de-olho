@@ -15,6 +15,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { VotosPieChart } from "@/components/votos-pie-chart";
 import { PaginationWithInput } from "@/components/ui/pagination-with-input";
+import { descricaoMateria, tituloMateria, usaDescricaoVotacao } from "@/lib/materia";
+import { DescricaoExpansivel, MarcaCuradoria, TemasChips } from "@/components/materia/materia-info";
 
 const VOTE_LABELS: Record<string, string> = {
   Sim: "Sim",
@@ -144,39 +146,60 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
                 ) : (
                     <div className="space-y-4 min-h-[600px] flex flex-col">
                         <div className="space-y-2 flex-1">
-                            {votacoesData.votacoes.map((v) => (
-                                <Link
+                            {votacoesData.votacoes.map((v) => {
+                                const href = `/votacoes/${v.codigo_votacao}?backUrl=${encodeURIComponent(pathname + "?" + searchParams.toString())}`;
+                                const soDescricao = usaDescricaoVotacao(v.sigla_materia);
+                                return (
+                                // O link cobre o cabeçalho; a descrição fica fora dele para o
+                                // botão "ver mais" não ficar aninhado num elemento interativo
+                                <div
                                     key={v.id}
-                                    href={`/votacoes/${v.codigo_votacao}?backUrl=${encodeURIComponent(pathname + "?" + searchParams.toString())}`}
-                                    className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                                    className="p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                                 >
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                <Badge 
-                                                    variant={
-                                                        v.voto === "Sim" ? "default" :
-                                                        v.voto === "Nao" ? "destructive" :
-                                                        "secondary"
-                                                    } 
-                                                    className="text-xs"
-                                                >
-                                                    {VOTE_LABELS[v.voto] || v.voto}
+                                    <Link href={href} className="block rounded-sm focus-visible:outline-2 focus-visible:outline-ring">
+                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                            <Badge 
+                                                variant={
+                                                    v.voto === "Sim" ? "default" :
+                                                    v.voto === "Nao" ? "destructive" :
+                                                    "secondary"
+                                                } 
+                                                className="text-xs"
+                                            >
+                                                {VOTE_LABELS[v.voto] || v.voto}
+                                            </Badge>
+                                            {v.materia && (
+                                                <Badge variant="outline" className="text-xs font-mono">
+                                                    {v.materia}
                                                 </Badge>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {new Date(v.data).toLocaleDateString("pt-BR")}
-                                                </span>
-                                            </div>
-                                            <p className="font-medium text-sm truncate">
-                                                {v.materia || "Sem matéria"}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground line-clamp-1">
-                                                {v.descricao_votacao}
-                                            </p>
+                                            )}
+                                            <span className="text-xs text-muted-foreground">
+                                                {new Date(v.data).toLocaleDateString("pt-BR")}
+                                            </span>
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
+                                        <p className="font-medium text-sm">
+                                            {v.materia ? tituloMateria(v, v.materia) : "Sem matéria"}
+                                        </p>
+                                    </Link>
+                                    {v.apelido_fonte === "curadoria" && <MarcaCuradoria className="mt-1" />}
+                                    {soDescricao ? (
+                                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                            {v.descricao_votacao}
+                                        </p>
+                                    ) : (
+                                        <>
+                                            <DescricaoExpansivel texto={descricaoMateria(v, v.ementa)} className="mt-1" />
+                                            {v.descricao_votacao && (
+                                                <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                                                    {v.descricao_votacao}
+                                                </p>
+                                            )}
+                                            <TemasChips temas={v.temas} className="mt-1.5" />
+                                        </>
+                                    )}
+                                </div>
+                                );
+                            })}
                         </div>
 
                          <PaginationWithInput 

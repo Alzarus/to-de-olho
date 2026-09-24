@@ -10,6 +10,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
+	"github.com/Alzarus/to-de-olho/internal/materia"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/senador"
@@ -29,6 +30,28 @@ type Scheduler struct {
 	rankingService *ranking.Service
 	senadorRepo    *senador.Repository
 	votacaoRepo    *votacao.Repository
+	materiaSync    *materia.SyncService // opcional: ComMaterias
+}
+
+// ComMaterias liga o sync das materias (nome popular e descricao) ao sync
+// diario e ao backfill.
+func (s *Scheduler) ComMaterias(m *materia.SyncService) *Scheduler {
+	s.materiaSync = m
+	return s
+}
+
+// syncMaterias completa codigo_materia nas votacoes antigas e busca o detalhe
+// das materias pendentes. limite <= 0: todas.
+func (s *Scheduler) syncMaterias(ctx context.Context, limite int) {
+	if s.materiaSync == nil {
+		return
+	}
+	if err := s.votacaoSync.CompletarCodigoMateria(ctx); err != nil {
+		slog.Error("falha ao completar codigo_materia das votacoes", "error", err)
+	}
+	if _, err := s.materiaSync.Sync(ctx, limite); err != nil {
+		slog.Error("falha sync materias", "error", err)
+	}
 }
 
 // NewScheduler cria um novo scheduler
@@ -165,6 +188,10 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 		slog.Error("falha no backfill de proposicoes", "error", err)
 	}
 
+	// Materias (nome popular e descricao): depois de votacoes e proposicoes,
+	// que dao os codigos. Nao entra no ranking.
+	s.syncMaterias(ctx, 0)
+
 	// F. Calculo de Ranking Final, so com a carga completa
 	slog.Info("--- PASSO 6/6: CALCULANDO RANKING ---")
 	if !s.cargaCompleta() {
@@ -227,6 +254,9 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
 		slog.Error("falha sync proposicoes", "error", err)
 	}
+
+	// 7b. Materias novas ou com detalhe antigo (limite por rodada)
+	s.syncMaterias(ctx, materia.PorRodadaDiaria)
 
 	// 8. Invalidar o cache e recalcular o ranking, so com a carga completa.
 	// Carga incompleta mantem o ranking em cache (ate o TTL de 24h); quem

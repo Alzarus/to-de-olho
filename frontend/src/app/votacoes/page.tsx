@@ -33,27 +33,19 @@ import {
   Votacao,
 } from "@/services/votacaoService";
 import { usePersistentYear } from "@/hooks/use-persistent-year";
+import {
+  descricaoMateria,
+  NOMES_TIPO,
+  nomeTipo,
+  tituloMateria,
+  usaDescricaoVotacao,
+} from "@/lib/materia";
+import {
+  DescricaoExpansivel,
+  MarcaCuradoria,
+  TemasChips,
+} from "@/components/materia/materia-info";
 
-// Nome por extenso das siglas de matéria que aparecem nas votações nominais
-const NOMES_TIPO: Record<string, string> = {
-  PEC: "Proposta de Emenda à Constituição",
-  MSF: "Mensagem (indicação de autoridades)",
-  OFS: "Ofício",
-  PLP: "Projeto de Lei Complementar",
-  PL: "Projeto de Lei",
-  MPV: "Medida Provisória",
-  PDL: "Projeto de Decreto Legislativo",
-  RQS: "Requerimento",
-  REQ: "Requerimento",
-  PRS: "Projeto de Resolução do Senado",
-  PLS: "Projeto de Lei do Senado",
-  PLC: "Projeto de Lei da Câmara",
-  SCD: "Substitutivo da Câmara dos Deputados",
-  PLN: "Projeto de Lei do Congresso Nacional",
-  PDS: "Projeto de Decreto Legislativo do Senado",
-};
-
-const nomeTipo = (sigla: string) => NOMES_TIPO[sigla] ?? sigla;
 
 const NOMES_RESULTADO: Record<string, string> = {
   A: "Aprovada",
@@ -588,13 +580,35 @@ function VotacoesContent() {
                           </div>
                         )}
                         {votacao.materia && (
-                          <span className="font-semibold text-primary block group-hover:text-primary/80 transition-colors">
-                            {votacao.materia}
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-semibold text-primary group-hover:text-primary/80 transition-colors">
+                              {tituloMateria(votacao, votacao.materia)}
+                            </span>
+                            {votacao.apelido_fonte === "curadoria" && (
+                              <MarcaCuradoria />
+                            )}
+                            <Badge variant="outline" className="font-mono">
+                              {votacao.materia}
+                            </Badge>
                           </span>
                         )}
-                        <span className="text-sm text-muted-foreground line-clamp-2">
-                          {votacao.descricao_votacao}
-                        </span>
+                        {usaDescricaoVotacao(votacao.sigla_materia) ? (
+                          <span className="text-sm text-muted-foreground line-clamp-2">
+                            {votacao.descricao_votacao}
+                          </span>
+                        ) : (
+                          <>
+                            <DescricaoExpansivel
+                              texto={descricaoMateria(votacao, votacao.ementa)}
+                            />
+                            {votacao.descricao_votacao && (
+                              <span className="text-xs text-muted-foreground line-clamp-1">
+                                {votacao.descricao_votacao}
+                              </span>
+                            )}
+                            <TemasChips temas={votacao.temas} />
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
