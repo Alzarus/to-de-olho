@@ -5,7 +5,7 @@ está publicado em [todeolho.org/metodologia](https://todeolho.org/metodologia).
 Toda mudança de regra entra aqui com data e motivo, na seção
 [Histórico de versões](#histórico-de-versões).
 
-**Versão vigente: v2**
+**Versão vigente: v2.1**
 
 ---
 
@@ -18,8 +18,12 @@ Nota = Produtividade × 0,35 + Presença × 0,25 + Economia da cota × 0,20 + Co
 ```
 
 **Período (recorte):** a partir da posse da legislatura em curso. Na 57ª
-legislatura, **01/02/2023**. O recorte acompanha a legislatura: a partir de
-01/02/2027 passa a ser a 58ª.
+legislatura, **01/02/2023**. O recorte acompanha a legislatura, com uma
+transição: nos 6 primeiros meses de uma legislatura nova, todos teriam menos
+que o tempo mínimo em exercício (abaixo). Nesse intervalo o ranking do mandato
+mostra a **legislatura anterior, encerrada**, com os senadores que ocupavam a
+cadeira no último dia dela. Na 58ª: de 01/02/2027 a 31/07/2027 o ranking
+mostra a 57ª inteira (01/02/2023 a 31/01/2027); a partir de 01/08/2027, a 58ª.
 
 **Todos os critérios usam o mesmo período.** No ranking do mandato, ele vai do
 início do recorte até hoje. No ranking de um ano, vai do início do ano (ou do
@@ -80,16 +84,22 @@ Cada registro da API cai numa de quatro classes:
 
 | classe | códigos da API | efeito |
 |---|---|---|
-| presente | Sim, Não, Abstenção, Votou (votação secreta), P-NRV (presente, não registrou voto), Presidente (art. 51 RISF), P-OD, Obstrução | conta como presença |
-| ausência justificada | LS (licença saúde), LP (licença particular), LAP, MIS (missão oficial), LC, LG, REP, LAN | sai da conta |
-| ausência | AP ("atividade parlamentar"), NCom (não compareceu) | conta como falta |
-| não conta | NA (dispositivo não citado) | sai da conta |
+| presente | Sim, Não, Abstenção, Votou (votação secreta), P-NRV (presente, não registrou voto), Presidente (art. 51 RISF) | conta como presença |
+| ausência justificada | LS (licença saúde), LAP, MIS (missão oficial), LC, LG, REP, LAN | sai da conta |
+| ausência | AP ("atividade parlamentar"), LP (licença particular), NCom (não compareceu) | conta como falta |
+| não conta | NA (dispositivo não citado), Obstrução, P-OD | sai da conta |
 
 ```
 Presença (usada no ranking) = presentes / (registros − NA − ausências justificadas) × 100
 Presença bruta              = presentes / (registros − NA) × 100
 ```
 
+- **Licença particular (LP) conta como falta.** O TCC só aceita como
+  justificada a licença médica e a missão oficial; a licença particular é
+  escolha do próprio senador, como a AP.
+- **Obstrução fica fora da conta.** Pelo TCC, não conta como presença; também
+  não é falta, por ser uma estratégia regimental. Nenhuma ocorrência no
+  mandato até a v2.1.
 - **AP ("atividade parlamentar") conta como falta.** É uma justificativa
   declarada pelo próprio senador, sem verificação independente. É também a
   ausência mais frequente no mandato: 2.243 registros, contra 153 de "não
@@ -155,6 +165,14 @@ ordenados. Produtividade zero continua sendo nota zero: é um dado real
 ---
 
 ## Histórico de versões
+
+### v2.1 — 23/09/2026: presença mais próxima do TCC e virada de legislatura
+
+| problema na v2 | correção na v2.1 |
+|---|---|
+| Licença particular (LP) saía da conta, mas o TCC só justifica licença médica e missão oficial | LP conta como falta. São 120 registros no mandato, de 12 senadores. O maior efeito é de 82,4 para 74,3 na presença (41 LP) |
+| Obstrução contava como presença; o TCC diz que não conta | Fica fora da conta (nem presença nem falta). Nenhuma ocorrência no mandato |
+| Em 01/02/2027, com a 58ª legislatura, todos ficariam abaixo de 6 meses em exercício e o ranking sairia vazio até agosto | Nos 6 primeiros meses de uma legislatura, o ranking do mandato mostra a anterior, encerrada |
 
 ### v2 — 23/09/2026: correção do cálculo (auditoria interna)
 

@@ -92,7 +92,7 @@ func (h *Handler) GetMetodologia(c *gin.Context) {
 			{
 				"nome":         "Presenca em Votacoes",
 				"peso":         "25%",
-				"descricao":    "Presenca nas votacoes nominais do Plenario desde a posse da legislatura. Licencas e missoes oficiais saem da conta; 'atividade parlamentar' (AP) e 'nao compareceu' contam como falta. Sem registro no periodo: fora da ordenacao",
+				"descricao":    "Presenca nas votacoes nominais do Plenario desde a posse da legislatura. Licenca de saude e missoes oficiais saem da conta; licenca particular (LP), 'atividade parlamentar' (AP) e 'nao compareceu' contam como falta; obstrucao fica fora da conta. Sem registro no periodo: fora da ordenacao",
 				"normalizacao": "Presentes / (Votacoes - NA - Licencas e missoes) * 100",
 			},
 			{

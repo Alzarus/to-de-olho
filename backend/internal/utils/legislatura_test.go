@@ -50,3 +50,50 @@ func TestPeriodoDoAno(t *testing.T) {
 		t.Errorf("ano corrente termina hoje, nao em dezembro: %s", fim)
 	}
 }
+
+// Item 14: nos 6 primeiros meses da 58a legislatura o ranking do mandato
+// continua na 57a, ja encerrada; depois passa para a 58a.
+func TestPeriodoDoMandatoNaViradaDeLegislatura(t *testing.T) {
+	t.Setenv("RECORTE_INICIO", "")
+	d := func(s string) time.Time { v, _ := time.Parse("2006-01-02", s); return v }
+	casos := []struct {
+		agora, inicio, fim string
+		encerrada          bool
+	}{
+		{"2026-09-23", "2023-02-01", "2026-09-23", false},
+		{"2027-01-31", "2023-02-01", "2027-01-31", false},
+		{"2027-02-01", "2023-02-01", "2027-02-01", true},
+		{"2027-07-31", "2023-02-01", "2027-02-01", true},
+		{"2027-08-01", "2027-02-01", "2027-08-01", false},
+	}
+	for _, c := range casos {
+		ini, fim, enc := periodoDoMandatoEm(d(c.agora))
+		if ini.Format("2006-01-02") != c.inicio || fim.Format("2006-01-02") != c.fim || enc != c.encerrada {
+			t.Errorf("%s: %s..%s encerrada=%v; esperado %s..%s encerrada=%v",
+				c.agora, ini.Format("2006-01-02"), fim.Format("2006-01-02"), enc, c.inicio, c.fim, c.encerrada)
+		}
+	}
+}
+
+func TestPeriodoDoMandatoRespeitaRecorteForcado(t *testing.T) {
+	t.Setenv("RECORTE_INICIO", "2019-02-01")
+	agora := time.Date(2027, 3, 1, 0, 0, 0, 0, time.UTC)
+	ini, fim, enc := periodoDoMandatoEm(agora)
+	if ini.Format("2006-01-02") != "2019-02-01" || !fim.Equal(agora) || enc {
+		t.Errorf("recorte forcado ignorado: %s..%s encerrada=%v", ini, fim, enc)
+	}
+}
+
+// Sem RECORTE_INICIO, cada ano e cortado pela posse da propria legislatura:
+// 2026 inteiro e da 57a mesmo depois da posse da 58a.
+func TestPeriodoDoAnoPorLegislatura(t *testing.T) {
+	t.Setenv("RECORTE_INICIO", "")
+	ini, fim := PeriodoDoAno(2023)
+	if ini.Format("2006-01-02") != "2023-02-01" || fim.Format("2006-01-02") != "2024-01-01" {
+		t.Errorf("2023: %s..%s", ini, fim)
+	}
+	ini, _ = PeriodoDoAno(2026)
+	if ini.Format("2006-01-02") != "2026-01-01" {
+		t.Errorf("2026 deveria comecar em 01/01: %s", ini)
+	}
+}

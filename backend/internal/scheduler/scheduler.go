@@ -13,6 +13,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/senador"
+	"github.com/Alzarus/to-de-olho/internal/utils"
 	"github.com/Alzarus/to-de-olho/internal/votacao"
 	"github.com/Alzarus/to-de-olho/pkg/retry"
 )
@@ -243,7 +244,14 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 
 // cargaCompleta confere que todo senador em exercicio tem ao menos um voto no
 // recorte (item 4). Um senador sem votos indica carga que falhou para ele.
+//
+// Na transicao de legislatura (item 14) a checagem nao se aplica: o ranking
+// mostra a legislatura encerrada, e os senadores novos podem nao ter votado.
 func (s *Scheduler) cargaCompleta() bool {
+	if utils.MandatoEncerrado() {
+		slog.Info("transicao de legislatura: checagem de completude dispensada")
+		return true
+	}
 	semVotos, err := s.votacaoSync.SenadoresSemVotos()
 	if err != nil {
 		slog.Error("falha na checagem de completude das votacoes", "error", err)

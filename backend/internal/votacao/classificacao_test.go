@@ -21,7 +21,7 @@ func TestCalcularStatsCasosDoPlano(t *testing.T) {
 		// 423 registros, 402 presentes, 0 AP, 14 justificadas, 7 NA
 		{"Marcelo Castro", map[string]int{"Sim": 300, "Não": 60, "Votou": 30, "P-NRV": 12, "LS": 10, "MIS": 4, "NA": 7}, 96.6, 100.0},
 		// 233 presentes, 166 AP, 17 justificadas, 7 NCom
-		{"Giordano", map[string]int{"Sim": 200, "Votou": 33, "AP": 166, "LP": 17, "NCom": 7}, 55.1, 57.4},
+		{"Giordano", map[string]int{"Sim": 200, "Votou": 33, "AP": 166, "LS": 17, "NCom": 7}, 55.1, 57.4},
 	}
 	for _, c := range casos {
 		st := calcularStats(1, c.porSigla)
@@ -36,6 +36,17 @@ func TestCalcularStatsCasosDoPlano(t *testing.T) {
 	g := calcularStats(1, casos[1].porSigla)
 	if g.AusenciasAP != 166 || g.NaoCompareceu != 7 || g.Ausencias != 173 || g.AusenciasJustificadas != 17 || g.Presentes != 233 || g.VotosRegistrados != 200 {
 		t.Errorf("contagens do Giordano erradas: %+v", g)
+	}
+}
+
+// Metodologia v2.1: LP conta como falta; obstrucao fica fora da conta
+func TestLicencaParticularEObstrucao(t *testing.T) {
+	st := calcularStats(1, map[string]int{"Sim": 8, "LP": 2, "LS": 5, "Obstrução": 3, "P-OD": 1})
+	if !perto(st.PresencaAjustada, 80) || !perto(st.PresencaBruta, 53.33) {
+		t.Errorf("LP deveria ser falta e obstrucao fora da conta: A=%.2f B=%.2f", st.PresencaBruta, st.PresencaAjustada)
+	}
+	if st.Ausencias != 2 || st.AusenciasJustificadas != 5 || st.Obstrucoes != 4 || st.Presentes != 8 {
+		t.Errorf("contagens erradas: %+v", st)
 	}
 }
 

@@ -59,12 +59,12 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 
 	slog.Info("iniciando calculo de ranking (cache miss)", "ano", ano)
 
-	senadores, err := s.senadorRepo.FindAll(false)
+	inicio, fim := periodo(ano)
+	encerrada := ano == nil && utils.MandatoEncerrado()
+	senadores, err := s.senadoresDoPeriodo(encerrada, fim)
 	if err != nil {
 		return nil, err
 	}
-
-	inicio, fim := periodo(ano)
 	dadosBrutos := make(map[int]*dadosBrutosSenador, len(senadores))
 	for _, sen := range senadores {
 		dadosBrutos[sen.ID] = s.coletarDadosBrutos(sen.ID, inicio, fim)
@@ -100,14 +100,27 @@ func (s *Service) CalcularRanking(ctx context.Context, ano *int) (*RankingRespon
 	}
 
 	response := &RankingResponse{
-		Ranking:     scores,
-		SemDados:    semDados,
-		Total:       len(scores),
-		CalculadoEm: time.Now(),
-		Metodologia: metodologia,
+		Ranking:              scores,
+		SemDados:             semDados,
+		Total:                len(scores),
+		CalculadoEm:          time.Now(),
+		Metodologia:          metodologia,
+		PeriodoInicio:        inicio.Format("2006-01-02"),
+		PeriodoFim:           fim.Format("2006-01-02"),
+		LegislaturaEncerrada: encerrada,
 	}
 	localCache.Set(cacheKey, response, 24*time.Hour)
 	return response, nil
+}
+
+// senadoresDoPeriodo: normalmente, os senadores em exercicio hoje. Com a
+// legislatura encerrada (transicao, item 14), os que ocupavam a cadeira no
+// ultimo dia dela, inclusive os que nao voltaram na legislatura nova.
+func (s *Service) senadoresDoPeriodo(encerrada bool, fim time.Time) ([]senador.Senador, error) {
+	if encerrada {
+		return s.senadorRepo.FindEmExercicioEm(fim.AddDate(0, 0, -1))
+	}
+	return s.senadorRepo.FindAll(false)
 }
 
 // periodo do ranking: mandato ou ano (ver utils.PeriodoDoAno)

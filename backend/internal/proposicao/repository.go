@@ -78,10 +78,11 @@ func (r *Repository) CountBySenadorID(senadorID int) (int64, error) {
 	return count, result.Error
 }
 
-// GetStats retorna estatisticas de proposicoes apresentadas desde o inicio do
-// recorte (posse da legislatura atual)
+// GetStats retorna estatisticas de proposicoes apresentadas no periodo do
+// mandato (utils.PeriodoDoMandato), o mesmo do ranking
 func (r *Repository) GetStats(senadorID int) (*ProposicaoStats, error) {
-	return r.GetStatsPeriodo(senadorID, utils.InicioRecorte(), time.Now())
+	inicio, fim := utils.PeriodoDoMandato()
+	return r.GetStatsPeriodo(senadorID, inicio, fim)
 }
 
 // condicaoSenador: o senador assina na condicao de senador (nao de deputado)

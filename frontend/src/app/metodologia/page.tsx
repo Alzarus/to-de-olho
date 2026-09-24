@@ -33,13 +33,15 @@ const criterios = [
     descricao:
       "Mede se o senador comparece quando o Senado vota. Cada votação nominal do Plenário conta separadamente.",
     formula:
-      "Nota = Presenças / (Votações no período − Licenças e missões oficiais) x 100",
+      "Nota = Presenças / (Votações no período − Licenças de saúde e missões oficiais) x 100",
     detalhes: [
       "Conta como presença: Sim, Não, Abstenção, voto secreto, presente sem registrar voto e presidência da sessão",
-      "Licenças (saúde, particular) e missões oficiais saem da conta: não penalizam nem ajudam",
+      "Licença de saúde (e demais licenças legais) e missões oficiais saem da conta: não penalizam nem ajudam",
+      "Licença particular (LP) conta como falta: o TCC só justifica licença médica e missão oficial",
       "\"Atividade parlamentar\" (AP) conta como falta: é uma justificativa declarada pelo próprio senador, sem verificação",
       "\"Não compareceu\" conta como falta",
-      "Considera as votações desde a posse da legislatura atual (01/02/2023)",
+      "Obstrução fica fora da conta: não é presença nem falta",
+      "Considera as votações desde a posse da legislatura atual (01/02/2023). Nos 6 primeiros meses de uma nova legislatura, o ranking continua mostrando a anterior, já encerrada",
       "A ficha mostra também a presença bruta, sem descontar licenças",
     ],
   },
@@ -294,6 +296,29 @@ export default function MetodologiaPage() {
           <CardTitle>Histórico de versões</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 text-sm text-muted-foreground">
+          <div>
+            <h3 className="font-semibold text-foreground">
+              v2.1 · 23/09/2026 · presença mais próxima do TCC
+            </h3>
+            <ul className="mt-2 list-inside list-disc space-y-1">
+              <li>
+                Licença particular (LP) passa a contar como falta. Na v2 ela
+                saía da conta, mas o TCC só justifica licença médica e missão
+                oficial, e a licença particular é escolha do senador, como a
+                &quot;atividade parlamentar&quot;. São 120 registros no mandato,
+                de 12 senadores.
+              </li>
+              <li>
+                Obstrução sai da conta: não é presença (como diz o TCC) nem
+                falta. Nenhuma ocorrência no mandato até aqui.
+              </li>
+              <li>
+                Virada de legislatura: nos 6 primeiros meses da nova
+                legislatura, todos teriam menos que o mínimo de exercício. Nesse
+                intervalo o ranking mostra a legislatura anterior, encerrada.
+              </li>
+            </ul>
+          </div>
           <div>
             <h3 className="font-semibold text-foreground">
               v2 · 23/09/2026 · correção do cálculo

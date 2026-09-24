@@ -13,7 +13,7 @@ const (
 	// Justificada e ausencia com licenca ou missao: sai do denominador na metrica B
 	Justificada
 	// Ausente conta como falta: "AP" (atividade parlamentar, declarada pelo
-	// proprio senador) e "NCom" (nao compareceu)
+	// proprio senador), "LP" (licenca particular) e "NCom" (nao compareceu)
 	Ausente
 )
 
@@ -26,11 +26,13 @@ var classes = map[string]Classe{
 	"Votou":                     Presente, // votacao secreta
 	"P-NRV":                     Presente, // presente, nao registrou voto
 	"Presidente (art. 51 RISF)": Presente,
-	"P-OD":                      Presente, // presente, obstrucao declarada
-	"Obstrução":                 Presente,
+
+	// Obstrucao fica fora da conta (metodologia v2.1): o TCC diz que nao conta
+	// como presenca, e ela tampouco e falta, por ser estrategia regimental.
+	"P-OD":      NaoConta, // presente, obstrucao declarada
+	"Obstrução": NaoConta,
 
 	"LS":  Justificada, // licenca saude
-	"LP":  Justificada, // licenca particular
 	"LAP": Justificada, // licenca para atividade parlamentar
 	"MIS": Justificada, // missao oficial
 	"LC":  Justificada,
@@ -38,7 +40,10 @@ var classes = map[string]Classe{
 	"REP": Justificada, // representacao da Casa
 	"LAN": Justificada,
 
+	// LP conta como falta (metodologia v2.1): o TCC so justifica licenca
+	// medica e missao oficial; licenca particular e escolha do senador, como AP.
 	"AP":   Ausente,
+	"LP":   Ausente,
 	"NCom": Ausente,
 
 	"NA": NaoConta,
