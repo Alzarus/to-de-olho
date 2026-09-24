@@ -78,7 +78,7 @@ func (h *Handler) GetScoreSenador(c *gin.Context) {
 func (h *Handler) GetMetodologia(c *gin.Context) {
 	metodologia := gin.H{
 		"titulo":     "Metodologia do Ranking de Senadores",
-		"versao":     "2.0", // v1 = TCC; v2 = correcao de 23/09/2026 (METODOLOGIA.md, historico de versoes)
+		"versao":     "2.2", // v1 = TCC; v2, v2.1 e v2.2 em 23/09/2026 (METODOLOGIA.md, historico de versoes)
 		"historico":  "https://github.com/Alzarus/to-de-olho/blob/master/METODOLOGIA.md#histórico-de-versões",
 		"referencia": "Volden, C. & Wiseman, A. E. (2018). Legislative Effectiveness in the American States",
 		"formula":    "Score = (Produtividade * 0.35) + (Presenca * 0.25) + (Economia * 0.20) + (Comissoes * 0.20)",
@@ -111,9 +111,10 @@ func (h *Handler) GetMetodologia(c *gin.Context) {
 		"detalhes_produtividade": []gin.H{
 			{"tipo": "PEC", "peso": "x3.0"},
 			{"tipo": "PLP", "peso": "x2.0"},
-			{"tipo": "PL", "peso": "x1.0"},
-			{"tipo": "Mocoes (RQS/MOC)", "peso": "x0.5"},
-			{"tipo": "Requerimentos (REQ)", "peso": "x0.1"},
+			{"tipo": "PL, PLS, PDL, PDS, PRS, PRN", "peso": "x1.0"},
+			{"tipo": "RQS, MOC, PFS", "peso": "x0.5"},
+			{"tipo": "REQ, INS e requerimentos de comissao", "peso": "x0.1"},
+			{"tipo": "ECD, SCD, OFS, MSG e outros documentos que nao sao autoria legislativa", "peso": "x0"},
 		},
 		"escala":              "Todos os scores sao normalizados para escala 0-100 antes da ponderacao",
 		"periodo":             "Mesmo periodo para todos os criterios: desde a posse da legislatura (mandato) ou o ano, cortado pelo recorte",

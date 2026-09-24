@@ -162,6 +162,9 @@ func (s *SyncService) montarProposicoes(ctx context.Context, sen senador.Senador
 		if posicao > 0 {
 			p.TipoAutor = tipo
 		}
+		if _, ok := PesoTipo(p.SiglaSubtipoMateria); !ok && p.AutoriaPrincipal() {
+			slog.Warn("sigla sem peso na metodologia, nao pontua", "sigla", p.SiglaSubtipoMateria, "identificacao", p.DescricaoIdentificacao)
+		}
 		p.Pontuacao = p.CalcularPontuacao()
 		proposicoes = append(proposicoes, p)
 	}
