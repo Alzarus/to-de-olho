@@ -14,6 +14,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
+	"github.com/Alzarus/to-de-olho/internal/gabinete"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/scheduler"
@@ -61,6 +62,11 @@ func main() {
 		&acesso.Visita{},
 		&acesso.Sal{},
 	); err != nil {
+		slog.Error("falha no auto-migrate", "error", err)
+		os.Exit(1)
+	}
+	// Estrutura de gabinete (numeros agregados: gabinete_recursos, gabinete_beneficios, gabinete_mesa)
+	if err := db.AutoMigrate(gabinete.Modelos()...); err != nil {
 		slog.Error("falha no auto-migrate", "error", err)
 		os.Exit(1)
 	}
@@ -137,6 +143,9 @@ func main() {
 	// Contexto para o scheduler (cancelado no shutdown)
 	ctxSched, cancelSched := context.WithCancel(context.Background())
 	defer cancelSched()
+
+	// Gabinete: carga semanal (guarda no sync diario) e no backfill
+	sched.SetGabineteSync(gabinete.NewSyncService(gabinete.NewRepository(db), senadorRepo, admClient, legisClient))
 
 	sched.Start(ctxSched)
 
