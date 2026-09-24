@@ -88,7 +88,7 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
                 )}
             </CardHeader>
             <CardContent>
-                <VotosPieChart data={chartData.por_tipo} onSliceClick={handleSliceClick} />
+                <VotosPieChart data={chartData.por_tipo} onSliceClick={handleSliceClick} activeType={filteredVoto} />
             </CardContent>
         </Card>
 

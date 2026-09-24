@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 import { SenatorBasicProfile } from "@/contexts/comparator-context";
+import { ChartTooltipContent } from "@/components/ui/chart-tooltip";
 
 // As cores podem vir do perfil se tiver, ou fixed.
 const COLORS = [
@@ -93,21 +94,24 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
                                   layout="vertical"
                                   margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
                               >
-                                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} />
-                                  <XAxis type="number" tickFormatter={(val) => `${(val/1000000).toFixed(0)}M`} tick={{ fontSize: 11 }} />
+                                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="var(--border)" />
+                                  <XAxis type="number" tickFormatter={(val) => `${(val/1000000).toFixed(0)}M`} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} />
                                   <YAxis 
                                     dataKey="name" 
                                     type="category" 
                                     width={100} 
-                                    tick={{ fontSize: 11 }}
+                                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                                     tickFormatter={(val) => truncate(val, 15)}
                                   />
                                   <Tooltip
-                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                      formatter={(value: any) => {
-                                          const numericValue = typeof value === "number" ? value : Number(value);
-                                          return formatCurrency(Number.isFinite(numericValue) ? numericValue : 0);
-                                      }}
+                                      content={({ active, payload, label }) => (
+                                          <ChartTooltipContent
+                                              active={active}
+                                              payload={payload}
+                                              label={label}
+                                              valueFormatter={formatCurrencyValue}
+                                          />
+                                      )}
                                       cursor={{ fill: "transparent" }}
                                   />
                                   <Legend wrapperStyle={{ paddingTop: "10px", fontSize: "11px" }} />
@@ -121,20 +125,23 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
                                   layout="horizontal"
                                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                               >
-                                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                                   <XAxis 
                                     dataKey="name" 
-                                    tick={{ fontSize: 12 }} 
+                                    tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} 
                                     tickFormatter={(val) => truncate(val, 20)}
                                     interval={0}
                                   />
-                                  <YAxis tickFormatter={(val) => `R$ ${(val/1000000).toFixed(1)}M`} />
+                                  <YAxis tickFormatter={(val) => `R$ ${(val/1000000).toFixed(1)}M`} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
                                   <Tooltip
-                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                      formatter={(value: any) => {
-                                          const numericValue = typeof value === "number" ? value : Number(value);
-                                          return formatCurrency(Number.isFinite(numericValue) ? numericValue : 0);
-                                      }}
+                                      content={({ active, payload, label }) => (
+                                          <ChartTooltipContent
+                                              active={active}
+                                              payload={payload}
+                                              label={label}
+                                              valueFormatter={formatCurrencyValue}
+                                          />
+                                      )}
                                       cursor={{ fill: "transparent" }}
                                   />
                                   <Legend wrapperStyle={{ paddingTop: "20px" }} />
@@ -149,6 +156,11 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
           </Card>
       </div>
     );
+}
+
+function formatCurrencyValue(value: unknown) {
+    const numericValue = typeof value === "number" ? value : Number(value);
+    return formatCurrency(Number.isFinite(numericValue) ? numericValue : 0);
 }
 
 function isEmendaEspecial(tipo: string): boolean {
