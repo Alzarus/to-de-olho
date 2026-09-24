@@ -24,10 +24,10 @@ services:
         max-file: "3"
 
   api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: todeolho-api:latest
+    # Imagem construida e escaneada (Trivy) no GitHub Actions e publicada no
+    # GHCR com a tag = SHA do commit. A VPS so faz pull; build local fica no
+    # docker-compose.contabo.build.yml.
+    image: ghcr.io/alzarus/todeolho-api:${IMAGE_TAG:?IMAGE_TAG obrigatorio (SHA publicado no GHCR)}
     container_name: todeolho-api
     restart: unless-stopped
     environment:
@@ -49,12 +49,9 @@ services:
         max-file: "3"
 
   web:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://todeolho.org}
-    image: todeolho-web:latest
+    # NEXT_PUBLIC_API_URL e embutido no bundle no build (CI, verificacao.yml);
+    # a variavel abaixo so vale para o lado servidor.
+    image: ghcr.io/alzarus/todeolho-web:${IMAGE_TAG:?IMAGE_TAG obrigatorio (SHA publicado no GHCR)}
     container_name: todeolho-web
     restart: unless-stopped
     environment:

@@ -1,0 +1,65 @@
+# Atualizacoes semanais de dependencias. Minor e patch vem agrupados em um PR
+# por ecossistema; major chega em PR separado (costuma exigir revisao).
+# Toda PR do Dependabot passa pelo mesmo gate do CI (testes + Trivy).
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(backend)"
+    groups:
+      go-minor-patch:
+        update-types: [minor, patch]
+
+  # O frontend instala com bun (frontend/Dockerfile usa bun.lock com
+  # --frozen-lockfile). O ecossistema "npm" do Dependabot atualizaria o
+  # package-lock.json, que nao entra no build; "bun" atualiza o bun.lock.
+  - package-ecosystem: bun
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(frontend)"
+    groups:
+      frontend-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directories:
+      - /backend
+      - /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(docker)"
+    groups:
+      imagens-base:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]

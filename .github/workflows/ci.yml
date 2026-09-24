@@ -1,89 +1,29 @@
 name: CI
 
+# Gate de pull request. A verificacao em si (testes, tipos, Trivy do repo e
+# build + Trivy das imagens) mora no verificacao.yml, o mesmo que o deploy.yml
+# chama em master antes de publicar. Aqui nada e publicado: o GITHUB_TOKEN so
+# le o repositorio.
+#
+# Sem gatilho de push em master: la o deploy.yml ja roda a mesma verificacao
+# como pre-requisito do deploy; rodar aqui tambem so duplicaria o build.
+
 on:
-  push:
-    branches: ["master"]
   pull_request:
     branches: ["master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  backend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
-
-      - name: Verify dependencies
-        run: go mod verify
-
-      - name: Run Tests
-        env:
-          TRANSPARENCIA_API_KEY: ${{ secrets.TRANSPARENCIA_API_KEY }}
-        run: go test -v ./...
-
-      - name: Vet
-        run: go vet ./...
-
-  # Varredura de dependencias e segredos. Falha so em CRITICAL; o que for
-  # aceito conscientemente vai para o .trivyignore com justificativa.
-  trivy-fs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Trivy (dependencias e segredos)
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          scanners: vuln,secret
-          severity: CRITICAL
-          exit-code: "1"
-          trivyignores: .trivyignore
-          version: v0.74.0
-
-  # Varredura das imagens de producao. A de arquivos (trivy-fs) nao enxerga a
-  # imagem base (Go stdlib no binario, pacotes do alpine, npm embutido no node).
-  # Falha em CRITICAL/HIGH que ja tenham correcao publicada.
-  trivy-image:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Construir imagens
-        run: |
-          docker build -t todeolho-api:ci ./backend
-          docker build -t todeolho-web:ci ./frontend
-
-      - name: Trivy (imagem da API)
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: image
-          image-ref: todeolho-api:ci
-          scanners: vuln,misconfig
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "1"
-          trivyignores: .trivyignore
-          version: v0.74.0
-
-      - name: Trivy (imagem web)
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: image
-          image-ref: todeolho-web:ci
-          scanners: vuln,misconfig
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "1"
-          trivyignores: .trivyignore
-          version: v0.74.0
+  verificacao:
+    uses: ./.github/workflows/verificacao.yml
+    with:
+      publicar: false
+    secrets:
+      TRANSPARENCIA_API_KEY: ${{ secrets.TRANSPARENCIA_API_KEY }}

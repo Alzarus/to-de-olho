@@ -1,0 +1,85 @@
+name: Seguranca agendada
+
+# CVE publicada depois do deploy nao aparece em nenhum PR ate alguem mexer no
+# codigo. Esta varredura semanal olha o repositorio e as imagens que estao NO
+# AR (tag movel `producao`, aplicada pelo deploy.yml so depois do health
+# check). Falha em CRITICAL/HIGH com correcao publicada; falha de workflow
+# agendado gera e-mail para o dono do repositorio.
+#
+# Correcao tipica: novo merge em master (o build usa `pull: true`, entao a
+# imagem base atualizada entra junto) ou Actions -> Deploy -> Run workflow sem
+# tag, que reconstroi o commit atual.
+
+on:
+  schedule:
+    # Segunda, 09:00 UTC (06:00 em Brasilia).
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trivy-fs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy (dependencias e segredos)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          trivyignores: .trivyignore
+          version: v0.74.0
+
+  trivy-producao:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Pacote pode estar privado; leitura basta.
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        servico: [api, web]
+    env:
+      IMAGEM: ghcr.io/alzarus/todeolho-${{ matrix.servico }}:producao
+    steps:
+      # O .trivyignore vem do repositorio.
+      - uses: actions/checkout@v4
+
+      - name: Login no GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Conferir tag producao
+        run: |
+          if ! docker buildx imagetools inspect "$IMAGEM" > /tmp/manifesto.txt 2>&1; then
+            cat /tmp/manifesto.txt
+            echo "::error::$IMAGEM nao encontrada. A tag e aplicada pelo deploy.yml depois de um deploy bem-sucedido; rode o deploy ao menos uma vez."
+            exit 1
+          fi
+          # Revisao do codigo que esta no ar, para o resumo do job.
+          docker buildx imagetools inspect "$IMAGEM" --format '{{json .Image}}' 2>/dev/null \
+            | grep -o '"org.opencontainers.image.revision":"[0-9a-f]*"' \
+            | sed 's/.*:"\(.*\)"/Revisao em producao: \1/' >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Trivy (imagem ${{ matrix.servico }} em producao)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGEM }}
+          scanners: vuln,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          trivyignores: .trivyignore
+          version: v0.74.0
