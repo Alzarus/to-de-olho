@@ -1,0 +1,3 @@
+# Scripts rodam no Linux (VPS, CI). Com core.autocrlf=true no Windows, um
+# checkout sairia com CRLF e o bash falharia com "$'\r': command not found".
+*.sh text eol=lf
