@@ -126,19 +126,36 @@ func NewScheduler(
 func (s *Scheduler) Start(ctx context.Context) {
 	slog.Info("iniciando scheduler")
 
-	dailyTicker := time.NewTicker(24 * time.Hour)
-
 	go func() {
 		for {
+			proxima := proximaExecucao(time.Now())
+			slog.Info("proximo sync diario agendado", "em", proxima.Format(time.RFC3339))
+			timer := time.NewTimer(time.Until(proxima))
 			select {
 			case <-ctx.Done():
+				timer.Stop()
 				slog.Info("parando scheduler")
 				return
-			case <-dailyTicker.C:
+			case <-timer.C:
 				s.RunDailySync(ctx)
 			}
 		}
 	}()
+}
+
+// horaSyncDiarioUTC e a hora fixa do sync diario (06:00 UTC = 03:00 em Brasilia).
+// Com um ticker de 24 h contado a partir da subida, cada deploy empurrava o sync
+// para o dia seguinte, e com deploys diarios ele nunca rodava.
+const horaSyncDiarioUTC = 6
+
+// proximaExecucao devolve o proximo horario fixo do sync diario depois de agora.
+func proximaExecucao(agora time.Time) time.Time {
+	u := agora.UTC()
+	p := time.Date(u.Year(), u.Month(), u.Day(), horaSyncDiarioUTC, 0, 0, 0, time.UTC)
+	if !p.After(u) {
+		p = p.AddDate(0, 0, 1)
+	}
+	return p
 }
 
 // RunBackfill executa o backfill completo de todos os anos.
