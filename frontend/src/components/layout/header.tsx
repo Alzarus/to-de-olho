@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UpdateBadge } from "@/components/update-badge";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Badge } from "@/components/ui/badge";
+import { QUEM_VOTAR_URL, emPeriodoEleitoral } from "@/lib/quem-votar";
 
 const navigation = [
   { name: "Início", href: "/" },
@@ -15,6 +17,19 @@ const navigation = [
   { name: "Votações", href: "/votacoes" },
   { name: "Metodologia", href: "/metodologia" },
 ];
+
+// O Quem Votar é outro app atrás do mesmo proxy (/quemvotar/), fora das rotas
+// do Next: o link é um <a> comum, porque o <Link> tentaria a rota no cliente.
+function QuemVotarLink({ className, onClick }: { className: string; onClick?: () => void }) {
+  return (
+    <a href={QUEM_VOTAR_URL} className={className} onClick={onClick}>
+      Quem Votar
+      {emPeriodoEleitoral() && (
+        <Badge className="ml-1.5 h-4 px-1.5 text-[10px]">Eleições 2026</Badge>
+      )}
+    </a>
+  );
+}
 
 export function Header() {
   const pathname = usePathname();
@@ -51,7 +66,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:block" aria-label="Navegação principal">
+        <nav className="hidden xl:block" aria-label="Navegação principal">
           <ul className="flex items-center gap-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
@@ -60,7 +75,7 @@ export function Header() {
                   <Link
                     href={item.href}
                     className={cn(
-                      "relative px-4 py-2 text-sm font-medium transition-colors rounded-lg",
+                      "relative px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors rounded-lg",
                       "hover:bg-accent hover:text-accent-foreground",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       isActive
@@ -80,12 +95,21 @@ export function Header() {
                 </li>
               );
             })}
+            <li>
+              <QuemVotarLink
+                className={cn(
+                  "flex items-center px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors rounded-lg text-muted-foreground",
+                  "hover:bg-accent hover:text-accent-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                )}
+              />
+            </li>
           </ul>
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
           {/* UpdateBadge visível apenas no desktop */}
-          <div className="hidden md:block">
+          <div className="hidden xl:block">
             <UpdateBadge />
           </div>
           <ModeToggle />
@@ -93,7 +117,7 @@ export function Header() {
           {/* Mobile menu button */}
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+          className="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:hidden"
           aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu de navegação"}
           aria-expanded={mobileMenuOpen}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -129,7 +153,7 @@ export function Header() {
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
         <nav
-          className="border-t border-border/40 bg-background md:hidden absolute w-full left-0 shadow-lg"
+          className="border-t border-border/40 bg-background xl:hidden absolute w-full left-0 shadow-lg"
           aria-label="Menu de navegação mobile"
         >
           {/* UpdateBadge visível no menu mobile para todas as telas mobile */}
@@ -159,6 +183,16 @@ export function Header() {
                 </li>
               );
             })}
+            <li>
+              <QuemVotarLink
+                className={cn(
+                  "flex items-center px-4 py-3 text-base font-medium transition-colors rounded-lg text-muted-foreground",
+                  "hover:bg-accent hover:text-accent-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                )}
+                onClick={() => setMobileMenuOpen(false)}
+              />
+            </li>
           </ul>
         </nav>
       )}

@@ -1,7 +1,6 @@
 package proposicao
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -58,8 +57,6 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 	sigla := c.Query("sigla")
 	status := c.Query("status")
 	sort := c.Query("sort")
-	
-	fmt.Printf("DEBUG Proposicoes: id=%d q=%s sigla=%s status=%s sort=%s\n", senadorID, queryStr, sigla, status, sort)
 	
 	var ano int
 	if anoStr := c.Query("ano"); anoStr != "" {

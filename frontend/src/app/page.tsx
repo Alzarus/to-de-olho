@@ -4,13 +4,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Trophy, Coins, Users, Activity, ExternalLink, BookOpen, BarChart3, LineChart } from "lucide-react";
+import { ArrowRight, Trophy, Coins, Users, Activity, ExternalLink, BookOpen, BarChart3, LineChart, Vote } from "lucide-react";
 import { useRanking } from "@/hooks/use-ranking";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { getStats } from "@/lib/api";
 import type { SenadorScore } from "@/types/api";
 import { formatPresenca, SEM_DADOS_PRESENCA } from "@/lib/utils";
+import { QUEM_VOTAR_URL, emPeriodoEleitoral } from "@/lib/quem-votar";
 
 function formatNumber(value: number): string {
   if (value >= 1_000_000) {
@@ -140,6 +141,35 @@ export default function Home() {
             </Card>
           ))}
         </div>
+      </section>
+
+      {/* Quem Votar: um olha para quem quer entrar, o outro para quem já está lá */}
+      <section className="container mx-auto px-4 md:px-6 mb-20" aria-labelledby="quem-votar-titulo">
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-6">
+            <div className="p-3 rounded-full bg-primary/10 text-primary w-fit">
+              <Vote size={28} aria-hidden="true" />
+            </div>
+            <div className="flex-1 space-y-1">
+              {emPeriodoEleitoral() && (
+                <Badge className="mb-1">Eleições 2026</Badge>
+              )}
+              <h2 id="quem-votar-titulo" className="text-xl font-bold tracking-tight">
+                Vai votar em 2026? Conheça as candidaturas
+              </h2>
+              <p className="text-muted-foreground">
+                O Tô De Olho acompanha quem já está no Senado. O Quem Votar mostra quem quer entrar:
+                candidaturas, patrimônio declarado e planos de governo, com dados oficiais do TSE.
+              </p>
+            </div>
+            <Button asChild size="lg" className="w-full md:w-auto">
+              <a href={QUEM_VOTAR_URL}>
+                Abrir o Quem Votar
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
 
       {/* Top Ranking Preview */}
