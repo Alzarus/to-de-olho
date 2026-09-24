@@ -22,6 +22,13 @@ type Votacao struct {
 	Materia           string    `json:"materia,omitempty"` // identificacao: "PLP 124/2022 (Substitutivo-CD)"
 	Ementa            string    `json:"ementa,omitempty"`
 	Resultado         string    `json:"resultado,omitempty"` // A (aprovada), R (rejeitada)...
+	// SiglaMateria e a sigla do tipo da materia (PEC, MSF, PLP...): campo
+	// `sigla` da API; no historico, derivada de Materia (PreencherHistorico).
+	SiglaMateria string `gorm:"size:20;index:idx_votacao_sigla_materia" json:"sigla_materia,omitempty"`
+	// Secreta vem de `votacaoSecreta` (S/N) da API. Numa votacao secreta o
+	// voto individual nao e publicado: a sigla de quem votou e "Votou".
+	// Nulo so em linhas antigas ate PreencherHistorico rodar.
+	Secreta *bool `gorm:"index:idx_votacao_secreta" json:"secreta"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -61,4 +68,29 @@ type VotacaoStats struct {
 type VotosPorTipo struct {
 	Voto  string `json:"voto"`
 	Total int    `json:"total"`
+}
+
+// FiltroLista reune os filtros da lista geral de votacoes (FindAll).
+type FiltroLista struct {
+	Ano        int
+	Materia    string   // busca livre em materia, descricao, ementa e sessao
+	Sessao     string   // codigo da sessao
+	Ordem      string   // "asc" ou "desc" (padrao)
+	Tipos      []string // siglas da materia: PEC, MSF...
+	Secreta    *bool    // nil: todas
+	Resultados []string // A, R...
+}
+
+// Faceta e a contagem de votacoes (nao de votos) com um valor de filtro.
+type Faceta struct {
+	Valor string `json:"valor"`
+	Total int    `json:"total"`
+}
+
+// Facetas alimenta os filtros da lista de votacoes.
+type Facetas struct {
+	Tipos      []Faceta `json:"tipos"`
+	Secreta    []Faceta `json:"secreta"` // valor "true" ou "false"
+	Resultados []Faceta `json:"resultados"`
+	Total      int      `json:"total"`
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Alzarus/to-de-olho/internal/senador"
@@ -149,6 +150,11 @@ func converterVotacao(v senadoapi.VotacaoSessaoAPI, senadorPorCodigo map[int]int
 	// Meio-dia UTC para a data nao mudar de dia em nenhum fuso
 	data := time.Date(dia.Year(), dia.Month(), dia.Day(), 12, 0, 0, 0, time.UTC)
 	codigoSessao := strconv.Itoa(v.CodigoSessao)
+	sigla := strings.ToUpper(strings.TrimSpace(v.Sigla))
+	if sigla == "" {
+		sigla = siglaDaIdentificacao(v.Identificacao)
+	}
+	secreta := votacaoSecreta(v.VotacaoSecreta)
 
 	var votos []Votacao
 	var ignorados int
@@ -175,9 +181,41 @@ func converterVotacao(v senadoapi.VotacaoSessaoAPI, senadorPorCodigo map[int]int
 			Materia:           v.Identificacao,
 			Ementa:            v.Ementa,
 			Resultado:         v.ResultadoVotacao,
+			SiglaMateria:      sigla,
+			Secreta:           secreta,
 		})
 	}
 	return votos, ignorados, nil
+}
+
+// siglaDaIdentificacao extrai a sigla do tipo da materia da identificacao
+// ("PLP 124/2022 (Substitutivo-CD)" -> "PLP"). Mesma regra do UPDATE de
+// PreencherHistorico.
+func siglaDaIdentificacao(identificacao string) string {
+	campos := strings.Fields(identificacao)
+	if len(campos) == 0 {
+		return ""
+	}
+	sigla := strings.ToUpper(campos[0])
+	if len(sigla) > 20 {
+		sigla = sigla[:20]
+	}
+	return sigla
+}
+
+// votacaoSecreta traduz o campo votacaoSecreta da API ("S"/"N"). Valor
+// desconhecido fica nulo e e resolvido por PreencherHistorico.
+func votacaoSecreta(v string) *bool {
+	switch strings.ToUpper(strings.TrimSpace(v)) {
+	case "S", "SIM", "TRUE":
+		b := true
+		return &b
+	case "N", "NAO", "NÃO", "FALSE":
+		b := false
+		return &b
+	default:
+		return nil
+	}
 }
 
 // rotuloVoto normaliza o voto para exibicao e para os filtros do frontend.

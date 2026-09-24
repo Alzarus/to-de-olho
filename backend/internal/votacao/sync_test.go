@@ -20,6 +20,8 @@ func TestConverterVotacao(t *testing.T) {
 		Identificacao:       "PLP 124/2022 (Substitutivo-CD)",
 		Ementa:              "Altera o CTN",
 		ResultadoVotacao:    "A",
+		Sigla:               "PLP",
+		VotacaoSecreta:      "N",
 		Votos: []senadoapi.VotoParlamentar{
 			{CodigoParlamentar: 5672, SiglaVoto: "Sim"},
 			{CodigoParlamentar: 742, SiglaVoto: "Não"},
@@ -40,6 +42,9 @@ func TestConverterVotacao(t *testing.T) {
 	}
 	if nao.Materia != "PLP 124/2022 (Substitutivo-CD)" || nao.Ementa != "Altera o CTN" || nao.Resultado != "A" {
 		t.Errorf("metadados errados: %+v", nao)
+	}
+	if nao.SiglaMateria != "PLP" || nao.Secreta == nil || *nao.Secreta {
+		t.Errorf("sigla/secreta errados: %q %v", nao.SiglaMateria, nao.Secreta)
 	}
 	if !nao.Data.Equal(time.Date(2026, 8, 12, 12, 0, 0, 0, time.UTC)) {
 		t.Errorf("data errada: %v", nao.Data)
@@ -72,5 +77,53 @@ func TestJanelasMensais(t *testing.T) {
 	}
 	if n := len(janelasMensais(d("2026-09-23"), d("2026-09-23"))); n != 1 {
 		t.Errorf("um dia so deveria dar 1 janela, deu %d", n)
+	}
+}
+
+func TestConverterVotacaoSemSiglaDerivaDaIdentificacao(t *testing.T) {
+	v := senadoapi.VotacaoSessaoAPI{
+		CodigoSessaoVotacao: 6966, DataSessao: "2025-08-13", Identificacao: "MSF 81/2024", VotacaoSecreta: "S",
+		Votos: []senadoapi.VotoParlamentar{{CodigoParlamentar: 1, SiglaVoto: "Votou"}},
+	}
+	votos, _, err := converterVotacao(v, map[int]int{1: 1})
+	if err != nil || len(votos) != 1 {
+		t.Fatalf("%v %v", votos, err)
+	}
+	if votos[0].SiglaMateria != "MSF" || votos[0].Secreta == nil || !*votos[0].Secreta {
+		t.Errorf("sigla/secreta errados: %q %v", votos[0].SiglaMateria, votos[0].Secreta)
+	}
+}
+
+func TestSiglaDaIdentificacao(t *testing.T) {
+	casos := []struct{ entrada, esperado string }{
+		{"PLP 124/2022 (Substitutivo-CD)", "PLP"},
+		{"  msf 81/2024", "MSF"},
+		{"PEC", "PEC"},
+		{"", ""},
+		{"   ", ""},
+	}
+	for _, c := range casos {
+		if obtido := siglaDaIdentificacao(c.entrada); obtido != c.esperado {
+			t.Errorf("siglaDaIdentificacao(%q) = %q; esperado %q", c.entrada, obtido, c.esperado)
+		}
+	}
+}
+
+func TestVotacaoSecreta(t *testing.T) {
+	casos := []struct {
+		entrada  string
+		esperado *bool
+	}{
+		{"S", boolPtr(true)},
+		{"s", boolPtr(true)},
+		{"N", boolPtr(false)},
+		{"", nil},
+		{"?", nil},
+	}
+	for _, c := range casos {
+		obtido := votacaoSecreta(c.entrada)
+		if (obtido == nil) != (c.esperado == nil) || (obtido != nil && *obtido != *c.esperado) {
+			t.Errorf("votacaoSecreta(%q) = %v; esperado %v", c.entrada, obtido, c.esperado)
+		}
 	}
 }

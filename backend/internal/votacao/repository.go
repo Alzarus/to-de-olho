@@ -1,6 +1,7 @@
 package votacao
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -123,7 +124,7 @@ func (r *Repository) UpsertBatch(votacoes []Votacao) error {
 		Columns: []clause.Column{{Name: "senador_id"}, {Name: "codigo_votacao"}},
 		DoUpdates: clause.AssignmentColumns([]string{
 			"sessao_id", "codigo_sessao", "sequencial_votacao", "data", "sigla_voto", "voto",
-			"descricao_votacao", "materia", "ementa", "resultado", "updated_at",
+			"descricao_votacao", "materia", "ementa", "resultado", "sigla_materia", "secreta", "updated_at",
 		}),
 	}).CreateInBatches(votacoes, 1000).Error
 }
@@ -147,29 +148,16 @@ func (r *Repository) GetStatsByAno(senadorID int, ano int) (*VotacaoStats, error
 }
 
 // FindAll retorna votacoes (uma linha por votacao, nao por voto) com
-// paginacao e filtros. ordem: "asc" ou "desc". sessao filtra pelo codigo da
-// sessao (destino dos links antigos /votacoes/NNNNNN_AAAA, decisao D2).
-func (r *Repository) FindAll(limit, offset, ano int, materia, ordem, sessao string) ([]Votacao, int64, error) {
+// paginacao e filtros. f.Ordem: "asc" ou "desc". f.Sessao filtra pelo codigo
+// da sessao (destino dos links antigos /votacoes/NNNNNN_AAAA, decisao D2).
+func (r *Repository) FindAll(limit, offset int, f FiltroLista) ([]Votacao, int64, error) {
 	var votacoes []Votacao
 	var total int64
 
-	baseQuery := r.db.Model(&Votacao{})
-
-	if ano > 0 {
-		baseQuery = baseQuery.Where("EXTRACT(YEAR FROM data) = ?", ano)
-	}
-
-	if materia != "" {
-		like := "%" + materia + "%"
-		baseQuery = baseQuery.Where("(materia ILIKE ? OR descricao_votacao ILIKE ? OR ementa ILIKE ? OR codigo_sessao ILIKE ?)", like, like, like, like)
-	}
-
-	if sessao != "" {
-		baseQuery = baseQuery.Where("sessao_id = ?", sessao)
-	}
+	baseQuery := r.filtrar(r.db.Model(&Votacao{}), f)
 
 	if err := baseQuery.Session(&gorm.Session{}).Select("COUNT(DISTINCT codigo_votacao)").Count(&total).Error; err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("contar votacoes: %w", err)
 	}
 
 	// DISTINCT ON exige que o ORDER BY comece pela coluna distinta
@@ -179,7 +167,7 @@ func (r *Repository) FindAll(limit, offset, ano int, materia, ordem, sessao stri
 
 	// Dentro do dia, a ordem das votacoes na sessao (sequencial pode ser nulo)
 	sortOrder := "data DESC, sessao_id DESC, sequencial_votacao DESC NULLS LAST, codigo_votacao DESC"
-	if ordem == "asc" {
+	if f.Ordem == "asc" {
 		sortOrder = "data ASC, sessao_id ASC, sequencial_votacao ASC NULLS FIRST, codigo_votacao ASC"
 	}
 
@@ -188,8 +176,68 @@ func (r *Repository) FindAll(limit, offset, ano int, materia, ordem, sessao stri
 		Limit(limit).
 		Offset(offset).
 		Find(&votacoes).Error
+	if err != nil {
+		return nil, 0, fmt.Errorf("listar votacoes: %w", err)
+	}
+	return votacoes, total, nil
+}
 
-	return votacoes, total, err
+// filtrar aplica os filtros da lista geral a uma consulta sobre votacoes
+func (r *Repository) filtrar(q *gorm.DB, f FiltroLista) *gorm.DB {
+	if f.Ano > 0 {
+		q = q.Where("EXTRACT(YEAR FROM data) = ?", f.Ano)
+	}
+	if f.Materia != "" {
+		like := "%" + f.Materia + "%"
+		q = q.Where("(materia ILIKE ? OR descricao_votacao ILIKE ? OR ementa ILIKE ? OR codigo_sessao ILIKE ?)", like, like, like, like)
+	}
+	if f.Sessao != "" {
+		q = q.Where("sessao_id = ?", f.Sessao)
+	}
+	if len(f.Tipos) > 0 {
+		q = q.Where("sigla_materia IN ?", f.Tipos)
+	}
+	if f.Secreta != nil {
+		q = q.Where("secreta = ?", *f.Secreta)
+	}
+	if len(f.Resultados) > 0 {
+		q = q.Where("resultado IN ?", f.Resultados)
+	}
+	return q
+}
+
+// Facetas conta as votacoes do ano (0: todos) por tipo de materia, por
+// votacao secreta ou aberta e por resultado, para montar os filtros.
+func (r *Repository) Facetas(ano int) (*Facetas, error) {
+	contar := func(expr string) ([]Faceta, error) {
+		var out []Faceta
+		err := r.filtrar(r.db.Model(&Votacao{}), FiltroLista{Ano: ano}).
+			Select(expr + " AS valor, COUNT(DISTINCT codigo_votacao) AS total").
+			Where(expr + " <> ''").
+			Group("valor").
+			Order("total DESC, valor").
+			Scan(&out).Error
+		return out, err
+	}
+
+	var fac Facetas
+	var err error
+	if fac.Tipos, err = contar("COALESCE(sigla_materia, '')"); err != nil {
+		return nil, fmt.Errorf("facetas por tipo: %w", err)
+	}
+	if fac.Secreta, err = contar("COALESCE(secreta::text, '')"); err != nil {
+		return nil, fmt.Errorf("facetas por secreta: %w", err)
+	}
+	if fac.Resultados, err = contar("COALESCE(resultado, '')"); err != nil {
+		return nil, fmt.Errorf("facetas por resultado: %w", err)
+	}
+	var total int64
+	if err := r.filtrar(r.db.Model(&Votacao{}), FiltroLista{Ano: ano}).
+		Select("COUNT(DISTINCT codigo_votacao)").Count(&total).Error; err != nil {
+		return nil, fmt.Errorf("facetas total: %w", err)
+	}
+	fac.Total = int(total)
+	return &fac, nil
 }
 
 // FindByID retorna os dados de uma votacao pelo codigo_votacao

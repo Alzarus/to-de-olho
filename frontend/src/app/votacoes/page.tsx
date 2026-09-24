@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Search, ArrowUp, ArrowDown, X, Lock } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +26,44 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { getVotacoes, Votacao } from "@/services/votacaoService";
+import {
+  getVotacoes,
+  getVotacoesFacetas,
+  FacetasVotacoes,
+  Votacao,
+} from "@/services/votacaoService";
 import { usePersistentYear } from "@/hooks/use-persistent-year";
+
+// Nome por extenso das siglas de matéria que aparecem nas votações nominais
+const NOMES_TIPO: Record<string, string> = {
+  PEC: "Proposta de Emenda à Constituição",
+  MSF: "Mensagem (indicação de autoridades)",
+  OFS: "Ofício",
+  PLP: "Projeto de Lei Complementar",
+  PL: "Projeto de Lei",
+  MPV: "Medida Provisória",
+  PDL: "Projeto de Decreto Legislativo",
+  RQS: "Requerimento",
+  REQ: "Requerimento",
+  PRS: "Projeto de Resolução do Senado",
+  PLS: "Projeto de Lei do Senado",
+  PLC: "Projeto de Lei da Câmara",
+  SCD: "Substitutivo da Câmara dos Deputados",
+  PLN: "Projeto de Lei do Congresso Nacional",
+  PDS: "Projeto de Decreto Legislativo do Senado",
+};
+
+const nomeTipo = (sigla: string) => NOMES_TIPO[sigla] ?? sigla;
+
+const NOMES_RESULTADO: Record<string, string> = {
+  A: "Aprovada",
+  R: "Rejeitada",
+};
+
+const nomeResultado = (r: string) => NOMES_RESULTADO[r] ?? r;
+
+// Valor neutro dos selects (o Radix não aceita value vazio)
+const TODAS = "todas";
 
 function VotacoesContent() {
   const router = useRouter();
@@ -41,10 +77,22 @@ function VotacoesContent() {
   const sortDir = searchParams.get("ordem") || "desc";
   // Votacoes de uma sessao (destino dos links antigos /votacoes/NNNNNN_AAAA)
   const sessao = searchParams.get("sessao") || "";
+  // Filtros: tipo=PEC,MSF · secreta=true|false · resultado=A|R
+  const tipoParam = searchParams.get("tipo") || "";
+  const secretaParam = searchParams.get("secreta") || "";
+  const resultado = searchParams.get("resultado") || "";
+  const secreta =
+    secretaParam === "true"
+      ? true
+      : secretaParam === "false"
+        ? false
+        : undefined;
+  const filtrosAtivos = Boolean(tipoParam || secretaParam || resultado);
 
   const [data, setData] = useState<Votacao[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [facetas, setFacetas] = useState<FacetasVotacoes | null>(null);
 
   // Input local para busca (debounce)
   const [localSearch, setLocalSearch] = useState(search);
@@ -84,6 +132,19 @@ function VotacoesContent() {
     return () => clearTimeout(timer);
   }, [localSearch, search, updateUrl]);
 
+  const anoConsulta = ano === 0 || sessao ? undefined : ano;
+
+  // Contagens dos filtros (dependem só do ano)
+  useEffect(() => {
+    let ativo = true;
+    getVotacoesFacetas(anoConsulta)
+      .then((f) => ativo && setFacetas(f))
+      .catch((error) => console.error("Failed to fetch facetas", error));
+    return () => {
+      ativo = false;
+    };
+  }, [anoConsulta]);
+
   // Fetch Data
   useEffect(() => {
     const fetchData = async () => {
@@ -92,10 +153,15 @@ function VotacoesContent() {
         const res = await getVotacoes(
           page,
           limit,
-          ano === 0 || sessao ? undefined : ano,
+          anoConsulta,
           search,
           sortDir,
           sessao || undefined,
+          {
+            tipos: tipoParam ? tipoParam.split(",") : undefined,
+            secreta,
+            resultado: resultado || undefined,
+          },
         );
         setData(res.data);
         setTotal(res.total);
@@ -107,13 +173,47 @@ function VotacoesContent() {
     };
 
     fetchData();
-  }, [page, ano, search, sessao, sortDir]);
+  }, [
+    page,
+    anoConsulta,
+    search,
+    sessao,
+    sortDir,
+    tipoParam,
+    secreta,
+    resultado,
+  ]);
 
   // A ordem vem do backend (data, sessão e sequencial dentro do dia). Ordenar
   // aqui só invertia a página atual em vez de buscar as votações mais antigas.
   const sortedData = data;
 
   const totalPages = Math.ceil(total / limit);
+
+  const tiposSelecionados = tipoParam ? tipoParam.split(",") : [];
+
+  // Tipos com contagem; os marcados continuam visíveis mesmo sem votação no ano
+  const opcoesTipo = [
+    ...(facetas?.tipos ?? []),
+    ...tiposSelecionados
+      .filter((t) => !facetas?.tipos.some((f) => f.valor === t))
+      .map((t) => ({ valor: t, total: 0 })),
+  ];
+
+  const contagem = (
+    lista: { valor: string; total: number }[] | undefined,
+    valor: string,
+  ) => lista?.find((f) => f.valor === valor)?.total ?? 0;
+
+  const alternarTipo = (sigla: string) => {
+    const novos = tiposSelecionados.includes(sigla)
+      ? tiposSelecionados.filter((t) => t !== sigla)
+      : [...tiposSelecionados, sigla];
+    updateUrl({ tipo: novos.join(","), page: 1 });
+  };
+
+  const limparFiltros = () =>
+    updateUrl({ tipo: null, secreta: null, resultado: null, page: 1 });
 
   const toggleSort = () => {
     updateUrl({ ordem: sortDir === "desc" ? "asc" : "desc", page: 1 });
@@ -212,7 +312,155 @@ function VotacoesContent() {
                 </button>
               )}
             </div>
+
+            {/* Aberta / secreta */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="secreta-select"
+                className="text-sm font-medium text-muted-foreground whitespace-nowrap"
+              >
+                Votação:
+              </label>
+              <Select
+                value={secretaParam || TODAS}
+                onValueChange={(v) =>
+                  updateUrl({ secreta: v === TODAS ? null : v, page: 1 })
+                }
+              >
+                <SelectTrigger id="secreta-select" className="h-9 w-[190px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TODAS}>
+                    Abertas e secretas
+                    {facetas
+                      ? ` (${facetas.total.toLocaleString("pt-BR")})`
+                      : ""}
+                  </SelectItem>
+                  <SelectItem value="false">
+                    Abertas
+                    {facetas
+                      ? ` (${contagem(facetas.secreta, "false").toLocaleString("pt-BR")})`
+                      : ""}
+                  </SelectItem>
+                  <SelectItem value="true">
+                    Secretas
+                    {facetas
+                      ? ` (${contagem(facetas.secreta, "true").toLocaleString("pt-BR")})`
+                      : ""}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Resultado */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="resultado-select"
+                className="text-sm font-medium text-muted-foreground whitespace-nowrap"
+              >
+                Resultado:
+              </label>
+              <Select
+                value={resultado || TODAS}
+                onValueChange={(v) =>
+                  updateUrl({ resultado: v === TODAS ? null : v, page: 1 })
+                }
+              >
+                <SelectTrigger id="resultado-select" className="h-9 w-[170px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TODAS}>
+                    Todos
+                    {facetas
+                      ? ` (${facetas.total.toLocaleString("pt-BR")})`
+                      : ""}
+                  </SelectItem>
+                  {(facetas?.resultados ?? []).map((f) => (
+                    <SelectItem key={f.valor} value={f.valor}>
+                      {nomeResultado(f.valor)} (
+                      {f.total.toLocaleString("pt-BR")})
+                    </SelectItem>
+                  ))}
+                  {resultado &&
+                    !facetas?.resultados.some((f) => f.valor === resultado) && (
+                      <SelectItem value={resultado}>
+                        {nomeResultado(resultado)} (0)
+                      </SelectItem>
+                    )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {filtrosAtivos && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={limparFiltros}
+                className="h-9"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+                Limpar filtros
+              </Button>
+            )}
           </div>
+
+          {/* Tipo de matéria */}
+          <fieldset className="mt-3">
+            <legend className="mb-2 text-sm font-medium text-muted-foreground">
+              Tipo de matéria
+              {tiposSelecionados.length > 0 &&
+                ` (${tiposSelecionados.length} ${tiposSelecionados.length === 1 ? "selecionado" : "selecionados"})`}
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {opcoesTipo.length === 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {facetas ? "Nenhum tipo no período." : "Carregando tipos..."}
+                </span>
+              )}
+              {opcoesTipo.map((f) => {
+                const marcado = tiposSelecionados.includes(f.valor);
+                return (
+                  <label
+                    key={f.valor}
+                    title={nomeTipo(f.valor)}
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${
+                      marcado
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border bg-background text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary"
+                      checked={marcado}
+                      onChange={() => alternarTipo(f.valor)}
+                    />
+                    <span>
+                      <span className="font-semibold">{f.valor}</span>
+                      {NOMES_TIPO[f.valor] && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          · {NOMES_TIPO[f.valor]}
+                        </span>
+                      )}{" "}
+                      <span className="text-muted-foreground">
+                        ({f.total.toLocaleString("pt-BR")})
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <p className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground">
+            <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            Em votação secreta (como a maioria das indicações de autoridades), o
+            Senado publica só quem votou, não o voto de cada senador.
+          </p>
         </div>
 
         <CardContent className="p-0 overflow-x-auto">
@@ -310,6 +558,35 @@ function VotacoesContent() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 min-w-[250px]">
+                        {(votacao.sigla_materia ||
+                          votacao.secreta ||
+                          votacao.resultado) && (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {votacao.sigla_materia && (
+                              <Badge
+                                variant="secondary"
+                                title={nomeTipo(votacao.sigla_materia)}
+                              >
+                                {votacao.sigla_materia}
+                                <span className="sr-only">
+                                  {" "}
+                                  ({nomeTipo(votacao.sigla_materia)})
+                                </span>
+                              </Badge>
+                            )}
+                            {votacao.secreta && (
+                              <Badge variant="outline">
+                                <Lock aria-hidden="true" />
+                                Secreta
+                              </Badge>
+                            )}
+                            {votacao.resultado && (
+                              <Badge variant="outline">
+                                {nomeResultado(votacao.resultado)}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                         {votacao.materia && (
                           <span className="font-semibold text-primary block group-hover:text-primary/80 transition-colors">
                             {votacao.materia}

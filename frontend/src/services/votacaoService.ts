@@ -13,8 +13,28 @@ export interface Votacao {
   descricao_votacao: string;
   materia: string;
   ementa?: string;
-  resultado?: string;
+  resultado?: string; // A (aprovada), R (rejeitada)
+  sigla_materia?: string; // tipo da matéria: PEC, MSF, PLP...
+  secreta?: boolean | null; // votação secreta: o voto individual não é publicado
   created_at: string;
+}
+
+export interface FiltrosVotacoes {
+  tipos?: string[]; // siglas da matéria
+  secreta?: boolean; // undefined: abertas e secretas
+  resultado?: string; // A ou R
+}
+
+export interface Faceta {
+  valor: string;
+  total: number;
+}
+
+export interface FacetasVotacoes {
+  tipos: Faceta[];
+  secreta: Faceta[]; // valor "true" ou "false"
+  resultados: Faceta[];
+  total: number;
 }
 
 export interface VotacaoResponse {
@@ -41,6 +61,7 @@ export const getVotacoes = async (
   materia?: string,
   ordem?: string,
   sessao?: string,
+  filtros: FiltrosVotacoes = {},
 ): Promise<VotacaoResponse> => {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -51,8 +72,22 @@ export const getVotacoes = async (
   if (materia) params.append("materia", materia);
   if (ordem) params.append("ordem", ordem);
   if (sessao) params.append("sessao", sessao);
+  if (filtros.tipos?.length) params.append("tipo", filtros.tipos.join(","));
+  if (filtros.secreta !== undefined)
+    params.append("secreta", String(filtros.secreta));
+  if (filtros.resultado) params.append("resultado", filtros.resultado);
 
   return fetcher<VotacaoResponse>(`/api/v1/votacoes?${params.toString()}`);
+};
+
+export const getVotacoesFacetas = async (
+  ano?: number,
+): Promise<FacetasVotacoes> => {
+  const params = new URLSearchParams();
+  if (ano) params.append("ano", ano.toString());
+  return fetcher<FacetasVotacoes>(
+    `/api/v1/votacoes/facetas?${params.toString()}`,
+  );
 };
 
 export const getVotacaoById = async (id: string): Promise<VotacaoDetail> => {
