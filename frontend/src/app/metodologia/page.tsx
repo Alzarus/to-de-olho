@@ -318,145 +318,6 @@ export default function MetodologiaPage() {
         </CardContent>
       </Card>
 
-      {/* Historico de versoes */}
-      <Card className="mt-8" id="historico">
-        <CardHeader>
-          <CardTitle>Histórico de versões</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6 text-sm text-muted-foreground">
-          <div>
-            <h3 className="font-semibold text-foreground">
-              v2.2 · 23/09/2026 · peso para todas as siglas de proposição
-            </h3>
-            <ul className="mt-2 list-inside list-disc space-y-1">
-              <li>
-                Até a v2.1 só PEC, PLP, RQS/MOC e REQ tinham peso definido. As
-                outras cerca de 40 siglas valiam como um projeto de lei sem que
-                isso estivesse decidido: uma indicação, que é só uma sugestão a
-                outro Poder, valia o mesmo que um PL.
-              </li>
-              <li>
-                Agora cada sigla tem peso pela força jurídica do instrumento. PEC
-                x3 e PLP x2, definidos no TCC, não mudam. Emendas da Câmara,
-                ofícios e petições não pontuam: não são autoria do senador.
-              </li>
-              <li>
-                Efeito pequeno: 26 de 78 senadores mudam de posição, 0,5 em
-                média; no top 10, só o 10º e o 11º trocam de lugar.
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground">
-              v2.1 · 23/09/2026 · presença mais próxima do TCC
-            </h3>
-            <ul className="mt-2 list-inside list-disc space-y-1">
-              <li>
-                Licença particular (LP) passa a contar como falta. Na v2 ela
-                saía da conta, mas o TCC só justifica licença médica e missão
-                oficial, e a licença particular é escolha do senador, como a
-                &quot;atividade parlamentar&quot;. São 120 registros no mandato,
-                de 12 senadores.
-              </li>
-              <li>
-                Obstrução sai da conta: não é presença (como diz o TCC) nem
-                falta. Nenhuma ocorrência no mandato até aqui.
-              </li>
-              <li>
-                Virada de legislatura: nos 6 primeiros meses da nova
-                legislatura, todos teriam menos que o mínimo de exercício. Nesse
-                intervalo o ranking mostra a legislatura anterior, encerrada.
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground">
-              v2 · 23/09/2026 · correção do cálculo
-            </h3>
-            <p className="mt-1">
-              Uma auditoria do próprio projeto encontrou pontos em que o código
-              não seguia a metodologia descrita no TCC. A v2 corrige o código;
-              as fórmulas do TCC não mudam.
-            </p>
-            <ul className="mt-2 list-inside list-disc space-y-1">
-              <li>
-                Coautorias eram descartadas: cada matéria ficava com um único
-                senador, o primeiro em ordem alfabética. Agora cada senador tem
-                suas matérias, e só o primeiro autor pontua.
-              </li>
-              <li>
-                Votações de uma mesma sessão contavam como uma só: das 423
-                votações do mandato, 155 entravam na conta. Agora cada votação
-                conta.
-              </li>
-              <li>
-                A presença ignorava &quot;atividade parlamentar&quot;, voto
-                secreto e presidência da sessão, e 58 de 81 senadores tinham
-                100%. Agora licenças e missões saem da conta, como o TCC
-                descreve, e &quot;atividade parlamentar&quot; conta como falta.
-                Mediana de 94,3.
-              </li>
-              <li>
-                Uma falha ao buscar os dados de um senador virava presença zero.
-                Agora a carga tenta de novo e, sem dado, o senador fica fora da
-                ordenação.
-              </li>
-              <li>
-                Comissões: frentes parlamentares, grupos de amizade e conselhos
-                de honrarias contavam, e cada recondução pontuava de novo. Agora
-                só colegiados legislativos, uma vez cada, com a mesma fórmula no
-                ano e no mandato.
-              </li>
-              <li>
-                Cota: o teto era igual para todos desde fevereiro de 2023, e
-                quem tomou posse em 2026 tinha economia perto de 100. Agora o
-                teto é proporcional aos meses em exercício, e é preciso ter ao
-                menos 6 meses no período para entrar na ordenação.
-              </li>
-              <li>
-                Vetos e matérias de quando o senador era deputado pontuavam.
-                Agora não pontuam.
-              </li>
-              <li>
-                Os critérios usavam períodos diferentes (a cota incluía janeiro
-                de 2023, da legislatura anterior), e a carga perdia dados: R$
-                3,75 milhões em lançamentos da cota e 11% das participações em
-                comissões com datas trocadas. Agora todas as fontes usam o mesmo
-                período, e os dados foram recarregados como na fonte.
-              </li>
-              <li>
-                Este texto divergia do cálculo em três pontos, agora alinhados:
-                dizia que &quot;justificativa de ausência não anula a falta&quot;
-                (o oposto do TCC); dava a produtividade em escala linear (o
-                cálculo é logarítmico); e dava presidente 5, titular 3 e
-                suplente 1 nas comissões (o cálculo dá titular 2, suplente 1 e
-                +1 por participação ativa).
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground">v1 · 2026 · TCC</h3>
-            <p className="mt-1">
-              Metodologia do Trabalho de Conclusão de Curso (IFBA): quatro
-              critérios com pesos 35/25/20/20.
-            </p>
-          </div>
-          <p>
-            A versão completa, com fórmulas e a tabela de códigos de voto, está
-            em{" "}
-            <a
-              href="https://github.com/Alzarus/to-de-olho/blob/master/METODOLOGIA.md"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              METODOLOGIA.md
-            </a>
-            .
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Academic References */}
       <Card className="mt-8">
         <CardHeader>
@@ -478,6 +339,19 @@ export default function MetodologiaPage() {
             <li>
               Adaptado para o Senado brasileiro, considerando o sistema
               multipartidário e os dados disponíveis nas APIs do governo.
+            </li>
+            <li>
+              A versão completa, com fórmulas e a tabela de códigos de voto,
+              está em{" "}
+              <a
+                href="https://github.com/Alzarus/to-de-olho/blob/master/METODOLOGIA.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                METODOLOGIA.md
+              </a>
+              .
             </li>
           </ul>
         </CardContent>

@@ -1,123 +1,128 @@
-# Tô De Olho (Código-Fonte)
+# Tô De Olho
 
-Este diretório contém o código-fonte completo da plataforma **Tô De Olho**, uma ferramenta de transparência legislativa desenvolvida como Trabalho de Conclusão de Curso (TCC).
+Plataforma de transparência sobre os senadores brasileiros, desenvolvida como Trabalho de Conclusão de Curso (TCC) em Análise e Desenvolvimento de Sistemas no IFBA.
 
-O sistema monitora a atividade dos senadores brasileiros, consolidando dados de gastos, votações e emendas em um ranking de efetividade.
+Em produção: **[todeolho.org](https://todeolho.org)**
+
+O sistema consolida dados abertos do Senado Federal e do Portal da Transparência. Proposições, presença em votações, gastos da cota parlamentar (CEAPS) e participação em comissões formam um ranking de efetividade ([metodologia](./METODOLOGIA.md)). Emendas parlamentares e a estrutura de gabinete são exibidas, mas não entram no ranking.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## O que o site oferece
 
-A aplicação segue a arquitetura **Monolito Modular** com frontend desacoplado.
+- **Ranking** dos senadores em exercício, por mandato ou por ano, com a nota de cada critério.
+- **Ficha do senador**: proposições (com nome popular das matérias), votações, gastos da cota, comissões, emendas e gabinete em números agregados (sem nomes nem salários).
+- **Votações** nominais do Plenário, com filtros por tipo de matéria, votação secreta e resultado.
+- **Comparador** de senadores, com gráficos filtráveis, alinhamento de votos e link compartilhável (`?ids=`).
+- **Exportação** em CSV (pronto para o Excel em português) e JSON, e versão para impressão/PDF.
+- **Metodologia** pública em [`/metodologia`](https://todeolho.org/metodologia) e em [`METODOLOGIA.md`](./METODOLOGIA.md), com o histórico de versões do cálculo.
+- Link para o **[Quem Votar](https://todeolho.org/quemvotar)**, app irmão para as eleições de 2026.
+
+## Fontes de dados
+
+| Fonte | Uso |
+|---|---|
+| API de Dados Abertos do Senado (legislativo) | senadores, proposições, votações, comissões, Mesa Diretora |
+| API de Dados Abertos do Senado (administrativo) | cota parlamentar (CEAPS) e estrutura de gabinete |
+| Portal da Transparência (CGU) | emendas parlamentares |
+
+---
+
+## Stack
+
+Monolito modular em Go com frontend Next.js desacoplado.
 
 ### Backend (`/backend`)
 
-- **Linguagem**: Go 1.21+
-- **Framework Web**: Gin (Performance HTTP)
-- **Banco de Dados**: PostgreSQL 15 (Relacional)
-- **ORM**: GORM (Object-Relational Mapping)
-- **Cache**: Redis (Rankings e sessões)
-- **Infraestrutura**: Docker (Multi-stage build)
+- **Go 1.27** com **Gin**
+- **PostgreSQL 15** via **GORM** (tabelas criadas por `AutoMigrate` na subida)
+- Módulos em `internal/`: `senador`, `proposicao`, `materia`, `votacao`, `ceaps`, `comissao`, `emenda`, `gabinete`, `ranking`, `acesso`, `scheduler`
+- Clientes das APIs externas em `pkg/` (com novas tentativas em `pkg/retry`)
+- Imagem final *distroless*
 
 ### Frontend (`/frontend`)
 
-- **Framework**: Next.js 15 (App Router)
-- **Linguagem**: TypeScript 5
-- **Estilização**: Tailwind CSS 4 + Shadcn/UI
-- **Gráficos**: Recharts (SVG interativo)
+- **Next.js 16** (App Router) e **React 19**
+- **TypeScript 5**
+- **Tailwind CSS 4** + shadcn/ui
+- **Recharts 3** para os gráficos
 
 ---
 
-## 🚀 Como Rodar Localmente
+## Como rodar localmente
 
 ### Pré-requisitos
 
-- [Go 1.21+](https://go.dev/)
-- [Bun 1.0+](https://bun.sh/) (ou Node.js 20+)
-- [Docker](https://www.docker.com/) (para banco/cache)
+- [Go 1.27+](https://go.dev/)
+- [Bun](https://bun.sh/) (ou Node.js 20+)
+- [Docker](https://www.docker.com/) para o banco
 
-### Modo Integrado (Docker Compose)
-
-A forma recomendada de subir o ambiente completo é usando o orquestrador nativo do projeto, presente na raiz (`docker-compose.yml`), passando o arquivo de ambiente desejado (ex: `.env.gsort`):
+### 1. Banco de dados
 
 ```bash
-docker compose --env-file .env.gsort up -d
-```
-
-Isso levantará o PostgreSQL, a API, o Frontend Next.js na porta `3000`, e o daemon de rede da Cloudflare simultaneamente.
-
-### Modo Desenvolvimento Individual
-
-Caso prefira rodar as peças soltas:
-```bash
-# Exemplo manual de banco de dados:
-docker run --name pg-todeolho -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:15
-# Redis não é mais obrigatório na arquitetura local simplificada
+docker run --name pg-todeolho -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:15-alpine
 ```
 
 ### 2. Backend
 
+Variáveis de ambiente (ou `backend/.env`):
+
+| Variável | Uso |
+|---|---|
+| `DATABASE_URL` | conexão com o Postgres, ex.: `postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable` |
+| `TRANSPARENCIA_API_KEY` | chave do Portal da Transparência (emendas) |
+| `SYNC_SECRET` | segredo das rotas `/api/v1/sync/*` (header `X-Sync-Secret`) |
+| `PORT` | porta da API (padrão `8080`) |
+
 ```bash
 cd backend
-
-# Instalar dependências
 go mod download
-
-# Rodar migrações e servidor
-# Padrão: localhost:8080
-go run cmd/api/main.go
+go run cmd/api/main.go   # localhost:8080
 ```
 
-> **Nota**: O sistema iniciará o `Scheduler` em background para sincronizar dados das APIs do Senado.
+Na subida, a API cria as tabelas e inicia o scheduler. Para carregar os dados com o banco vazio, rode o backfill:
+
+```bash
+curl -X POST -H "X-Sync-Secret: $SYNC_SECRET" http://localhost:8080/api/v1/sync/backfill
+```
 
 ### 3. Frontend
 
 ```bash
 cd frontend
-
-# Instalar dependências
 bun install
-
-# Rodar servidor de desenvolvimento
-# Padrão: localhost:3000
-bun run dev
+BACKEND_URL=http://localhost:8080 bun run dev   # localhost:3000
 ```
 
-Acesse **http://localhost:3000** no seu navegador.
+O Next.js encaminha `/api/*` para o backend definido em `BACKEND_URL`. O padrão (`http://api:8080`) é o nome do serviço no Docker Compose.
+
+### Testes
+
+```bash
+cd backend && go test ./...          # testes de repositório rodam só com TEST_DATABASE_URL (Postgres descartável)
+cd frontend && bunx tsc --noEmit && bun run build
+```
 
 ---
 
-## 📦 Deploy (Produção / GSORT)
+## Deploy
 
-A infraestrutura atual foi desenhada para a arquitetura **on-premise** via **Docker Compose**, otimizada para o laboratório Gsort (IFBA), desativando os serviços antigos da Google Cloud. O roteamento externo é provido nativamente através de um túnel seguro **Cloudflare Zero Trust** (`cloudflared`), contornando eficientemente a falta de IP estático público e bloqueios de roteador/firewall (NAT) institucionais.
+Produção numa VM Contabo, com Docker Compose (`docker-compose.contabo.yml`) atrás do Nginx Proxy Manager e da Cloudflare. O backend não é exposto: o frontend o alcança pela rede interna do Compose.
 
-### Passos de Deploy
+- **CI** (`.github/workflows/ci.yml`): testes e `go vet` do backend, e varredura de dependências e das imagens com Trivy.
+- **Deploy** (`.github/workflows/deploy.yml`): a cada push no `master`, o workflow gera o `.env` a partir dos secrets do repositório, sobe os containers na VM e confere a saúde da API e do frontend.
 
-O ambiente consolida Banco de Dados, Backend, Frontend e Daemon de Túnel em um orquestrador unificado.
+Runbook completo em [`deploy-contabo.md`](./deploy-contabo.md). As chaves exigidas estão em [`.env.contabo.example`](./.env.contabo.example). O deploy anterior, no laboratório GSORT do IFBA, está documentado em [`deploy-gsort.md`](./deploy-gsort.md).
 
-1.  Preencha as chaves de API necessárias e o token gerado pela Cloudflare no arquivo `.env.gsort`.
-2.  Compile e suba todos os serviços em background a partir da pasta raiz:
-    ```bash
-    docker compose --env-file .env.gsort up -d --build
-    ```
-3.  Sendo a primeira inicialização local com banco zerado, engatilhe o mapeamento dos dados oficiais (*backfill*) rodando a rotina interna:
-    ```bash
-    docker exec todeolho-api /force_sync
-    ```
+### Atualização dos dados
 
-### Estratégia de Ingestão de Dados
-
-O sistema opera em modo híbrido:
-
-1.  **Backfill**: Carga inicial massiva (histórico).
-2.  **Scheduler**: Sincronização diária (incremental) embutida no binário do backend.
+- **Backfill**: carga completa da legislatura atual (desde 01/02/2023), via `POST /api/v1/sync/backfill`.
+- **Sync diário**: roda dentro da API às 03:00 (Brasília) e atualiza senadores, votações, cota, emendas, comissões, proposições e matérias, e recalcula o ranking. A estrutura de gabinete é recarregada uma vez por semana.
 
 ---
 
-## 📚 Documentação Adicional
+## Documentação
 
-Para detalhes arquiteturais, consulte a pasta `../docs`:
-
-- `adr-arquitetura-backend.md`: Decisões técnicas do backend.
-- `stack-frontend.md`: Decisões de UI/UX.
-- `implementation_plan.md`: Plano de implementação detalhado.
+- [`METODOLOGIA.md`](./METODOLOGIA.md): cálculo do ranking, fórmulas, códigos de voto e histórico de versões.
+- [`ROADMAP.md`](./ROADMAP.md): próximos passos.
+- [`deploy-contabo.md`](./deploy-contabo.md): runbook de produção.
