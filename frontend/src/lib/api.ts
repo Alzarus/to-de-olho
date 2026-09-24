@@ -6,6 +6,8 @@ import type {
   VotosPorTipoResponse,
   DespesasResponse,
   DespesasAgregadoResponse,
+  DespesasMensalResponse,
+  DespesasFornecedoresResponse,
   EmendasResponse,
   ProposicaoResponse,
   ComissoesResponse,
@@ -133,6 +135,30 @@ export async function getDespesasAgregado(
   const query = params.toString() ? `?${params.toString()}` : "";
   return fetcher<DespesasAgregadoResponse>(
     `/api/v1/senadores/${id}/despesas/agregado${query}`,
+  );
+}
+
+function queryAno(ano?: number): string {
+  return ano ? `?ano=${ano}` : "";
+}
+
+// Gasto por mês com todos os lançamentos (a lista paginada não serve para somar)
+export async function getDespesasMensal(
+  id: number,
+  ano?: number,
+): Promise<DespesasMensalResponse> {
+  return fetcher<DespesasMensalResponse>(
+    `/api/v1/senadores/${id}/despesas/mensal${queryAno(ano)}`,
+  );
+}
+
+// Total por fornecedor com todos os lançamentos, do maior para o menor
+export async function getDespesasFornecedores(
+  id: number,
+  ano?: number,
+): Promise<DespesasFornecedoresResponse> {
+  return fetcher<DespesasFornecedoresResponse>(
+    `/api/v1/senadores/${id}/despesas/fornecedores${queryAno(ano)}`,
   );
 }
 

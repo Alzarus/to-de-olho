@@ -2,7 +2,7 @@
 
 import { useQueries } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { getSenadorScore, getDespesasAgregado, getDespesas } from "@/lib/api";
+import { getSenadorScore, getDespesasAgregado, getDespesasMensal } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -108,11 +108,11 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
     })),
   });
 
-  // 3. Fetch Detailed (for Evolution)
+  // 3. Fetch Monthly (for Evolution): soma de todos os lançamentos no backend
   const detailedQueries = useQueries({
     queries: selectedIds.map((id) => ({
-      queryKey: ["senador-despesas", id, apiYear],
-      queryFn: () => getDespesas(id, apiYear),
+      queryKey: ["senador-despesas-mensal", id, apiYear],
+      queryFn: () => getDespesasMensal(id, apiYear),
     })),
   });
 
@@ -207,12 +207,11 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
   const evolutionMap = new Map<string, any>(); 
 
   detailedQueries.forEach((q, index) => {
-      if (!q.data?.despesas) return;
+      if (!q.data?.meses) return;
       const scoreQ = scoreQueries[index];
       const name = scoreQ.data?.nome || `Senador ${selectedIds[index]}`;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      q.data.despesas.forEach((d: any) => {
+      q.data.meses.forEach((d) => {
           const key = `${d.ano}-${d.mes.toString().padStart(2, '0')}`;
           if (!evolutionMap.has(key)) {
               evolutionMap.set(key, { 
@@ -222,7 +221,7 @@ export function ExpensesTab({ selectedIds, year }: ExpensesTabProps) {
               });
           }
           const item = evolutionMap.get(key);
-          item[name] = (item[name] || 0) + d.valor;
+          item[name] = (item[name] || 0) + d.total;
       });
   });
 

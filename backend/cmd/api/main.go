@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Alzarus/to-de-olho/internal/acesso"
 	"github.com/Alzarus/to-de-olho/internal/api"
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
@@ -57,6 +58,8 @@ func main() {
 		&comissao.ComissaoMembro{},
 		&proposicao.Proposicao{},
 		&emenda.Emenda{},
+		&acesso.Visita{},
+		&acesso.Sal{},
 	); err != nil {
 		slog.Error("falha no auto-migrate", "error", err)
 		os.Exit(1)

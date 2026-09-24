@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Alzarus/to-de-olho/internal/acesso"
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
@@ -80,6 +81,8 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			senadores.GET("/codigo/:codigo", senadorHandler.GetByCodigo)
 			senadores.GET("/:id/despesas", ceapsHandler.ListBySenador)
 			senadores.GET("/:id/despesas/agregado", ceapsHandler.AggregateBySenador)
+			senadores.GET("/:id/despesas/mensal", ceapsHandler.MensalBySenador)
+			senadores.GET("/:id/despesas/fornecedores", ceapsHandler.FornecedoresBySenador)
 			senadores.GET("/:id/votacoes", votacaoHandler.ListBySenador)
 			senadores.GET("/:id/votacoes/stats", votacaoHandler.GetStats)
 			senadores.GET("/:id/votacoes/tipos", votacaoHandler.GetVotosPorTipo)
@@ -211,7 +214,9 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 		})
 
 		// Stats (dados reais para a home page)
-		v1.GET("/stats", statsHandler(db))
+		acessoRepo := acesso.NewRepository(db)
+		v1.GET("/stats", statsHandler(db, acessoRepo))
+		v1.POST("/acessos", acesso.NewHandler(acessoRepo).Registrar)
 
 		// Ranking
 		v1.GET("/ranking", rankingHandler.GetRanking)
