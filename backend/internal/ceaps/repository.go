@@ -64,8 +64,15 @@ func (r *Repository) FindBySenadorID(senadorID int, ano *int, limit int, offset 
 	return despesas, total, result.Error
 }
 
+// IntervaloMeses recorta os meses de competencia (1-12, inclusivo). Zero em
+// De ou Ate: sem limite daquele lado.
+type IntervaloMeses struct {
+	De  int
+	Ate int
+}
+
 // AggregateByTipo retorna gastos agregados por tipo de despesa
-func (r *Repository) AggregateByTipo(senadorID int, ano *int) ([]AggregatedDespesa, error) {
+func (r *Repository) AggregateByTipo(senadorID int, ano *int, meses IntervaloMeses) ([]AggregatedDespesa, error) {
 	var result []AggregatedDespesa
 
 	query := r.db.Model(&DespesaCEAPS{}).
@@ -77,14 +84,21 @@ func (r *Repository) AggregateByTipo(senadorID int, ano *int) ([]AggregatedDespe
 	if ano != nil {
 		query = query.Where("ano = ?", *ano)
 	}
+	if meses.De > 0 {
+		query = query.Where("mes >= ?", meses.De)
+	}
+	if meses.Ate > 0 {
+		query = query.Where("mes <= ?", meses.Ate)
+	}
 
 	err := query.Scan(&result).Error
 	return result, err
 }
 
 // GastoMensal soma as despesas por mes de competencia. Sem ano, traz todos os
-// meses do banco (mesmo recorte do agregado por tipo).
-func (r *Repository) GastoMensal(senadorID int, ano *int) ([]SenadorGastoMensal, error) {
+// meses do banco (mesmo recorte do agregado por tipo). Com tipos, so soma
+// essas categorias (tipo_despesa exato); vazio soma todas.
+func (r *Repository) GastoMensal(senadorID int, ano *int, tipos []string) ([]SenadorGastoMensal, error) {
 	var result []SenadorGastoMensal
 
 	query := r.db.Model(&DespesaCEAPS{}).
@@ -95,14 +109,18 @@ func (r *Repository) GastoMensal(senadorID int, ano *int) ([]SenadorGastoMensal,
 	if ano != nil {
 		query = query.Where("ano = ?", *ano)
 	}
+	if len(tipos) > 0 {
+		query = query.Where("tipo_despesa IN ?", tipos)
+	}
 
 	err := query.Scan(&result).Error
 	return result, err
 }
 
 // Fornecedores soma as despesas por fornecedor, do maior para o menor. O
-// fornecedor e identificado pelo CNPJ/CPF; sem documento, pelo nome.
-func (r *Repository) Fornecedores(senadorID int, ano *int) ([]FornecedorAgregado, error) {
+// fornecedor e identificado pelo CNPJ/CPF; sem documento, pelo nome. Com
+// tipos, so entram essas categorias.
+func (r *Repository) Fornecedores(senadorID int, ano *int, tipos []string) ([]FornecedorAgregado, error) {
 	var result []FornecedorAgregado
 
 	query := r.db.Model(&DespesaCEAPS{}).
@@ -113,6 +131,9 @@ func (r *Repository) Fornecedores(senadorID int, ano *int) ([]FornecedorAgregado
 		Order("total DESC")
 	if ano != nil {
 		query = query.Where("ano = ?", *ano)
+	}
+	if len(tipos) > 0 {
+		query = query.Where("tipo_despesa IN ?", tipos)
 	}
 
 	err := query.Scan(&result).Error

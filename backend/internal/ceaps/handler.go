@@ -3,6 +3,7 @@ package ceaps
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -92,6 +93,8 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 // @Produce json
 // @Param senador_id path int true "ID do senador"
 // @Param ano query int false "Ano de referencia"
+// @Param mes_de query int false "Primeiro mes de competencia (1-12)"
+// @Param mes_ate query int false "Ultimo mes de competencia (1-12)"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/senadores/{senador_id}/despesas/agregado [get]
 func (h *Handler) AggregateBySenador(c *gin.Context) {
@@ -109,7 +112,7 @@ func (h *Handler) AggregateBySenador(c *gin.Context) {
 		}
 	}
 
-	agregados, err := h.repo.AggregateByTipo(senadorID, ano)
+	agregados, err := h.repo.AggregateByTipo(senadorID, ano, IntervaloMeses{De: mesOpcional(c, "mes_de"), Ate: mesOpcional(c, "mes_ate")})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao agregar despesas"})
 		return
@@ -136,12 +139,40 @@ func anoOpcional(c *gin.Context) *int {
 	return nil
 }
 
+// mesOpcional le um mes 1-12; ausente ou invalido vale 0 (sem limite)
+func mesOpcional(c *gin.Context, chave string) int {
+	if m, err := strconv.Atoi(c.Query(chave)); err == nil && m >= 1 && m <= 12 {
+		return m
+	}
+	return 0
+}
+
+// maxTipos limita quantas categorias ?tipo= um agregado aceita
+const maxTipos = 30
+
+// tiposOpcionais le ?tipo= repetido (uma categoria por parametro: os nomes
+// das categorias tem virgula). Ausente: todas as categorias.
+func tiposOpcionais(c *gin.Context) []string {
+	var tipos []string
+	vistos := map[string]bool{}
+	for _, t := range c.QueryArray("tipo") {
+		t = strings.TrimSpace(t)
+		if t == "" || vistos[t] || len(tipos) >= maxTipos {
+			continue
+		}
+		vistos[t] = true
+		tipos = append(tipos, t)
+	}
+	return tipos
+}
+
 // MensalBySenador godoc
 // @Summary Retorna o gasto por mes de competencia
 // @Tags despesas
 // @Produce json
 // @Param senador_id path int true "ID do senador"
 // @Param ano query int false "Ano de referencia"
+// @Param tipo query []string false "Categorias (tipo_despesa); repetir o parametro para varias" collectionFormat(multi)
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/senadores/{senador_id}/despesas/mensal [get]
 func (h *Handler) MensalBySenador(c *gin.Context) {
@@ -151,7 +182,7 @@ func (h *Handler) MensalBySenador(c *gin.Context) {
 		return
 	}
 
-	meses, err := h.repo.GastoMensal(senadorID, anoOpcional(c))
+	meses, err := h.repo.GastoMensal(senadorID, anoOpcional(c), tiposOpcionais(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao agregar despesas por mes"})
 		return
@@ -172,6 +203,7 @@ func (h *Handler) MensalBySenador(c *gin.Context) {
 // @Produce json
 // @Param senador_id path int true "ID do senador"
 // @Param ano query int false "Ano de referencia"
+// @Param tipo query []string false "Categorias (tipo_despesa); repetir o parametro para varias" collectionFormat(multi)
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/senadores/{senador_id}/despesas/fornecedores [get]
 func (h *Handler) FornecedoresBySenador(c *gin.Context) {
@@ -181,7 +213,7 @@ func (h *Handler) FornecedoresBySenador(c *gin.Context) {
 		return
 	}
 
-	fornecedores, err := h.repo.Fornecedores(senadorID, anoOpcional(c))
+	fornecedores, err := h.repo.Fornecedores(senadorID, anoOpcional(c), tiposOpcionais(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao agregar despesas por fornecedor"})
 		return
