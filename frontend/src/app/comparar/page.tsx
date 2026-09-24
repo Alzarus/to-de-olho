@@ -21,6 +21,8 @@ import { OverviewTab } from "@/components/comparator/overview-tab";
 import { ExpensesTab } from "@/components/comparator/expenses-tab";
 import { SuppliersTab } from "@/components/comparator/suppliers-tab";
 import { EmendasTab } from "@/components/comparator/emendas-tab";
+import { VotesTab } from "@/components/comparator/votes-tab";
+import { corSerie } from "@/lib/comparador-filtros";
 import { CabinetTab } from "@/components/comparator/cabinet-tab";
 import { SenatorSelector } from "@/components/comparator/senator-selector";
 import { ComparatorExportMenu } from "@/components/comparator/export-menu";
@@ -255,13 +257,11 @@ function ComparatorContent() {
                     alt={senator.nome}
                     className="h-20 w-20 rounded-full object-cover shadow-sm"
                   />
-                  <div className={`absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold shadow-sm ${
-                    index === 0 ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" :
-                    index === 1 ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" :
-                    index === 2 ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" :
-                    index === 3 ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300" :
-                    "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                  }`}>
+                  {/* Cor do senador em todos os gráficos do comparador */}
+                  <div
+                    className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-card text-xs font-bold text-foreground"
+                    style={{ boxShadow: `0 0 0 3px ${corSerie(index)}` }}
+                  >
                     {index + 1}
                   </div>
                 </div>
@@ -310,6 +310,7 @@ function ComparatorContent() {
           <TabsTrigger value="cabinet">Gabinete</TabsTrigger>
           <TabsTrigger value="amendments">Emendas</TabsTrigger>
           <TabsTrigger value="suppliers">Fornecedores</TabsTrigger>
+          <TabsTrigger value="votes">Votações</TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
@@ -318,7 +319,7 @@ function ComparatorContent() {
           </TabsContent>
           
           <TabsContent value="expenses">
-            <ExpensesTab selectedIds={selectedSenators.map(s => s.id)} year={year} />
+            <ExpensesTab senators={selectedSenators} year={year} />
           </TabsContent>
 
           <TabsContent value="cabinet">
@@ -331,6 +332,10 @@ function ComparatorContent() {
           
           <TabsContent value="suppliers">
             <SuppliersTab selectedIds={selectedSenators.map(s => s.id)} year={year} />
+          </TabsContent>
+
+          <TabsContent value="votes">
+            <VotesTab senators={selectedSenators} year={year} />
           </TabsContent>
         </div>
       </Tabs>

@@ -130,26 +130,38 @@ export async function getDespesas(
 export async function getDespesasAgregado(
   id: number,
   ano?: number,
+  meses?: { de: number; ate: number },
 ): Promise<DespesasAgregadoResponse> {
   const params = new URLSearchParams();
   if (ano) params.append("ano", ano.toString());
+  // Recorte de meses do comparador; o ano inteiro dispensa os parâmetros
+  if (ano && meses && (meses.de > 1 || meses.ate < 12)) {
+    params.append("mes_de", meses.de.toString());
+    params.append("mes_ate", meses.ate.toString());
+  }
   const query = params.toString() ? `?${params.toString()}` : "";
   return fetcher<DespesasAgregadoResponse>(
     `/api/v1/senadores/${id}/despesas/agregado${query}`,
   );
 }
 
-function queryAno(ano?: number): string {
-  return ano ? `?ano=${ano}` : "";
+// ?ano= e ?tipo= repetido (uma categoria por parâmetro: os nomes têm vírgula)
+function queryAno(ano?: number, tipos?: readonly string[]): string {
+  const params = new URLSearchParams();
+  if (ano) params.append("ano", ano.toString());
+  for (const t of tipos ?? []) params.append("tipo", t);
+  const query = params.toString();
+  return query ? `?${query}` : "";
 }
 
 // Gasto por mês com todos os lançamentos (a lista paginada não serve para somar)
 export async function getDespesasMensal(
   id: number,
   ano?: number,
+  tipos?: readonly string[],
 ): Promise<DespesasMensalResponse> {
   return fetcher<DespesasMensalResponse>(
-    `/api/v1/senadores/${id}/despesas/mensal${queryAno(ano)}`,
+    `/api/v1/senadores/${id}/despesas/mensal${queryAno(ano, tipos)}`,
   );
 }
 
@@ -157,9 +169,10 @@ export async function getDespesasMensal(
 export async function getDespesasFornecedores(
   id: number,
   ano?: number,
+  tipos?: readonly string[],
 ): Promise<DespesasFornecedoresResponse> {
   return fetcher<DespesasFornecedoresResponse>(
-    `/api/v1/senadores/${id}/despesas/fornecedores${queryAno(ano)}`,
+    `/api/v1/senadores/${id}/despesas/fornecedores${queryAno(ano, tipos)}`,
   );
 }
 

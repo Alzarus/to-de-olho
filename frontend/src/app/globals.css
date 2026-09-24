@@ -93,6 +93,29 @@
   --chart-4: oklch(0.6 0.18 30);
   --chart-5: oklch(0.55 0.15 280);
 
+  /* Séries do comparador: uma cor por senador (posição na seleção), igual em
+     todas as abas. Ordem validada (skill dataviz, validate_palette.js): CVD
+     ΔE >= 9,1 entre vizinhas no claro e 8,4 no escuro. No claro, aqua,
+     amarelo e magenta ficam abaixo de 3:1 com o fundo: por isso todo gráfico
+     do comparador tem legenda e tabela com os dados. */
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #e87ba4;
+  /* Referência neutra (teto da cota) */
+  --serie-ref: #a3a29c;
+  /* Rampa sequencial (azul, claro -> escuro) do mapa de alinhamento */
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #6da7ec;
+  --seq-4: #3987e5;
+  --seq-5: #256abf;
+  --seq-6: #184f95;
+  --seq-7: #0d366b;
+  --seq-texto-baixo: #0b0b0b;
+  --seq-texto-alto: #ffffff;
+
   /* Sidebar */
   --sidebar: oklch(0.98 0.005 250);
   --sidebar-foreground: oklch(0.2 0.02 250);
@@ -131,6 +154,24 @@
   --chart-3: oklch(0.6 0.18 145);
   --chart-4: oklch(0.55 0.15 30);
   --chart-5: oklch(0.5 0.12 280);
+
+  /* Séries do comparador - passos do tema escuro (mesmos matizes) */
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --serie-4: #c98500;
+  --serie-5: #d55181;
+  --serie-ref: #6b6a64;
+  /* No escuro, perto de zero fica perto do fundo: a rampa se inverte */
+  --seq-1: #0d366b;
+  --seq-2: #104281;
+  --seq-3: #184f95;
+  --seq-4: #256abf;
+  --seq-5: #3987e5;
+  --seq-6: #6da7ec;
+  --seq-7: #9ec5f4;
+  --seq-texto-baixo: #ffffff;
+  --seq-texto-alto: #0b0b0b;
 
   /* Sidebar - Dark */
   --sidebar: oklch(0.18 0.02 250);

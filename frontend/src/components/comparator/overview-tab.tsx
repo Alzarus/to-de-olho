@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import type { SenadorScore } from "@/types/api";
 import type { SenatorBasicProfile } from "@/contexts/comparator-context";
+import { corSerie } from "@/lib/comparador-filtros";
 
 interface OverviewTabProps {
   senators: SenatorBasicProfile[];
@@ -21,13 +22,6 @@ interface ForaDoRanking {
   motivo: string;
 }
 
-const COLORS = [
-  "#3b82f6", // Blue
-  "#22c55e", // Green
-  "#eab308", // Yellow
-  "#ef4444", // Red
-  "#a855f7", // Purple
-];
 
 export function OverviewTab({ senators, year }: OverviewTabProps) {
   const selectedIds = senators.map((s) => s.id);
@@ -56,7 +50,7 @@ export function OverviewTab({ senators, year }: OverviewTabProps) {
         if (!senator) return null;
         return {
             ...senator,
-            color: COLORS[index % COLORS.length]
+            color: corSerie(index)
         };
     })
     .filter((s): s is SenadorScore & { color: string } => s !== null);
