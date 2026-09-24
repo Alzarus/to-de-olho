@@ -56,3 +56,11 @@ type SenadorGastoMensal struct {
 	Mes   int     `json:"mes"`
 	Total float64 `json:"total"`
 }
+
+// FornecedorAgregado representa o total pago a um fornecedor
+type FornecedorAgregado struct {
+	Fornecedor string  `json:"fornecedor"`
+	CNPJCPF    string  `gorm:"column:cnpj_cpf" json:"cnpj_cpf"`
+	Total      float64 `json:"total"`
+	Quantidade int     `json:"quantidade"`
+}

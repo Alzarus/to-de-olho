@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { getSenadorScore, getDespesas } from "@/lib/api";
+import { getSenadorScore, getDespesasFornecedores } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Building2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -34,11 +34,11 @@ export function SuppliersTab({ selectedIds, year }: SuppliersTabProps) {
     })),
   });
 
-  // Fetch Detailed Expenses (contains supplier info)
+  // Total por fornecedor, somado no backend com todos os lançamentos
   const detailedQueries = useQueries({
     queries: selectedIds.map((id) => ({
-      queryKey: ["senador-despesas", id, apiYear],
-      queryFn: () => getDespesas(id, apiYear),
+      queryKey: ["senador-despesas-fornecedores", id, apiYear],
+      queryFn: () => getDespesasFornecedores(id, apiYear),
     })),
   });
 
@@ -71,14 +71,11 @@ export function SuppliersTab({ selectedIds, year }: SuppliersTabProps) {
     const name = scoreQ.data?.nome || `Senador ${id}`;
     const color = COLORS[index % COLORS.length];
 
-    if (!q.data?.despesas) return { id, name, color, suppliers: new Map() };
-
-    // Aggregate by supplier
-    const suppliers = new Map<string, number>();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    q.data.despesas.forEach((d: any) => {
-        const fornecedor = d.fornecedor || "NÃO INFORMADO";
-        suppliers.set(fornecedor, (suppliers.get(fornecedor) || 0) + d.valor);
+    // Chave: CNPJ/CPF, que casa o mesmo fornecedor escrito de formas diferentes
+    const suppliers = new Map<string, { name: string; total: number }>();
+    q.data?.fornecedores.forEach((f) => {
+        const key = f.cnpj_cpf || f.fornecedor || "NÃO INFORMADO";
+        suppliers.set(key, { name: f.fornecedor || "NÃO INFORMADO", total: f.total });
     });
 
     return { id, name, color, suppliers };
@@ -95,15 +92,15 @@ export function SuppliersTab({ selectedIds, year }: SuppliersTabProps) {
       if (selectedIds.length < 2) return false;
       const count = senatorSuppliers.filter(s => s.suppliers.has(supplier)).length;
       return count >= 2;
-  }).map(supplier => {
-      const total = senatorSuppliers.reduce((acc, s) => acc + (s.suppliers.get(supplier) || 0), 0);
-      return { name: supplier, total };
+  }).map(key => {
+      const total = senatorSuppliers.reduce((acc, s) => acc + (s.suppliers.get(key)?.total || 0), 0);
+      const name = senatorSuppliers.find(s => s.suppliers.has(key))?.suppliers.get(key)?.name ?? key;
+      return { key, name, total };
   }).sort((a, b) => b.total - a.total).slice(0, 10); // Top 10 common
 
   // 2. Top Suppliers per Senator
   const topSuppliersPerSenator = senatorSuppliers.map(s => {
-      const top = Array.from(s.suppliers.entries())
-          .map(([name, total]) => ({ name, total }))
+      const top = Array.from(s.suppliers.values())
           .sort((a, b) => b.total - a.total)
           .slice(0, 5);
       return { ...s, top };
@@ -129,7 +126,7 @@ export function SuppliersTab({ selectedIds, year }: SuppliersTabProps) {
                                 <span className="font-medium text-sm sm:text-base">{supplier.name}</span>
                                 <div className="flex items-center gap-4 mt-2 sm:mt-0">
                                     <div className="flex -space-x-2">
-                                        {senatorSuppliers.filter(s => s.suppliers.has(supplier.name)).map(s => (
+                                        {senatorSuppliers.filter(s => s.suppliers.has(supplier.key)).map(s => (
                                             <Link href={`/senador/${s.id}?tab=ceaps${year > 0 ? `&ano=${year}` : ''}`} key={s.id} className="h-6 w-6 rounded-full border-2 border-background flex items-center justify-center text-[10px] text-white font-bold hover:scale-110 transition-transform cursor-pointer" style={{ backgroundColor: s.color }} title={s.name}>
                                                 {s.name.charAt(0)}
                                             </Link>

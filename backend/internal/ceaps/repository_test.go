@@ -61,3 +61,48 @@ func TestSubstituirAnoGuardaLancamentosIguais(t *testing.T) {
 		t.Errorf("lancamentos iguais com ids distintos: esperado 12000, obtido %v", total)
 	}
 }
+
+func TestAgregadosUsamTodosOsLancamentos(t *testing.T) {
+	db := testdb.Abrir(t, &DespesaCEAPS{})
+	repo := NewRepository(db)
+	// 30 lancamentos: mais que a pagina padrao da lista (20), que os graficos usavam
+	for i := 0; i < 30; i++ {
+		mes := i%3 + 1
+		cnpj, nome := "11.111.111/0001-11", "Posto A"
+		if i%2 == 1 {
+			cnpj, nome = "22.222.222/0001-22", "Grafica B"
+		}
+		if err := db.Create(&DespesaCEAPS{IDOrigem: i + 1, SenadorID: 1, Ano: 2024, Mes: mes, Valor: 10, CNPJCPF: cnpj, Fornecedor: nome}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	// sem documento: agrupa pelo nome; outro ano e outro senador ficam de fora
+	db.Create(&DespesaCEAPS{IDOrigem: 100, SenadorID: 1, Ano: 2024, Mes: 1, Valor: 5, Fornecedor: "Taxi"})
+	db.Create(&DespesaCEAPS{IDOrigem: 101, SenadorID: 1, Ano: 2024, Mes: 1, Valor: 5, Fornecedor: "Onibus"})
+	db.Create(&DespesaCEAPS{IDOrigem: 102, SenadorID: 1, Ano: 2025, Mes: 1, Valor: 1000, CNPJCPF: "11.111.111/0001-11", Fornecedor: "Posto A"})
+	db.Create(&DespesaCEAPS{IDOrigem: 103, SenadorID: 2, Ano: 2024, Mes: 1, Valor: 1000, CNPJCPF: "11.111.111/0001-11", Fornecedor: "Posto A"})
+
+	ano := 2024
+	meses, err := repo.GastoMensal(1, &ano)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(meses) != 3 || meses[0].Mes != 1 || meses[0].Total != 110 || meses[2].Total != 100 {
+		t.Errorf("meses de 2024 errados: %+v", meses)
+	}
+	todos, _ := repo.GastoMensal(1, nil)
+	if len(todos) != 4 || todos[3].Ano != 2025 {
+		t.Errorf("sem ano deveria trazer os 4 meses em ordem: %+v", todos)
+	}
+
+	forn, err := repo.Fornecedores(1, &ano)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(forn) != 4 {
+		t.Fatalf("esperados 4 fornecedores (2 por CNPJ, 2 sem documento), vieram %+v", forn)
+	}
+	if forn[0].Total != 150 || forn[0].Quantidade != 15 || forn[0].CNPJCPF == "" {
+		t.Errorf("maior fornecedor errado: %+v", forn[0])
+	}
+}

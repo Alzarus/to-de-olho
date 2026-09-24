@@ -107,19 +107,16 @@ function VotacoesContent() {
     };
 
     fetchData();
-  }, [page, ano, search, sessao]);
+  }, [page, ano, search, sessao, sortDir]);
 
-  // Aplicar ordenação client-side
-  const sortedData = [...data].sort((a, b) => {
-    const dateA = new Date(a.data).getTime();
-    const dateB = new Date(b.data).getTime();
-    return sortDir === "desc" ? dateB - dateA : dateA - dateB;
-  });
+  // A ordem vem do backend (data, sessão e sequencial dentro do dia). Ordenar
+  // aqui só invertia a página atual em vez de buscar as votações mais antigas.
+  const sortedData = data;
 
   const totalPages = Math.ceil(total / limit);
 
   const toggleSort = () => {
-    updateUrl({ ordem: sortDir === "desc" ? "asc" : "desc" });
+    updateUrl({ ordem: sortDir === "desc" ? "asc" : "desc", page: 1 });
   };
 
   return (

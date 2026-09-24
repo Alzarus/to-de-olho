@@ -148,6 +148,29 @@ export interface DespesasAgregadoResponse {
   por_tipo: DespesaAgregado[];
 }
 
+export interface GastoMensal {
+  ano: number;
+  mes: number;
+  total: number;
+}
+
+export interface DespesasMensalResponse {
+  senador_id: number;
+  meses: GastoMensal[];
+}
+
+export interface FornecedorAgregado {
+  fornecedor: string;
+  cnpj_cpf: string;
+  total: number;
+  quantidade: number;
+}
+
+export interface DespesasFornecedoresResponse {
+  senador_id: number;
+  fornecedores: FornecedorAgregado[];
+}
+
 // Emendas (RF08-RF10)
 export interface LocalidadeValor {
   localidade: string;
@@ -253,9 +276,14 @@ export interface VotacoesResponse {
 // Stats da plataforma (home page)
 export interface StatsResponse {
   total_senadores: number;
-  total_votos: number;
+  total_votos: number; // votos individuais (um por senador por votação)
+  total_votacoes: number; // votações nominais distintas
+  votacoes_desde: string | null;
   total_despesas_ceaps: number;
+  ceaps_ano_inicio: number;
+  ceaps_ano_fim: number;
   total_emendas: number;
-  total_acessos: number;
+  total_acessos: number; // visitantes únicos por dia, somados
+  acessos_desde: string | null; // início da contagem real
   ultima_atualizacao: string;
 }

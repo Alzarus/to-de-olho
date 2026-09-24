@@ -35,6 +35,19 @@ function formatCurrency(value: number): string {
   return `R$ ${value.toFixed(0)}`;
 }
 
+// Datas da API chegam em UTC; o dia/mês exibido é o da própria data
+function formatDia(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "UTC" });
+}
+
+function formatMesAno(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", { month: "2-digit", year: "numeric", timeZone: "UTC" });
+}
+
+function formatPeriodo(inicio: number, fim: number): string {
+  return inicio === fim ? String(inicio) : `${inicio} a ${fim}`;
+}
+
 export default function Home() {
   // Fetch Top 3 Senators for the podium
   const { data: rankingData, isLoading } = useRanking(3);
@@ -50,31 +63,37 @@ export default function Home() {
       label: "Senadores Monitorados", 
       value: statsData ? statsData.total_senadores.toString() : "--", 
       icon: Users,
-      description: "Cobertura completa"
+      description: "Todos os em exercício"
     },
     { 
       label: "Votos Registrados", 
       value: statsData ? formatNumber(statsData.total_votos) : "--", 
       icon: Activity,
-      description: "Desde 2023"
+      description: statsData
+        ? `Em ${statsData.total_votacoes} votações nominais${statsData.votacoes_desde ? `, desde ${formatMesAno(statsData.votacoes_desde)}` : ""}`
+        : "Votações nominais"
     },
     { 
       label: "Despesas Monitoradas", 
       value: statsData ? formatCurrency(statsData.total_despesas_ceaps) : "--", 
       icon: Coins,
-      description: "Em cotas parlamentares"
+      description: statsData && statsData.ceaps_ano_inicio > 0
+        ? `Cota parlamentar, ${formatPeriodo(statsData.ceaps_ano_inicio, statsData.ceaps_ano_fim)}`
+        : "Em cotas parlamentares"
     },
     { 
       label: "Emendas Rastreadas", 
       value: statsData ? formatNumber(statsData.total_emendas) : "--", 
       icon: BarChart3,
-      description: "Fontes oficiais"
+      description: "Portal da Transparência"
     },
     { 
-      label: "Acessos na Plataforma", 
+      label: "Visitas na Plataforma", 
       value: statsData ? formatNumber(statsData.total_acessos) : "--", 
       icon: LineChart,
-      description: "Cidadãos de olho"
+      description: statsData?.acessos_desde
+        ? `Visitantes únicos por dia, desde ${formatDia(statsData.acessos_desde)}`
+        : "Contagem começando agora"
     },
   ];
 

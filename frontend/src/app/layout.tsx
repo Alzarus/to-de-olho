@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { Header, Footer } from "@/components/layout";
 import { ComparatorDock } from "@/components/comparator/comparator-dock";
+import { ContadorAcessos } from "@/components/layout/contador-acessos";
 import { Providers } from "@/lib/providers";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
@@ -76,6 +77,7 @@ export default function RootLayout({
             <ComparatorDock />
             <Footer />
             <Toaster richColors position="top-right" />
+            <ContadorAcessos />
           </div>
         </Providers>
         {process.env.NEXT_PUBLIC_GA_ID && (

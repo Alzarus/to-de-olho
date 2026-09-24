@@ -7,6 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// limiteMaximo e o maior limit aceito na lista de despesas
+const limiteMaximo = 100
+
 // Handler gerencia endpoints REST de despesas CEAPS
 type Handler struct {
 	repo *Repository
@@ -46,11 +49,12 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		}
 	}
 	
-	// Paginacao
+	// Paginacao. Agregados tem rota propria (/mensal, /fornecedores): a
+	// lista nao serve para somar e nao precisa devolver milhares de linhas.
 	limit := 20
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = l
+			limit = min(l, limiteMaximo)
 		}
 	}
 
@@ -121,5 +125,73 @@ func (h *Handler) AggregateBySenador(c *gin.Context) {
 		"senador_id":  senadorID,
 		"total_geral": totalGeral,
 		"por_tipo":    agregados,
+	})
+}
+
+// anoOpcional le ?ano=; ausente ou invalido vale "todos os anos"
+func anoOpcional(c *gin.Context) *int {
+	if anoVal, err := strconv.Atoi(c.Query("ano")); err == nil && anoVal > 0 {
+		return &anoVal
+	}
+	return nil
+}
+
+// MensalBySenador godoc
+// @Summary Retorna o gasto por mes de competencia
+// @Tags despesas
+// @Produce json
+// @Param senador_id path int true "ID do senador"
+// @Param ano query int false "Ano de referencia"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/senadores/{senador_id}/despesas/mensal [get]
+func (h *Handler) MensalBySenador(c *gin.Context) {
+	senadorID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID invalido"})
+		return
+	}
+
+	meses, err := h.repo.GastoMensal(senadorID, anoOpcional(c))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao agregar despesas por mes"})
+		return
+	}
+	if meses == nil {
+		meses = []SenadorGastoMensal{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"senador_id": senadorID,
+		"meses":      meses,
+	})
+}
+
+// FornecedoresBySenador godoc
+// @Summary Retorna o total pago a cada fornecedor, do maior para o menor
+// @Tags despesas
+// @Produce json
+// @Param senador_id path int true "ID do senador"
+// @Param ano query int false "Ano de referencia"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/senadores/{senador_id}/despesas/fornecedores [get]
+func (h *Handler) FornecedoresBySenador(c *gin.Context) {
+	senadorID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID invalido"})
+		return
+	}
+
+	fornecedores, err := h.repo.Fornecedores(senadorID, anoOpcional(c))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao agregar despesas por fornecedor"})
+		return
+	}
+	if fornecedores == nil {
+		fornecedores = []FornecedorAgregado{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"senador_id":   senadorID,
+		"fornecedores": fornecedores,
 	})
 }

@@ -84,17 +84,40 @@ func (r *Repository) AggregateByTipo(senadorID int, ano *int) ([]AggregatedDespe
 	return result, err
 }
 
-// GetGastoMensal retorna evolucao mensal de gastos
-func (r *Repository) GetGastoMensal(senadorID int, ano int) ([]SenadorGastoMensal, error) {
+// GastoMensal soma as despesas por mes de competencia. Sem ano, traz todos os
+// meses do banco (mesmo recorte do agregado por tipo).
+func (r *Repository) GastoMensal(senadorID int, ano *int) ([]SenadorGastoMensal, error) {
 	var result []SenadorGastoMensal
 
-	err := r.db.Model(&DespesaCEAPS{}).
+	query := r.db.Model(&DespesaCEAPS{}).
 		Select("ano, mes, SUM(valor) as total").
-		Where("senador_id = ? AND ano = ?", senadorID, ano).
+		Where("senador_id = ?", senadorID).
 		Group("ano, mes").
-		Order("mes ASC").
-		Scan(&result).Error
+		Order("ano ASC, mes ASC")
+	if ano != nil {
+		query = query.Where("ano = ?", *ano)
+	}
 
+	err := query.Scan(&result).Error
+	return result, err
+}
+
+// Fornecedores soma as despesas por fornecedor, do maior para o menor. O
+// fornecedor e identificado pelo CNPJ/CPF; sem documento, pelo nome.
+func (r *Repository) Fornecedores(senadorID int, ano *int) ([]FornecedorAgregado, error) {
+	var result []FornecedorAgregado
+
+	query := r.db.Model(&DespesaCEAPS{}).
+		Select(`MAX(fornecedor) AS fornecedor, COALESCE(NULLIF(cnpj_cpf, ''), '') AS cnpj_cpf,
+			SUM(valor) AS total, COUNT(*) AS quantidade`).
+		Where("senador_id = ?", senadorID).
+		Group("COALESCE(NULLIF(cnpj_cpf, ''), ''), CASE WHEN COALESCE(cnpj_cpf, '') = '' THEN fornecedor END").
+		Order("total DESC")
+	if ano != nil {
+		query = query.Where("ano = ?", *ano)
+	}
+
+	err := query.Scan(&result).Error
 	return result, err
 }
 
