@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // Handler gerencia endpoints REST de proposicoes
@@ -79,7 +80,7 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		"limit":        limit,
 		"page":         page,
 		"total_pages":  (int(total) + limit - 1) / limit,
-		"proposicoes":  proposicoes,
+		"proposicoes":  utils.NaoNulo(proposicoes),
 	})
 }
 
@@ -130,6 +131,6 @@ func (h *Handler) GetPorTipo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id": senadorID,
-		"por_tipo":   tipos,
+		"por_tipo":   utils.NaoNulo(tipos),
 	})
 }

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // Handler gerencia endpoints REST de senadores
@@ -36,7 +37,7 @@ func (h *Handler) ListAll(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"total":     count,
-		"senadores": senadores,
+		"senadores": utils.NaoNulo(senadores),
 	})
 }
 

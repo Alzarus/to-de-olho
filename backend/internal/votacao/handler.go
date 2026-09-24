@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // Handler gerencia endpoints REST de votacoes
@@ -64,7 +65,7 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		"page":        page,
 		"limit":       limit,
 		"total_pages": totalPages,
-		"votacoes":    votacoes,
+		"votacoes":    utils.NaoNulo(votacoes),
 	})
 }
 
@@ -115,7 +116,7 @@ func (h *Handler) GetVotosPorTipo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id": senadorID,
-		"por_tipo":   tipos,
+		"por_tipo":   utils.NaoNulo(tipos),
 	})
 }
 
@@ -168,7 +169,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":  votacoes,
+		"data":  utils.NaoNulo(votacoes),
 		"total": total,
 		"page":  page,
 		"limit": limit,
@@ -264,6 +265,6 @@ func (h *Handler) GetByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"votacao": votacao,
-		"votos":   votos,
+		"votos":   utils.NaoNulo(votos),
 	})
 }
