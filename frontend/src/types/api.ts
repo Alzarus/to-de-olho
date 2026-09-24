@@ -208,6 +208,39 @@ export interface EmendasResponse {
   resumo?: ResumoEmendas;
 }
 
+// Estrutura de gabinete (números agregados, sem nomes nem salários)
+export type LocalGabinete = "GABINETE" | "ESCRITORIO";
+
+export interface VinculoGabinete {
+  vinculo: string; // "Comissionado", "Efetivo", "Requisitado"...
+  quantidade: number;
+}
+
+export interface LocalGabineteResumo {
+  local: LocalGabinete;
+  rotulo: string;
+  total: number;
+  vinculos: VinculoGabinete[];
+}
+
+export interface BeneficioGabinete {
+  tipo: string; // "Auxílio-Moradia", "Imóvel Funcional"
+  utilizacao: string; // "Utilizou", "Não utilizou"
+}
+
+export interface GabineteResponse {
+  senador_id: number;
+  ano: number; // 0 quando não há dados
+  anos_disponiveis: number[];
+  total: number;
+  locais: LocalGabineteResumo[];
+  por_vinculo: VinculoGabinete[];
+  beneficios: BeneficioGabinete[];
+  cargo_mesa: string | null; // cargo atual na Mesa Diretora
+  atualizado_em: string | null;
+  fonte_url: string;
+}
+
 // Proposicoes
 export interface Proposicao extends CamposMateria {
   id: number;

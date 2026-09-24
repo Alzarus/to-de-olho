@@ -35,6 +35,7 @@ import { ProposicoesTab } from "@/components/senator/proposicoes-tab";
 import { ComissoesTab } from "@/components/senator/comissoes-tab";
 import { CeapsTab } from "@/components/senator/ceaps-tab";
 import { VotacoesTab } from "@/components/senator/votacoes-tab";
+import { GabineteTab } from "@/components/senator/gabinete-tab";
 import {
   Tooltip,
   TooltipContent,
@@ -423,6 +424,7 @@ function SenadorContent() {
             <TabsTrigger value="ceaps">CEAPS</TabsTrigger>
             <TabsTrigger value="comissoes">Comissões</TabsTrigger>
             <TabsTrigger value="emendas">Emendas</TabsTrigger>
+            <TabsTrigger value="gabinete">Gabinete</TabsTrigger>
           </TabsList>
         </div>
 
@@ -668,6 +670,18 @@ function SenadorContent() {
             da Transparência.
           </p>
           <EmendasTab id={id} ano={ano} />
+        </TabsContent>
+
+        <TabsContent value="gabinete" className="mt-6">
+          <h2 className="text-2xl font-bold tracking-tight mb-4">
+            Estrutura de Gabinete ({ano === 0 ? "ano mais recente" : ano})
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            Quantos servidores trabalham no gabinete em Brasília e nos escritórios
+            de apoio no estado, por tipo de vínculo, e o uso de auxílio-moradia e
+            imóvel funcional. Dados da API administrativa do Senado.
+          </p>
+          <GabineteTab id={id} ano={ano} />
         </TabsContent>
       </Tabs>
     </div>

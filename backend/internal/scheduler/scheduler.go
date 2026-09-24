@@ -10,6 +10,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
+	"github.com/Alzarus/to-de-olho/internal/gabinete"
 	"github.com/Alzarus/to-de-olho/internal/materia"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
@@ -30,7 +31,8 @@ type Scheduler struct {
 	rankingService *ranking.Service
 	senadorRepo    *senador.Repository
 	votacaoRepo    *votacao.Repository
-	materiaSync    *materia.SyncService // opcional: ComMaterias
+	materiaSync    *materia.SyncService  // opcional: ComMaterias
+	gabineteSync   *gabinete.SyncService // opcional (SetGabineteSync)
 }
 
 // ComMaterias liga o sync das materias (nome popular e descricao) ao sync
@@ -51,6 +53,44 @@ func (s *Scheduler) syncMaterias(ctx context.Context, limite int) {
 	}
 	if _, err := s.materiaSync.Sync(ctx, limite); err != nil {
 		slog.Error("falha sync materias", "error", err)
+	}
+}
+
+// intervaloGabinete e a frequencia da carga de gabinete: a fonte muda pouco e
+// a rota e lenta, entao o sync diario so roda quando a ultima carga passou disso.
+const intervaloGabinete = 7 * 24 * time.Hour
+
+// SetGabineteSync liga a carga de estrutura de gabinete ao scheduler
+func (s *Scheduler) SetGabineteSync(g *gabinete.SyncService) {
+	s.gabineteSync = g
+}
+
+// syncGabinete roda a carga do ano atual (e, em janeiro, do ano anterior, que
+// fecha na fonte) quando a guarda semanal permite.
+func (s *Scheduler) syncGabinete(ctx context.Context, agora time.Time) {
+	if s.gabineteSync == nil {
+		return
+	}
+	anos := []int{agora.Year()}
+	if agora.Month() == time.January {
+		anos = append(anos, agora.Year()-1)
+	}
+	for _, ano := range anos {
+		precisa, err := s.gabineteSync.PrecisaAtualizar(ano, intervaloGabinete)
+		if err != nil {
+			slog.Error("falha na guarda do sync de gabinete", "ano", ano, "error", err)
+			continue
+		}
+		if !precisa {
+			slog.Info("gabinete atualizado ha menos de uma semana, pulando", "ano", ano)
+			continue
+		}
+		if _, err := s.gabineteSync.SyncAno(ctx, ano); err != nil {
+			slog.Error("falha sync gabinete", "ano", ano, "error", err)
+		}
+	}
+	if err := s.gabineteSync.SyncMesa(ctx); err != nil {
+		slog.Error("falha sync mesa diretora", "error", err)
 	}
 }
 
@@ -106,7 +146,7 @@ func (s *Scheduler) Start(ctx context.Context) {
 // garantindo que o Cloud Run mantenha o container vivo.
 func (s *Scheduler) RunBackfill(ctx context.Context) {
 	forceBackfill := true // Sempre forca quando chamado via HTTP
-	
+
 	// 1. Verificar se ja existem dados
 	count, err := s.senadorRepo.Count()
 	if err != nil {
@@ -133,7 +173,7 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 	slog.Info("configuracao de backfill", "ano_inicio", anoInicio, "ano_fim", anoAtual)
 
 	// 3. Sequencia de Sync (com retry em cada passo)
-	
+
 	// A. Dados Basicos (Senadores)
 	slog.Info("--- PASSO 1/6: SENADORES ---")
 	if err := retry.WithRetry(ctx, 3, "backfill-senadores", func() error {
@@ -191,6 +231,13 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 	// Materias (nome popular e descricao): depois de votacoes e proposicoes,
 	// que dao os codigos. Nao entra no ranking.
 	s.syncMaterias(ctx, 0)
+	// Gabinete (numeros agregados): Mesa e todos os anos do recorte
+	if s.gabineteSync != nil {
+		slog.Info("--- GABINETE ---")
+		if err := s.gabineteSync.SyncTodos(ctx, gabinete.AnosDoRecorte(time.Now())); err != nil {
+			slog.Error("falha no backfill de gabinete", "error", err)
+		}
+	}
 
 	// F. Calculo de Ranking Final, so com a carga completa
 	slog.Info("--- PASSO 6/6: CALCULANDO RANKING ---")
@@ -257,6 +304,8 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 
 	// 7b. Materias novas ou com detalhe antigo (limite por rodada)
 	s.syncMaterias(ctx, materia.PorRodadaDiaria)
+	// 7b. Gabinete: semanal (guarda por data da ultima carga)
+	s.syncGabinete(ctx, time.Now())
 
 	// 8. Invalidar o cache e recalcular o ranking, so com a carga completa.
 	// Carga incompleta mantem o ranking em cache (ate o TTL de 24h); quem

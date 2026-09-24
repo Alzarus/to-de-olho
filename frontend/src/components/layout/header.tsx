@@ -44,7 +44,7 @@ export function Header() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-3 transition-opacity hover:opacity-80"
+          className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-80"
           aria-label="Tô De Olho - Página inicial"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -59,15 +59,15 @@ export function Header() {
             <span className="text-lg font-bold tracking-tight text-foreground whitespace-nowrap">
               Tô De Olho
             </span>
-            <span className="hidden text-xs text-muted-foreground sm:block">
+            <span className="hidden text-xs text-muted-foreground whitespace-nowrap sm:block">
               Transparência no Senado
             </span>
           </div>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden xl:block" aria-label="Navegação principal">
-          <ul className="flex items-center gap-1">
+        <nav className="hidden min-w-0 xl:block" aria-label="Navegação principal">
+          <ul className="flex items-center gap-0.5 2xl:gap-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -75,7 +75,7 @@ export function Header() {
                   <Link
                     href={item.href}
                     className={cn(
-                      "relative px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors rounded-lg",
+                      "relative px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors rounded-lg 2xl:px-4",
                       "hover:bg-accent hover:text-accent-foreground",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       isActive
@@ -98,7 +98,7 @@ export function Header() {
             <li>
               <QuemVotarLink
                 className={cn(
-                  "flex items-center px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors rounded-lg text-muted-foreground",
+                  "flex items-center px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors rounded-lg text-muted-foreground 2xl:px-4",
                   "hover:bg-accent hover:text-accent-foreground",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 )}
@@ -107,10 +107,10 @@ export function Header() {
           </ul>
         </nav>
 
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* UpdateBadge visível apenas no desktop */}
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          {/* UpdateBadge visível apenas no desktop; compacto para caber ao lado do menu */}
           <div className="hidden xl:block">
-            <UpdateBadge />
+            <UpdateBadge compacto />
           </div>
           <ModeToggle />
           

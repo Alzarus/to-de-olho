@@ -5,7 +5,8 @@ import { useLastSync } from "@/hooks/use-metadata";
 import { Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function UpdateBadge() {
+// compacto: só a data; o rótulo fica para leitores de tela e na dica do mouse
+export function UpdateBadge({ compacto = false }: { compacto?: boolean }) {
   const { data } = useLastSync();
   const [mounted, setMounted] = useState(false);
 
@@ -28,9 +29,13 @@ export function UpdateBadge() {
   if (!lastSyncFormatted) return null;
 
   return (
-    <Badge variant="outline" className="w-full justify-center sm:w-auto inline-flex gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-normal border-muted-foreground/30 text-muted-foreground py-1">
-      <Clock className="w-3 h-3 sm:w-3 sm:h-3" />
-      <span>Dados atualizados em:</span>
+    <Badge
+      variant="outline"
+      className="w-full justify-center sm:w-auto inline-flex gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-normal border-muted-foreground/30 text-muted-foreground py-1 whitespace-nowrap"
+      title={compacto ? `Dados atualizados em ${lastSyncFormatted}` : undefined}
+    >
+      <Clock className="w-3 h-3 sm:w-3 sm:h-3" aria-hidden="true" />
+      <span className={compacto ? "sr-only" : undefined}>Dados atualizados em:</span>
       <span className="font-medium text-foreground">{lastSyncFormatted}</span>
     </Badge>
   );

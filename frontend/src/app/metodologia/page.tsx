@@ -237,7 +237,9 @@ export default function MetodologiaPage() {
                 Senado (Administrativo)
               </h4>
               <p className="mt-1 text-sm text-muted-foreground">
-                Despesas da cota parlamentar (CEAPS).
+                Despesas da cota parlamentar (CEAPS) e estrutura de
+                gabinete (quantidade de servidores por local e vínculo,
+                auxílio-moradia e imóvel funcional).
               </p>
               <a
                 href="https://adm.senado.gov.br/adm-dadosabertos/swagger-ui"
@@ -300,6 +302,13 @@ export default function MetodologiaPage() {
             <li>
               <strong>Gastar menos não é ser melhor</strong> -- a cota tem peso
               moderado (20%) e varia por estado.
+            </li>
+            <li>
+              <strong>Gabinete em números agregados</strong> -- por
+              privacidade, mostramos só quantos servidores há por local e
+              vínculo, sem nomes nem salários; o detalhe está na página de
+              transparência do Senado. Quem ocupa cargo na Mesa Diretora
+              (como a Presidência) tem parte da equipe fora do gabinete.
             </li>
             <li>
               <strong>Dados podem ter atraso</strong> -- as fontes oficiais

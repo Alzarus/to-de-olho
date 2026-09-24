@@ -63,7 +63,7 @@ Todas as funcionalidades base já estão operacionais no ambiente de desenvolvim
 
 Funcionalidades listadas no TCC como "Desejáveis" ou para trabalhos futuros, caso falte tempo antes da defesa.
 
-- [ ] **Módulo de Gabinete (RF17, RF18)**: Lista de servidores e folha de pagamento.
+- [~] **Módulo de Gabinete (RF17, RF18)**: fase 1 entregue em 23/09/2026 (números agregados por local e vínculo, benefícios, aba na ficha e no comparador). Lista nominal e folha de pagamento (RF18) ficam fora por decisão de privacidade.
 - [ ] **Transparência Fornecedores (RF06, RF07, RF20)**: Ranking de recebedores e alertas de suspeita.
 - [ ] **Atividade Legislativa Expandida (RF14, RF15, RF16)**: Discursos, Agenda, Redes Sociais.
 - [ ] **Relatorias**: Bônus de pontuação para relatores de matérias complexas.

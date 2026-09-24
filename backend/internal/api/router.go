@@ -11,6 +11,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
+	"github.com/Alzarus/to-de-olho/internal/gabinete"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/senador"
@@ -70,6 +71,11 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 		emendaHandler := emenda.NewHandler(emendaService)
 		emendaSync := emenda.NewSyncService(emendaRepo, senadorRepo, transparenciaAPIKey)
 
+		// Estrutura de gabinete (numeros agregados)
+		gabineteRepo := gabinete.NewRepository(db)
+		gabineteHandler := gabinete.NewHandler(gabineteRepo, senadorRepo)
+		gabineteSync := gabinete.NewSyncService(gabineteRepo, senadorRepo, admClient, legisClient)
+
 		// Ranking
 		rankingService := ranking.NewService(senadorRepo, proposicaoRepo, votacaoRepo, ceapsRepo, comissaoRepo)
 		rankingHandler := ranking.NewHandler(rankingService)
@@ -100,6 +106,8 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			senadores.GET("/:id/score", rankingHandler.GetScoreSenador)
 			// Emendas
 			senadores.GET("/:id/emendas", emendaHandler.GetBySenador)
+			// Gabinete (numeros agregados, sem nomes)
+			senadores.GET("/:id/gabinete", gabineteHandler.GetBySenador)
 		}
 
 		// Votacoes (Geral)
@@ -189,6 +197,24 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 				"message": "sync de emendas concluido",
 				"ano":     ano,
 			})
+		})
+
+		// Gabinete: ?ano=AAAA carrega um ano; sem ano, a Mesa e todos os anos do recorte
+		syncGroup.POST("/gabinete", func(c *gin.Context) {
+			anos := gabinete.AnosDoRecorte(time.Now())
+			if s := c.Query("ano"); s != "" {
+				var ano int
+				if _, err := fmt.Sscanf(s, "%d", &ano); err != nil || ano < 2000 {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "ano invalido"})
+					return
+				}
+				anos = []int{ano}
+			}
+			if err := gabineteSync.SyncTodos(c.Request.Context(), anos); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"message": "sync de gabinete concluido", "anos": anos})
 		})
 
 		// Metadata
