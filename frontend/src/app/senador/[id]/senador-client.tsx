@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { Suspense } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -112,6 +112,8 @@ function SenadorError({ message }: { message: string }) {
   );
 }
 
+const ANOS_FICHA = [2026, 2025, 2024, 2023];
+
 function SenadorContent() {
   const params = useParams();
   const router = useRouter();
@@ -119,7 +121,16 @@ function SenadorContent() {
   const pathname = usePathname();
 
   const id = Number(params.id);
-  const [ano, setAno] = useState<number>(0);
+  // Ano pela URL (?ano=), como a aba: links de fora (ex.: fornecedores do
+  // comparador) abrem a ficha no ano certo. Ausente ou fora da lista = mandato.
+  const anoUrl = Number(searchParams.get("ano"));
+  const ano = ANOS_FICHA.includes(anoUrl) ? anoUrl : 0;
+  const setAno = (novo: number) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (novo > 0) newParams.set("ano", String(novo));
+    else newParams.delete("ano");
+    router.replace(`${pathname}?${newParams.toString()}`, { scroll: false });
+  };
 
   // Tab control via URL
   const activeTab = searchParams.get("tab") || "proposicoes";
@@ -200,10 +211,11 @@ function SenadorContent() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="0">Mandato (Todos os anos)</SelectItem>
-              <SelectItem value="2026">2026</SelectItem>
-              <SelectItem value="2025">2025</SelectItem>
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2023">2023</SelectItem>
+              {ANOS_FICHA.map((a) => (
+                <SelectItem key={a} value={String(a)}>
+                  {a}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

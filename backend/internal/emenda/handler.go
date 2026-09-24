@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 type Handler struct {
@@ -41,7 +42,7 @@ func (h *Handler) GetBySenador(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"emendas": emendas,
+		"emendas": utils.NaoNulo(emendas),
 		"resumo":  resumo,
 	})
 }

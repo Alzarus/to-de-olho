@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // limiteMaximo e o maior limit aceito na lista de despesas
@@ -83,7 +84,7 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		"limit":      limit,
 		"page":       page,
 		"total_pages": (int(total) + limit - 1) / limit,
-		"despesas":   despesas,
+		"despesas":   utils.NaoNulo(despesas),
 	})
 }
 
@@ -127,7 +128,7 @@ func (h *Handler) AggregateBySenador(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id":  senadorID,
 		"total_geral": totalGeral,
-		"por_tipo":    agregados,
+		"por_tipo":    utils.NaoNulo(agregados),
 	})
 }
 
@@ -193,7 +194,7 @@ func (h *Handler) MensalBySenador(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id": senadorID,
-		"meses":      meses,
+		"meses":      utils.NaoNulo(meses),
 	})
 }
 
@@ -224,6 +225,6 @@ func (h *Handler) FornecedoresBySenador(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id":   senadorID,
-		"fornecedores": fornecedores,
+		"fornecedores": utils.NaoNulo(fornecedores),
 	})
 }

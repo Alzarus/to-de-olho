@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/Alzarus/to-de-olho/internal/utils"
 )
 
 // Handler gerencia endpoints REST de comissoes
@@ -69,7 +70,7 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		"limit":        limit,
 		"page":         page,
 		"total_pages":  (int(total) + limit - 1) / limit,
-		"comissoes":    comissoes,
+		"comissoes":    utils.NaoNulo(comissoes),
 	})
 }
 
@@ -97,7 +98,7 @@ func (h *Handler) GetAtivas(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id": senadorID,
 		"total":      len(comissoes),
-		"comissoes":  comissoes,
+		"comissoes":  utils.NaoNulo(comissoes),
 	})
 }
 
@@ -148,6 +149,6 @@ func (h *Handler) GetPorCasa(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"senador_id": senadorID,
-		"por_casa":   casas,
+		"por_casa":   utils.NaoNulo(casas),
 	})
 }
