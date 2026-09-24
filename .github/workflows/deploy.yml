@@ -126,14 +126,17 @@ jobs:
           ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" bash -se <<'REMOTE'
           set -euo pipefail
           # Backend: alcancado pela rede interna a partir do container web.
-          for i in $(seq 1 30); do
+          # A API so abre a porta depois do AutoMigrate e do recalculo da
+          # pontuacao; uma migracao pesada ja levou mais de 2 min (deploys do
+          # #40 e #41). Espera ate 6 min (72 x 5 s).
+          for i in $(seq 1 72); do
             if docker exec todeolho-web node -e \
               "require('http').get('http://api:8080/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))" 2>/dev/null; then
               echo "[OK] backend respondendo em /health"
               break
             fi
-            if [ "$i" = 30 ]; then
-              echo "[FALHA] backend nao respondeu apos 30 tentativas"
+            if [ "$i" = 72 ]; then
+              echo "[FALHA] backend nao respondeu apos 72 tentativas (6 min)"
               docker compose -f /opt/todeolho/docker-compose.contabo.yml logs --tail=50 api
               exit 1
             fi
