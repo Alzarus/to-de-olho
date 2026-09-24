@@ -4,12 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Alzarus/to-de-olho/internal/materia"
 	"github.com/Alzarus/to-de-olho/internal/senador"
 	"github.com/Alzarus/to-de-olho/internal/testdb"
 )
 
 func novoRepo(t *testing.T) *Repository {
-	db := testdb.Abrir(t, &senador.Senador{}, &Votacao{})
+	db := testdb.Abrir(t, &senador.Senador{}, &Votacao{}, &materia.Materia{}, &materia.ApelidoCurado{})
 	senadores := []senador.Senador{
 		{ID: 1, CodigoParlamentar: 742, Nome: "Marcelo Castro", EmExercicio: true},
 		{ID: 2, CodigoParlamentar: 5672, Nome: "Alan Rick", EmExercicio: true},

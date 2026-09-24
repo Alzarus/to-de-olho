@@ -1,6 +1,7 @@
 import { fetcher } from "@/lib/api";
+import type { CamposMateria } from "@/lib/materia";
 
-export interface Votacao {
+export interface Votacao extends CamposMateria {
   id: number;
   senador_id: number;
   codigo_votacao: number; // id da votacao (codigoSessaoVotacao do Senado)

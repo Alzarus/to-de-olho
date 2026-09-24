@@ -285,6 +285,7 @@ func (s *SyncService) convertToModel(api senadoapi.MateriaAPI, senadorID int) Pr
 		DataApresentacao:       dataApresentacao,
 		EstagioTramitacao:      estagio,
 		Autoria:                api.Autoria,
+		IdProcesso:             intOuNulo(api.ID),
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
 	"github.com/Alzarus/to-de-olho/internal/gabinete"
+	"github.com/Alzarus/to-de-olho/internal/materia"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/senador"
@@ -30,7 +31,29 @@ type Scheduler struct {
 	rankingService *ranking.Service
 	senadorRepo    *senador.Repository
 	votacaoRepo    *votacao.Repository
+	materiaSync    *materia.SyncService  // opcional: ComMaterias
 	gabineteSync   *gabinete.SyncService // opcional (SetGabineteSync)
+}
+
+// ComMaterias liga o sync das materias (nome popular e descricao) ao sync
+// diario e ao backfill.
+func (s *Scheduler) ComMaterias(m *materia.SyncService) *Scheduler {
+	s.materiaSync = m
+	return s
+}
+
+// syncMaterias completa codigo_materia nas votacoes antigas e busca o detalhe
+// das materias pendentes. limite <= 0: todas.
+func (s *Scheduler) syncMaterias(ctx context.Context, limite int) {
+	if s.materiaSync == nil {
+		return
+	}
+	if err := s.votacaoSync.CompletarCodigoMateria(ctx); err != nil {
+		slog.Error("falha ao completar codigo_materia das votacoes", "error", err)
+	}
+	if _, err := s.materiaSync.Sync(ctx, limite); err != nil {
+		slog.Error("falha sync materias", "error", err)
+	}
 }
 
 // intervaloGabinete e a frequencia da carga de gabinete: a fonte muda pouco e
@@ -123,7 +146,7 @@ func (s *Scheduler) Start(ctx context.Context) {
 // garantindo que o Cloud Run mantenha o container vivo.
 func (s *Scheduler) RunBackfill(ctx context.Context) {
 	forceBackfill := true // Sempre forca quando chamado via HTTP
-	
+
 	// 1. Verificar se ja existem dados
 	count, err := s.senadorRepo.Count()
 	if err != nil {
@@ -150,7 +173,7 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 	slog.Info("configuracao de backfill", "ano_inicio", anoInicio, "ano_fim", anoAtual)
 
 	// 3. Sequencia de Sync (com retry em cada passo)
-	
+
 	// A. Dados Basicos (Senadores)
 	slog.Info("--- PASSO 1/6: SENADORES ---")
 	if err := retry.WithRetry(ctx, 3, "backfill-senadores", func() error {
@@ -205,6 +228,9 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 		slog.Error("falha no backfill de proposicoes", "error", err)
 	}
 
+	// Materias (nome popular e descricao): depois de votacoes e proposicoes,
+	// que dao os codigos. Nao entra no ranking.
+	s.syncMaterias(ctx, 0)
 	// Gabinete (numeros agregados): Mesa e todos os anos do recorte
 	if s.gabineteSync != nil {
 		slog.Info("--- GABINETE ---")
@@ -276,6 +302,8 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 		slog.Error("falha sync proposicoes", "error", err)
 	}
 
+	// 7b. Materias novas ou com detalhe antigo (limite por rodada)
+	s.syncMaterias(ctx, materia.PorRodadaDiaria)
 	// 7b. Gabinete: semanal (guarda por data da ultima carga)
 	s.syncGabinete(ctx, time.Now())
 

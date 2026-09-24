@@ -15,6 +15,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
 	"github.com/Alzarus/to-de-olho/internal/gabinete"
+	"github.com/Alzarus/to-de-olho/internal/materia"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/scheduler"
@@ -61,6 +62,8 @@ func main() {
 		&emenda.Emenda{},
 		&acesso.Visita{},
 		&acesso.Sal{},
+		&materia.Materia{},
+		&materia.ApelidoCurado{},
 	); err != nil {
 		slog.Error("falha no auto-migrate", "error", err)
 		os.Exit(1)
@@ -78,6 +81,16 @@ func main() {
 	// Completa colunas novas de votacoes nas linhas antigas (idempotente)
 	if err := votacao.PreencherHistorico(db); err != nil {
 		slog.Error("falha ao preencher historico de votacoes", "error", err)
+		os.Exit(1)
+	}
+	// Nome popular das materias: curadoria com fonte oficial e codigo_materia
+	// das votacoes antigas que o banco consegue derivar (idempotentes)
+	if err := materia.SemearApelidosCurados(db); err != nil {
+		slog.Error("falha ao gravar apelidos curados", "error", err)
+		os.Exit(1)
+	}
+	if err := votacao.PreencherCodigoMateria(db); err != nil {
+		slog.Error("falha ao preencher codigo_materia das votacoes", "error", err)
 		os.Exit(1)
 	}
 
@@ -138,7 +151,7 @@ func main() {
 		rankingService,
 		senadorRepo,
 		votacaoRepo,
-	)
+	).ComMaterias(materia.NewSyncService(db, legisClient))
 
 	// Contexto para o scheduler (cancelado no shutdown)
 	ctxSched, cancelSched := context.WithCancel(context.Background())

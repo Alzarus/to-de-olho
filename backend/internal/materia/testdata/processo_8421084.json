@@ -1,0 +1,86 @@
+{
+ "id": 8421084,
+ "codigoMateria": 157055,
+ "identificacao": "PL 2088/2023",
+ "sigla": "PL",
+ "descricaoSigla": "Projeto de Lei",
+ "numero": "2088",
+ "ano": 2023,
+ "apelido": "Lei da Reciprocidade\nLei da Reciprocidade Econômica",
+ "objetivo": "Iniciadora",
+ "casaIdentificadora": "SF",
+ "conteudo": {
+  "id": 7520039,
+  "idTipo": 11,
+  "siglaTipo": "NORMA_GERAL",
+  "tipo": "Norma Geral",
+  "ementa": "Acrescenta o art. 12-A à Lei nº 12.187, de 29 de dezembro de 2009, que institui a Política Nacional sobre Mudança do Clima, para tornar obrigatório o cumprimento de padrões ambientais compatíveis aos do Brasil, para a disponibilização de bens no mercado brasileiro.",
+  "tipoNormaIndicada": "LEI"
+ },
+ "documento": {
+  "id": 9322933,
+  "siglaTipo": "PROJETO_LEI_ORDINARIA",
+  "tipo": "Projeto de Lei Ordinária",
+  "dataApresentacao": "2023-04-24",
+  "url": "https://legis.senado.gov.br/sdleg-getter/documento?dm=9322933",
+  "autoria": [
+   {
+    "autor": "Zequinha Marinho",
+    "sexo": "M",
+    "siglaTipo": "SENADOR",
+    "descricaoTipo": "SENADOR",
+    "ordem": 1,
+    "outrosAutoresNaoInformados": "Não",
+    "codigoParlamentar": 3806,
+    "uf": "PA",
+    "siglaPartido": "PL",
+    "partido": "Partido Liberal",
+    "siglaCargo": "SENADOR",
+    "cargo": "Senador",
+    "idEnte": 1,
+    "siglaEnte": "SF",
+    "casaEnte": "SF",
+    "ente": "Senado Federal"
+   }
+  ],
+  "resumoAutoria": "Senador Zequinha Marinho (PL/PA)"
+ },
+ "tramitando": "Não",
+ "classificacoes": [
+  {
+   "codigo": 33804865,
+   "descricao": "Comércio",
+   "descricaoHierarquia": "Economia e Desenvolvimento / Indústria, Comércio e Serviços / Comércio"
+  },
+  {
+   "codigo": 33809739,
+   "descricao": "Poluição",
+   "descricaoHierarquia": "Meio Ambiente / Poluição"
+  },
+  {
+   "codigo": 33809784,
+   "descricao": "Mudanças Climáticas",
+   "descricaoHierarquia": "Meio Ambiente / Mudanças Climáticas"
+  }
+ ],
+ "autoriaIniciativa": [
+  {
+   "autor": "Zequinha Marinho",
+   "sexo": "M",
+   "siglaTipo": "SENADOR",
+   "descricaoTipo": "SENADOR",
+   "ordem": 1,
+   "outrosAutoresNaoInformados": "Não",
+   "codigoParlamentar": 3806,
+   "uf": "PA",
+   "siglaPartido": "PL",
+   "partido": "Partido Liberal",
+   "siglaCargo": "SENADOR",
+   "cargo": "Senador",
+   "idEnte": 1,
+   "siglaEnte": "SF",
+   "casaEnte": "SF",
+   "ente": "Senado Federal"
+  }
+ ]
+}

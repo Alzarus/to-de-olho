@@ -1,6 +1,10 @@
 package proposicao
 
-import "time"
+import (
+	"time"
+
+	"github.com/Alzarus/to-de-olho/internal/materia"
+)
 
 // Proposicao representa uma proposicao legislativa de autoria de um senador
 type Proposicao struct {
@@ -28,8 +32,19 @@ type Proposicao struct {
 	EstagioTramitacao string `json:"estagio_tramitacao"` // Apresentado, EmComissao, AprovadoComissao, AprovadoPlenario, TransformadoLei
 	Pontuacao         float64 `json:"pontuacao"`          // Pontos calculados
 
+	// IdProcesso e o id de /processo/{id} (detalhe da materia, tabela materias)
+	IdProcesso *int `json:"id_processo,omitempty"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+
+	// Nome popular e descricao, via LEFT JOIN de materias (read-only, sem
+	// coluna em proposicoes). ApelidoFonte: "oficial" ou "curadoria".
+	Apelido          *string       `gorm:"->;-:migration" json:"apelido,omitempty"`
+	ApelidoFonte     *string       `gorm:"->;-:migration" json:"apelido_fonte,omitempty"`
+	ApelidoFonteURL  *string       `gorm:"->;-:migration" json:"apelido_fonte_url,omitempty"`
+	ExplicacaoEmenta *string       `gorm:"->;-:migration" json:"explicacao_ementa,omitempty"`
+	Temas            materia.Temas `gorm:"->;-:migration" json:"temas,omitempty"`
 }
 
 // TableName define o nome da tabela

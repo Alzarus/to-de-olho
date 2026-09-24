@@ -1,0 +1,86 @@
+{
+ "id": 8441243,
+ "codigoMateria": 157233,
+ "identificacao": "PL 2338/2023",
+ "sigla": "PL",
+ "descricaoSigla": "Projeto de Lei",
+ "numero": "2338",
+ "ano": 2023,
+ "apelido": "Marco Legal da Inteligência Artificial",
+ "objetivo": "Iniciadora",
+ "casaIdentificadora": "SF",
+ "conteudo": {
+  "id": 7524862,
+  "idTipo": 11,
+  "siglaTipo": "NORMA_GERAL",
+  "tipo": "Norma Geral",
+  "ementa": "Dispõe sobre o uso da Inteligência Artificial.",
+  "tipoNormaIndicada": "LEI"
+ },
+ "documento": {
+  "id": 9347593,
+  "siglaTipo": "PROJETO_LEI_ORDINARIA",
+  "tipo": "Projeto de Lei Ordinária",
+  "dataApresentacao": "2023-05-03",
+  "url": "https://legis.senado.gov.br/sdleg-getter/documento?dm=9347593",
+  "autoria": [
+   {
+    "autor": "Rodrigo Pacheco",
+    "sexo": "M",
+    "siglaTipo": "SENADOR",
+    "descricaoTipo": "SENADOR",
+    "ordem": 1,
+    "outrosAutoresNaoInformados": "Não",
+    "codigoParlamentar": 5732,
+    "uf": "MG",
+    "siglaPartido": "PSD",
+    "partido": "Partido Social Democrático",
+    "siglaCargo": "SENADOR",
+    "cargo": "Senador",
+    "idEnte": 1,
+    "siglaEnte": "SF",
+    "casaEnte": "SF",
+    "ente": "Senado Federal"
+   }
+  ],
+  "resumoAutoria": "Senador Rodrigo Pacheco (PSD/MG)"
+ },
+ "tramitando": "Não",
+ "classificacoes": [
+  {
+   "codigo": 33805092,
+   "descricao": "Ciência, Tecnologia e Informática",
+   "descricaoHierarquia": "Economia e Desenvolvimento / Ciência, Tecnologia e Informática"
+  },
+  {
+   "codigo": 33805512,
+   "descricao": "Responsabilidade Civil",
+   "descricaoHierarquia": "Jurídico / Direito Civil / Responsabilidade Civil"
+  },
+  {
+   "codigo": 33805662,
+   "descricao": "Direitos Individuais e Coletivos",
+   "descricaoHierarquia": "Jurídico / Direitos e Garantias / Direitos Individuais e Coletivos"
+  }
+ ],
+ "autoriaIniciativa": [
+  {
+   "autor": "Rodrigo Pacheco",
+   "sexo": "M",
+   "siglaTipo": "SENADOR",
+   "descricaoTipo": "SENADOR",
+   "ordem": 1,
+   "outrosAutoresNaoInformados": "Não",
+   "codigoParlamentar": 5732,
+   "uf": "MG",
+   "siglaPartido": "PSD",
+   "partido": "Partido Social Democrático",
+   "siglaCargo": "SENADOR",
+   "cargo": "Senador",
+   "idEnte": 1,
+   "siglaEnte": "SF",
+   "casaEnte": "SF",
+   "ente": "Senado Federal"
+  }
+ ]
+}
