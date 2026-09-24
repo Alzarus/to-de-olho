@@ -9,6 +9,7 @@ import type {
   DespesasMensalResponse,
   DespesasFornecedoresResponse,
   EmendasResponse,
+  GabineteResponse,
   ProposicaoResponse,
   ComissoesResponse,
   VotacoesResponse,
@@ -183,6 +184,15 @@ export async function getEmendas(
   if (ano) params.append("ano", ano.toString());
   const query = params.toString() ? `?${params.toString()}` : "";
   return fetcher<EmendasResponse>(`/api/v1/senadores/${id}/emendas${query}`);
+}
+
+// Estrutura de gabinete: sem ano (ou 0), o ano mais recente com dados
+export async function getGabinete(
+  id: number,
+  ano?: number,
+): Promise<GabineteResponse> {
+  const query = ano ? `?ano=${ano}` : "";
+  return fetcher<GabineteResponse>(`/api/v1/senadores/${id}/gabinete${query}`);
 }
 
 export async function getProposicoes(

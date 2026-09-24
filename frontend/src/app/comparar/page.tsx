@@ -23,6 +23,7 @@ import { SuppliersTab } from "@/components/comparator/suppliers-tab";
 import { EmendasTab } from "@/components/comparator/emendas-tab";
 import { VotesTab } from "@/components/comparator/votes-tab";
 import { corSerie } from "@/lib/comparador-filtros";
+import { CabinetTab } from "@/components/comparator/cabinet-tab";
 import { SenatorSelector } from "@/components/comparator/senator-selector";
 import { ComparatorExportMenu } from "@/components/comparator/export-menu";
 import { PrintButton } from "@/components/print-button";
@@ -322,14 +323,7 @@ function ComparatorContent() {
           </TabsContent>
 
           <TabsContent value="cabinet">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4">Estrutura de Gabinete</h2>
-                <div className="h-64 flex items-center justify-center border-dashed border-2 rounded-lg">
-                  <span className="text-muted-foreground">Lista de Servidores em construção</span>
-                </div>
-              </CardContent>
-            </Card>
+            <CabinetTab senators={selectedSenators} year={year} />
           </TabsContent>
 
           <TabsContent value="amendments" className="mt-6 space-y-6">
