@@ -1,6 +1,10 @@
 "use client";
 
-import { useVotosPorTipo, useVotacoes } from "@/hooks/use-senador";
+import { useVotosPorTipo, useVotacoes, useSenador } from "@/hooks/use-senador";
+import { getVotacoes } from "@/lib/api";
+import { buscarTodasPaginas, rotuloAnoArquivo, slugArquivo } from "@/lib/export";
+import { COLUNAS_VOTACAO } from "@/lib/export-colunas";
+import { ExportarDados } from "@/components/export-dados";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +39,8 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
   
   // List Data
   const { data: votacoesData, isLoading: isListLoading } = useVotacoes(id, page, limit, filteredVoto, ano === 0 ? undefined : ano);
+  const { data: senador } = useSenador(id);
+  const anoApi = ano === 0 ? undefined : ano;
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -94,13 +100,35 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
 
         {/* List Section */}
         <Card className="h-fit w-full max-w-full overflow-hidden">
-            <CardHeader>
+            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
                 <CardTitle>
                     {filteredVoto 
                         ? `Votos: ${VOTE_LABELS[filteredVoto] || filteredVoto}`
                         : "Todas as Votações"
                     }
                 </CardTitle>
+                {votacoesData && votacoesData.total > 0 && (
+                    <ExportarDados
+                        descricao={`Votações${anoApi ? ` de ${anoApi}` : ""}`}
+                        detalhe={`${votacoesData.total} votações, todas as páginas${filteredVoto ? ", com o filtro atual" : ""}`}
+                        nomeArquivo={`todeolho_${slugArquivo(senador?.nome ?? `senador-${id}`)}_votacoes_${rotuloAnoArquivo(anoApi)}`}
+                        colunas={COLUNAS_VOTACAO}
+                        observacao={
+                            filteredVoto
+                                ? `Filtro aplicado: voto "${VOTE_LABELS[filteredVoto] || filteredVoto}"`
+                                : undefined
+                        }
+                        parametros={{ senador_id: id, ano: anoApi ?? "todos" }}
+                        obter={(aoProgredir) =>
+                            // limit 100 é o máximo da API de votações
+                            buscarTodasPaginas(
+                                (p) => getVotacoes(id, p, 100, filteredVoto, anoApi),
+                                (r) => ({ itens: r.votacoes ?? [], totalPaginas: r.total_pages }),
+                                aoProgredir,
+                            )
+                        }
+                    />
+                )}
             </CardHeader>
             <CardContent>
                 {isListLoading ? (

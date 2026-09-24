@@ -2,7 +2,11 @@
 
 import { PaginationWithInput } from "@/components/ui/pagination-with-input";
 
-import { useDespesas } from "@/hooks/use-senador";
+import { useDespesas, useSenador } from "@/hooks/use-senador";
+import { getDespesas } from "@/lib/api";
+import { buscarTodasPaginas, rotuloAnoArquivo, slugArquivo } from "@/lib/export";
+import { COLUNAS_DESPESA } from "@/lib/export-colunas";
+import { ExportarDados } from "@/components/export-dados";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -128,6 +132,7 @@ export function CeapsTab({ id, ano }: { id: number; ano: number }) {
   }, [ano]);
 
   const { data, isLoading } = useDespesas(id, ano, page, 20, searchParam, tipo, sort);
+  const { data: senador } = useSenador(id);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchValue(e.target.value);
@@ -192,6 +197,27 @@ export function CeapsTab({ id, ano }: { id: number; ano: number }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+                <ExportarDados
+                    className="sm:order-last sm:ml-auto"
+                    descricao={`Despesas CEAPS${ano ? ` de ${ano}` : " do mandato"}`}
+                    detalhe={`${data.total} lançamentos, todas as páginas${searchParam || tipo !== "todos" ? ", com o filtro atual" : ""}`}
+                    nomeArquivo={`todeolho_${slugArquivo(senador?.nome ?? `senador-${id}`)}_despesas_${rotuloAnoArquivo(ano)}`}
+                    colunas={COLUNAS_DESPESA}
+                    observacao={
+                        searchParam || tipo !== "todos"
+                            ? `Filtro aplicado: ${[searchParam && `fornecedor contém "${searchParam}"`, tipo !== "todos" && `tipo "${tipo}"`].filter(Boolean).join("; ")}`
+                            : undefined
+                    }
+                    parametros={{ senador_id: id, ano: ano || "mandato", ordenacao: sort }}
+                    obter={(aoProgredir) =>
+                        // limit 100 é o máximo da API de despesas
+                        buscarTodasPaginas(
+                            (p) => getDespesas(id, ano, p, 100, searchParam, tipo, sort),
+                            (r) => ({ itens: r.despesas ?? [], totalPaginas: r.total_pages }),
+                            aoProgredir,
+                        )
+                    }
+                />
                 <Select value={tipo} onValueChange={setTipo}>
                     <SelectTrigger className="w-full sm:w-[280px]">
                         <SelectValue placeholder="Filtrar por Tipo" />

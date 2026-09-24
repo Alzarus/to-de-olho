@@ -34,3 +34,12 @@ export function formatPresenca(presenca: number | null | undefined, casas = 1): 
 
 export const SEM_DADOS_PRESENCA =
   "Sem registro de votação nominal no período: dados insuficientes para medir presença.";
+
+// Primeiro ano com dados (início da 57ª legislatura)
+export const ANO_INICIAL_DADOS = 2023;
+
+/** Anos do seletor: do ano atual até 2023, sem lista fixa no código */
+export function anosDisponiveis(hoje: Date = new Date()): number[] {
+  const atual = Math.max(hoje.getFullYear(), ANO_INICIAL_DADOS);
+  return Array.from({ length: atual - ANO_INICIAL_DADOS + 1 }, (_, i) => atual - i);
+}

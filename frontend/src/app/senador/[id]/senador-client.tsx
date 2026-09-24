@@ -28,6 +28,7 @@ import { useVotosPorTipo } from "@/hooks/use-senador";
 import { fetcher } from "@/lib/api";
 import { X, Info } from "lucide-react";
 import { CompareToggleButton } from "@/components/comparator/compare-toggle-button";
+import { PrintButton } from "@/components/print-button";
 import { SenatorRadarChart } from "@/components/senator/radar-chart";
 import { EmendasTab } from "@/components/senator/emendas-tab";
 import { ProposicoesTab } from "@/components/senator/proposicoes-tab";
@@ -269,7 +270,7 @@ function SenadorContent() {
                 </Badge>
               )}
             </div>
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               <CompareToggleButton
                 senator={{
                   id: senador.senador_id,
@@ -279,6 +280,7 @@ function SenadorContent() {
                   fotoUrl: senador.foto_url,
                 }}
               />
+              <PrintButton />
             </div>
           </div>
         </div>

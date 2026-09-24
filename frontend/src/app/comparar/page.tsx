@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useComparator } from "@/contexts/comparator-context";
+import { useEffect, useState, Suspense } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  useComparator,
+  MAX_SENATORS,
+  type SenatorBasicProfile,
+} from "@/contexts/comparator-context";
 import { useRanking } from "@/hooks/use-ranking";
 import { usePersistentYear } from "@/hooks/use-persistent-year";
 import { Button } from "@/components/ui/button";
-import { Trash2, Download, X as XIcon, ArrowRight, ChevronDown } from "lucide-react";
+import { Trash2, X as XIcon, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +22,8 @@ import { ExpensesTab } from "@/components/comparator/expenses-tab";
 import { SuppliersTab } from "@/components/comparator/suppliers-tab";
 import { EmendasTab } from "@/components/comparator/emendas-tab";
 import { SenatorSelector } from "@/components/comparator/senator-selector";
+import { ComparatorExportMenu } from "@/components/comparator/export-menu";
+import { PrintButton } from "@/components/print-button";
 import {
   Select,
   SelectContent,
@@ -23,21 +31,97 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatPresenca } from "@/lib/utils";
+import { anosDisponiveis } from "@/lib/utils";
+import { getSenador } from "@/lib/api";
+
+const ANOS = anosDisponiveis();
+const ANO_PADRAO = ANOS[0];
+
+// "?ids=1,2,3" -> [1, 2, 3], sem repetidos, no máximo 5
+function lerIds(param: string | null): number[] {
+  if (!param) return [];
+  const ids = param
+    .split(",")
+    .map((p) => Number(p.trim()))
+    .filter((n) => Number.isInteger(n) && n > 0);
+  return [...new Set(ids)].slice(0, MAX_SENATORS);
+}
 
 function ComparatorContent() {
-  const { selectedSenators, clearSelection, removeSenator } = useComparator();
+  const {
+    selectedSenators,
+    clearSelection,
+    removeSenator,
+    replaceSelection,
+    isHydrated,
+  } = useComparator();
   const searchParams = useSearchParams();
   const yearParam = searchParams.get("ano");
-  // Se o parametro existe, usa o valor (mesmo que seja 0). Se não, default para 2024 (ou ano atual)
-  const year = yearParam !== null ? Number(yearParam) : 2024;
+  // Com ?ano= usa o valor (0 = mandato completo); sem ele, o ano atual
+  const yearFromUrl = yearParam !== null ? Number(yearParam) : NaN;
+  const year = Number.isInteger(yearFromUrl) && yearFromUrl >= 0 ? yearFromUrl : ANO_PADRAO;
   const [isSelectorExpanded, setIsSelectorExpanded] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+
+  // Seleção compartilhável: ?ids= na entrada tem prioridade sobre o localStorage
+  const idsParam = searchParams.get("ids");
+  const [urlPronta, setUrlPronta] = useState(false);
+
+  useEffect(() => {
+    if (!isHydrated || urlPronta) return;
+    const ids = lerIds(idsParam);
+    const atuais = selectedSenators.map((s) => s.id);
+    if (ids.length === 0 || ids.join(",") === atuais.join(",")) {
+      queueMicrotask(() => setUrlPronta(true));
+      return;
+    }
+
+    let cancelado = false;
+    Promise.all(
+      ids.map(async (id): Promise<SenatorBasicProfile | null> => {
+        const conhecido = selectedSenators.find((s) => s.id === id);
+        if (conhecido) return conhecido;
+        try {
+          const s = await queryClient.fetchQuery({
+            queryKey: ["senador", id],
+            queryFn: () => getSenador(id),
+          });
+          return { id: s.id, nome: s.nome, partido: s.partido, uf: s.uf, fotoUrl: s.foto_url || "" };
+        } catch {
+          return null;
+        }
+      }),
+    ).then((perfis) => {
+      if (cancelado) return;
+      const encontrados = perfis.filter((p): p is SenatorBasicProfile => p !== null);
+      if (encontrados.length < ids.length) {
+        toast.warning("Alguns senadores do link não foram encontrados.");
+      }
+      replaceSelection(encontrados);
+      setUrlPronta(true);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [isHydrated, urlPronta, idsParam, selectedSenators, queryClient, replaceSelection]);
+
+  // Depois de ler a URL, ela acompanha a seleção (replace: sem poluir o histórico)
+  useEffect(() => {
+    if (!isHydrated || !urlPronta) return;
+    const atual = selectedSenators.map((s) => s.id).join(",");
+    if ((idsParam ?? "") === atual) return;
+    const params = new URLSearchParams(searchParams.toString());
+    if (atual) params.set("ids", atual);
+    else params.delete("ids");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [isHydrated, urlPronta, selectedSenators, idsParam, searchParams, pathname, router]);
 
   // Tab control via URL
   const activeTab = searchParams.get("tab") || "overview";
-  
+
   const setActiveTab = (tab: string) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("tab", tab);
@@ -63,6 +147,18 @@ function ComparatorContent() {
 
   const { data: rankingData } = useRanking(undefined, year === 0 ? undefined : year);
 
+  // Enquanto lê o localStorage ou os senadores do link, não mostra o vazio
+  if (!isHydrated || (!urlPronta && lerIds(idsParam).length > 0)) {
+    return (
+      <div
+        className="container mx-auto max-w-7xl px-4 py-12 text-center text-muted-foreground"
+        role="status"
+      >
+        Carregando comparação…
+      </div>
+    );
+  }
+
   // Empty state - show the selector
   if (selectedSenators.length === 0) {
     return (
@@ -76,70 +172,11 @@ function ComparatorContent() {
             desempenho, gastos e votações.
           </p>
         </div>
-        
+
         <SenatorSelector />
       </div>
     );
   }
-
-  // Fetch ranking data for export
-
-  const handleExport = () => {
-    if (!rankingData?.ranking || selectedSenators.length === 0) {
-      return;
-    }
-
-    // Filter data for selected senators
-    const relevantData = rankingData.ranking.filter(r => 
-      selectedSenators.some(s => s.id === r.senador_id)
-    );
-
-    if (relevantData.length === 0) {
-        console.warn("No data found for selected senators");
-        return;
-    }
-
-    // Define CSV Headers
-    const headers = [
-      "Senador", "Partido", "UF", 
-      "Score Final", "Posição Rank",
-      "Produtividade (Score)", "Presença (Score)", "Economia (Score)", "Comissões (Score)",
-      "Proposições (Total)", "Votações (Participação)", "Gasto CEAPS (R$)"
-    ];
-
-    // Map data to rows
-    const rows = relevantData.map(d => [
-      `"${d.nome}"`,
-      d.partido,
-      d.uf,
-      d.score_final.toFixed(2),
-      d.posicao,
-      d.produtividade.toFixed(2),
-      formatPresenca(d.presenca, 2),
-      d.economia_cota.toFixed(2),
-      d.comissoes.toFixed(2),
-      d.detalhes.total_proposicoes,
-      `${d.detalhes.votacoes_participadas}/${d.detalhes.total_votacoes}`,
-      d.detalhes.gasto_ceaps.toFixed(2).replace('.', ',') // Format currency roughly
-    ]);
-
-    // Construct CSV String
-    const csvContent = [
-      headers.join(","),
-      ...rows.map(row => row.join(","))
-    ].join("\n");
-
-    // Trigger Download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `comparacao_senadores_${year === 0 ? 'mandato' : year}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
@@ -160,24 +197,27 @@ function ComparatorContent() {
               value={year.toString()}
               onValueChange={(value) => updateUrl({ ano: Number(value) })}
             >
-              <SelectTrigger id="ano-select" className="w-full sm:w-[180px]">
+              <SelectTrigger id="ano-select" className="w-full sm:w-[180px]" aria-label="Período da comparação">
                 <SelectValue placeholder="Selecione o ano" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="0">Mandato Completo</SelectItem>
-                <SelectItem value="2026">2026</SelectItem>
-                <SelectItem value="2025">2025</SelectItem>
-                <SelectItem value="2024">2024</SelectItem>
-                <SelectItem value="2023">2023</SelectItem>
+                {ANOS.map((a) => (
+                  <SelectItem key={a} value={a.toString()}>
+                    {a}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 sm:flex-none" disabled={!rankingData?.ranking || selectedSenators.length === 0}>
-              <Download className="mr-2 h-4 w-4" />
-              Exportar
-            </Button>
+            <ComparatorExportMenu
+              senators={selectedSenators}
+              year={year}
+              rankingData={rankingData}
+            />
+            <PrintButton className="flex-1 sm:flex-none" />
             <Button
               variant="ghost"
               size="sm"
@@ -197,11 +237,13 @@ function ComparatorContent() {
           {selectedSenators.map((senator, index) => (
             <Card key={senator.id} className="relative w-56 shrink-0 transition-all hover:shadow-md">
               {/* Remove Button */}
-              <button 
+              <button
+                type="button"
                 onClick={() => removeSenator(senator.id)}
+                aria-label={`Remover ${senator.nome} da comparação`}
                 className="absolute right-2 top-2 rounded-full p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
-                <XIcon className="h-4 w-4" />
+                <XIcon className="h-4 w-4" aria-hidden="true" />
               </button>
                 
               <CardContent className="flex flex-col items-center p-4 text-center">
@@ -249,7 +291,7 @@ function ComparatorContent() {
                     element?.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
               }}
-              className="flex w-40 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted p-4 text-center bg-muted/20 hover:bg-muted/40 transition-colors"
+              className="no-print flex w-40 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted p-4 text-center bg-muted/20 hover:bg-muted/40 transition-colors"
             >
               <ArrowRight className="h-6 w-6 text-muted-foreground mb-2" />
               <span className="text-xs font-medium text-muted-foreground">
@@ -271,7 +313,7 @@ function ComparatorContent() {
 
         <div className="mt-6">
           <TabsContent value="overview">
-            <OverviewTab selectedIds={selectedSenators.map(s => s.id)} year={year} />
+            <OverviewTab senators={selectedSenators} year={year} />
           </TabsContent>
           
           <TabsContent value="expenses">
@@ -301,7 +343,7 @@ function ComparatorContent() {
 
       {/* Add More Section */}
       {selectedSenators.length < 5 && (
-        <div id="add-senators" className="mt-12 pt-8 border-t scroll-mt-20">
+        <div id="add-senators" className="no-print mt-12 pt-8 border-t scroll-mt-20">
           <div 
             className="flex items-center justify-between mb-4 cursor-pointer group"
             onClick={() => setIsSelectorExpanded(!isSelectorExpanded)}
