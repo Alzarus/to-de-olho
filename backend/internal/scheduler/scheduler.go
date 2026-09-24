@@ -10,6 +10,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/ceaps"
 	"github.com/Alzarus/to-de-olho/internal/comissao"
 	"github.com/Alzarus/to-de-olho/internal/emenda"
+	"github.com/Alzarus/to-de-olho/internal/gabinete"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/senador"
@@ -29,6 +30,45 @@ type Scheduler struct {
 	rankingService *ranking.Service
 	senadorRepo    *senador.Repository
 	votacaoRepo    *votacao.Repository
+	gabineteSync   *gabinete.SyncService // opcional (SetGabineteSync)
+}
+
+// intervaloGabinete e a frequencia da carga de gabinete: a fonte muda pouco e
+// a rota e lenta, entao o sync diario so roda quando a ultima carga passou disso.
+const intervaloGabinete = 7 * 24 * time.Hour
+
+// SetGabineteSync liga a carga de estrutura de gabinete ao scheduler
+func (s *Scheduler) SetGabineteSync(g *gabinete.SyncService) {
+	s.gabineteSync = g
+}
+
+// syncGabinete roda a carga do ano atual (e, em janeiro, do ano anterior, que
+// fecha na fonte) quando a guarda semanal permite.
+func (s *Scheduler) syncGabinete(ctx context.Context, agora time.Time) {
+	if s.gabineteSync == nil {
+		return
+	}
+	anos := []int{agora.Year()}
+	if agora.Month() == time.January {
+		anos = append(anos, agora.Year()-1)
+	}
+	for _, ano := range anos {
+		precisa, err := s.gabineteSync.PrecisaAtualizar(ano, intervaloGabinete)
+		if err != nil {
+			slog.Error("falha na guarda do sync de gabinete", "ano", ano, "error", err)
+			continue
+		}
+		if !precisa {
+			slog.Info("gabinete atualizado ha menos de uma semana, pulando", "ano", ano)
+			continue
+		}
+		if _, err := s.gabineteSync.SyncAno(ctx, ano); err != nil {
+			slog.Error("falha sync gabinete", "ano", ano, "error", err)
+		}
+	}
+	if err := s.gabineteSync.SyncMesa(ctx); err != nil {
+		slog.Error("falha sync mesa diretora", "error", err)
+	}
 }
 
 // NewScheduler cria um novo scheduler
@@ -165,6 +205,14 @@ func (s *Scheduler) RunBackfill(ctx context.Context) {
 		slog.Error("falha no backfill de proposicoes", "error", err)
 	}
 
+	// Gabinete (numeros agregados): Mesa e todos os anos do recorte
+	if s.gabineteSync != nil {
+		slog.Info("--- GABINETE ---")
+		if err := s.gabineteSync.SyncTodos(ctx, gabinete.AnosDoRecorte(time.Now())); err != nil {
+			slog.Error("falha no backfill de gabinete", "error", err)
+		}
+	}
+
 	// F. Calculo de Ranking Final, so com a carga completa
 	slog.Info("--- PASSO 6/6: CALCULANDO RANKING ---")
 	if !s.cargaCompleta() {
@@ -227,6 +275,9 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 	if err := s.proposicaoSync.SyncFromAPI(ctx); err != nil {
 		slog.Error("falha sync proposicoes", "error", err)
 	}
+
+	// 7b. Gabinete: semanal (guarda por data da ultima carga)
+	s.syncGabinete(ctx, time.Now())
 
 	// 8. Invalidar o cache e recalcular o ranking, so com a carga completa.
 	// Carga incompleta mantem o ranking em cache (ate o TTL de 24h); quem
