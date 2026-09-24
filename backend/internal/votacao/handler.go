@@ -1,9 +1,11 @@
 package votacao
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -118,23 +120,38 @@ func (h *Handler) GetVotosPorTipo(c *gin.Context) {
 }
 
 // GetAll godoc
-// @Summary Lista todas as votacoes (agrupadas por sessao)
+// @Summary Lista todas as votacoes (uma linha por votacao)
 // @Tags votacoes
 // @Produce json
 // @Param page query int false "Pagina (default 1)"
 // @Param limit query int false "Limite (default 20)"
-// @Param ano query int false "Ano (default atual)"
+// @Param ano query int false "Ano (default: todos)"
 // @Param materia query string false "Filtro por materia/descricao"
 // @Param sessao query string false "Codigo da sessao (todas as votacoes dela)"
+// @Param tipo query string false "Siglas da materia separadas por virgula (PEC,MSF...)"
+// @Param secreta query bool false "true: so secretas; false: so abertas"
+// @Param resultado query string false "Resultados separados por virgula (A,R)"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/votacoes [get]
 func (h *Handler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	ano, _ := strconv.Atoi(c.Query("ano"))
-	materia := c.Query("materia")
-	ordem := c.DefaultQuery("ordem", "desc")
-	sessao := c.Query("sessao")
+
+	secreta, err := parseSecreta(c.Query("secreta"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	filtro := FiltroLista{
+		Ano:        ano,
+		Materia:    c.Query("materia"),
+		Sessao:     c.Query("sessao"),
+		Ordem:      c.DefaultQuery("ordem", "desc"),
+		Tipos:      parseLista(c.Query("tipo")),
+		Secreta:    secreta,
+		Resultados: parseLista(c.Query("resultado")),
+	}
 
 	if page < 1 {
 		page = 1
@@ -144,7 +161,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	votacoes, total, err := h.repo.FindAll(limit, offset, ano, materia, ordem, sessao)
+	votacoes, total, err := h.repo.FindAll(limit, offset, filtro)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar votacoes"})
 		return
@@ -156,6 +173,54 @@ func (h *Handler) GetAll(c *gin.Context) {
 		"page":  page,
 		"limit": limit,
 	})
+}
+
+// GetFacetas godoc
+// @Summary Contagens de votacoes por tipo de materia, secreta e resultado
+// @Tags votacoes
+// @Produce json
+// @Param ano query int false "Ano (default: todos)"
+// @Success 200 {object} Facetas
+// @Router /api/v1/votacoes/facetas [get]
+func (h *Handler) GetFacetas(c *gin.Context) {
+	ano, _ := strconv.Atoi(c.Query("ano"))
+	facetas, err := h.repo.Facetas(ano)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar facetas"})
+		return
+	}
+	c.JSON(http.StatusOK, facetas)
+}
+
+// siglaValida limita os valores de tipo/resultado a siglas simples
+var siglaValida = regexp.MustCompile(`^[A-Z0-9-]{1,20}$`)
+
+// parseLista le uma lista separada por virgula, em maiusculas, sem vazios,
+// repetidos ou valores fora do formato de sigla.
+func parseLista(valor string) []string {
+	var out []string
+	vistos := map[string]bool{}
+	for _, item := range strings.Split(valor, ",") {
+		item = strings.ToUpper(strings.TrimSpace(item))
+		if item == "" || vistos[item] || !siglaValida.MatchString(item) {
+			continue
+		}
+		vistos[item] = true
+		out = append(out, item)
+	}
+	return out
+}
+
+// parseSecreta le o filtro secreta: vazio e "todas" (nil).
+func parseSecreta(valor string) (*bool, error) {
+	if strings.TrimSpace(valor) == "" {
+		return nil, nil
+	}
+	b, err := strconv.ParseBool(strings.TrimSpace(valor))
+	if err != nil {
+		return nil, fmt.Errorf("parametro secreta invalido %q: use true ou false", valor)
+	}
+	return &b, nil
 }
 
 // idLegado casa o formato antigo de id de votacao, "codigoSessao_ano"

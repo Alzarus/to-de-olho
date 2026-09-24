@@ -106,6 +106,7 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 		votacoes := v1.Group("/votacoes")
 		{
 			votacoes.GET("", votacaoHandler.GetAll)
+			votacoes.GET("/facetas", votacaoHandler.GetFacetas)
 			votacoes.GET("/:id", votacaoHandler.GetByID)
 		}
 

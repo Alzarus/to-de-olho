@@ -162,10 +162,11 @@ type VotacaoSessaoAPI struct {
 	SequencialVotacao   *int   `json:"sequencialVotacao"`   // pode vir null
 	CodigoMateria       *int   `json:"codigoMateria"`
 	Identificacao       string `json:"identificacao"` // Ex: "PLP 124/2022 (Substitutivo-CD)"
+	Sigla               string `json:"sigla"`         // tipo da materia: PLP, PEC, MSF...
 	Ementa              string `json:"ementa"`
 	ResultadoVotacao    string `json:"resultadoVotacao"`
 
-	VotacaoSecreta     string            `json:"votacaoSecreta"`
+	VotacaoSecreta     string            `json:"votacaoSecreta"` // "S" ou "N"
 	TotalVotosSim      int               `json:"totalVotosSim"`
 	TotalVotosNao      int               `json:"totalVotosNao"`
 	Votos              []VotoParlamentar `json:"votos"`
