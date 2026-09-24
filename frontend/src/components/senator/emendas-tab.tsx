@@ -18,7 +18,10 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useEmendas } from "@/hooks/use-senador";
+import { useEmendas, useSenador } from "@/hooks/use-senador";
+import { rotuloAnoArquivo, slugArquivo } from "@/lib/export";
+import { COLUNAS_EMENDA } from "@/lib/export-colunas";
+import { ExportarDados } from "@/components/export-dados";
 import { formatCurrency } from "@/lib/utils";
 import { AlertCircle, Info, Search, ArrowUpDown, X } from "lucide-react";
 import { BrazilMap } from "@/components/ui/brazil-map";
@@ -28,6 +31,7 @@ type Ordenacao = "pago_desc" | "pago_asc" | "empenhado_desc" | "empenhado_asc" |
 
 export function EmendasTab({ id, ano }: { id: number; ano: number }) {
   const { data, isLoading } = useEmendas(id, ano);
+  const { data: senador } = useSenador(id);
   const [tipoFiltro, setTipoFiltro] = useState<TipoFiltro>("todos");
   const [busca, setBusca] = useState("");
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("pago_desc");
@@ -261,6 +265,22 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
           <CardHeader>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <CardTitle>Detalhamento das Emendas</CardTitle>
+                  <ExportarDados
+                      className="sm:order-last sm:ml-auto"
+                      descricao={`Emendas${ano ? ` de ${ano}` : " do mandato"}`}
+                      detalhe={`${emendasFiltradas.length} emendas${emendasFiltradas.length < emendas.length ? " (com o filtro atual)" : ""}, não só as 50 exibidas`}
+                      nomeArquivo={`todeolho_${slugArquivo(senador?.nome ?? `senador-${id}`)}_emendas_${rotuloAnoArquivo(ano)}`}
+                      colunas={COLUNAS_EMENDA}
+                      observacao={
+                          emendasFiltradas.length < emendas.length
+                              ? `Filtro aplicado: ${[tipoFiltro !== "todos" && (tipoFiltro === "pix" ? "especiais (PIX)" : "finalidade definida"), busca && `busca "${busca}"`].filter(Boolean).join("; ")}`
+                              : undefined
+                      }
+                      parametros={{ senador_id: id, ano: ano || "mandato" }}
+                      obter={async () =>
+                          emendasFiltradas.map((e) => ({ ...e, senador: senador?.nome ?? "" }))
+                      }
+                  />
                   {tipoFiltro !== "todos" && (
                       <Badge 
                           variant="secondary" 

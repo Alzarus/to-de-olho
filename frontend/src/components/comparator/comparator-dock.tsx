@@ -20,7 +20,7 @@ export function ComparatorDock() {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-4 left-0 right-0 z-50 flex justify-center pointer-events-none env-safe-area-bottom"
+        className="no-print fixed bottom-4 left-0 right-0 z-50 flex justify-center pointer-events-none env-safe-area-bottom"
         style={{ paddingRight: "var(--removed-body-scroll-bar-size)", paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="pointer-events-auto w-[95%] max-w-fit flex flex-col items-center gap-2 rounded-2xl border border-border bg-background p-2 shadow-sm dark:bg-popover">

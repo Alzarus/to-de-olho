@@ -194,3 +194,94 @@
     scrollbar-width: none; /* Firefox */
   }
 }
+
+/* Impressão / Salvar PDF: só o conteúdo, fundo branco e texto escuro.
+   A URL e a data aparecem no topo pelo componente PrintInfo (.print-only). */
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  :root,
+  .dark {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.15 0.02 250);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.15 0.02 250);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.15 0.02 250);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.35 0.02 250);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.15 0.02 250);
+    --border: oklch(0.8 0.01 250);
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  body > div,
+  main {
+    padding-top: 0 !important;
+    overflow: visible !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .no-print,
+  button,
+  input,
+  select,
+  [role="combobox"],
+  [role="tablist"],
+  [data-sonner-toaster],
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  [data-slot="card"],
+  table tr,
+  li,
+  details,
+  figure,
+  svg {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  /* Tabelas e listas roláveis mostram tudo no papel */
+  .overflow-x-auto,
+  .no-scrollbar {
+    overflow: visible !important;
+  }
+}

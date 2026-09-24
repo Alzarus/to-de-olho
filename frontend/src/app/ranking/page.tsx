@@ -21,6 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRanking } from "@/hooks/use-ranking";
 import { usePersistentYear } from "@/hooks/use-persistent-year";
+import { ExportarDados } from "@/components/export-dados";
+import { PrintButton } from "@/components/print-button";
+import { rotuloAnoArquivo } from "@/lib/export";
+import { COLUNAS_RANKING, linhasRanking } from "@/lib/export-colunas";
 import type { SenadorScore } from "@/types/api";
 import {
   Tooltip,
@@ -36,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BRAZIL_STATES } from "@/components/ui/brazil-map-data";
-import { formatPresenca, SEM_DADOS_PRESENCA } from "@/lib/utils";
+import { anosDisponiveis, formatPresenca, SEM_DADOS_PRESENCA } from "@/lib/utils";
 
 const UF_MAP = Object.fromEntries(
   BRAZIL_STATES.map((state) => [state.id, state.name]),
@@ -546,10 +550,7 @@ function RankingError({ message }: { message: string }) {
 }
 
 // Anos do seletor: da primeira legislatura com dados (2023) ate o ano corrente
-const ANOS_DISPONIVEIS = Array.from(
-  { length: new Date().getFullYear() - 2023 + 1 },
-  (_, i) => new Date().getFullYear() - i,
-);
+const ANOS_DISPONIVEIS = anosDisponiveis();
 
 // AAAA-MM-DD -> DD/MM/AAAA, sem passar por Date (fuso)
 function formatarData(iso: string): string {
@@ -791,6 +792,36 @@ function RankingContent() {
             <Badge variant="outline" className="font-normal">
               {filteredData.length} senadores
             </Badge>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {data && (
+              <ExportarDados
+                descricao={`Ranking ${ano === 0 ? "do mandato" : `de ${ano}`}`}
+                detalhe={`${filteredData.length} classificados e ${semDados.length} com dados insuficientes${hasActiveFilters ? ", com os filtros atuais" : ""}`}
+                nomeArquivo={`todeolho_ranking_${rotuloAnoArquivo(ano)}`}
+                colunas={COLUNAS_RANKING}
+                observacao={
+                  hasActiveFilters
+                    ? `Filtros aplicados: ${[
+                        partido && `partido ${partido}`,
+                        uf && `UF ${uf}`,
+                        search && `nome contém "${search}"`,
+                        inativos && "inclui inativos",
+                      ]
+                        .filter(Boolean)
+                        .join("; ")}`
+                    : undefined
+                }
+                parametros={{
+                  ano: ano || "mandato",
+                  ordenacao: `${sortBy} ${sortDir}`,
+                  metodologia: data.metodologia,
+                  calculado_em: data.calculado_em,
+                }}
+                obter={async () => linhasRanking(filteredData, semDados)}
+              />
+            )}
+            <PrintButton />
           </div>
         </CardHeader>
 
