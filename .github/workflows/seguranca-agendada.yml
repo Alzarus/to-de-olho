@@ -23,7 +23,7 @@ jobs:
   trivy-fs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Trivy (dependencias e segredos)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -51,7 +51,7 @@ jobs:
       IMAGEM: ghcr.io/alzarus/todeolho-${{ matrix.servico }}:producao
     steps:
       # O .trivyignore vem do repositorio.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Login no GHCR
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
