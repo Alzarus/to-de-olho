@@ -120,13 +120,16 @@ mesma_versao() {
 reserva=$(resolver_reserva)
 echo "[INFO] versão nova: $nova; reserva (producao): ${reserva:-nenhuma}"
 
-subir "$nova"
-if saudavel; then
+# `subir && saudavel` dentro do if: um `up` que sai com erro (imagem ausente,
+# banco unhealthy, recriação interrompida no meio) conta como falha de saúde
+# e leva ao rollback. Solto, sob `set -e`, ele encerraria o script sem
+# rollback e com o .env já apontando a versão nova.
+if subir "$nova" && saudavel; then
   echo "RESULTADO: versão $nova no ar e saudável"
   exit 0
 fi
 
-echo "::error::a versão $nova falhou no health check"
+echo "::error::a versão $nova falhou na subida ou no health check"
 if [ -z "$reserva" ]; then
   echo "RESULTADO: FALHA sem rollback. Não existe tag producao; a versão $nova segue no ar quebrada. Rollback manual: gh workflow run deploy.yml -f tag=<sha bom>"
   exit 1
@@ -137,8 +140,7 @@ if mesma_versao "$nova" "$reserva"; then
 fi
 
 echo "[ROLLBACK] restaurando a producao: $reserva"
-subir "$reserva"
-if saudavel; then
+if subir "$reserva" && saudavel; then
   echo "RESULTADO: ROLLBACK. A versão $nova falhou; a producao $reserva foi restaurada e está saudável. O job termina em falha de propósito."
 else
   echo "RESULTADO: ROLLBACK FALHOU. A versão $nova falhou, e a producao $reserva também não ficou saudável. Nenhuma nova tentativa; intervenção manual."
