@@ -1,6 +1,9 @@
 # Atualizacoes semanais de dependencias. Minor e patch vem agrupados em um PR
-# por ecossistema; major chega em PR separado (costuma exigir revisao).
-# Toda PR do Dependabot passa pelo mesmo gate do CI (testes + Trivy).
+# por ecossistema; major chega sempre em PR separado (nenhum grupo aceita
+# major) e recebe o rotulo `revisar` (dependabot-revisao.yml). Toda PR do
+# Dependabot passa pelo mesmo gate do CI (testes, Trivy e fumaca).
+# Combinado desde 25/09/2026: um merge por vez, esperando o deploy terminar
+# (deploy-contabo.md, secao "Merges e Dependabot").
 version: 2
 updates:
   - package-ecosystem: gomod
@@ -80,5 +83,8 @@ updates:
     commit-message:
       prefix: "ci"
     groups:
+      # Major de action (ex.: checkout v6 -> v7) muda entradas e o runtime do
+      # Node da action: fica fora do grupo, em PR proprio.
       actions:
         patterns: ["*"]
+        update-types: [minor, patch]
