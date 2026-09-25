@@ -3,8 +3,11 @@ name: Deploy to Contabo VPS
 # Fluxo (push em master):
 #   verificacao (testes, tipos, Trivy fs, build + Trivy das imagens)
 #     -> publicar (push no GHCR das MESMAS imagens escaneadas, tag = SHA)
-#     -> deploy (VPS so faz pull + up --no-build; nada compila em producao)
-#     -> marcar-producao (tag movel `producao`, lida pela varredura agendada)
+#     -> deploy (VPS so faz pull; ensaio da migracao numa copia do banco;
+#        up --no-build; health check pelo NPM; rollback automatico para a
+#        tag `producao` se o health check falhar)
+#     -> marcar-producao (tag movel `producao` = ultima versao saudavel; e a
+#        reserva do rollback automatico e o alvo da varredura agendada)
 #
 # Rollback: Actions -> Deploy to Contabo VPS -> Run workflow, informando em
 # `tag` o SHA completo de um deploy anterior. Pula verificacao e publicacao e
@@ -152,6 +155,10 @@ jobs:
             IdentitiesOnly yes
             StrictHostKeyChecking yes
             UserKnownHostsFile ~/.ssh/known_hosts
+            # O passo de implantacao pode ficar minutos sem saida (espera da
+            # API, rollback): o keepalive impede que a sessao caia calada.
+            ServerAliveInterval 30
+            ServerAliveCountMax 6
           EOF
           chmod 600 ~/.ssh/config
 
@@ -169,13 +176,15 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           TRANSPARENCIA_API_KEY: ${{ secrets.TRANSPARENCIA_API_KEY }}
           SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
-          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
           # O heredoc segue por stdin do ssh: nenhum segredo aparece na linha
           # de comando nem no log do runner (o Actions ja mascara os valores).
           # A expansao e local de proposito (os valores estao no runner).
+          # A linha IMAGE_TAG do .env antigo e mantida: quem troca a versao e
+          # o implantar.sh, depois do ensaio. Se o ensaio barrar a versao nova,
+          # o .env continua descrevendo o que esta no ar.
           # shellcheck disable=SC2087
-          ssh vps "umask 077 && cat > ${{ env.REMOTE_DIR }}/.env" <<EOF
+          ssh vps "cd ${{ env.REMOTE_DIR }} && umask 077 && t=\$(grep -m1 '^IMAGE_TAG=' .env 2>/dev/null || true) && cat > .env.novo && { [ -z \"\$t\" ] || printf '%s\n' \"\$t\" >> .env.novo; } && mv .env.novo .env" <<EOF
           POSTGRES_USER=${POSTGRES_USER}
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
           POSTGRES_DB=${POSTGRES_DB}
@@ -183,18 +192,18 @@ jobs:
           SYNC_SECRET=${SYNC_SECRET}
           NEXT_PUBLIC_API_URL=https://todeolho.org
           INICIO_BACKFILL=2023
-          IMAGE_TAG=${IMAGE_TAG}
           EOF
 
-      - name: Pull das imagens e subida dos containers
+      - name: Pull das imagens (nova e reserva do rollback)
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          # Token e usuario vao nas duas primeiras linhas do stdin; o restante
-          # e o script. Nada sensivel na linha de comando do ssh.
+          # Token, usuario e tag vao nas tres primeiras linhas do stdin; o
+          # restante e o script. Nada sensivel na linha de comando do ssh.
           {
-            printf '%s\n%s\n' "$GHCR_TOKEN" "$GHCR_USER"
+            printf '%s\n%s\n%s\n' "$GHCR_TOKEN" "$GHCR_USER" "$IMAGE_TAG"
             cat <<'REMOTE'
           set -euo pipefail
           cd /opt/todeolho
@@ -228,45 +237,61 @@ jobs:
           unset GHCR_TOKEN
 
           # </dev/null: o script chega por stdin; nenhum comando pode consumi-lo.
+          # IMAGE_TAG exportada vale mais que a do .env (que ainda aponta a
+          # versao no ar): o pull traz a nova sem trocar nada ainda.
           compose="docker compose -f docker-compose.contabo.yml --env-file .env"
           # So api e web: o postgres nao muda de versao sozinho num deploy.
           # O docker aproveita as camadas ja baixadas: repetir o pull converge.
           repetir "pull do GHCR" $compose pull api web
-          $compose up -d --no-build --remove-orphans </dev/null
-          REMOTE
-          } | ssh vps 'IFS= read -r GHCR_TOKEN && IFS= read -r GHCR_USER && export GHCR_TOKEN GHCR_USER && exec bash -se'
 
-      - name: Health check
+          # Reserva do rollback automatico (implantar.sh): as imagens da tag
+          # `producao`, a ultima versao que passou no health check. Ficam
+          # locais antes de qualquer troca, para o rollback nao depender da
+          # rede. Tag inexistente (primeiro deploy) nao e erro: o deploy segue
+          # sem rollback automatico, e o implantar.sh avisa. Falha de rede, sim:
+          # sem reserva garantida, nao se troca a versao no ar.
+          puxar_reserva() {
+            local img="ghcr.io/alzarus/todeolho-$1:producao" saida tentativa
+            for tentativa in 1 2 3 4 5; do
+              if saida=$(docker pull -q "$img" 2>&1 </dev/null); then
+                echo "[OK] reserva $img"; return 0
+              fi
+              case "$saida" in
+                *"manifest unknown"*|*"not found"*)
+                  echo "[AVISO] $img nao existe no GHCR: deploy sem rollback automatico"
+                  docker image rm "$img" >/dev/null 2>&1 </dev/null || true
+                  return 0 ;;
+              esac
+              [ "$tentativa" = 5 ] && { echo "[FALHA] pull da reserva $img: $saida"; return 1; }
+              echo "[AVISO] pull da reserva falhou (tentativa $tentativa de 5); nova tentativa em $((tentativa * 10)) s"
+              sleep $((tentativa * 10))
+            done
+          }
+          puxar_reserva api
+          puxar_reserva web
+          REMOTE
+          } | ssh vps 'IFS= read -r GHCR_TOKEN && IFS= read -r GHCR_USER && IFS= read -r IMAGE_TAG && export GHCR_TOKEN GHCR_USER IMAGE_TAG && exec bash -se'
+
+      # A imagem nova da API sobe contra uma COPIA do banco de producao antes
+      # de qualquer troca. Barra migracao que quebra no schema real, como a do
+      # GORM 1.31.2 em 25/09 (o CI testa com banco vazio e nao pega). Falhou
+      # aqui, a producao nao foi tocada. Detalhes em scripts/deploy/.
+      - name: Ensaio da migracao numa copia do banco
+        env:
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
+        run: ssh vps bash -s -- "$IMAGE_TAG" < scripts/deploy/ensaio-migracao.sh
+
+      # up + health check (API, loopback e caminho publico pela 443 do NPM).
+      # Se falhar, o implantar.sh volta sozinho para a tag `producao` e o job
+      # termina em falha, com o motivo e a versao restaurada no resumo.
+      - name: Implantar (health check e rollback automatico)
+        env:
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          ssh vps bash -se <<'REMOTE'
-          set -euo pipefail
-          # Backend: alcancado pela rede interna a partir do container web.
-          # A API so abre a porta depois do AutoMigrate e do recalculo da
-          # pontuacao; uma migracao pesada ja levou mais de 2 min (deploys do
-          # #40 e #41). Espera ate 6 min (72 x 5 s).
-          for i in $(seq 1 72); do
-            if docker exec todeolho-web node -e \
-              "require('http').get('http://api:8080/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))" 2>/dev/null; then
-              echo "[OK] backend respondendo em /health"
-              break
-            fi
-            if [ "$i" = 72 ]; then
-              echo "[FALHA] backend nao respondeu apos 72 tentativas (6 min)"
-              docker compose -f /opt/todeolho/docker-compose.contabo.yml --env-file /opt/todeolho/.env logs --tail=50 api
-              exit 1
-            fi
-            sleep 5
-          done
-
-          # Frontend: porta de loopback exposta pelo compose.
-          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5350/)
-          if [ "$code" != "200" ]; then
-            echo "[FALHA] frontend retornou HTTP $code"
-            docker compose -f /opt/todeolho/docker-compose.contabo.yml --env-file /opt/todeolho/.env logs --tail=50 web
-            exit 1
-          fi
-          echo "[OK] frontend respondendo (HTTP 200)"
-          REMOTE
+          rc=0
+          ssh vps bash -s -- "$IMAGE_TAG" < scripts/deploy/implantar.sh | tee /tmp/implantar.log || rc=$?
+          { echo "### Implantacao"; sed -n 's/^RESULTADO: //p' /tmp/implantar.log; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
 
       # Sem `docker builder prune`: a VPS nao compila mais nada.
       - name: Limpeza de imagens antigas

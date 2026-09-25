@@ -37,6 +37,9 @@ services:
       - TRANSPARENCIA_API_KEY=${TRANSPARENCIA_API_KEY:?TRANSPARENCIA_API_KEY obrigatorio}
       - SYNC_SECRET=${SYNC_SECRET:?SYNC_SECRET obrigatorio}
       - INICIO_BACKFILL=${INICIO_BACKFILL:-2023}
+      # Só o teste de fumaça do CI liga (verificacao.yml): lá o sync diário
+      # das 06:00 UTC chamaria as APIs do Senado a partir do runner.
+      - SCHEDULER_DESATIVADO=${SCHEDULER_DESATIVADO:-false}
     depends_on:
       db:
         condition: service_healthy

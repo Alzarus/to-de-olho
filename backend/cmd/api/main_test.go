@@ -85,3 +85,24 @@ func TestPoolDoAmbiente(t *testing.T) {
 		})
 	}
 }
+
+func TestAgendadorDesligado(t *testing.T) {
+	casos := []struct {
+		valor string
+		quer  bool
+	}{
+		{"", false},
+		{"0", false},
+		{"false", false},
+		{"lixo", false},
+		{"1", true},
+		{"true", true},
+		{" TRUE ", true},
+	}
+	for _, c := range casos {
+		t.Setenv("SCHEDULER_DESATIVADO", c.valor)
+		if got := agendadorDesligado(); got != c.quer {
+			t.Errorf("SCHEDULER_DESATIVADO=%q: agendadorDesligado() = %v; esperado %v", c.valor, got, c.quer)
+		}
+	}
+}
