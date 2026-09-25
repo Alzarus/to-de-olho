@@ -30,6 +30,12 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(frontend)"
+    # Os tipos do Node acompanham a versao que roda em producao (Node 24 no
+    # frontend/Dockerfile): tipos de uma major mais nova deixam o tsc aceitar
+    # APIs que o runtime nao tem. Sobem junto com a imagem, a mao.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       frontend-minor-patch:
         update-types: [minor, patch]
@@ -46,6 +52,11 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(docker)"
+    # Major do Node fica de fora: o Dependabot propoe tambem as versoes impares
+    # (o #51 levou a 25, sem suporte). A troca de major e manual, so para LTS.
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
     groups:
       imagens-base:
         update-types: [minor, patch]

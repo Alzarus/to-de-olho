@@ -26,7 +26,10 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN bun run build
 
 # Stage 3: Runner (imagem minima)
-FROM node:25-alpine AS runner
+# Node 24 (LTS). O Dependabot #51 trocou para o 25, versao impar: nunca vira
+# LTS e saiu de suporte em 06/2026, sem correcoes de seguranca. Subir so para
+# a proxima LTS (26, a partir de 10/2026); o dependabot.yml ignora majors.
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

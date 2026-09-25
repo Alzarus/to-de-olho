@@ -215,7 +215,16 @@ jobs:
           # </dev/null: o script chega por stdin; nenhum comando pode consumi-lo.
           compose="docker compose -f docker-compose.contabo.yml --env-file .env"
           # So api e web: o postgres nao muda de versao sozinho num deploy.
-          $compose pull api web </dev/null
+          # O pull da VPS ate o GHCR (via IPv6) cai com "connection reset by
+          # peer" de forma intermitente: 2 de 3 deploys de 25/09/2026 falharam
+          # so por isso, com o codigo aprovado. O docker aproveita as camadas ja
+          # baixadas, entao repetir converge; ate 5 tentativas, espera crescente.
+          for tentativa in 1 2 3 4 5; do
+            if $compose pull api web </dev/null; then break; fi
+            if [ "$tentativa" = 5 ]; then echo "[FALHA] pull do GHCR falhou 5 vezes"; exit 1; fi
+            echo "[AVISO] pull falhou (tentativa $tentativa de 5); nova tentativa em $((tentativa * 10)) s"
+            sleep $((tentativa * 10))
+          done
           $compose up -d --no-build --remove-orphans </dev/null
           REMOTE
           } | ssh vps 'IFS= read -r GHCR_TOKEN && IFS= read -r GHCR_USER && export GHCR_TOKEN GHCR_USER && exec bash -se'
