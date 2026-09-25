@@ -1,7 +1,8 @@
 
 import { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
-import { Github, Linkedin, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
+import { GithubIcon, LinkedinIcon } from "@/components/ui/brand-icons";
 
 export const metadata: Metadata = {
   title: "Sobre | Tô de Olho",
@@ -77,11 +78,11 @@ export default function SobrePage() {
             
             <div className="pt-6 border-t mt-6 flex gap-4">
                 <a href="https://github.com/Alzarus" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                    <Github className="w-5 h-5" />
+                    <GithubIcon className="w-5 h-5" />
                     <span className="sr-only">GitHub</span>
                 </a>
                 <a href="https://www.linkedin.com/in/pedroalmei/" target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                    <Linkedin className="w-5 h-5" />
+                    <LinkedinIcon className="w-5 h-5" />
                     <span className="sr-only">LinkedIn</span>
                 </a>
                  <a href="mailto:pedro.almei@hotmail.com" className="text-muted-foreground hover:text-primary transition-colors">
