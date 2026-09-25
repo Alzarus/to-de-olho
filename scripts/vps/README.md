@@ -8,10 +8,57 @@ rodar de novo) e têm um modo que só lê (`status` ou `verificar`).
 | `firewall-cloudflare.sh` | VPS (root) | 80/443 só aceitam a Cloudflare (cadeia `DOCKER-USER`) |
 | `endurecer-ssh.sh` | VPS (root) | SSH só por chave, fail2ban, atualizações de segurança |
 | `instalar-backup.sh` + `backup.sh` | VPS (root) | backup diário criptografado para o Cloudflare R2 |
+| `npm-sslip.sh` | VPS (root) | desativa (sem apagar) os proxy hosts `sslip.io` do NPM |
+| `verificar-vps.sh` | VPS (root) | retrato somente leitura do estado da VPS |
 | `restauracao-local.sh` | sua máquina (Docker) | gera a chave age e testa a restauração |
 | `../cloudflare/regras-zona.sh` | sua máquina | TLS, cache de borda e limite de taxa da zona |
 
-## Ordem recomendada
+## Janela de manutenção (roteiro para a VPS atual)
+
+Situação da VPS em 24/09/2026, levantada pelo `verificar-vps.sh`:
+
+- **Sistema e recursos:** Ubuntu 26.04, 4 vCPU, 7,8 GB de RAM, disco com 18% de uso.
+- **Já estava certo:** senha no SSH desligada; fail2ban e unattended-upgrades ativos.
+- **Pendências:** reboot pendente e 6 atualizações.
+- **ufw:** ativo, mas não protege 80/443, porque o Docker publica essas portas por fora dele.
+- **NPM:** ainda servia 3 hosts `sslip.io` direto no IP, sem Cloudflare.
+
+Faça de madrugada, com duas sessões SSH abertas. O site fica fora do ar só
+durante o reboot (1 a 2 minutos).
+
+```bash
+# 0. Na sua maquina: copiar os scripts (do branch ou da master, depois do merge)
+scp -r scripts/vps root@<IP>:/root/ops-vps
+
+# 1. Na VPS
+cd /root/ops-vps
+bash verificar-vps.sh > /root/antes.txt            # retrato de antes
+
+bash npm-sslip.sh status                           # 3 hosts sslip.io ATIVOS
+bash npm-sslip.sh desativar                        # backups em /opt/proxy/backup-sslip-*.json
+
+bash endurecer-ssh.sh aplicar                      # depois: login novo numa 3a janela
+
+apt-get update && apt-get -y upgrade               # as 6 atualizacoes pendentes
+reboot
+# (reconectar; esperar os conteineres ficarem healthy: docker ps)
+
+bash firewall-cloudflare.sh verificar              # tem que passar sem [FALHA]
+bash firewall-cloudflare.sh aplicar
+#   na sua maquina: curl -sI https://todeolho.org/ | head -1              -> 200
+#                   curl -skI -m 8 --resolve todeolho.org:443:<IP> https://todeolho.org/ -> timeout
+#                   https://neurofluxis.com/ abre normalmente
+bash firewall-cloudflare.sh confirmar              # em ate 5 min
+
+bash instalar-backup.sh                            # depois preencher /etc/todeolho-backup.env
+bash instalar-backup.sh testar
+```
+
+Depois, na sua máquina: `bash restauracao-local.sh testar r2`. Só apague os
+dumps manuais de `/opt/todeolho/backups` (os da troca da v3, de 23/09) depois
+que essa restauração tiver dado certo.
+
+## Ordem recomendada (detalhe de cada passo)
 
 1. **Cloudflare** (na sua máquina). Crie um token com as permissões listadas no
    cabeçalho de `regras-zona.sh` e rode `status`, depois `aplicar`.

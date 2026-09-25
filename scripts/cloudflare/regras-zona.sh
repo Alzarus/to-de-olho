@@ -128,12 +128,17 @@ regras_cache() {
     # --- isso prenderia o HTML por um ano. 2 min tambem limita a janela em que,
     # --- apos um deploy, um HTML antigo aponta para chunks /_next/static que ja
     # --- nao existem (o deploy pode chamar "purgar" para zerar essa janela).
-    # --- Navegacao do App Router (query _rsc) nao e cacheada: a mesma URL devolve
-    # --- HTML ou payload RSC conforme cabecalhos que a Cloudflare nao diferencia.
+    # --- Navegacao do App Router (query _rsc ou cabecalho RSC) nao e cacheada: a
+    # --- mesma URL devolve HTML ou payload RSC conforme cabecalhos que a
+    # --- Cloudflare nao poe na chave de cache (ela ignora Vary).
+    # --- As fichas (/senador/[id]) saem do Next com "private, no-store" so por
+    # --- serem dinamicas; nao ha cookie nem conteudo por usuario (conferido no
+    # --- PR #48), entao o TTL sobreposto as cacheia de proposito: sao as paginas
+    # --- mais caras de renderizar.
     # --- Erros 4xx/5xx nunca ficam na borda.
     {
       description: "To De Olho - paginas HTML",
-      expression: "(http.host eq \"\($h)\" and http.request.method eq \"GET\" and not starts_with(http.request.uri.path, \"/api/\") and not starts_with(http.request.uri.path, \"/quemvotar\") and not starts_with(http.request.uri.path, \"/_next/\") and not http.request.uri.query contains \"_rsc=\")",
+      expression: "(http.host eq \"\($h)\" and http.request.method eq \"GET\" and not starts_with(http.request.uri.path, \"/api/\") and not starts_with(http.request.uri.path, \"/quemvotar\") and not starts_with(http.request.uri.path, \"/_next/\") and not http.request.uri.query contains \"_rsc=\" and not any(lower(http.request.headers.names[*])[*] == \"rsc\"))",
       action: "set_cache_settings",
       action_parameters: {
         cache: true,
