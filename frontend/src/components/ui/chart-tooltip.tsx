@@ -1,14 +1,20 @@
 "use client";
 
 import * as React from "react";
-import type { DefaultTooltipContentProps } from "recharts";
+import type {
+  TooltipPayload,
+  TooltipPayloadEntry as RechartsTooltipPayloadEntry,
+} from "recharts";
 
 import { cn } from "@/lib/utils";
 
-export type TooltipPayloadEntry = NonNullable<
-  DefaultTooltipContentProps<number | string, number | string>["payload"]
->[number];
-export type ChartTooltipPayload = ReadonlyArray<TooltipPayloadEntry>;
+// Tipos exportados pelo próprio Recharts, e não derivados de
+// DefaultTooltipContentProps com genéricos fixos: a 3.10 passou a entregar ao
+// `content` do <Tooltip> um TooltipPayload com ValueType mais largo, e o tipo
+// derivado com <number | string> deixou de ser compatível (quebrou o build no
+// Dependabot #53). Os formatadores abaixo já recebem `unknown`.
+export type TooltipPayloadEntry = RechartsTooltipPayloadEntry;
+export type ChartTooltipPayload = TooltipPayload;
 
 export interface ChartTooltipContentProps {
   /** Injetados pelo Recharts quando usado em `<Tooltip content={...} />`. */
