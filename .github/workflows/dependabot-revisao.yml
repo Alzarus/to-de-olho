@@ -1,0 +1,56 @@
+name: Dependabot (revisao)
+
+# Versao maior exige revisao. Em 25/09/2026, PRs do Dependabot mergeados em
+# lote e sem revisao levaram a producao o Node 25 (#51, versao impar sem
+# suporte), o TypeScript 7, o ESLint 10, o framer-motion 13 e o GORM que
+# derrubou a API (#50). O dependabot.yml ja deixa versao maior fora dos
+# grupos; aqui o PR dela recebe o rotulo `revisar` e um roteiro. Nada e
+# aprovado nem mergeado por este workflow.
+#
+# `pull_request` disparado pelo Dependabot recebe token somente leitura, a
+# menos que o workflow peca mais: por isso o `permissions` do job.
+
+on:
+  pull_request:
+    branches: ["master"]
+    types: [opened, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  rotular:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      # Criar o rotulo `revisar` na primeira vez.
+      issues: write
+    steps:
+      - name: Metadados do Dependabot
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Rotular versao maior
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.html_url }}
+          ACAO: ${{ github.event.action }}
+          DEPENDENCIAS: ${{ steps.meta.outputs.dependency-names }}
+          DE: ${{ steps.meta.outputs.previous-version }}
+          PARA: ${{ steps.meta.outputs.new-version }}
+        run: |
+          gh label create revisar --repo "$GITHUB_REPOSITORY" --color B60205 \
+            --description "Versao maior: revisar antes do merge" 2>/dev/null || true
+          gh pr edit "$PR" --add-label revisar
+          # Comentario so na abertura: cada rebase do Dependabot dispara
+          # `synchronize` e repetiria o texto.
+          [ "$ACAO" = synchronize ] && exit 0
+          gh pr comment "$PR" --body-file - <<EOF
+          **Versão maior** ($DEPENDENCIAS: $DE → $PARA). Antes do merge:
+
+          - [ ] ler o changelog e o guia de migração (quebras de API, tipos, ícones removidos...);
+          - [ ] CI verde, inclusive o teste de fumaça (db + api + web e o gráfico no navegador);
+          - [ ] backend: o deploy ensaia a migração numa cópia do banco de produção e para se ela falhar;
+          - [ ] **um merge por vez**: esperar o deploy terminar (e o health check passar) antes do próximo. Cada deploy publica o \`master\` inteiro.
+          EOF

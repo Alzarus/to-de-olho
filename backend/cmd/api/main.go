@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -163,7 +164,15 @@ func main() {
 	// Gabinete: carga semanal (guarda no sync diario) e no backfill
 	sched.SetGabineteSync(gabinete.NewSyncService(gabinete.NewRepository(db), senadorRepo, admClient, legisClient))
 
-	sched.Start(ctxSched)
+	// O ensaio de migração do deploy (scripts/deploy/ensaio-migracao.sh) sobe
+	// esta imagem contra uma cópia descartável do banco só para ver se ela
+	// chega ao /health. Lá o sync diário não pode rodar: gravaria na cópia e
+	// chamaria as APIs do Senado sem motivo.
+	if agendadorDesligado() {
+		slog.Warn("scheduler desligado por SCHEDULER_DESATIVADO")
+	} else {
+		sched.Start(ctxSched)
+	}
 
 	// Registrar endpoint de sync diario (Cloud Scheduler)
 	api.RegisterSchedulerRoutes(router, sched)
@@ -289,6 +298,12 @@ func healthcheck() int {
 		return 1
 	}
 	return 0
+}
+
+// agendadorDesligado lê SCHEDULER_DESATIVADO ("1" ou "true").
+func agendadorDesligado() bool {
+	v, _ := strconv.ParseBool(strings.TrimSpace(os.Getenv("SCHEDULER_DESATIVADO")))
+	return v
 }
 
 func getPort() string {

@@ -131,19 +131,27 @@ push em master
        ├─ backend: go mod verify, go vet, go test
        ├─ frontend: tsc --noEmit
        ├─ Trivy do repositório (CRITICAL)
-       └─ imagens api e web: build no runner (Buildx + cache do Actions)
-            → Trivy na imagem carregada (CRITICAL/HIGH com correção)
-            → artefato da MESMA imagem escaneada
+       ├─ imagens api e web: build no runner (Buildx + cache do Actions)
+       │    → Trivy na imagem carregada (CRITICAL/HIGH com correção)
+       │    → artefato da MESMA imagem escaneada
+       └─ fumaça: db + api + web com o docker-compose.contabo.yml, 200 em
+            /, /ranking, /senador/1 e /api/v1/ranking, e o gráfico do senador
+            no navegador (Playwright: svg do Recharts, tooltip, console limpo)
   └─ publicar: push em ghcr.io/alzarus/todeolho-{api,web}:<SHA>
-  └─ deploy (VPS): docker login (token do job, via stdin) → pull api web
-                   → up -d --no-build → health check → logout
-  └─ marcar-producao: tag móvel :producao = o que está no ar
+  └─ deploy (VPS): docker login (token do job, via stdin)
+                   → pull api web <SHA> e a reserva :producao → logout
+                   → ensaio da migração numa cópia do banco (seção 7.1)
+                   → up -d --no-build → health check (API, loopback e
+                     caminho público pela 443 do NPM)
+                   → falhou? rollback automático para :producao (seção 7.2)
+  └─ marcar-producao: tag móvel :producao = última versão saudável
 ```
 
 No pull request roda só a `verificacao` (build + Trivy, **sem** push). Se
 qualquer etapa falhar, nada é publicado nem implantado.
 
-O `IMAGE_TAG` (SHA do commit) é gravado no `/opt/todeolho/.env` e o
+O `IMAGE_TAG` (SHA do commit) é gravado no `/opt/todeolho/.env` pelo
+`scripts/deploy/implantar.sh`, só depois do ensaio, e o
 `docker-compose.contabo.yml` usa `ghcr.io/alzarus/todeolho-*:${IMAGE_TAG}`. O
 compose de produção não tem `build:`; para construir localmente as mesmas
 imagens, usar o override `docker-compose.contabo.build.yml`.
@@ -217,9 +225,10 @@ exige rebuild:
    Contabo VPS* (o resumo mostra a tag), ou `git log --format=%H` em `master`.
 2. Actions → *Deploy to Contabo VPS* → **Run workflow**, preencher `tag` com o
    SHA completo (40 caracteres) e rodar.
-3. O workflow pula testes, Trivy e publicação, grava o novo `IMAGE_TAG` no
-   `.env`, faz `pull` + `up -d --no-build`, roda o health check e move a tag
-   `:producao` para esse SHA.
+3. O workflow pula testes, Trivy e publicação e segue o mesmo caminho de um
+   deploy normal: `pull`, ensaio, `up -d --no-build`, health check (com
+   rollback automático) e, se ficar saudável, move a tag `:producao` para esse
+   SHA.
 
 Pelo terminal: `gh workflow run deploy.yml -f tag=<sha>`.
 
@@ -238,13 +247,88 @@ Cuidados:
 Para reverter apenas o roteamento, basta apontar o `location /` do NPM de volta
 para `quemvotar-web:8080`.
 
+### 7.1 Ensaio da migração (automático, antes da troca)
+
+Em 25/09/2026 o GORM 1.31.2 (Dependabot #50) passou no CI, que testa com banco
+vazio, e na produção o `AutoMigrate` tentou `DROP CONSTRAINT
+uni_despesas_ceaps_id_origem`, que não existe. A API entrou em loop e o site
+ficou 20 min com 500.
+
+Desde então, antes de trocar a versão, o `scripts/deploy/ensaio-migracao.sh`:
+
+1. copia o banco de produção para `todeolho_ensaio`, no mesmo Postgres
+   (`pg_dump | psql`: snapshot MVCC, sem bloquear a API; `CREATE DATABASE ...
+   TEMPLATE` exigiria derrubar as conexões dela). Exige livre no disco o dobro
+   do tamanho do banco;
+2. sobe a imagem **nova** da API em `todeolho-ensaio`, na rede interna, sem
+   porta publicada, com `SCHEDULER_DESATIVADO=true` e sem `SYNC_SECRET` nem
+   chave do Portal (nenhum sync, nenhuma chamada externa);
+3. exige `/health` 200 em até 6 min; se a API encerrar antes (migração
+   quebrada), falha na hora, com o log;
+4. apaga contêiner e cópia sempre (trap em EXIT, HUP e TERM; um ensaio
+   interrompido de outro jeito é limpo pelo seguinte).
+
+Se o ensaio falhar, o job para ali: **a produção não é tocada** e o `.env`
+continua apontando a versão no ar. Contra o schema de produção, o ensaio barra
+a imagem com GORM 1.31.2 (`constraint "uni_despesas_ceaps_id_origem" ... does
+not exist`) e aprova a atual.
+
+O que ele não pega: migração que passa mas deixa o dado errado, e erro que só
+aparece com tráfego. Para isso existem o health check e o rollback.
+
+### 7.2 Rollback automático
+
+O `scripts/deploy/implantar.sh` faz o `up` e o health check:
+
+- API `/health` pela rede interna (até 6 min; se o contêiner reiniciar 3
+  vezes, desiste na hora, porque loop de reinício não se recupera sozinho);
+- web no loopback `127.0.0.1:5350`;
+- `/` e `/api/v1/ranking` **pelo caminho público**: porta 443 do NPM com o
+  SNI e o Host `todeolho.org` (`curl --resolve todeolho.org:443:127.0.0.1`),
+  como o Quem Votar faz desde o incidente do 502 (quem-votar #20).
+
+Se falhar, ele reimplanta as imagens da tag `:producao` (a última versão que
+passou no health check), baixadas no passo de pull **antes** da troca, para
+não depender da rede da VPS na hora do rollback. Confere a saúde delas e
+termina o job em **falha**, com o motivo e a versão restaurada no resumo do
+run. Casos-limite:
+
+| situação | o que acontece |
+|---|---|
+| não existe `:producao` (primeiro deploy) | falha sem rollback; o resumo indica o rollback manual |
+| `:producao` é a mesma imagem que falhou | falha sem rollback (o problema está na VPS: banco, rede, NPM) |
+| a `:producao` também falha | uma única tentativa: falha com "ROLLBACK FALHOU", sem loop; intervenção manual |
+| pull da `:producao` falha por rede | o deploy para antes da troca: sem reserva, a versão no ar não é trocada |
+
+O rollback troca imagens; o schema fica como a versão nova deixou (ver os
+cuidados acima). O `marcar-producao` só roda com o deploy saudável, então a
+`:producao` nunca aponta uma versão que falhou.
+
+### 7.3 Merges e Dependabot
+
+Combinado desde 25/09/2026, depois de três quedas no mesmo dia:
+
+- **Um merge por vez, esperando o deploy terminar** (verde, ou com o rollback
+  concluído) antes do próximo. Cada deploy publica o `master` inteiro, e não
+  só o PR: em 25/09 os merges em lote levaram juntos o Node 25 (#51) e o GORM
+  quebrado (#50), e um PR independente (#59) quase republicou o GORM porque o
+  `master` ainda o continha.
+- **Versão maior exige revisão.** O Dependabot nunca agrupa major; o PR dela
+  recebe o rótulo `revisar` e um roteiro (`dependabot-revisao.yml`). Exemplos:
+  lucide-react 1.x removeu os ícones de marcas (#61); recharts 3.10 mudou o
+  tipo do tooltip (#53).
+- Ignorados de propósito no `dependabot.yml`: major do `node` nas imagens (a
+  troca é manual e só para LTS), major do `@types/node` e `gorm.io/*` (até a
+  atualização testada com o ensaio).
+- O `master` é protegido: merge só com os checks do CI verdes
+  (`verificacao / ...`, inclusive a fumaça).
+
 ## 8. Varreduras e monitoramento
 
 | Workflow | Quando | O que faz |
 |---|---|---|
 | `seguranca-agendada.yml` | Segunda 09:00 UTC | Trivy do repositório e das imagens `:producao` (o que está no ar). Falha em CRITICAL/HIGH com correção. |
-| `disponibilidade.yml` | A cada 15 min | `curl` em `/`, `/ranking`, `/api/v1/ranking`, `/quemvotar/` (200) e `/api/v1/sync/daily` (404 na borda), com 3 tentativas. |
-| `.github/dependabot.yml` | Semanal | PRs agrupados para Go, Bun (frontend), imagens base e actions. |
+| `.github/dependabot.yml` | Semanal | PRs agrupados (minor e patch) para Go, Bun (frontend), imagens base e actions; major em PR próprio, com o rótulo `revisar`. |
 
 Falha de workflow agendado gera e-mail para o dono do repositório. Quando a
 varredura agendada acusar CVE na imagem base (ex.: `tzdata`, `openssl`), um
@@ -253,3 +337,20 @@ recente. Sem mudança de código, rodar *Deploy to Contabo VPS* sem `tag`.
 
 Observação: o GitHub desativa workflows agendados de repositórios públicos após
 60 dias sem commits; se isso acontecer, reativar em Actions.
+
+### Disponibilidade: monitor externo
+
+O antigo `disponibilidade.yml` (cron de 15 min no Actions) foi removido em
+25/09/2026. Ele não servia: o cron rodou 2 vezes em quase 10 h, e nas duas a
+Cloudflare devolveu **403** ao runner do GitHub em todas as rotas. Nunca
+avisaria de uma queda de verdade e só gerava alarme falso.
+
+O monitor é um serviço externo, fora da VPS e do GitHub:
+
+- **UptimeRobot** (plano grátis, intervalo de 5 min, alerta por e-mail e/ou
+  Telegram), com um monitor HTTP(S) por rota: `https://todeolho.org/`,
+  `https://todeolho.org/api/v1/ranking` e `https://todeolho.org/quemvotar/`,
+  esperando 200. Opcional: monitor de *keyword* (`Tô De Olho`) na home, para
+  pegar página de erro servida com 200.
+- **healthchecks.io** (grátis) para o backup: o `backup.sh` faz ping em
+  `HC_URL` ao terminar; sem ping no prazo, o serviço avisa.
