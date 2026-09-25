@@ -74,7 +74,7 @@ func (s *SyncService) convertToSenador(p senado.ParlamentarAPI) Senador {
 		NomeCompleto:      id.NomeCompletoParlamentar,
 		Partido:           id.SiglaPartidoParlamentar,
 		UF:                id.UfParlamentar,
-		FotoURL:           id.UrlFotoParlamentar,
+		FotoURL:           NormalizarFotoURL(id.UrlFotoParlamentar),
 		Email:             id.EmailParlamentar,
 		Cargo:             p.Mandato.DescricaoParticipacao,
 		Titular:           titular,

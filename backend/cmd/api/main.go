@@ -93,6 +93,12 @@ func main() {
 		slog.Error("falha ao preencher codigo_materia das votacoes", "error", err)
 		os.Exit(1)
 	}
+	// Fotos gravadas em http:// (conteúdo misto no site em https) passam a
+	// https; o sync já grava normalizado (idempotente)
+	if err := senador.NormalizarFotosHTTPS(db); err != nil {
+		slog.Error("falha ao normalizar fotos dos senadores", "error", err)
+		os.Exit(1)
+	}
 
 	/*
 		// Redis foi removido por questoes de custo no GCP
@@ -105,10 +111,7 @@ func main() {
 	router := api.SetupRouter(db, transparenciaKey)
 
 	// Criar servidor HTTP
-	srv := &http.Server{
-		Addr:    getPort(),
-		Handler: router,
-	}
+	srv := novoServidor(getPort(), router)
 
 	// --- Inicializar Services para Scheduler (Duplicado do Router por enquanto) ---
 	// Repositorios
@@ -211,18 +214,67 @@ func connectDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	maxConns := 100 // default para Cloud Run com alta recorrencia
-	if envMax := os.Getenv("DB_MAX_OPEN_CONNS"); envMax != "" {
-		if parsed, err := strconv.Atoi(envMax); err == nil && parsed > 0 {
-			maxConns = parsed
-		}
-	}
-
-	sqlDB.SetMaxIdleConns(maxConns / 2)
-	sqlDB.SetMaxOpenConns(maxConns)
+	pool := poolDoAmbiente()
+	sqlDB.SetMaxOpenConns(pool.abertas)
+	sqlDB.SetMaxIdleConns(pool.ociosas)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	return db, nil
+}
+
+// configPool é o tamanho do pool de conexões com o Postgres.
+type configPool struct {
+	abertas, ociosas int
+}
+
+// poolDoAmbiente lê DB_MAX_OPEN_CONNS e DB_MAX_IDLE_CONNS.
+//
+// O padrão antigo (100 abertas, pensado para o Cloud Run) era o
+// max_connections inteiro do Postgres 15: sob carga a API sozinha esgotava o
+// banco e sobrava zero conexão para o psql de manutenção, o backup e o
+// superusuário. 20 abertas dão conta da API (as consultas levam
+// milissegundos, e o limite por origem segura a fila antes do banco) e
+// deixam 80 livres. 10 ociosas evitam reabrir conexão a cada rajada;
+// ConnMaxIdleTime devolve ao banco as que ficarem paradas.
+func poolDoAmbiente() configPool {
+	p := configPool{abertas: 20, ociosas: 10}
+	if v, err := strconv.Atoi(os.Getenv("DB_MAX_OPEN_CONNS")); err == nil && v > 0 {
+		p.abertas = v
+	}
+	if v, err := strconv.Atoi(os.Getenv("DB_MAX_IDLE_CONNS")); err == nil && v >= 0 {
+		p.ociosas = v
+	}
+	// Ociosas acima de abertas não têm efeito; deixa explícito.
+	p.ociosas = min(p.ociosas, p.abertas)
+	return p
+}
+
+// novoServidor monta o http.Server com prazos.
+//
+// Sem nenhum timeout, um cliente que manda os headers um byte por vez
+// (slowloris) segura uma goroutine e um descritor para sempre; poucos milhares
+// derrubam a API. A Cloudflare filtra isso na borda, mas a origem precisa se
+// defender sozinha para o caso de ser alcançada direto.
+//   - ReadHeaderTimeout 10 s: tempo para chegarem os headers.
+//   - ReadTimeout 30 s: request inteiro. A API só recebe GET e POST sem corpo.
+//   - WriteTimeout 60 s: da leitura ao fim da resposta. A consulta mais
+//     pesada (alinhamento, ranking sem cache) leva poucos segundos; os syncs
+//     longos tiram o prazo depois de autenticados (api.semPrazoDeEscrita).
+//   - IdleTimeout 120 s: keep-alive parado é fechado.
+//   - MaxHeaderBytes 64 KiB: o padrão é 1 MiB. Nenhuma URL do site chega
+//     perto disso, e query string gigante (?q=, ?tipo=) viraria LIKE e IN
+//     enormes no banco.
+func novoServidor(addr string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    64 << 10,
+	}
 }
 
 // healthcheck devolve 0 se a API local responde 200 em /health, 1 caso contrario.

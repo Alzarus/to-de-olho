@@ -2,9 +2,11 @@ package votacao
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -47,6 +49,16 @@ func TestParseLista(t *testing.T) {
 		if obtido := parseLista(c.entrada); !reflect.DeepEqual(obtido, c.esperado) {
 			t.Errorf("parseLista(%q) = %v; esperado %v", c.entrada, obtido, c.esperado)
 		}
+	}
+}
+
+func TestParseListaTemTeto(t *testing.T) {
+	var itens []string
+	for i := 0; i < 5000; i++ {
+		itens = append(itens, fmt.Sprintf("S%d", i))
+	}
+	if obtido := parseLista(strings.Join(itens, ",")); len(obtido) != maxItensLista {
+		t.Errorf("lista longa deve parar em %d itens; veio %d", maxItensLista, len(obtido))
 	}
 }
 
