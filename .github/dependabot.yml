@@ -13,6 +13,14 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(backend)"
+    # GORM e o driver Postgres ficam de fora ate uma atualizacao testada contra
+    # o schema de producao. O #50 levou gorm 1.25.5 -> 1.31.2 e driver 1.5.4 ->
+    # 1.6.3; o AutoMigrate novo tentou "DROP CONSTRAINT uni_despesas_ceaps_id_
+    # origem", que nao existe (a unicidade antiga se chama despesas_ceaps_id_
+    # origem_key), e a API nao subiu em producao em 25/09/2026. O CI nao pegou
+    # porque testa num banco criado do zero.
+    ignore:
+      - dependency-name: "gorm.io/*"
     groups:
       go-minor-patch:
         update-types: [minor, patch]
