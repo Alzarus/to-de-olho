@@ -1,0 +1,20 @@
+# Override para construir localmente as imagens de producao, com os mesmos
+# contextos e build-args do CI (.github/workflows/verificacao.yml). Fica fora
+# do docker-compose.contabo.yml de proposito: em producao o compose nao tem
+# `build:` e a VPS nunca compila, mesmo que alguem rode `up` sem --no-build.
+#
+# Uso (IMAGE_TAG so da nome a imagem local):
+#   IMAGE_TAG=local docker compose --env-file .env.contabo.example \
+#     -f docker-compose.contabo.yml -f docker-compose.contabo.build.yml build
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://todeolho.org}
