@@ -209,22 +209,29 @@ jobs:
             ln -s "$HOME/.docker/cli-plugins" "$DOCKER_CONFIG/cli-plugins"
           fi
 
-          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          # A rede da VPS falha de forma intermitente em dois pontos: DNS local
+          # (lookup ghcr.io on 127.0.0.53: i/o timeout, deploy do #58) e conexao
+          # IPv6 com o GHCR (connection reset by peer, deploys do #45/#46 e #57).
+          # Login e pull passam pelo mesmo `repetir`: ate 5 tentativas com
+          # espera crescente. `</dev/null` porque o script chega por stdin.
+          repetir() {
+            local rotulo="$1" tentativa; shift
+            for tentativa in 1 2 3 4 5; do
+              if "$@" </dev/null; then return 0; fi
+              if [ "$tentativa" = 5 ]; then echo "[FALHA] $rotulo falhou 5 vezes"; return 1; fi
+              echo "[AVISO] $rotulo falhou (tentativa $tentativa de 5); nova tentativa em $((tentativa * 10)) s"
+              sleep $((tentativa * 10))
+            done
+          }
+          login_ghcr() { printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin; }
+          repetir "login no GHCR" login_ghcr
           unset GHCR_TOKEN
 
           # </dev/null: o script chega por stdin; nenhum comando pode consumi-lo.
           compose="docker compose -f docker-compose.contabo.yml --env-file .env"
           # So api e web: o postgres nao muda de versao sozinho num deploy.
-          # O pull da VPS ate o GHCR (via IPv6) cai com "connection reset by
-          # peer" de forma intermitente: 2 de 3 deploys de 25/09/2026 falharam
-          # so por isso, com o codigo aprovado. O docker aproveita as camadas ja
-          # baixadas, entao repetir converge; ate 5 tentativas, espera crescente.
-          for tentativa in 1 2 3 4 5; do
-            if $compose pull api web </dev/null; then break; fi
-            if [ "$tentativa" = 5 ]; then echo "[FALHA] pull do GHCR falhou 5 vezes"; exit 1; fi
-            echo "[AVISO] pull falhou (tentativa $tentativa de 5); nova tentativa em $((tentativa * 10)) s"
-            sleep $((tentativa * 10))
-          done
+          # O docker aproveita as camadas ja baixadas: repetir o pull converge.
+          repetir "pull do GHCR" $compose pull api web
           $compose up -d --no-build --remove-orphans </dev/null
           REMOTE
           } | ssh vps 'IFS= read -r GHCR_TOKEN && IFS= read -r GHCR_USER && export GHCR_TOKEN GHCR_USER && exec bash -se'
