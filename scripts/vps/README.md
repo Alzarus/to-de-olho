@@ -10,6 +10,7 @@ rodar de novo) e têm um modo que só lê (`status` ou `verificar`).
 | `instalar-backup.sh` + `backup.sh` | VPS (root) | backup diário criptografado para o Cloudflare R2 |
 | `npm-sslip.sh` | VPS (root) | desativa (sem apagar) os proxy hosts `sslip.io` do NPM |
 | `verificar-vps.sh` | VPS (root) | retrato somente leitura do estado da VPS |
+| `dns-redundante.sh` | VPS (root) | soma Cloudflare e Quad9 aos resolvedores da Contabo (DNS do deploy falhou em 25/09) |
 | `restauracao-local.sh` | sua máquina (Docker) | gera a chave age e testa a restauração |
 | `../cloudflare/regras-zona.sh` | sua máquina | TLS, cache de borda e limite de taxa da zona |
 
@@ -38,6 +39,7 @@ bash npm-sslip.sh status                           # 3 hosts sslip.io ATIVOS
 bash npm-sslip.sh desativar                        # backups em /opt/proxy/backup-sslip-*.json
 
 bash endurecer-ssh.sh aplicar                      # depois: login novo numa 3a janela
+bash dns-redundante.sh aplicar                     # DNS de outros provedores ao lado da Contabo
 
 apt-get update && apt-get -y upgrade               # as 6 atualizacoes pendentes
 reboot
