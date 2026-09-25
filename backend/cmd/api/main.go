@@ -17,6 +17,7 @@ import (
 	"github.com/Alzarus/to-de-olho/internal/emenda"
 	"github.com/Alzarus/to-de-olho/internal/gabinete"
 	"github.com/Alzarus/to-de-olho/internal/materia"
+	"github.com/Alzarus/to-de-olho/internal/migracao"
 	"github.com/Alzarus/to-de-olho/internal/proposicao"
 	"github.com/Alzarus/to-de-olho/internal/ranking"
 	"github.com/Alzarus/to-de-olho/internal/scheduler"
@@ -49,6 +50,13 @@ func main() {
 	db, err := connectDB()
 	if err != nil {
 		slog.Error("falha ao conectar ao banco", "error", err)
+		os.Exit(1)
+	}
+
+	// Antes do AutoMigrate: sem isto, o GORM 1.31 tenta apagar constraints
+	// que não existem e a API não sobe (internal/migracao, incidente de 25/09).
+	if err := migracao.RemoverUnicidadesRedundantes(db); err != nil {
+		slog.Error("falha ao remover unicidades redundantes", "error", err)
 		os.Exit(1)
 	}
 
