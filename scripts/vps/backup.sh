@@ -88,7 +88,10 @@ backup_sqlite_quemvotar() {
   " || falha "backup do SQLite do Quem Votar falhou"
   docker cp "quemvotar-api:${tmp_ct}" "$TMP/quemvotar.db" >/dev/null
   docker exec -w /app quemvotar-api /nodejs/bin/node -e "require('fs').unlinkSync('${tmp_ct}')" || true
-  log "quemvotar sqlite: $(du -h "$TMP/quemvotar.db" | cut -f1)"
+  # O SQLite vai cru para o tar (que nao comprime) e era 95% do backup.
+  local cru; cru=$(du -h "$TMP/quemvotar.db" | cut -f1)
+  gzip -6 "$TMP/quemvotar.db"
+  log "quemvotar sqlite: ${cru} (gzip: $(du -h "$TMP/quemvotar.db.gz" | cut -f1))"
 }
 
 backup_npm() {
@@ -101,9 +104,11 @@ backup_npm() {
 }
 
 escrever_manifesto() {
+  # nullglob: uma parte pulada (ex.: quemvotar-api fora do ar) nao pode virar
+  # um "arquivo nao encontrado" que o set -e transforma em falha do backup.
   {
     echo "backup ${CARIMBO} host=$(hostname)"
-    echo "--- sha256"; (cd "$TMP" && sha256sum -- *.dump *.db *.tar.gz 2>/dev/null)
+    echo "--- sha256"; (cd "$TMP" && shopt -s nullglob && sha256sum -- *.dump *.db.gz *.tar.gz)
     echo "--- imagens em execucao"; docker ps --format '{{.Names}} {{.Image}}' | sort
     echo "--- imagem->digest"; docker inspect --format '{{.Name}} {{.Image}}' $(docker ps -q) 2>/dev/null | sort
   } > "$TMP/MANIFESTO.txt"
@@ -112,7 +117,7 @@ escrever_manifesto() {
 empacotar_e_enviar() {
   local nome="todeolho-backup-${CARIMBO}.tar.age" final
   mkdir -p "$LOCAL_DIR"; final="$LOCAL_DIR/$nome"
-  tar -C "$TMP" -cf - MANIFESTO.txt $(cd "$TMP" && ls *.dump *.db *.tar.gz 2>/dev/null) \
+  tar -C "$TMP" -cf - MANIFESTO.txt $(cd "$TMP" && shopt -s nullglob && echo *.dump *.db.gz *.tar.gz) \
     | age -r "$AGE_DESTINATARIO" -o "$final"
   rclone copyto --s3-no-check-bucket --retries 5 "$final" "r2:${R2_BUCKET}/diario/${DATA}/${nome}" || falha "envio ao R2 falhou"
   if [ "$(date -u +%d)" = "01" ]; then

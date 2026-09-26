@@ -42,6 +42,9 @@ API="https://api.cloudflare.com/client/v4"
 
 need() { command -v "$1" >/dev/null || { echo "[ERRO] faltando: $1" >&2; exit 1; }; }
 need curl; need jq; need openssl
+# O jq.exe nativo do Windows termina as linhas com CRLF; o CR entraria nos IDs
+# e quebraria as URLs. --binary desliga essa conversao.
+case "$(jq -rn '"x","y"')" in *$'\r'*) jq() { command jq --binary "$@"; } ;; esac
 : "${CF_API_TOKEN:?defina CF_API_TOKEN (read -rs CF_API_TOKEN && export CF_API_TOKEN)}"
 
 # Chamada a API. Em falha, mostra so as mensagens de erro (a resposta completa
