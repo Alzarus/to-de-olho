@@ -39,9 +39,13 @@ ferramentas() { # roda age/rclone/sqlite numa alpine descartavel
 }
 
 cmd_chave() {
-  [ -f "$CHAVE" ] && { echo "[OK] chave ja existe em $CHAVE"; grep -o 'age1[0-9a-z]*' "$CHAVE"; return; }
+  [ -s "$CHAVE" ] && { echo "[OK] chave ja existe em $CHAVE"; grep -o 'age1[0-9a-z]*' "$CHAVE"; return; }
   mkdir -p "$(dirname "$CHAVE")"
-  docker run --rm alpine:3.22 sh -c 'apk add -q age >/dev/null && age-keygen 2>/dev/null' > "$CHAVE"
+  # Gera num temporario: se o docker falhar, nao sobra um arquivo vazio que
+  # a proxima execucao tomaria por uma chave existente.
+  docker run --rm alpine:3.22 sh -c 'apk add -q age >/dev/null && age-keygen 2>/dev/null' > "$CHAVE.tmp" \
+    && grep -q '^AGE-SECRET-KEY-' "$CHAVE.tmp" || { rm -f "$CHAVE.tmp"; echo "[ERRO] age-keygen falhou (o Docker esta rodando?)" >&2; exit 1; }
+  mv "$CHAVE.tmp" "$CHAVE"
   chmod 600 "$CHAVE"
   echo "[OK] chave privada em $CHAVE (copie para o gerenciador de senhas)"
   echo "Chave PUBLICA (vai em AGE_DESTINATARIO na VPS):"
@@ -50,10 +54,11 @@ cmd_chave() {
 
 obter_arquivo() {
   if [ "$1" != r2 ]; then cp "$1" "$TRAB/backup.tar.age"; return; fi
-  read -rp "Bucket R2: " R2_BUCKET
-  read -rp "Endpoint (https://<conta>.r2.cloudflarestorage.com): " RCLONE_CONFIG_R2_ENDPOINT
-  read -rp "Access key ID: " RCLONE_CONFIG_R2_ACCESS_KEY_ID
-  read -rsp "Secret access key: " RCLONE_CONFIG_R2_SECRET_ACCESS_KEY; echo
+  # Usa o ambiente se ja vier preenchido (set -a; . ~/.config/todeolho/backup.env).
+  [ -n "${R2_BUCKET:-}" ] || read -rp "Bucket R2: " R2_BUCKET
+  [ -n "${RCLONE_CONFIG_R2_ENDPOINT:-}" ] || read -rp "Endpoint (https://<conta>.r2.cloudflarestorage.com): " RCLONE_CONFIG_R2_ENDPOINT
+  [ -n "${RCLONE_CONFIG_R2_ACCESS_KEY_ID:-}" ] || read -rp "Access key ID: " RCLONE_CONFIG_R2_ACCESS_KEY_ID
+  [ -n "${RCLONE_CONFIG_R2_SECRET_ACCESS_KEY:-}" ] || { read -rsp "Secret access key: " RCLONE_CONFIG_R2_SECRET_ACCESS_KEY; echo; }
   export RCLONE_CONFIG_R2_ENDPOINT RCLONE_CONFIG_R2_ACCESS_KEY_ID RCLONE_CONFIG_R2_SECRET_ACCESS_KEY
   ferramentas "f=\$(rclone lsf -R --files-only --s3-no-check-bucket r2:${R2_BUCKET}/diario | sort | tail -1) \
     && echo \"mais recente: \$f\" && rclone copyto --s3-no-check-bucket r2:${R2_BUCKET}/diario/\$f /t/backup.tar.age"
@@ -85,6 +90,8 @@ cmd_testar() {
   ferramentas "mkdir -p /t/x && age -d -i /k/$(basename "$CHAVE") /t/backup.tar.age | tar -xf - -C /t/x && ls -la /t/x"
   conferir_manifesto && echo "[OK] sha256 conferem com o MANIFESTO"
   restaurar_postgres
+  # Backups a partir de 26/09 trazem o SQLite em gzip; os anteriores, cru.
+  [ -f "$TRAB/x/quemvotar.db.gz" ] && ferramentas "gunzip /t/x/quemvotar.db.gz"
   if [ -f "$TRAB/x/quemvotar.db" ]; then
     ferramentas "sqlite3 /t/x/quemvotar.db 'pragma integrity_check;' && sqlite3 /t/x/quemvotar.db \"select 'tabelas: '||count(*) from sqlite_master where type='table'\""
   fi
