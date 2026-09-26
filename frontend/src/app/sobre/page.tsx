@@ -71,8 +71,20 @@ export default function SobrePage() {
               </div>
 
               <div className="space-y-2 text-sm text-muted-foreground">
-                <p>🎓 Estudante de Análise e Desenvolvimento de Sistemas (ADS)</p>
-                <p>🏫 Instituto Federal da Bahia (IFBA)</p>
+                <p>🎓 Tecnólogo em Análise e Desenvolvimento de Sistemas (ADS)</p>
+                <p>🏫 Instituto Federal da Bahia (IFBA), 2017–2026</p>
+                <p>
+                  📄 TCC:{" "}
+                  <a
+                    href="https://ads.ifba.edu.br/item1259"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Tô De Olho: Democratizando a Transparência do Senado Federal
+                    através de Dados Abertos
+                  </a>
+                </p>
               </div>
             </div>
             
