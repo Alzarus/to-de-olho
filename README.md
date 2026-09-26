@@ -4,6 +4,8 @@ Plataforma de transparência sobre os senadores brasileiros, desenvolvida como T
 
 Em produção: **[todeolho.org](https://todeolho.org)**
 
+Publicação do TCC: [Tô De Olho: Democratizando a Transparência do Senado Federal através de Dados Abertos](https://ads.ifba.edu.br/item1259) (repositório de TCCs do curso de ADS do IFBA).
+
 O sistema consolida dados abertos do Senado Federal e do Portal da Transparência. Proposições, presença em votações, gastos da cota parlamentar (CEAPS) e participação em comissões formam um ranking de efetividade ([metodologia](./METODOLOGIA.md)). Emendas parlamentares e a estrutura de gabinete são exibidas, mas não entram no ranking.
 
 ---
