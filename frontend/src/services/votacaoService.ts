@@ -16,6 +16,7 @@ export interface Votacao extends CamposMateria {
   ementa?: string;
   resultado?: string; // A (aprovada), R (rejeitada)
   sigla_materia?: string; // tipo da matéria: PEC, MSF, PLP...
+  codigo_materia?: number | null; // código da matéria no Senado (link para a página oficial)
   secreta?: boolean | null; // votação secreta: o voto individual não é publicado
   created_at: string;
 }
