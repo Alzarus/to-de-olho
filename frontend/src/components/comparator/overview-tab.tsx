@@ -53,7 +53,9 @@ export function OverviewTab({ senators, year }: OverviewTabProps) {
             color: corSerie(index)
         };
     })
-    .filter((s): s is SenadorScore & { color: string } => s !== null);
+    .filter((s): s is SenadorScore & { color: string } => s !== null)
+    // Destaques e Ranking Geral do melhor para o pior; a cor segue a ordem de seleção
+    .sort((a, b) => b.score_final - a.score_final);
 
   const yearLabel = year === 0 ? "Mandato Completo" : year.toString();
 

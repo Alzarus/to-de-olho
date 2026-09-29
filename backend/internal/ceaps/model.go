@@ -2,6 +2,7 @@ package ceaps
 
 import (
 	"math"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -30,6 +31,19 @@ type DespesaCEAPS struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// TipoNaoInformado e o rotulo da categoria que o Senado publica em branco
+// (tipoDespesa null: 50 lancamentos em 2026, quase todos recibos de pessoa
+// fisica). Vazia, ela quebrava o seletor de categorias do comparador.
+const TipoNaoInformado = "Não informada pelo Senado"
+
+// AfterFind aplica o rotulo nos lancamentos lidos um a um (lista paginada)
+func (d *DespesaCEAPS) AfterFind(_ *gorm.DB) error {
+	if strings.TrimSpace(d.TipoDespesa) == "" {
+		d.TipoDespesa = TipoNaoInformado
+	}
+	return nil
 }
 
 // TableName define o nome da tabela

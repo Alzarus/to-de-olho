@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Calendar, FileText, CheckCircle2, XCircle, MinusCircle, AlertCircle, HelpCircle, Search, X } from "lucide-react";
+import { ArrowLeft, Calendar, ExternalLink, FileText, CheckCircle2, XCircle, MinusCircle, AlertCircle, HelpCircle, Search, X } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -225,6 +225,19 @@ function VotacaoDetalheContent() {
                  </p>
                  {!usaDescricaoVotacao(votacao.sigla_materia) && (
                     <TemasChips temas={votacao.temas} max={6} className="mt-3" />
+                 )}
+                 {votacao.codigo_materia && (
+                    <Button asChild variant="outline" size="sm" className="mt-4">
+                      <a
+                        href={`https://www25.senado.leg.br/web/atividade/materias/-/materia/${votacao.codigo_materia}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Ver {votacao.materia || "matéria"} no site do Senado
+                        <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        <span className="sr-only"> (abre em nova aba)</span>
+                      </a>
+                    </Button>
                  )}
             </div>
             <div className="mt-4 sm:mt-0 text-right">
