@@ -3,6 +3,7 @@
 import { PaginationWithInput } from "@/components/ui/pagination-with-input";
 
 import { useComissoes } from "@/hooks/use-senador";
+import { Atualizando, ErroCarregamento } from "@/components/ui/atualizando";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,7 +72,7 @@ export function ComissoesTab({ id }: { id: number }) {
   const statusParam = status === "todos" ? "" : status;
   const participacaoParam = participacao === "todos" ? "" : participacao;
 
-  const { data, isLoading } = useComissoes(id, page, limit, searchParam, statusParam, participacaoParam);
+  const { data, isLoading, isFetching, isError, refetch } = useComissoes(id, page, limit, searchParam, statusParam, participacaoParam);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchValue(e.target.value);
@@ -88,7 +89,9 @@ export function ComissoesTab({ id }: { id: number }) {
     return <Skeleton className="h-[200px] w-full" />;
   }
 
-  if (!data) return null;
+  if (!data) {
+    return isError ? <ErroCarregamento aoTentar={() => refetch()} /> : null;
+  }
 
   const formatDate = (dateStr?: string) => {
       if (!dateStr) return "Atual";
@@ -146,6 +149,7 @@ export function ComissoesTab({ id }: { id: number }) {
             </div>
         </div>
 
+      <Atualizando ativo={isFetching && !isLoading}>
       <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
         {data.comissoes.map((comissao) => (
           <Card key={comissao.id} className="hover:bg-muted/50 transition-colors">
@@ -187,6 +191,7 @@ export function ComissoesTab({ id }: { id: number }) {
              </p>
         )}
       </div>
+      </Atualizando>
 
        {/* Pagination Controls */}
        <PaginationWithInput 

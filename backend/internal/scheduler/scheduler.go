@@ -92,6 +92,10 @@ func (s *Scheduler) syncGabinete(ctx context.Context, agora time.Time) {
 	if err := s.gabineteSync.SyncMesa(ctx); err != nil {
 		slog.Error("falha sync mesa diretora", "error", err)
 	}
+	// Escritorios, terceirizados e estagiarios: retrato atual, tres chamadas
+	if _, err := s.gabineteSync.SyncApoio(ctx); err != nil {
+		slog.Error("falha sync escritorios e colaboradores", "error", err)
+	}
 }
 
 // NewScheduler cria um novo scheduler
