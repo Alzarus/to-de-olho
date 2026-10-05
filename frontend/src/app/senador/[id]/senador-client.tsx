@@ -677,9 +677,10 @@ function SenadorContent() {
             Emendas Parlamentares ({ano === 0 ? "Mandato" : ano})
           </h2>
           <p className="text-muted-foreground mb-4">
-            Recursos destinados através de emendas individuais, de bancada,
-            comissão, relator e transferências especiais (PIX). Dados do Portal
-            da Transparência.
+            Recursos destinados pelas emendas individuais do senador, com
+            finalidade definida ou como transferências especiais (PIX). As de
+            bancada e de comissão não são atribuídas a um senador e ficam de
+            fora. Dados do Portal da Transparência.
           </p>
           <EmendasTab id={id} ano={ano} />
         </TabsContent>

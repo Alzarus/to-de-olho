@@ -1,6 +1,8 @@
 package emenda
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -97,4 +99,34 @@ func (r *Repository) GetResumo(senadorID uint, ano int) (*ResumoEmendas, error) 
 	}
 
 	return &resumo, nil
+}
+
+// DatasPendentes lista os codigos de emenda sem datas ou com valor pago
+// diferente do da ultima consulta, dos anos mais recentes para os mais
+// antigos. Um codigo pode estar em mais de uma linha (senadores com o mesmo
+// nome de busca): volta uma vez. limite <= 0: todos.
+func (r *Repository) DatasPendentes(limite int) ([]emendaPendente, error) {
+	q := r.db.Model(&Emenda{}).
+		Select("numero, MAX(valor_empenhado) AS valor_empenhado").
+		Where("datas_consultadas_em IS NULL OR datas_valor_pago <> valor_pago").
+		Group("numero").
+		Order("MAX(ano) DESC, numero DESC")
+	if limite > 0 {
+		q = q.Limit(limite)
+	}
+	var out []emendaPendente
+	err := q.Scan(&out).Error
+	return out, err
+}
+
+// GravarDatas grava as datas em todas as linhas do codigo e guarda o valor
+// pago de cada linha, que decide a proxima consulta.
+func (r *Repository) GravarDatas(numero string, d Datas, agora time.Time) error {
+	return r.db.Model(&Emenda{}).Where("numero = ?", numero).Updates(map[string]any{
+		"data_primeiro_empenho":   d.PrimeiroEmpenho,
+		"data_primeiro_pagamento": d.PrimeiroPagamento,
+		"data_ultimo_pagamento":   d.UltimoPagamento,
+		"datas_consultadas_em":    agora,
+		"datas_valor_pago":        gorm.Expr("valor_pago"),
+	}).Error
 }
