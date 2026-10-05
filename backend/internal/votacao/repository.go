@@ -2,6 +2,7 @@ package votacao
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -273,4 +274,59 @@ func (r *Repository) FindVotosByCodigoVotacao(codigoVotacao int) ([]Votacao, err
 		Find(&votacoes).Error
 
 	return votacoes, err
+}
+
+// PlacaresAbertos agrega Sim e Nao de cada votacao nominal aberta (base da
+// selecao do match; ver SelecionarMatch).
+func (r *Repository) PlacaresAbertos() ([]Placar, error) {
+	var out []Placar
+	err := r.db.Table("votacoes").
+		Select(`codigo_votacao, MAX(data) AS data, MAX(materia) AS materia,
+			MAX(sigla_materia) AS sigla_materia, MAX(descricao_votacao) AS descricao_votacao,
+			COUNT(*) FILTER (WHERE voto = 'Sim') AS sim,
+			COUNT(*) FILTER (WHERE voto = 'Nao') AS nao`).
+		Where("secreta = false").
+		Group("codigo_votacao").
+		Scan(&out).Error
+	return out, err
+}
+
+// votoMatch e uma linha de voto com os dados do senador
+type votoMatch struct {
+	CodigoVotacao int
+	Voto          string
+	SenadorID     int
+	Nome          string
+	NomeCompleto  string
+	UF            string
+	Partido       string
+}
+
+// SenadoresMatch devolve os votos dos senadores (inclusive os que deixaram o
+// cargo) nas votacoes informadas, agrupados por senador e em ordem de nome.
+func (r *Repository) SenadoresMatch(codigos []int) ([]SenadorMatch, error) {
+	var linhas []votoMatch
+	err := r.db.Table("votacoes").
+		Select(`votacoes.codigo_votacao, votacoes.voto, senadores.id AS senador_id, senadores.nome,
+			senadores.nome_completo, senadores.uf, senadores.partido`).
+		Joins("JOIN senadores ON senadores.id = votacoes.senador_id").
+		Where("votacoes.codigo_votacao IN ?", codigos).
+		Order("senadores.nome ASC").
+		Scan(&linhas).Error
+	if err != nil {
+		return nil, err
+	}
+	var out []SenadorMatch
+	indice := map[int]int{}
+	for _, l := range linhas {
+		i, ok := indice[l.SenadorID]
+		if !ok {
+			i = len(out)
+			indice[l.SenadorID] = i
+			out = append(out, SenadorMatch{ID: l.SenadorID, Nome: l.Nome, NomeCompleto: l.NomeCompleto,
+				UF: l.UF, Partido: l.Partido, Votos: map[string]string{}})
+		}
+		out[i].Votos[strconv.Itoa(l.CodigoVotacao)] = l.Voto
+	}
+	return out, nil
 }

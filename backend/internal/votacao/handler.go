@@ -258,3 +258,49 @@ func (h *Handler) GetByID(c *gin.Context) {
 		"votos":   utils.NaoNulo(votos),
 	})
 }
+
+// GetMatch godoc
+// @Summary Votacoes do match do Quem Votar e os votos de cada senador
+// @Description Regra publica em TextoRegraMatch: so votacoes de merito disputadas.
+// @Tags votacoes
+// @Produce json
+// @Success 200 {object} RespostaMatch
+// @Router /api/v1/votacoes/match [get]
+func (h *Handler) GetMatch(c *gin.Context) {
+	placares, err := h.repo.PlacaresAbertos()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar placares"})
+		return
+	}
+	selecao := SelecionarMatch(placares)
+	resposta := RespostaMatch{Regra: TextoRegraMatch, Votacoes: []VotacaoMatch{}, Senadores: []SenadorMatch{}}
+	codigos := make([]int, 0, len(selecao))
+	for _, p := range selecao {
+		resposta.Votacoes = append(resposta.Votacoes, h.detalharMatch(p))
+		codigos = append(codigos, p.CodigoVotacao)
+	}
+	if len(codigos) > 0 {
+		senadores, err := h.repo.SenadoresMatch(codigos)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao buscar votos"})
+			return
+		}
+		resposta.Senadores = senadores
+	}
+	c.JSON(http.StatusOK, resposta)
+}
+
+// detalharMatch completa o placar com o texto oficial da materia; sem a
+// materia, fica so a identificacao.
+func (h *Handler) detalharMatch(p Placar) VotacaoMatch {
+	item := VotacaoMatch{Placar: p, Titulo: p.Materia}
+	v, err := h.repo.FindByID(p.CodigoVotacao)
+	if err != nil {
+		return item
+	}
+	item.Ementa, item.Resultado, item.ExplicacaoEmenta = v.Ementa, v.Resultado, v.ExplicacaoEmenta
+	if v.Apelido != nil && *v.Apelido != "" {
+		item.Titulo = *v.Apelido + " (" + p.Materia + ")"
+	}
+	return item
+}
