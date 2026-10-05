@@ -47,6 +47,14 @@ updates:
     ignore:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # O lint depende do typescript-eslint (via eslint-config-next), que em
+      # 10/2026 suporta TypeScript < 6.1 e nao roda com o ESLint 10 por causa
+      # do eslint-plugin-react. O TS 7 e o ESLint 10 entraram por bump e
+      # quebraram o lint; sobem a mao quando o suporte sair.
+      - dependency-name: "typescript"
+        versions: [">=6.1.0"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
     groups:
       frontend-minor-patch:
         update-types: [minor, patch]
