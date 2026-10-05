@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "Metodologia do ranking",
+  description:
+    "Como a nota de cada senador é calculada: produtividade (35%), presença (25%), economia da cota (20%) e comissões (20%), com as fontes de dados e as limitações.",
+  alternates: { canonical: "/metodologia" },
+};
 
 const criterios = [
   {
