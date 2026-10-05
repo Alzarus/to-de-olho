@@ -9,6 +9,7 @@ import type { SenatorBasicProfile } from "@/contexts/comparator-context";
 import type { Emenda } from "@/types/api";
 import { ChartTooltipContent } from "@/components/ui/chart-tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AvisoRastreabilidade } from "@/components/emendas/aviso-rastreabilidade";
 import {
   casaLocal,
   classificarTipoEmenda,
@@ -145,6 +146,7 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <AvisoRastreabilidade ano={year} />
       <BarraFiltros rotulo="Filtros de emendas">
         <FiltroSelect
           rotulo="Tipo de emenda"

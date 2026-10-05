@@ -11,18 +11,35 @@ import (
 	"github.com/Alzarus/to-de-olho/pkg/transparencia"
 )
 
+// ClienteDocumentos e o que o sync de datas usa do Portal da Transparencia
+// (*transparencia.Client; interface para testes)
+type ClienteDocumentos interface {
+	GetDocumentosEmenda(ctx context.Context, codigoEmenda string, pagina int) ([]transparencia.DocumentoEmendaDTO, error)
+}
+
 type SyncService struct {
-	repo          *Repository
-	senadorRepo   *senador.Repository
-	transparencia *transparencia.Client
+	repo            *Repository
+	senadorRepo     *senador.Repository
+	transparencia   *transparencia.Client
+	documentosAPI   ClienteDocumentos
+	pausaDocumentos time.Duration
 }
 
 func NewSyncService(repo *Repository, senadorRepo *senador.Repository, apiKey string) *SyncService {
+	cliente := transparencia.NewClient(apiKey)
 	return &SyncService{
-		repo:          repo,
-		senadorRepo:   senadorRepo,
-		transparencia: transparencia.NewClient(apiKey),
+		repo:            repo,
+		senadorRepo:     senadorRepo,
+		transparencia:   cliente,
+		documentosAPI:   cliente,
+		pausaDocumentos: pausaDocumentos,
 	}
+}
+
+// NewSyncDatas cria o servico so para o sync de datas, com outro cliente e
+// outra pausa entre chamadas (testes)
+func NewSyncDatas(repo *Repository, cliente ClienteDocumentos, pausa time.Duration) *SyncService {
+	return &SyncService{repo: repo, documentosAPI: cliente, pausaDocumentos: pausa}
 }
 
 func (s *SyncService) SyncAll(ctx context.Context, ano int) error {

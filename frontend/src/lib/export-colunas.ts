@@ -81,6 +81,9 @@ export const COLUNAS_EMENDA: ColunaCSV<Emenda & ComSenador>[] = [
   { cabecalho: "Localidade", valor: (e) => e.localidade },
   { cabecalho: "Valor empenhado (R$)", valor: (e) => e.valor_empenhado },
   { cabecalho: "Valor pago (R$)", valor: (e) => e.valor_pago },
+  { cabecalho: "Primeiro empenho", valor: (e) => formatarDataISO(e.data_primeiro_empenho) },
+  { cabecalho: "Primeiro pagamento", valor: (e) => formatarDataISO(e.data_primeiro_pagamento) },
+  { cabecalho: "Último pagamento", valor: (e) => formatarDataISO(e.data_ultimo_pagamento) },
   { cabecalho: "Última atualização", valor: (e) => formatarDataISO(e.data_ultima_atualizacao) },
 ];
 
