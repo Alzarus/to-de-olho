@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { AlertCircle, ExternalLink, Info } from "lucide-react";
+import { AlertCircle, ExternalLink, Info, MapPin, Phone } from "lucide-react";
 import { getGabinete } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +44,13 @@ function formatarData(iso: string | null): string {
 }
 
 const plural = (n: number) => `${n.toLocaleString("pt-BR")} ${n === 1 ? "servidor" : "servidores"}`;
+
+// "Terceirizado" / "Estagiário" da API, no plural quando for o caso
+function rotuloColaborador(tipo: string, n: number): string {
+  const t = tipo.toLowerCase();
+  if (n === 1) return t;
+  return t.endsWith("o") ? `${t}s` : t;
+}
 
 export function GabineteTab({ id, ano }: { id: number; ano: number }) {
   const { data, isLoading, isError } = useQuery({
@@ -246,10 +253,54 @@ export function GabineteTab({ id, ano }: { id: number; ano: number }) {
         </Card>
       )}
 
+      {((data.escritorios?.length ?? 0) > 0 || (data.colaboradores?.length ?? 0) > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Escritórios no estado e outros colaboradores (hoje)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(data.escritorios?.length ?? 0) > 0 && (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {data.escritorios!.map((e, i) => (
+                  <li key={`${e.nome}-${i}`} className="space-y-1 rounded-lg border p-3 text-sm">
+                    <p className="font-medium">{e.nome}</p>
+                    {e.endereco && (
+                      <p className="flex items-start gap-1.5 text-muted-foreground">
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        <span>{e.endereco}</span>
+                      </p>
+                    )}
+                    {e.telefone && (
+                      <p className="flex items-center gap-1.5 text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        <span>{e.telefone}</span>
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {(data.colaboradores?.length ?? 0) > 0 && (
+              <p className="text-sm">
+                Além dos servidores, o gabinete tem hoje{" "}
+                {data.colaboradores!
+                  .map((c) => `${c.quantidade} ${rotuloColaborador(c.vinculo, c.quantidade)}`)
+                  .join(" e ")}
+                . Eles não entram no total acima: são contratados por empresa ou pelo programa de estágio do Senado.
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Situação atual da fonte, sem histórico: vale para hoje, qualquer que seja o ano escolhido.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="space-y-2 text-sm text-muted-foreground">
         <p>{NOTA_PRIVACIDADE}</p>
         <p>
-          Fonte: API de Dados Abertos Administrativos do Senado Federal (recursos utilizados pelo senador).
+          Fonte: API de Dados Abertos Administrativos do Senado Federal (recursos utilizados pelo senador;
+          escritórios de apoio, terceirizados e estagiários).
           Atualizado em {formatarData(data.atualizado_em)}.{" "}
           <a
             href={data.fonte_url}

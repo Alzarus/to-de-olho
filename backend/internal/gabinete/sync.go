@@ -39,12 +39,18 @@ type SyncService struct {
 	senadores ListaSenadores
 	recursos  FonteRecursos
 	mesa      FonteMesa
+	apoio     FonteApoio
 	agora     func() time.Time
 }
 
-// NewSyncService cria o servico de sincronizacao
+// NewSyncService cria o servico de sincronizacao. Se a fonte de recursos
+// tambem servir escritorios e colaboradores (o AdmClient serve), SyncApoio a usa.
 func NewSyncService(repo *Repository, senadores ListaSenadores, recursos FonteRecursos, mesa FonteMesa) *SyncService {
-	return &SyncService{repo: repo, senadores: senadores, recursos: recursos, mesa: mesa, agora: time.Now}
+	s := &SyncService{repo: repo, senadores: senadores, recursos: recursos, mesa: mesa, agora: time.Now}
+	if apoio, ok := recursos.(FonteApoio); ok {
+		s.apoio = apoio
+	}
+	return s
 }
 
 // ResultadoSync resume uma carga de um ano
@@ -252,6 +258,12 @@ func (s *SyncService) SyncTodos(ctx context.Context, anos []int) error {
 	if err := s.SyncMesa(ctx); err != nil {
 		slog.Error("falha no sync da mesa diretora", "error", err)
 		primeiro = err
+	}
+	if _, err := s.SyncApoio(ctx); err != nil {
+		slog.Error("falha no sync de escritorios e colaboradores", "error", err)
+		if primeiro == nil {
+			primeiro = err
+		}
 	}
 	for _, ano := range anos {
 		if _, err := s.SyncAno(ctx, ano); err != nil {
