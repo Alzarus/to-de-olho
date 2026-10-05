@@ -26,8 +26,8 @@ func NewHandler(repo *Repository, senadorRepo *senador.Repository) *Handler {
 
 // rotulos dos locais na resposta, em pt-BR
 var rotulos = map[string]string{
-	LocalGabinete:   "Gabinete",
-	LocalEscritorio: "Escritórios de apoio",
+	LocalGabinete:   "Gabinete em Brasília",
+	LocalEscritorio: "Escritórios no estado",
 }
 
 // FonteURL e a pagina oficial com o detalhe (nomes e cargos) do pessoal
@@ -173,6 +173,17 @@ func (h *Handler) GetBySenador(c *gin.Context) {
 	}
 	if cargo, err := h.repo.CargoMesaAtual(senadorID); err == nil && cargo != nil {
 		res.CargoMesa = &cargo.Cargo
+	}
+	res.Escritorios, res.Colaboradores = []EscritorioResumo{}, []VinculoResumo{}
+	if escs, err := h.repo.Escritorios(senadorID); err == nil {
+		for _, e := range escs {
+			res.Escritorios = append(res.Escritorios, EscritorioResumo{Nome: e.Nome, Endereco: e.Endereco, Telefone: e.Telefone})
+		}
+	}
+	if cols, err := h.repo.Colaboradores(senadorID); err == nil {
+		for _, c := range cols {
+			res.Colaboradores = append(res.Colaboradores, VinculoResumo{Vinculo: c.Tipo, Quantidade: c.Quantidade})
+		}
 	}
 	c.JSON(http.StatusOK, res)
 }
