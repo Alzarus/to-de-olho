@@ -75,8 +75,31 @@ func (c *Client) GetEmendasWithCtx(ctx context.Context, ano int, nomeAutor strin
 	reqURL := fmt.Sprintf("%s/emendas?%s", BaseURL, params.Encode())
 
 	var emendas []EmendaDTO
+	err := c.getJSON(ctx, reqURL, fmt.Sprintf("GetEmendas(ano=%d, autor=%s, pag=%d)", ano, nomeAutor, pagina), &emendas)
+	return emendas, err
+}
 
-	err := retry.WithRetry(ctx, 3, fmt.Sprintf("GetEmendas(ano=%d, autor=%s, pag=%d)", ano, nomeAutor, pagina), func() error {
+// DocumentoEmendaDTO e um documento de execucao da emenda (nota de empenho,
+// liquidacao ou ordem bancaria). Data vem como dd/mm/aaaa.
+type DocumentoEmendaDTO struct {
+	Data                    string `json:"data"`
+	Fase                    string `json:"fase"` // Empenho, Liquidação, Pagamento
+	CodigoDocumentoResumido string `json:"codigoDocumentoResumido"`
+}
+
+// GetDocumentosEmenda lista uma pagina dos documentos de execucao da emenda
+// (/emendas/documentos/{codigo}); pagina vazia encerra a lista.
+func (c *Client) GetDocumentosEmenda(ctx context.Context, codigoEmenda string, pagina int) ([]DocumentoEmendaDTO, error) {
+	reqURL := fmt.Sprintf("%s/emendas/documentos/%s?pagina=%d", BaseURL, url.PathEscape(codigoEmenda), pagina)
+	var docs []DocumentoEmendaDTO
+	err := c.getJSON(ctx, reqURL, fmt.Sprintf("GetDocumentosEmenda(%s, pag=%d)", codigoEmenda, pagina), &docs)
+	return docs, err
+}
+
+// getJSON faz o GET com a chave da API e retry, e decodifica o corpo em out
+// (corpo vazio deixa out como esta).
+func (c *Client) getJSON(ctx context.Context, reqURL, operacao string, out any) error {
+	return retry.WithRetry(ctx, 3, operacao, func() error {
 		req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 		if err != nil {
 			return err
@@ -108,17 +131,13 @@ func (c *Client) GetEmendasWithCtx(ctx context.Context, ano int, nomeAutor strin
 
 		// Verificar se body esta vazio
 		if resp.ContentLength == 0 {
-			emendas = []EmendaDTO{}
 			return nil
 		}
 
-		if err := json.NewDecoder(resp.Body).Decode(&emendas); err != nil {
+		if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
 			return fmt.Errorf("erro decode: %w", err)
 		}
 
 		return nil
 	})
-
-	return emendas, err
 }
-

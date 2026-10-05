@@ -20,14 +20,16 @@ import {
 } from "@/components/ui/tooltip";
 import { useEmendas, useSenador } from "@/hooks/use-senador";
 import { rotuloAnoArquivo, slugArquivo } from "@/lib/export";
-import { COLUNAS_EMENDA } from "@/lib/export-colunas";
+import { COLUNAS_EMENDA, formatarDataISO } from "@/lib/export-colunas";
+import { AvisoRastreabilidade } from "@/components/emendas/aviso-rastreabilidade";
 import { ExportarDados } from "@/components/export-dados";
 import { formatCurrency } from "@/lib/utils";
+import type { Emenda } from "@/types/api";
 import { AlertCircle, Info, Search, ArrowUpDown, X } from "lucide-react";
 import { BrazilMap } from "@/components/ui/brazil-map";
 
 type TipoFiltro = "todos" | "pix" | "definida";
-type Ordenacao = "pago_desc" | "pago_asc" | "empenhado_desc" | "empenhado_asc" | "localidade";
+type Ordenacao = "pago_desc" | "pago_asc" | "empenhado_desc" | "empenhado_asc" | "pagamento_recente" | "localidade";
 
 export function EmendasTab({ id, ano }: { id: number; ano: number }) {
   const { data, isLoading } = useEmendas(id, ano);
@@ -68,6 +70,8 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
         case "pago_asc": return a.valor_pago - b.valor_pago;
         case "empenhado_desc": return b.valor_empenhado - a.valor_empenhado;
         case "empenhado_asc": return a.valor_empenhado - b.valor_empenhado;
+        // Sem pagamento vai para o fim; datas ISO comparam como texto
+        case "pagamento_recente": return (b.data_ultimo_pagamento ?? "").localeCompare(a.data_ultimo_pagamento ?? "");
         case "localidade": return a.localidade.localeCompare(b.localidade);
         default: return 0;
       }
@@ -109,6 +113,8 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
 
   if (!data || emendas.length === 0) {
       return (
+          <div className="space-y-4">
+          <AvisoRastreabilidade ano={ano} />
           <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <AlertCircle className="h-12 w-12 mb-4 opacity-20" />
@@ -116,11 +122,13 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                   <p className="text-xs mt-2">Os dados podem estar em processo de importacao.</p>
               </CardContent>
           </Card>
+          </div>
       );
   }
 
     return (
     <div className="space-y-6">
+      <AvisoRastreabilidade ano={ano} />
       {/* Resumo - Cards clicaveis */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card 
@@ -322,6 +330,7 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                           <SelectItem value="pago_asc">Menor valor pago</SelectItem>
                           <SelectItem value="empenhado_desc">Maior empenhado</SelectItem>
                           <SelectItem value="empenhado_asc">Menor empenhado</SelectItem>
+                          <SelectItem value="pagamento_recente">Pagamento mais recente</SelectItem>
                           <SelectItem value="localidade">Localidade (A-Z)</SelectItem>
                       </SelectContent>
                   </Select>
@@ -354,6 +363,9 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                           </div>
                                           <p className="font-medium text-sm break-words">{emenda.localidade}</p>
                                           <p className="text-xs text-muted-foreground break-words">{emenda.funcional_programatica}</p>
+                                          {emenda.data_primeiro_empenho && (
+                                              <p className="text-xs text-muted-foreground">{resumoDatas(emenda)}</p>
+                                          )}
                                       </div>
                                       <div className="text-left sm:text-right">
                                           <p className="font-bold text-sm">{formatCurrency(emenda.valor_pago)}</p>
@@ -379,6 +391,16 @@ export function EmendasTab({ id, ano }: { id: number; ano: number }) {
                                       <div>
                                           <span className="font-medium text-foreground">Pago:</span> {formatCurrency(emenda.valor_pago)}
                                       </div>
+                                      {emenda.data_primeiro_empenho && (
+                                          <>
+                                              <div>
+                                                  <span className="font-medium text-foreground">Primeiro empenho:</span> {formatarDataISO(emenda.data_primeiro_empenho)}
+                                              </div>
+                                              <div>
+                                                  <span className="font-medium text-foreground">Pagamentos:</span> {periodoPagamentos(emenda)}
+                                              </div>
+                                          </>
+                                      )}
                                   </div>
                               </details>
                           ))}
@@ -501,6 +523,20 @@ function normalizarLocalidade(valor: string): string {
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[\s-]+/g, "_")
         .trim();
+}
+
+// Datas da execução: só aparecem depois da consulta aos documentos da emenda
+function resumoDatas(e: Emenda): string {
+    const empenho = `Empenhada em ${formatarDataISO(e.data_primeiro_empenho)}`;
+    if (!e.data_ultimo_pagamento) return `${empenho} · sem pagamento registrado`;
+    return `${empenho} · último pagamento em ${formatarDataISO(e.data_ultimo_pagamento)}`;
+}
+
+function periodoPagamentos(e: Emenda): string {
+    if (!e.data_primeiro_pagamento || !e.data_ultimo_pagamento) return "nenhum registrado";
+    const inicio = formatarDataISO(e.data_primeiro_pagamento);
+    const fim = formatarDataISO(e.data_ultimo_pagamento);
+    return inicio === fim ? `em ${inicio}` : `de ${inicio} a ${fim}`;
 }
 
 function isEmendaEspecial(tipo: string): boolean {

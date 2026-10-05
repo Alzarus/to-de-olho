@@ -201,6 +201,10 @@ export interface Emenda {
   valor_empenhado: number;
   valor_pago: number;
   data_ultima_atualizacao: string;
+  // Datas da execução (Portal da Transparência); nulas até a primeira consulta
+  data_primeiro_empenho?: string | null;
+  data_primeiro_pagamento?: string | null;
+  data_ultimo_pagamento?: string | null;
 }
 
 export interface EmendasResponse {
