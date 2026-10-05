@@ -196,3 +196,44 @@ func TestAgregadoPorTipoRecortaMeses(t *testing.T) {
 		})
 	}
 }
+
+// O Senado publica alguns lancamentos com tipoDespesa null. A categoria vazia
+// quebrava o seletor do comparador; agora vem com o rotulo, e filtrar por ele
+// traz so esses lancamentos.
+func TestCategoriaVaziaVemComRotulo(t *testing.T) {
+	db := testdb.Abrir(t, &DespesaCEAPS{})
+	repo := NewRepository(db)
+	lancamentos := []DespesaCEAPS{
+		{IDOrigem: 1, SenadorID: 1, Ano: 2026, Mes: 1, Valor: 3500, TipoDespesa: "", CNPJCPF: "11", Fornecedor: "Pessoa"},
+		{IDOrigem: 2, SenadorID: 1, Ano: 2026, Mes: 2, Valor: 3500, TipoDespesa: "  ", CNPJCPF: "11", Fornecedor: "Pessoa"},
+		{IDOrigem: 3, SenadorID: 1, Ano: 2026, Mes: 2, Valor: 100, TipoDespesa: "Outra", CNPJCPF: "22", Fornecedor: "Posto"},
+	}
+	if err := db.Create(&lancamentos).Error; err != nil {
+		t.Fatal(err)
+	}
+	ano := 2026
+
+	agregado, err := repo.AggregateByTipo(1, &ano, IntervaloMeses{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(agregado) != 2 || agregado[0].TipoDespesa != TipoNaoInformado || agregado[0].Total != 7000 {
+		t.Fatalf("esperado %q com 7000 em primeiro, veio %+v", TipoNaoInformado, agregado)
+	}
+
+	forn, err := repo.Fornecedores(1, &ano, []string{TipoNaoInformado})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(forn) != 1 || forn[0].Total != 7000 {
+		t.Errorf("filtro pelo rotulo: esperado so Pessoa com 7000, veio %+v", forn)
+	}
+
+	lista, total, err := repo.FindBySenadorID(1, &ano, 10, 0, "", TipoNaoInformado, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 2 || lista[0].TipoDespesa != TipoNaoInformado {
+		t.Errorf("lista: esperados 2 com o rotulo, veio total=%d %+v", total, lista)
+	}
+}

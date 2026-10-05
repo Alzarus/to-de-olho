@@ -99,7 +99,8 @@ export function FiltroSelect({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {opcoes.map((o) => (
+          {/* Valor vazio derruba o Select do Radix (a página inteira quebra) */}
+          {opcoes.filter((o) => o.valor !== "").map((o) => (
             <SelectItem key={o.valor} value={o.valor}>
               {o.rotulo}
             </SelectItem>

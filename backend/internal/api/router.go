@@ -187,6 +187,24 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			})
 		})
 
+		// Datas das emendas (documentos de execucao). ?limite=N; sem limite, todas
+		// as pendentes: o backfill leva ~1h30 pelo limite de 90 req/min do Portal
+		syncGroup.POST("/emendas-datas", func(c *gin.Context) {
+			limite := 0
+			if l := c.Query("limite"); l != "" {
+				if _, err := fmt.Sscanf(l, "%d", &limite); err != nil || limite < 0 {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "limite invalido"})
+					return
+				}
+			}
+			resumo, err := emendaSync.SyncDatas(c.Request.Context(), limite)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "resumo": resumo})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"message": "sync de datas das emendas concluido", "resumo": resumo})
+		})
+
 		syncGroup.POST("/emendas/:ano", func(c *gin.Context) {
 			anoStr := c.Param("ano")
 			ano := 2024

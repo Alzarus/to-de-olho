@@ -306,6 +306,10 @@ func (s *Scheduler) RunDailySync(ctx context.Context) {
 	}); err != nil {
 		slog.Error("falha sync emendas", "error", err)
 	}
+	// 5b. Datas das emendas novas ou com valor pago alterado (limite por rodada)
+	if _, err := s.emendaSync.SyncDatas(ctx, emenda.DatasPorRodada); err != nil {
+		slog.Error("falha sync datas das emendas", "error", err)
+	}
 
 	// 6. Comissoes (Mudancas de membros)
 	if err := retry.WithRetry(ctx, 3, "sync-comissoes", func() error {

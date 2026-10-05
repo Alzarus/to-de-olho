@@ -16,6 +16,10 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// colunaTipo e a categoria com o rotulo de TipoNaoInformado no lugar da vazia:
+// agrupa, filtra e busca pelo mesmo valor que a API devolve.
+const colunaTipo = "COALESCE(NULLIF(TRIM(tipo_despesa), ''), '" + TipoNaoInformado + "')"
+
 // FindBySenadorID retorna despesas de um senador com paginacao, busca e filtros
 func (r *Repository) FindBySenadorID(senadorID int, ano *int, limit int, offset int, queryStr string, tipo string, sort string) ([]DespesaCEAPS, int64, error) {
 	var despesas []DespesaCEAPS
@@ -28,12 +32,12 @@ func (r *Repository) FindBySenadorID(senadorID int, ano *int, limit int, offset 
 	}
 
 	if tipo != "" && tipo != "todos" {
-		dbQuery = dbQuery.Where("tipo_despesa = ?", tipo)
+		dbQuery = dbQuery.Where(colunaTipo+" = ?", tipo)
 	}
 
 	if queryStr != "" {
 		search := "%" + queryStr + "%"
-		dbQuery = dbQuery.Where("(fornecedor ILIKE ? OR tipo_despesa ILIKE ?)", search, search)
+		dbQuery = dbQuery.Where("(fornecedor ILIKE ? OR "+colunaTipo+" ILIKE ?)", search, search)
 	}
 
 	if err := dbQuery.Count(&total).Error; err != nil {
@@ -76,9 +80,9 @@ func (r *Repository) AggregateByTipo(senadorID int, ano *int, meses IntervaloMes
 	var result []AggregatedDespesa
 
 	query := r.db.Model(&DespesaCEAPS{}).
-		Select("tipo_despesa, SUM(valor) as total, COUNT(*) as quantidade").
+		Select(colunaTipo+" AS tipo_despesa, SUM(valor) as total, COUNT(*) as quantidade").
 		Where("senador_id = ?", senadorID).
-		Group("tipo_despesa").
+		Group(colunaTipo).
 		Order("total DESC")
 
 	if ano != nil {
@@ -97,7 +101,7 @@ func (r *Repository) AggregateByTipo(senadorID int, ano *int, meses IntervaloMes
 
 // GastoMensal soma as despesas por mes de competencia. Sem ano, traz todos os
 // meses do banco (mesmo recorte do agregado por tipo). Com tipos, so soma
-// essas categorias (tipo_despesa exato); vazio soma todas.
+// essas categorias (valor exato de colunaTipo); vazio soma todas.
 func (r *Repository) GastoMensal(senadorID int, ano *int, tipos []string) ([]SenadorGastoMensal, error) {
 	var result []SenadorGastoMensal
 
@@ -110,7 +114,7 @@ func (r *Repository) GastoMensal(senadorID int, ano *int, tipos []string) ([]Sen
 		query = query.Where("ano = ?", *ano)
 	}
 	if len(tipos) > 0 {
-		query = query.Where("tipo_despesa IN ?", tipos)
+		query = query.Where(colunaTipo+" IN ?", tipos)
 	}
 
 	err := query.Scan(&result).Error
@@ -133,7 +137,7 @@ func (r *Repository) Fornecedores(senadorID int, ano *int, tipos []string) ([]Fo
 		query = query.Where("ano = ?", *ano)
 	}
 	if len(tipos) > 0 {
-		query = query.Where("tipo_despesa IN ?", tipos)
+		query = query.Where(colunaTipo+" IN ?", tipos)
 	}
 
 	err := query.Scan(&result).Error

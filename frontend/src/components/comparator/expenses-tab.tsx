@@ -464,7 +464,7 @@ export function ExpensesTab({ senators, year }: ExpensesTabProps) {
             <CardTitle>Evolução dos gastos ({periodo})</CardTitle>
             <CardDescription>
               {evolucaoPorCategoria
-                ? `Soma das ${categorias.length} categorias selecionadas.`
+                ? `Soma ${categorias.length === 1 ? "da categoria escolhida" : `das ${categorias.length} categorias escolhidas`} no filtro “Categorias”, no topo da aba${filtros.categorias === null ? ` (por padrão, as ${categorias.length} maiores)` : ""}.`
                 : "Total da cota (todas as categorias)."}{" "}
               {filtros.granularidade === "acumulada" && "Valores acumulados desde o início do período. "}
               {emPct && "Em % do teto mensal da UF de cada senador multiplicado pelos meses de cada ponto."}
@@ -487,7 +487,7 @@ export function ExpensesTab({ senators, year }: ExpensesTabProps) {
               largura="w-[220px]"
               opcoes={[
                 { valor: "total", rotulo: "Total da cota" },
-                { valor: "categorias", rotulo: "Categorias selecionadas" },
+                { valor: "categorias", rotulo: "Categorias do filtro" },
               ]}
               aoMudar={(v) => definir({ [PARAMS_DESPESAS.evolucao]: v === "total" ? null : v })}
             />
