@@ -190,7 +190,9 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 		})
 
 		// Datas das emendas (documentos de execucao). ?limite=N; sem limite, todas
-		// as pendentes: o backfill leva ~1h30 pelo limite de 90 req/min do Portal
+		// as pendentes. Leva ~5 s por emenda (~2,5 paginas de documentos, pausa e
+		// latencia do Portal): as ~2.900 do backfill de 05/10 dariam ~4 h. A
+		// desconexao do cliente cancela o sync; ver deploy-contabo.md, secao 6.1
 		syncGroup.POST("/emendas-datas", func(c *gin.Context) {
 			limite := 0
 			if l := c.Query("limite"); l != "" {

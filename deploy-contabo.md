@@ -215,6 +215,39 @@ O passo de votações é o mais demorado e depende das APIs do Senado; ele é pu
 automaticamente se já houver dados. Se o backfill for interrompido, basta
 repetir a chamada — cada etapa verifica o que já existe antes de baixar.
 
+### 6.1 Syncs avulsos (direto na API)
+
+O backfill responde na hora, então pode passar pelo Next (porta 5350). Os
+outros syncs de `/api/v1/sync/*` (`senadores`, `despesas/:ano`, `votacoes`,
+`comissoes`, `proposicoes`, `emendas/:ano`, `emendas-datas`, `gabinete`,
+`daily`) são **síncronos**: só respondem no fim. Pelo Next, a requisição é
+cortada em ~30 s e o cliente recebe erro, sem saber se o sync terminou.
+
+Chamar a API direto, de um contêiner na rede dela (a porta 8080 não é
+publicada no host):
+
+```bash
+source /opt/todeolho/.env
+docker run --rm --network container:todeolho-api curlimages/curl \
+  -sS -X POST "http://127.0.0.1:8080/api/v1/sync/gabinete" \
+  -H "X-Sync-Secret: $SYNC_SECRET"
+```
+
+O sync usa o contexto da requisição: **se o cliente desconectar, o sync para no
+meio** (o que já foi gravado fica). Para os longos:
+
+- não pôr `--max-time` curto. Em 05/10, o backfill de `emendas-datas` (~2.900
+  pendentes, ~5 s cada) parou quando o curl desistiu, com `--max-time 10800`
+  (3 h), e deixou o resto para o sync diário;
+- rodar fora da sessão SSH, com `docker run -d --name <nome>` no lugar de
+  `--rm`, e ler o resumo depois em `docker logs <nome>` (apagar com
+  `docker rm <nome>`);
+- se der, dividir em lotes: `emendas-datas?limite=500` (das mais recentes para
+  as mais antigas) e `gabinete?ano=AAAA`.
+
+Para as datas das emendas, em geral não precisa: o sync diário consulta 600 por
+noite.
+
 ## 7. Rollback
 
 O volume `postgres_data` é preservado entre deploys. Cada deploy publica as
