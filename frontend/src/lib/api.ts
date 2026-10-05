@@ -204,6 +204,7 @@ export async function getProposicoes(
   sigla: string = "",
   status: string = "",
   sort: string = "",
+  autoria: string = "",
 ): Promise<ProposicaoResponse> {
   const params = new URLSearchParams();
   params.append("page", page.toString());
@@ -213,6 +214,7 @@ export async function getProposicoes(
   if (sigla) params.append("sigla", sigla);
   if (status) params.append("status", status);
   if (sort) params.append("sort", sort);
+  if (autoria) params.append("autoria", autoria);
 
   const query = params.toString() ? `?${params.toString()}` : "";
   return fetcher<ProposicaoResponse>(
