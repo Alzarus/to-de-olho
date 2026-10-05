@@ -268,6 +268,8 @@ export interface ProposicaoResponse {
   page: number;
   total_pages: number;
   proposicoes: Proposicao[];
+  // Siglas do senador com a autoria filtrada (opções do filtro de tipo)
+  tipos?: { tipo: string; total: number }[];
 }
 
 // Comissoes

@@ -6,10 +6,10 @@ import { useProposicoes } from "@/hooks/use-senador";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Proposicao } from "@/types/api";
-import { descricaoMateria, tituloMateria } from "@/lib/materia";
+import { descricaoMateria, nomeTipo, tituloMateria } from "@/lib/materia";
 import { DescricaoExpansivel, MarcaCuradoria, TemasChips } from "@/components/materia/materia-info";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Gavel, Search, ChevronLeft, ChevronRight, Filter, X } from "lucide-react";
+import { CheckCircle2, Gavel, Loader2, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -44,6 +44,19 @@ function rotuloSemPontos(prop: Proposicao): string | null {
   return null;
 }
 
+// Rótulo das siglas no filtro de tipo: separa os dois requerimentos, que
+// NOMES_TIPO chama só de "Requerimento"
+const ROTULO_SIGLA: Record<string, string> = {
+  RQS: "Requerimento ao Plenário",
+  REQ: "Requerimento de comissão",
+  INS: "Indicação",
+  MOC: "Moção",
+  PET: "Petição",
+  PRN: "Projeto de Resolução do Congresso",
+  VET: "Veto",
+};
+const rotuloSigla = (sigla: string) => ROTULO_SIGLA[sigla] ?? nomeTipo(sigla);
+
 export function ProposicoesTab({ id }: { id: number }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -55,6 +68,7 @@ export function ProposicoesTab({ id }: { id: number }) {
   const sigla = searchParams.get("prop_type") ?? "todos";
   const status = searchParams.get("prop_status") ?? "todos";
   const sort = searchParams.get("prop_sort") ?? "data_desc";
+  const autoria = searchParams.get("prop_autoria") ?? "todos";
   const limit = 20;
 
   // Local state for input debounce
@@ -98,8 +112,12 @@ export function ProposicoesTab({ id }: { id: number }) {
 
   const siglaParam = sigla !== "todos" ? sigla : "";
   const statusParam = status !== "todos" ? status : "";
+  const autoriaParam = autoria !== "todos" ? autoria : "";
 
-  const { data, isLoading } = useProposicoes(id, page, limit, searchParam, undefined, siglaParam, statusParam, sort);
+  // isFetching: a lista anterior fica na tela (placeholderData) enquanto o
+  // filtro novo carrega; sem indicador, parecia que o filtro não funcionava
+  const { data, isLoading, isFetching } = useProposicoes(id, page, limit, searchParam, undefined, siglaParam, statusParam, sort, autoriaParam);
+  const atualizando = isFetching && !isLoading;
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchValue(e.target.value);
@@ -109,6 +127,7 @@ export function ProposicoesTab({ id }: { id: number }) {
   const setSigla = (v: string) => updateUrl("prop_type", v);
   const setStatus = (v: string) => updateUrl("prop_status", v);
   const setSort = (v: string) => updateUrl("prop_sort", v);
+  const setAutoria = (v: string) => updateUrl("prop_autoria", v);
 
   const nextPage = () => setPage(page + 1);
   const prevPage = () => setPage(Math.max(1, page - 1));
@@ -131,11 +150,21 @@ export function ProposicoesTab({ id }: { id: number }) {
 
   if (!data) return null;
 
+  // Opções de tipo a partir dos dados; a sigla escolhida fica na lista mesmo
+  // sem proposições com a autoria atual
+  const tipos = [...(data.tipos ?? [])];
+  if (siglaParam && !tipos.some((t) => t.tipo === siglaParam)) {
+      tipos.push({ tipo: siglaParam, total: 0 });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <h3 className="text-lg font-semibold hidden sm:block">Proposições</h3>
+              <h3 className="text-lg font-semibold hidden sm:flex items-center gap-2">
+                  Proposições
+                  {atualizando && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden="true" />}
+              </h3>
               <div className="relative w-full sm:w-72">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -159,39 +188,49 @@ export function ProposicoesTab({ id }: { id: number }) {
           </div>
           
           <div className="flex flex-wrap items-center gap-2">
+              <Select value={autoria} onValueChange={setAutoria}>
+                  <SelectTrigger className="w-full sm:w-[220px]" aria-label="Filtrar por autoria">
+                      <SelectValue placeholder="Autoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="todos">Todas as autorias</SelectItem>
+                      <SelectItem value="principal">Só autoria principal</SelectItem>
+                      <SelectItem value="coautoria">Só coautorias</SelectItem>
+                  </SelectContent>
+              </Select>
+
               <Select value={sigla} onValueChange={setSigla}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[240px]" aria-label="Filtrar por tipo">
                       <SelectValue placeholder="Filtrar por Tipo" />
                   </SelectTrigger>
                   <SelectContent>
                       <SelectItem value="todos">Todos os Tipos</SelectItem>
-                      <SelectItem value="PEC" title="Proposta de Emenda à Constituição">PEC - Emenda Constitucional</SelectItem>
-                      <SelectItem value="PLP" title="Projeto de Lei Complementar">PLP - Lei Complementar</SelectItem>
-                      <SelectItem value="PL" title="Projeto de Lei">PL - Projeto de Lei</SelectItem>
-                      <SelectItem value="PDL" title="Projeto de Decreto Legislativo">PDL - Decreto Legislativo</SelectItem>
-                      <SelectItem value="PRS" title="Projeto de Resolução do Senado">PRS - Resolução do Senado</SelectItem>
-                      <SelectItem value="REQ" title="Requerimento">REQ - Requerimento</SelectItem>
+                      {tipos.map((t) => (
+                          <SelectItem key={t.tipo} value={t.tipo} title={rotuloSigla(t.tipo)}>
+                              {t.tipo} - {rotuloSigla(t.tipo)} ({t.total})
+                          </SelectItem>
+                      ))}
                   </SelectContent>
               </Select>
 
               <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filtrar por situação">
                       <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                       <SelectItem value="todos">Todos os Status</SelectItem>
-                      <SelectItem value="Apresentado">Em Tramitação</SelectItem>
+                      <SelectItem value="Apresentado">Apresentada</SelectItem>
                       <SelectItem value="EmComissao">Em Comissão</SelectItem>
                       <SelectItem value="AprovadoComissao">Aprovado na Comissão</SelectItem>
                       <SelectItem value="AprovadoPlenario">Aprovado no Plenário</SelectItem>
                       <SelectItem value="TransformadoLei">Transformado em Lei</SelectItem>
-                      <SelectItem value="ARQUIVADA">Arquivado</SelectItem>
                       <SelectItem value="PREJUDICADO">Prejudicado</SelectItem>
+                      <SelectItem value="RETIRADO_PELO_AUTOR">Retirado pelo autor</SelectItem>
                   </SelectContent>
               </Select>
 
               <Select value={sort} onValueChange={setSort}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px]" aria-label="Ordenação">
                       <SelectValue placeholder="Ordenação" />
                   </SelectTrigger>
                   <SelectContent>
@@ -202,7 +241,10 @@ export function ProposicoesTab({ id }: { id: number }) {
           </div>
       </div>
 
-      <div className="grid gap-4">
+      <div
+          className={`grid gap-4 transition-opacity ${atualizando ? "pointer-events-none opacity-50" : ""}`}
+          aria-busy={atualizando}
+      >
           {data.proposicoes.length === 0 ? (
               <div className="text-center py-12 border rounded-lg bg-muted/10">
                   <p className="text-muted-foreground">Nenhuma proposição encontrada.</p>
