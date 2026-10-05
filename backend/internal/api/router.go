@@ -121,6 +121,8 @@ func SetupRouter(db *gorm.DB, transparenciaAPIKey string) *gin.Engine {
 			votacoes.GET("", votacaoHandler.GetAll)
 			votacoes.GET("/facetas", votacaoHandler.GetFacetas)
 			votacoes.GET("/alinhamento", votacaoHandler.GetAlinhamento)
+			// Perguntas do match do Quem Votar (regra publica em votacao.TextoRegraMatch)
+			votacoes.GET("/match", votacaoHandler.GetMatch)
 			votacoes.GET("/:id", votacaoHandler.GetByID)
 		}
 
