@@ -18,6 +18,16 @@ type Emenda struct {
 	ValorEmpenhado        float64          `json:"valor_empenhado"`
 	ValorPago             float64          `json:"valor_pago"`
 	DataUltimaAtualizacao time.Time        `json:"data_ultima_atualizacao"`
+
+	// Datas da execucao, de /emendas/documentos/{codigo}. Nulas ate a primeira
+	// consulta ou quando a fase ainda nao ocorreu.
+	DataPrimeiroEmpenho   *time.Time `json:"data_primeiro_empenho"`
+	DataPrimeiroPagamento *time.Time `json:"data_primeiro_pagamento"`
+	DataUltimoPagamento   *time.Time `json:"data_ultimo_pagamento"`
+	// DatasConsultadasEm e DatasValorPago guardam quando e com que valor pago
+	// as datas foram buscadas: valor pago diferente pede nova consulta.
+	DatasConsultadasEm *time.Time `json:"-"`
+	DatasValorPago     float64    `json:"-"`
 }
 
 type ResumoEmendas struct {
