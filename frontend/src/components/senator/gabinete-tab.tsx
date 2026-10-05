@@ -264,12 +264,14 @@ export function GabineteTab({ id, ano }: { id: number; ano: number }) {
                 {data.escritorios!.map((e, i) => (
                   <li key={`${e.nome}-${i}`} className="space-y-1 rounded-lg border p-3 text-sm">
                     <p className="font-medium">{e.nome}</p>
-                    {e.endereco && (
-                      <p className="flex items-start gap-1.5 text-muted-foreground">
-                        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <p className="flex items-start gap-1.5 text-muted-foreground">
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      {e.endereco?.trim() ? (
                         <span>{e.endereco}</span>
-                      </p>
-                    )}
+                      ) : (
+                        <span className="italic">Endereço não informado pela fonte</span>
+                      )}
+                    </p>
                     {e.telefone && (
                       <p className="flex items-center gap-1.5 text-muted-foreground">
                         <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
