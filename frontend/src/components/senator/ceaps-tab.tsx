@@ -8,6 +8,7 @@ import { buscarTodasPaginas, rotuloAnoArquivo, slugArquivo } from "@/lib/export"
 import { COLUNAS_DESPESA } from "@/lib/export-colunas";
 import { ExportarDados } from "@/components/export-dados";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Atualizando, ErroCarregamento } from "@/components/ui/atualizando";
 import { formatCurrency } from "@/lib/utils";
 import {
   Table,
@@ -131,7 +132,7 @@ export function CeapsTab({ id, ano }: { id: number; ano: number }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ano]);
 
-  const { data, isLoading } = useDespesas(id, ano, page, 20, searchParam, tipo, sort);
+  const { data, isLoading, isFetching, isError, refetch } = useDespesas(id, ano, page, 20, searchParam, tipo, sort);
   const { data: senador } = useSenador(id);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,7 +162,9 @@ export function CeapsTab({ id, ano }: { id: number; ano: number }) {
     return <Skeleton className="h-[400px] w-full" />;
   }
 
-  if (!data || !data.despesas) return null;
+  if (!data || !data.despesas) {
+    return isError ? <ErroCarregamento aoTentar={() => refetch()} /> : null;
+  }
 
   const formatDate = (dateStr?: string) => {
       if (!dateStr) return "-";
@@ -236,6 +239,7 @@ export function CeapsTab({ id, ano }: { id: number; ano: number }) {
             </div>
         </div>
 
+        <Atualizando ativo={isFetching && !isLoading}>
         <div className="rounded-md border overflow-hidden">
           <div className="overflow-x-auto">
               <Table>
@@ -339,6 +343,7 @@ export function CeapsTab({ id, ano }: { id: number; ano: number }) {
               </Table>
           </div>
         </div>
+        </Atualizando>
 
         {/* Pagination Controls */}
         <PaginationWithInput 

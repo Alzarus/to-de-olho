@@ -1,68 +1,95 @@
 import type { Metadata } from "next";
 import SenadorClient from "./senador-client";
+import { buscarApi, jsonLd, NOME_SITE, SITE_URL } from "@/lib/seo";
 
 type Props = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-async function getSenador(id: string) {
-  // Em produção, usa o URL interno ou público.
-  // Como estamos no server-side, idealmente usaríamos o URL interno do container se possível,
-  // mas aqui vamos usar o BACKEND_URL público ou localhost
-  const baseUrl = process.env.BACKEND_URL || "http://localhost:8080";
+type SenadorMeta = {
+  nome?: string;
+  nome_completo?: string;
+  partido?: string;
+  uf?: string;
+  foto_url?: string;
+  em_exercicio?: boolean;
+};
 
-  try {
-    const res = await fetch(`${baseUrl}/api/v1/senadores/${id}`, {
-      next: { revalidate: 3600 }, // Cache de 1 hora
-    });
+type ScoreMeta = { posicao?: number; score_final?: number; dados_insuficientes?: boolean };
 
-    if (!res.ok) return null;
-    return res.json();
-  } catch (error) {
-    console.error("Erro ao buscar senador para metadata:", error);
-    return null;
-  }
-}
+// Mesma URL nas duas chamadas (metadata e página): o fetch do Next deduplica
+const buscarSenador = (id: string) => buscarApi<SenadorMeta>(`/api/v1/senadores/${encodeURIComponent(id)}`);
+const buscarScore = (id: string) => buscarApi<ScoreMeta>(`/api/v1/senadores/${encodeURIComponent(id)}/score`);
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const senador = await getSenador(id);
+  const canonical = `/senador/${id}`;
+  const [senador, score] = await Promise.all([buscarSenador(id), buscarScore(id)]);
 
-  if (!senador) {
+  if (!senador?.nome) {
     return {
       title: "Senador não encontrado",
       description: "Informações detalhadas sobre senadores brasileiros.",
+      alternates: { canonical },
     };
   }
 
-  const title = `Senador ${senador.nome || 'Desconhecido'} (${senador.partido || '-'}-${senador.uf || '-'})`;
-  const description = `Veja o desempenho de ${senador.nome} no Senado: Produtividade, Presença, Gastos e Emendas. Ranking: ${senador.score_ranking?.posicao}º lugar.`;
+  const title = `Senador ${senador.nome} (${senador.partido || "-"}-${senador.uf || "-"})`;
+  // Antes lia score_ranking, que a API não tem: toda descrição saía com "undefinedº lugar"
+  const posicao =
+    score && !score.dados_insuficientes && score.posicao
+      ? ` ${score.posicao}º no ranking do Tô De Olho, com nota ${score.score_final?.toFixed(1).replace(".", ",")}.`
+      : "";
+  const description = `Desempenho de ${senador.nome} no Senado: proposições, presença em votações, gastos da cota parlamentar, emendas e gabinete.${posicao}`;
+  // A API devolve foto_url (o código lia url_foto, e a imagem era sempre o logo)
+  const imagem = senador.foto_url || "/logo.png";
 
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
-      images: [
-        {
-          url: senador.url_foto || "/logo.png",
-          width: 800,
-          height: 600,
-          alt: `Foto de ${senador.nome}`,
-        },
-      ],
+      type: "profile",
+      images: [{ url: imagem, alt: `Foto de ${senador.nome}` }],
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title,
       description,
-      images: [senador.url_foto || "/logo.png"],
+      images: [imagem],
     },
   };
 }
 
-export default function Page() {
-  return <SenadorClient />;
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+  const senador = await buscarSenador(id);
+  const dados = senador?.nome
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        name: senador.nome,
+        ...(senador.nome_completo && senador.nome_completo !== senador.nome
+          ? { alternateName: senador.nome_completo }
+          : {}),
+        jobTitle: "Senador da República",
+        ...(senador.foto_url ? { image: senador.foto_url } : {}),
+        ...(senador.partido ? { affiliation: { "@type": "PoliticalParty", name: senador.partido } } : {}),
+        ...(senador.uf ? { workLocation: { "@type": "State", name: senador.uf } } : {}),
+        url: `${SITE_URL}/senador/${id}`,
+        mainEntityOfPage: { "@type": "ProfilePage", name: `${senador.nome} | ${NOME_SITE}` },
+      }
+    : null;
+
+  return (
+    <>
+      {dados && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(dados) }} />
+      )}
+      <SenadorClient />
+    </>
+  );
 }

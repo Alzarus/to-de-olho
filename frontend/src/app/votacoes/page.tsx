@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, ArrowUp, ArrowDown, X, Lock } from "lucide-react";
+import { Search, ArrowUp, ArrowDown, X, Lock, ChevronDown, SlidersHorizontal } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,9 @@ const nomeResultado = (r: string) => NOMES_RESULTADO[r] ?? r;
 // Valor neutro dos selects (o Radix não aceita value vazio)
 const TODAS = "todas";
 
+// Painel de filtros aberto ou recolhido: escolha do visitante, só neste navegador
+const CHAVE_FILTROS_ABERTOS = "votacoes-filtros-abertos";
+
 function VotacoesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -85,6 +88,25 @@ function VotacoesContent() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [facetas, setFacetas] = useState<FacetasVotacoes | null>(null);
+
+  // Aberto no SSR e no desktop; no celular começa recolhido (o painel ocupa a
+  // tela inteira antes da tabela), salvo se o visitante já escolheu
+  const [filtrosAbertos, setFiltrosAbertos] = useState(true);
+  useEffect(() => {
+    let salvo: string | null = null;
+    try {
+      salvo = localStorage.getItem(CHAVE_FILTROS_ABERTOS);
+    } catch {}
+    if (salvo !== null) setFiltrosAbertos(salvo === "1");
+    else if (window.matchMedia("(max-width: 639px)").matches) setFiltrosAbertos(false);
+  }, []);
+  const alternarFiltros = () => {
+    const aberto = !filtrosAbertos;
+    setFiltrosAbertos(aberto);
+    try {
+      localStorage.setItem(CHAVE_FILTROS_ABERTOS, aberto ? "1" : "0");
+    } catch {}
+  };
 
   // Input local para busca (debounce)
   const [localSearch, setLocalSearch] = useState(search);
@@ -183,6 +205,9 @@ function VotacoesContent() {
   const totalPages = Math.ceil(total / limit);
 
   const tiposSelecionados = tipoParam ? tipoParam.split(",") : [];
+  // Cada tipo marcado conta como um filtro
+  const qtdFiltros =
+    tiposSelecionados.length + (secretaParam ? 1 : 0) + (resultado ? 1 : 0) + (search ? 1 : 0);
 
   // Tipos com contagem; os marcados continuam visíveis mesmo sem votação no ano
   const opcoesTipo = [
@@ -275,10 +300,37 @@ function VotacoesContent() {
               {total.toLocaleString("pt-BR")} votações
             </Badge>
           </div>
+          <div className="flex items-center gap-2">
+            {!filtrosAbertos && filtrosAtivos && (
+              <Button type="button" variant="ghost" size="sm" onClick={limparFiltros}>
+                <X className="h-4 w-4" aria-hidden="true" />
+                Limpar filtros
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={alternarFiltros}
+              aria-expanded={filtrosAbertos}
+              aria-controls="painel-filtros-votacoes"
+            >
+              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+              Filtros{qtdFiltros > 0 ? ` (${qtdFiltros})` : ""}
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${filtrosAbertos ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              />
+            </Button>
+          </div>
         </CardHeader>
 
         {/* Barra de Filtros - dentro do card, perto da tabela */}
-        <div className="border-t border-b border-border bg-muted/30 px-4 py-3">
+        <div
+          id="painel-filtros-votacoes"
+          hidden={!filtrosAbertos}
+          className="border-t border-b border-border bg-muted/30 px-4 py-3"
+        >
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Busca */}
             <div className="relative flex-1 min-w-[180px] sm:max-w-md">

@@ -142,3 +142,60 @@ func (r *Repository) UltimaAtualizacao(ano int) (*time.Time, error) {
 	err := r.db.Model(&Recurso{}).Where("ano = ?", ano).Select("MAX(atualizado_em)").Scan(&t).Error
 	return t, err
 }
+
+// SubstituirEscritorios troca o retrato dos escritorios de apoio. Lista vazia
+// nao apaga nada (falha da fonte nao pode sumir com os enderecos).
+func (r *Repository) SubstituirEscritorios(escritorios []Escritorio, agora time.Time) error {
+	if len(escritorios) == 0 {
+		return errors.New("lista de escritorios vazia: nada gravado")
+	}
+	ts := carimbo(agora)
+	for i := range escritorios {
+		escritorios[i].ID = 0
+		escritorios[i].AtualizadoEm = ts
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("1 = 1").Delete(&Escritorio{}).Error; err != nil {
+			return fmt.Errorf("limpeza de gabinete_escritorios: %w", err)
+		}
+		if err := tx.Create(&escritorios).Error; err != nil {
+			return fmt.Errorf("insert de gabinete_escritorios: %w", err)
+		}
+		return nil
+	})
+}
+
+// SubstituirColaboradores troca a contagem dos tipos informados (so os que a
+// fonte trouxe nesta carga): quem nao aparece mais fica sem linha, isto e, zero.
+func (r *Repository) SubstituirColaboradores(tipos []string, linhas []Colaborador, agora time.Time) error {
+	ts := carimbo(agora)
+	for i := range linhas {
+		linhas[i].AtualizadoEm = ts
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("tipo IN ?", tipos).Delete(&Colaborador{}).Error; err != nil {
+			return fmt.Errorf("limpeza de gabinete_colaboradores: %w", err)
+		}
+		if len(linhas) == 0 {
+			return nil
+		}
+		if err := tx.Create(&linhas).Error; err != nil {
+			return fmt.Errorf("insert de gabinete_colaboradores: %w", err)
+		}
+		return nil
+	})
+}
+
+// Escritorios devolve os escritorios de apoio atuais do senador
+func (r *Repository) Escritorios(senadorID int) ([]Escritorio, error) {
+	var out []Escritorio
+	err := r.db.Where("senador_id = ?", senadorID).Order("nome ASC").Find(&out).Error
+	return out, err
+}
+
+// Colaboradores devolve a contagem atual de terceirizados e estagiarios do senador
+func (r *Repository) Colaboradores(senadorID int) ([]Colaborador, error) {
+	var out []Colaborador
+	err := r.db.Where("senador_id = ?", senadorID).Order("quantidade DESC, tipo ASC").Find(&out).Error
+	return out, err
+}

@@ -227,6 +227,12 @@ export interface LocalGabineteResumo {
   vinculos: VinculoGabinete[];
 }
 
+export interface EscritorioGabinete {
+  nome: string;
+  endereco: string;
+  telefone: string;
+}
+
 export interface BeneficioGabinete {
   tipo: string; // "Auxílio-Moradia", "Imóvel Funcional"
   utilizacao: string; // "Utilizou", "Não utilizou"
@@ -241,6 +247,9 @@ export interface GabineteResponse {
   por_vinculo: VinculoGabinete[];
   beneficios: BeneficioGabinete[];
   cargo_mesa: string | null; // cargo atual na Mesa Diretora
+  // Retrato atual da fonte (sem histórico), qualquer que seja o ano
+  escritorios?: EscritorioGabinete[];
+  colaboradores?: VinculoGabinete[]; // terceirizados e estagiários do gabinete
   atualizado_em: string | null;
   fonte_url: string;
 }
@@ -272,6 +281,8 @@ export interface ProposicaoResponse {
   page: number;
   total_pages: number;
   proposicoes: Proposicao[];
+  // Siglas do senador com a autoria filtrada (opções do filtro de tipo)
+  tipos?: { tipo: string; total: number }[];
 }
 
 // Comissoes

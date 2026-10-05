@@ -68,6 +68,7 @@ export function useProposicoes(
   sigla: string = "",
   status: string = "",
   sort: string = "",
+  autoria: string = "",
 ) {
   return useQuery({
     queryKey: [
@@ -80,9 +81,10 @@ export function useProposicoes(
       sigla,
       status,
       sort,
+      autoria,
     ],
     queryFn: () =>
-      getProposicoes(id, page, limit, search, ano, sigla, status, sort),
+      getProposicoes(id, page, limit, search, ano, sigla, status, sort, autoria),
     enabled: id > 0,
     placeholderData: (previousData) => previousData,
   });
