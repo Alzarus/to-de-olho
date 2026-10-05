@@ -8,6 +8,7 @@ import { ExportarDados } from "@/components/export-dados";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Atualizando, ErroCarregamento } from "@/components/ui/atualizando";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -37,10 +38,10 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
   const limit = 20;
 
   // Pie Chart Data
-  const { data: chartData, isLoading: isChartLoading } = useVotosPorTipo(id);
+  const { data: chartData, isLoading: isChartLoading, isError: isChartError, refetch: refetchChart } = useVotosPorTipo(id);
   
   // List Data
-  const { data: votacoesData, isLoading: isListLoading } = useVotacoes(id, page, limit, filteredVoto, ano === 0 ? undefined : ano);
+  const { data: votacoesData, isLoading: isListLoading, isFetching: isListFetching, isError: isListError, refetch: refetchList } = useVotacoes(id, page, limit, filteredVoto, ano === 0 ? undefined : ano);
   const { data: senador } = useSenador(id);
   const anoApi = ano === 0 ? undefined : ano;
 
@@ -76,7 +77,9 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
       return <Skeleton className="h-[400px] w-full" />;
   }
 
-  if (!chartData || !chartData.por_tipo) return null;
+  if (!chartData || !chartData.por_tipo) {
+    return isChartError ? <ErroCarregamento aoTentar={() => refetchChart()} /> : null;
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 w-full min-w-0">
@@ -139,11 +142,14 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
                             <Skeleton key={i} className="h-16 w-full" />
                         ))}
                     </div>
+                ) : !votacoesData && isListError ? (
+                    <ErroCarregamento aoTentar={() => refetchList()} />
                 ) : !votacoesData || votacoesData.votacoes.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                         Nenhuma votação encontrada.
                     </div>
                 ) : (
+                    <Atualizando ativo={isListFetching && !isListLoading}>
                     <div className="space-y-4 min-h-[600px] flex flex-col">
                         <div className="space-y-2 flex-1">
                             {votacoesData.votacoes.map((v) => {
@@ -209,6 +215,7 @@ export function VotacoesTab({ id, ano }: { id: number; ano?: number }) {
                             className="border-t pt-4"
                         />
                     </div>
+                    </Atualizando>
                 )}
             </CardContent>
         </Card>

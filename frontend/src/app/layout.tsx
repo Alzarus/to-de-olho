@@ -8,6 +8,7 @@ import { ContadorAcessos } from "@/components/layout/contador-acessos";
 import { Providers } from "@/lib/providers";
 import { PrintInfo } from "@/components/print-button";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { jsonLd, NOME_SITE, SITE_URL } from "@/lib/seo";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -45,14 +46,15 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/logo.png",
-        width: 1200,
-        height: 630,
+        width: 1024,
+        height: 1024,
         alt: "Logo Tô De Olho",
       },
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    // O logo é quadrado: o card grande cortaria a imagem
+    card: "summary",
     title: "Tô De Olho - Transparência no Senado",
     description: "Plataforma de transparência e acompanhamento da atuação dos senadores brasileiros.",
     images: ["/logo.png"],
@@ -71,6 +73,20 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLd({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: NOME_SITE,
+              url: SITE_URL,
+              inLanguage: "pt-BR",
+              description:
+                "Transparência e acompanhamento da atuação dos senadores brasileiros, com dados abertos do Senado e do Portal da Transparência.",
+            }),
+          }}
+        />
         <Providers>
           <div className="flex min-h-screen flex-col overflow-x-hidden pt-16">
             <Header />

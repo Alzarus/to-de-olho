@@ -5,8 +5,10 @@ import { Mail } from "lucide-react";
 import { GithubIcon, LinkedinIcon } from "@/components/ui/brand-icons";
 
 export const metadata: Metadata = {
-  title: "Sobre | Tô de Olho",
-  description: "Conheça o projeto de TCC Tô de Olho.",
+  title: "Sobre o projeto",
+  description:
+    "O Tô De Olho é um projeto de TCC (IFBA) que reúne dados abertos do Senado e do Portal da Transparência para acompanhar a atuação dos senadores.",
+  alternates: { canonical: "/sobre" },
 };
 
 export default function SobrePage() {

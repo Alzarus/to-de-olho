@@ -3,6 +3,7 @@
 import { useQueries } from "@tanstack/react-query";
 import { getEmendas } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErroCarregamento } from "@/components/ui/atualizando";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell } from "recharts";
 import type { SenatorBasicProfile } from "@/contexts/comparator-context";
@@ -60,6 +61,15 @@ export function EmendasTab({ senators, year }: EmendasTabProps) {
   });
 
   if (queries.some((q) => q.isLoading)) return <Skeleton className="h-[500px] w-full" />;
+  // Falha de um senador não pode virar "sem emendas" no gráfico
+  if (queries.some((q) => q.isError)) {
+    return (
+      <ErroCarregamento
+        mensagem="Não foi possível carregar as emendas de todos os senadores."
+        aoTentar={() => queries.forEach((q) => q.isError && q.refetch())}
+      />
+    );
+  }
 
   const todas = senators.map((_, i) => queries[i].data?.emendas ?? []);
 

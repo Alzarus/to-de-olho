@@ -76,6 +76,15 @@ jobs:
       - name: Checagem de tipos
         run: bunx tsc --noEmit
 
+      # Sem este passo, os bumps do TypeScript 7 e do ESLint 10 quebraram o
+      # lint sem ninguem ver (o typescript-eslint nao roda com nenhum dos dois).
+      # Avisos nao falham; erros sim.
+      - name: Lint
+        run: bun run lint
+
+      - name: Testes unitarios
+        run: bun test src
+
   # Varredura de dependencias e segredos. Falha so em CRITICAL; o que for
   # aceito conscientemente vai para o .trivyignore com justificativa.
   trivy-fs:

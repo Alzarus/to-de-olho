@@ -41,7 +41,7 @@ func TestFindBySenadorIDTrazNomePopular(t *testing.T) {
 	}
 	for _, c := range casos {
 		t.Run(c.nome, func(t *testing.T) {
-			lista, total, err := repo.FindBySenadorID(1, 10, 0, c.busca, 0, "", "", "")
+			lista, total, err := repo.FindBySenadorID(1, 10, 0, c.busca, 0, "", "", "", "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -59,7 +59,7 @@ func TestFindBySenadorIDTrazNomePopular(t *testing.T) {
 			}
 		})
 	}
-	lista, _, _ := repo.FindBySenadorID(1, 1, 0, "", 0, "", "", "")
+	lista, _, _ := repo.FindBySenadorID(1, 1, 0, "", 0, "", "", "", "")
 	if deref(lista[0].ExplicacaoEmenta) != explicacao || len(lista[0].Temas) != 1 {
 		t.Errorf("explicacao/temas: %q %v", deref(lista[0].ExplicacaoEmenta), lista[0].Temas)
 	}
