@@ -48,6 +48,10 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 	sigla := c.Query("sigla")
 	status := c.Query("status")
 	sort := c.Query("sort")
+	autoria := c.Query("autoria")
+	if CondicaoAutoria(autoria) == "" {
+		autoria = ""
+	}
 	
 	var ano int
 	if anoStr := c.Query("ano"); anoStr != "" {
@@ -56,9 +60,16 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		}
 	}
 
-	proposicoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, queryStr, ano, sigla, status, sort)
+	proposicoes, total, err := h.repo.FindBySenadorID(senadorID, limit, offset, queryStr, ano, sigla, status, sort, autoria)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao buscar proposicoes"})
+		return
+	}
+
+	// Opcoes do filtro de tipo: as siglas que o senador tem, com a autoria escolhida
+	tipos, err := h.repo.ContarPorSigla(senadorID, autoria)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "falha ao contar proposicoes por tipo"})
 		return
 	}
 
@@ -69,6 +80,7 @@ func (h *Handler) ListBySenador(c *gin.Context) {
 		"page":         page,
 		"total_pages":  (int(total) + limit - 1) / limit,
 		"proposicoes":  utils.NaoNulo(proposicoes),
+		"tipos":        utils.NaoNulo(tipos),
 	})
 }
 

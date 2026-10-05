@@ -20,8 +20,9 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
-// FindBySenadorID retorna proposicoes de um senador com paginacao, busca e filtros
-func (r *Repository) FindBySenadorID(senadorID int, limit int, offset int, queryStr string, ano int, sigla string, tramitacao string, sort string) ([]Proposicao, int64, error) {
+// FindBySenadorID retorna proposicoes de um senador com paginacao, busca e
+// filtros. autoria: "principal", "coautoria" ou vazio (todas); ver CondicaoAutoria.
+func (r *Repository) FindBySenadorID(senadorID int, limit int, offset int, queryStr string, ano int, sigla string, tramitacao string, sort string, autoria string) ([]Proposicao, int64, error) {
 	var proposicoes []Proposicao
 	var total int64
 	
@@ -45,6 +46,10 @@ func (r *Repository) FindBySenadorID(senadorID int, limit int, offset int, query
 
 	if tramitacao != "" {
 		dbQuery = dbQuery.Where("(estagio_tramitacao = ? OR situacao_atual ILIKE ?)", tramitacao, tramitacao)
+	}
+
+	if cond := CondicaoAutoria(autoria); cond != "" {
+		dbQuery = dbQuery.Where(cond)
 	}
 
 	if err := dbQuery.Count(&total).Error; err != nil {
@@ -145,6 +150,33 @@ func (r *Repository) GetStatsPeriodo(senadorID int, inicio, fim time.Time) (*Pro
 }
 
 // GetProposicoesPorTipo retorna contagem de proposicoes por tipo
+// CondicaoAutoria traduz o filtro de autoria da listagem: "principal" e o que
+// pontua no ranking (condicaoPrincipal), "coautoria" e a assinatura como
+// senador fora da primeira posicao. Outro valor: sem filtro.
+func CondicaoAutoria(autoria string) string {
+	switch autoria {
+	case "principal":
+		return condicaoPrincipal
+	case "coautoria":
+		return condicaoCoautoria
+	}
+	return ""
+}
+
+// ContarPorSigla conta as proposicoes do senador por sigla, com o filtro de
+// autoria (as opcoes do filtro de tipo da listagem)
+func (r *Repository) ContarPorSigla(senadorID int, autoria string) ([]ProposicaoPorTipo, error) {
+	var result []ProposicaoPorTipo
+	q := r.db.Model(&Proposicao{}).
+		Select("TRIM(sigla_subtipo_materia) as tipo, COUNT(*) as total").
+		Where("senador_id = ?", senadorID)
+	if cond := CondicaoAutoria(autoria); cond != "" {
+		q = q.Where(cond)
+	}
+	err := q.Group("TRIM(sigla_subtipo_materia)").Order("total DESC, tipo").Scan(&result).Error
+	return result, err
+}
+
 func (r *Repository) GetProposicoesPorTipo(senadorID int) ([]ProposicaoPorTipo, error) {
 	var result []ProposicaoPorTipo
 	err := r.db.Model(&Proposicao{}).
