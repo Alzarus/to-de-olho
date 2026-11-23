@@ -1,6 +1,22 @@
 import { useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
+// Sem localStorage (modo privado restrito, cookies bloqueados) o acesso lança
+// exceção; nesse caso a página segue sem lembrar o ano
+function lerAno(chave: string): string | null {
+  try {
+    return localStorage.getItem(chave);
+  } catch {
+    return null;
+  }
+}
+
+function gravarAno(chave: string, ano: string) {
+  try {
+    localStorage.setItem(chave, ano);
+  } catch {}
+}
+
 export function usePersistentYear(key: string) {
   const router = useRouter();
   const pathname = usePathname();
@@ -13,12 +29,12 @@ export function usePersistentYear(key: string) {
     const yearParam = searchParams.get("ano");
     // Prefix key to avoid collisions
     const storageKey = `todeolho_year_${key}`;
-    const storedYear = localStorage.getItem(storageKey);
+    const storedYear = lerAno(storageKey);
 
     if (yearParam !== null) {
       // URL has priority. If it exists, update storage to match.
       if (yearParam !== storedYear) {
-        localStorage.setItem(storageKey, yearParam);
+        gravarAno(storageKey, yearParam);
       }
     } else {
       // URL has no year. Check if we have a stored preference.
