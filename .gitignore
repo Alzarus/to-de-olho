@@ -26,3 +26,9 @@ run.log
 backend/err.txt
 backend/output_test.json
 backend/api.exe
+
+# Documentos internos (auditoria de segurança e infraestrutura) - cópia no Drive
+AUDITORIA.md
+PLANO-MIGRACAO.md
+trivy-baseline.txt
+ANDAMENTO.md
