@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  Suspense,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, ArrowUp, ArrowDown, X, Lock, ChevronDown, SlidersHorizontal } from "lucide-react";
 
@@ -60,6 +66,36 @@ const TODAS = "todas";
 // Painel de filtros aberto ou recolhido: escolha do visitante, só neste navegador
 const CHAVE_FILTROS_ABERTOS = "votacoes-filtros-abertos";
 
+// Escolha feita nesta aba; vale mesmo quando o localStorage está bloqueado
+let escolhaFiltrosAbertos: boolean | null = null;
+const ouvintesFiltros = new Set<() => void>();
+
+function assinarFiltrosAbertos(aoMudar: () => void) {
+  ouvintesFiltros.add(aoMudar);
+  return () => {
+    ouvintesFiltros.delete(aoMudar);
+  };
+}
+
+// Aberto no desktop; no celular começa recolhido (o painel ocupa a tela
+// inteira antes da tabela), salvo se o visitante já escolheu
+function lerFiltrosAbertos(): boolean {
+  if (escolhaFiltrosAbertos !== null) return escolhaFiltrosAbertos;
+  try {
+    const salvo = localStorage.getItem(CHAVE_FILTROS_ABERTOS);
+    if (salvo !== null) return salvo === "1";
+  } catch {}
+  return !window.matchMedia("(max-width: 639px)").matches;
+}
+
+function gravarFiltrosAbertos(aberto: boolean) {
+  escolhaFiltrosAbertos = aberto;
+  try {
+    localStorage.setItem(CHAVE_FILTROS_ABERTOS, aberto ? "1" : "0");
+  } catch {}
+  ouvintesFiltros.forEach((aoMudar) => aoMudar());
+}
+
 function VotacoesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,27 +125,22 @@ function VotacoesContent() {
   const [loading, setLoading] = useState(true);
   const [facetas, setFacetas] = useState<FacetasVotacoes | null>(null);
 
-  // Aberto no SSR e no desktop; no celular começa recolhido (o painel ocupa a
-  // tela inteira antes da tabela), salvo se o visitante já escolheu
-  const [filtrosAbertos, setFiltrosAbertos] = useState(true);
-  useEffect(() => {
-    let salvo: string | null = null;
-    try {
-      salvo = localStorage.getItem(CHAVE_FILTROS_ABERTOS);
-    } catch {}
-    if (salvo !== null) setFiltrosAbertos(salvo === "1");
-    else if (window.matchMedia("(max-width: 639px)").matches) setFiltrosAbertos(false);
-  }, []);
-  const alternarFiltros = () => {
-    const aberto = !filtrosAbertos;
-    setFiltrosAbertos(aberto);
-    try {
-      localStorage.setItem(CHAVE_FILTROS_ABERTOS, aberto ? "1" : "0");
-    } catch {}
-  };
+  // Aberto no SSR; no cliente segue lerFiltrosAbertos
+  const filtrosAbertos = useSyncExternalStore(
+    assinarFiltrosAbertos,
+    lerFiltrosAbertos,
+    () => true,
+  );
+  const alternarFiltros = () => gravarFiltrosAbertos(!filtrosAbertos);
 
   // Input local para busca (debounce)
   const [localSearch, setLocalSearch] = useState(search);
+  // Se a URL mudar por fora (voltar do navegador, link), o campo acompanha
+  const [searchAnterior, setSearchAnterior] = useState(search);
+  if (search !== searchAnterior) {
+    setSearchAnterior(search);
+    setLocalSearch(search);
+  }
   const limit = 20;
 
   // Persist year
@@ -130,11 +161,6 @@ function VotacoesContent() {
     },
     [searchParams, router],
   );
-
-  // Sync initial localSearch if URL changes externally
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
 
   // Handle Search Debounce
   useEffect(() => {
